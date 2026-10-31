@@ -122,7 +122,10 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+(Nothing yet.)
 
+Released in 1.9.0 (2026-10-31; 16 MB now, as it carries the phone server
+for phone-only mode, which only shows on a fresh install):
 
 
 - Importing from older recipe blogs (EasyRecipe and similar plugins, which
