@@ -1,32 +1,48 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl } from "../pb";
-import { isPhoneMode, leavePhoneMode, rememberPhoneAccount, setUpPhone } from "../phoneMode";
+import { isPhoneMode, leavePhoneMode, phoneModeSupported, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
 // "Set up your Bento" instead, to make the first account. In the app, with
-// no server chosen yet, it first asks: "Just me, on this phone" (phone-only
-// mode, see phoneMode.ts) or "Connect to a server".
+// no server chosen yet, it starts with Bento on this phone (phone-only mode,
+// see phoneMode.ts): just a name, nothing to set up. Connecting to a server
+// is the smaller choice under it, for households sharing one. Phones that
+// can't run phone-only mode go straight to the server.
 export default function Login() {
   const phone = isPhoneMode();
-  const [step, setStep] = useState<"choose" | "phone" | "server">(() =>
-    isAndroidApp && !phone && !savedServerUrl() ? "choose" : "server",
-  );
+  const firstRun = isAndroidApp && !phone && !savedServerUrl();
+  const [step, setStep] = useState<"phone" | "server">(firstRun ? "phone" : "server");
+  // Whether this phone can run phone-only mode: null until known.
+  const [phoneOk, setPhoneOk] = useState<boolean | null>(isAndroidApp ? null : false);
   const [server, setServer] = useState(savedServerUrl);
   // Whether the server needs setting up: null until we know (or can't tell).
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
+  // In the app: the address typed couldn't be reached.
+  const [unreachable, setUnreachable] = useState(false);
+
+  useEffect(() => {
+    void phoneModeSupported().then((ok) => {
+      setPhoneOk(ok);
+      if (!ok) setStep("server");
+    });
+  }, []);
 
   // Asks the server whether it has any accounts yet. In the app this waits
   // for a server address.
   function checkSetup() {
     if (phone) return;
+    setUnreachable(false);
     if (isAndroidApp) {
       if (!server.trim()) return;
       setServerUrl(normaliseServerUrl(server));
     }
     pb.send<{ needsSetup: boolean }>("/api/cookbook/setup", {})
       .then((answer) => setNeedsSetup(answer.needsSetup))
-      .catch(() => setNeedsSetup(null));
+      .catch((err) => {
+        setNeedsSetup(null);
+        if (isAndroidApp && (err as { status?: number }).status === 0) setUnreachable(true);
+      });
   }
 
   useEffect(() => {
@@ -69,22 +85,11 @@ export default function Login() {
       </main>
     );
 
-  if (step === "choose")
+  // Still checking whether this phone can run it (a moment).
+  if (step === "phone" && phoneOk === null)
     return (
       <main className="login">
-        <div className="card stack login-card">
-          {brand}
-          <div className="login-choices">
-            <button className="login-choice" onClick={() => setStep("phone")}>
-              <strong>Just me, on this phone</strong>
-              <span className="muted">Nothing to set up. Your recipes stay on this phone, and you can back them up.</span>
-            </button>
-            <button className="login-choice" onClick={() => setStep("server")}>
-              <strong>Connect to a server</strong>
-              <span className="muted">For a household sharing one Bento, or one a friend runs.</span>
-            </button>
-          </div>
-        </div>
+        <div className="card stack login-card">{brand}</div>
       </main>
     );
 
@@ -94,9 +99,12 @@ export default function Login() {
         <div className="card stack login-card">
           {brand}
           <PhoneSetupForm />
-          <button className="link-button" onClick={() => setStep("choose")}>
-            ← Back
-          </button>
+          <div className="login-other">
+            <p className="muted">Sharing with your household? A Bento server keeps everyone's phones in step.</p>
+            <button className="button" onClick={() => setStep("server")}>
+              Connect to a server
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -105,6 +113,11 @@ export default function Login() {
     <main className="login">
       <div className="card stack login-card">
         {brand}
+        {isAndroidApp && phoneOk === false && firstRun && (
+          <p className="muted small-note">
+            This phone can't run Bento by itself (it needs a newer, 64-bit phone), so it connects to a Bento server.
+          </p>
+        )}
         {isAndroidApp && (
           <label>
             Server address
@@ -124,9 +137,15 @@ export default function Login() {
             />
           </label>
         )}
+        {unreachable && (
+          <p className="error" role="status">
+            Couldn't reach {normaliseServerUrl(server).replace(/^https?:\/\//, "")}. Check the address, that the server is
+            on, and, if it uses Tailscale, that Tailscale is on on this phone too.
+          </p>
+        )}
         {needsSetup ? <SetupForm server={server} /> : <LoginForm server={server} />}
-        {isAndroidApp && (
-          <button className="link-button" onClick={() => setStep("choose")}>
+        {isAndroidApp && phoneOk && (
+          <button className="link-button" onClick={() => setStep("phone")}>
             ← Or use Bento on this phone only
           </button>
         )}

@@ -22,8 +22,8 @@
       <h2>The short version</h2>
       <p class="note">
         Bento doesn't send your information to the developer or to anyone else. There are no ads, no analytics and no
-        tracking. Everything you add is stored on the Bento server you choose to connect to, which you or someone you
-        know runs.
+        tracking. Everything you add stays on your phone, or, if you choose to connect to a Bento server to share with
+        your household, on that server, which you or someone you know runs.
       </p>
 
       <h2>What Bento stores, and where</h2>
@@ -33,27 +33,32 @@
         plan, the shopping list and the pantry.
       </p>
       <p>
-        All of this is stored on the Bento server you log in to. That server is run by you or by the person who invited
-        you (for example on a computer or Raspberry Pi in their home), not by the developer. The people with an account
-        on the same server can see the household's recipes, lists and plans, as sharing them is what Bento is for. The
-        person running the server can see everything stored on it.
+        <strong>On this phone only</strong> (the usual way to start): Bento runs its own small server inside the app,
+        reachable only from your phone, and keeps everything in the app's private storage. Nothing leaves the phone
+        unless you save a backup, which goes wherever you choose (like Google Drive). Bento turns off Android's
+        automatic backup to Google, so Bento's own backups are the only copies.
       </p>
       <p>
-        The app also keeps a copy of recipes you've opened on your phone, so you can read them without a connection,
-        and remembers your settings and login there. Logging out removes that copy.
+        <strong>With a Bento server</strong> (for sharing with a household): everything is stored on the server you log
+        in to. That server is run by you or by the person who invited you (for example on a computer or Raspberry Pi in
+        their home), not by the developer. The people with an account on the same server can see the household's
+        recipes, lists and plans, as sharing them is what Bento is for. The person running the server can see
+        everything stored on it. The app also keeps a copy of your recipes and the shopping list on your phone, so you
+        can use them without a connection, and remembers your settings and login there. Logging out removes that
+        copy.
       </p>
 
       <h2>What Bento connects to</h2>
       <ul>
-        <li><strong>Your Bento server</strong>, to load and save everything above.</li>
+        <li><strong>Your Bento server</strong>, if you use one, to load and save everything above.</li>
         <li>
-          <strong>Recipe websites you choose.</strong> When you save a recipe from a link, your Bento server fetches that
-          page to read the recipe from it, and the photo from it. When you open a site, a store's page or a search from
+          <strong>Recipe websites you choose.</strong> When you save a recipe from a link, Bento (on your phone, or your
+          server) fetches that page to read the recipe from it, and the photo from it. When you open a site, a store's page or a search from
           Bento, it opens in a browser and that website's own privacy policy applies.
         </li>
         <li>
-          <strong>Open Food Facts</strong>, when you scan a barcode Bento doesn't know yet. Your Bento server sends only
-          the barcode number to <a href="https://world.openfoodfacts.org">Open Food Facts</a>, a free, open database of
+          <strong>Open Food Facts</strong>, when you scan a barcode Bento doesn't know yet. Bento sends only the barcode
+          number to <a href="https://world.openfoodfacts.org">Open Food Facts</a>, a free, open database of
           food products, to find the product's name and brand. Nothing else about you is sent.
         </li>
       </ul>
@@ -61,19 +66,24 @@
 
       <h2>Permissions</h2>
       <p>
-        Bento uses your internet connection to reach your Bento server. When you add a photo to a recipe or your
-        profile, or a saved web page to import, you pick the file yourself; Bento only gets the file you choose.
+        Bento uses your internet connection to reach recipe websites and, if you use one, your Bento server. When you
+        add a photo to a recipe or your profile, or a saved web page to import, you pick the file yourself; Bento only
+        gets the file you choose.
       </p>
       <p>
         Scanning a barcode uses Google's own scanner on your phone (part of Google Play services), which handles the
-        camera itself. Bento doesn't ask for camera access and only receives the barcode number.
+        camera itself. Bento doesn't ask for camera access and only receives the barcode number. Google Play services
+        may send Google basic information about how its scanner is working, under
+        <a href="https://policies.google.com/privacy">Google's privacy policy</a>.
       </p>
 
       <h2>Deleting your information</h2>
       <p>
-        You can delete recipes, notes, lists and your photos in the app at any time. To delete your account and
-        everything on it, ask the person who runs your Bento server, or delete the server's data if it's yours.
-        Uninstalling the app removes everything it kept on your phone.
+        You can delete recipes, notes, lists and your photos in the app at any time. To delete your account, open
+        <strong>Profile</strong> in the app and tap <strong>Delete my account</strong>: your account, picture and
+        ratings are deleted from the server, while recipes and lists you added stay for your household. On a Bento
+        that's on your phone only, the same place says <strong>Delete everything</strong>, which deletes all of
+        Bento's data from the phone. Uninstalling the app also removes everything it kept on your phone.
       </p>
 
       <h2>Children</h2>

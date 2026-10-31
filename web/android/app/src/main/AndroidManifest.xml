@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- allowBackup off: Android's own copy to Google can't hold a phone-only
+         Bento reliably (it stops at 25 MB, and could copy the database
+         mid-write), so Bento's Backups page is the one way, and the privacy
+         policy can say nothing goes to Google. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"

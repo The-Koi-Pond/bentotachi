@@ -3,6 +3,8 @@ import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, type User
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { erasePhone, isPhoneMode } from "../phoneMode";
+import { forgetOfflineCopy } from "../offline";
 
 const users = () => pb.collection<User>("users");
 
@@ -19,7 +21,55 @@ export default function Profile() {
       <NameSection user={user} />
       <ColorSection user={user} />
       <PasswordSection user={user} />
+      <DeleteSection user={user} />
     </div>
+  );
+}
+
+// "Delete my account". On a server: the account, its picture and its
+// ratings go; the recipes, list items and plan nights it added stay, as
+// they're the household's. Phone-only: everything on this phone goes
+// (it's the only account), and Bento starts again as new.
+function DeleteSection({ user }: { user: User }) {
+  const phone = isPhoneMode();
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+
+  async function remove() {
+    const question = phone
+      ? "Delete everything in Bento on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Backups.)"
+      : `Delete your account, ${displayName(user)}? Your picture and ratings go with it. Recipes and list items you added stay for the household. This can't be undone.`;
+    if (!window.confirm(question)) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      if (phone) await erasePhone();
+      else {
+        await users().delete(user.id);
+        forgetOfflineCopy();
+        pb.authStore.clear();
+      }
+      window.location.reload();
+    } catch (err) {
+      setStatus({ text: errorMessage(err), isError: true });
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section title={phone ? "Delete Bento's data" : "Delete my account"}>
+      <p className="muted small-note">
+        {phone
+          ? "Deletes everything Bento keeps on this phone, and starts again as new."
+          : "Deletes your account from this Bento. What you added for the household stays."}
+      </p>
+      <div className="actions">
+        <button className="button danger small push-left" onClick={() => void remove()} disabled={busy}>
+          {busy ? "Deleting…" : phone ? "Delete everything" : "Delete my account"}
+        </button>
+      </div>
+      <Status status={status} />
+    </Section>
   );
 }
 

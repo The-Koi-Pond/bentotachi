@@ -91,4 +91,30 @@ func TestStartBackupRestore(t *testing.T) {
 	if len(items) != 1 {
 		t.Fatalf("a failed restore shouldn't change anything: %v", items)
 	}
+
+	// Rescue: with the server stopped (as when it won't start), the data
+	// still comes out as a backup that restores elsewhere.
+	if _, err := Rescue(dataDir); err == nil {
+		t.Fatal("rescuing while the server runs should fail")
+	}
+	Stop()
+	rescued, err := Rescue(dataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh := filepath.Join(t.TempDir(), "pb_data")
+	port, err = Start(fresh, hooks, migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err = Restore(rescued)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base = fmt.Sprintf("http://127.0.0.1:%d", port)
+	token = call("POST", "/api/collections/users/auth-with-password", "", map[string]string{"identity": "sam", "password": "a-long-password"})["token"].(string)
+	items = call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["title"] != "Soup" {
+		t.Fatalf("the rescued data should restore with Soup in it: %v", items)
+	}
 }

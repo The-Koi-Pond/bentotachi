@@ -29,6 +29,9 @@ import java.util.concurrent.Executors;
  *   start()   starts it (if it isn't already) and resolves with { url }.
  *   backup()  makes a backup and asks where to save it: { saved }.
  *   restore() asks for a backup file and puts it in place: { restored, url }.
+ *   supported() whether this phone can run it (64-bit ARM): { supported }.
+ *   erase()   stops it and deletes everything it kept.
+ *   rescue()  when it won't start: saves its data as a backup anyway: { saved }.
  *
  * Bento's server code (server/pb_hooks and pb_migrations) comes inside the
  * app (see copyBentoServerCode in build.gradle) and is copied out to the
@@ -41,6 +44,13 @@ public class BentoLocalServerPlugin extends Plugin {
     // One at a time, off the screen's thread: starting can take a few seconds.
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private File pendingBackup;
+
+    // The server is built for 64-bit ARM only (see mobile/README.md).
+    @PluginMethod
+    public void supported(PluginCall call) {
+        boolean arm64 = java.util.Arrays.asList(android.os.Build.SUPPORTED_ABIS).contains("arm64-v8a");
+        call.resolve(new JSObject().put("supported", arm64));
+    }
 
     @PluginMethod
     public void start(PluginCall call) {
@@ -62,6 +72,22 @@ public class BentoLocalServerPlugin extends Plugin {
         });
     }
 
+    // "Delete my account" on a phone-only Bento: stops the server and deletes
+    // everything it kept (recipes, photos, lists, the account). Can't be undone.
+    @PluginMethod
+    public void erase(PluginCall call) {
+        worker.execute(() -> {
+            try {
+                Bentoserver.stop();
+            } catch (Throwable e) {
+                // Not running (or can't run here): nothing to stop.
+            }
+            deleteAll(new File(getContext().getFilesDir(), "bento-data"));
+            deleteAll(new File(getContext().getFilesDir(), "bento-server"));
+            call.resolve();
+        });
+    }
+
     @PluginMethod
     public void backup(PluginCall call) {
         worker.execute(() -> {
@@ -76,6 +102,25 @@ public class BentoLocalServerPlugin extends Plugin {
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("application/zip");
             intent.putExtra(Intent.EXTRA_TITLE, pendingBackup.getName());
+            getActivity().runOnUiThread(() -> startActivityForResult(call, intent, "backupSaved"));
+        });
+    }
+
+    // When the server won't start: the data straight from its folder (the
+    // server isn't running), saved like a backup.
+    @PluginMethod
+    public void rescue(PluginCall call) {
+        worker.execute(() -> {
+            try {
+                pendingBackup = new File(Bentoserver.rescue(new File(getContext().getFilesDir(), "bento-data").getPath()));
+            } catch (Throwable e) {
+                call.reject(e.getMessage());
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/zip");
+            intent.putExtra(Intent.EXTRA_TITLE, "bento-saved-data.zip");
             getActivity().runOnUiThread(() -> startActivityForResult(call, intent, "backupSaved"));
         });
     }

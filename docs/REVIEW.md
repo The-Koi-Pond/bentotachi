@@ -54,10 +54,12 @@ code unless marked *(inferred)*.
 ### Google Play
 - [ ] **Blocker: the self-updater** (`REQUEST_INSTALL_PACKAGES`). Planned:
   a Play build without it.
-- [ ] **Blocker: no "Delete my account" in the app** (Play requires one for
+- [x] **Blocker: no "Delete my account" in the app** (Play requires one for
   apps that create accounts) *(policy from memory; check in Play Console)*.
-- [ ] **High: privacy policy** doesn't mention phone-only mode, Android's
+  Done: 2026-10-31: Profile → Delete my account (server: the account, picture and ratings; what they added stays). Phone-only: Delete everything erases the phone's Bento.
+- [x] **High: privacy policy** doesn't mention phone-only mode, Android's
   own backup (`allowBackup`), or Google's scanner.
+  Done: 2026-10-31: site/privacy.html covers phone-only mode, Android backup (now turned off: allowBackup=false), Google's scanner, and in-app account deletion. Goes live when pushed to GitHub.
 - [ ] **High: plain http** (`cleartext: true`): passwords travel
   unencrypted on home Wi-Fi; the Data safety form would have to say so.
   Tailscale users are fine. Fix: https via `tailscale serve`, or guide
@@ -71,12 +73,15 @@ code unless marked *(inferred)*.
   phones would fail. Hide the option where it can't run.
 - [ ] **High: never gets app updates** (its own server has no releases, so
   the check always says "up to date").
-- [ ] **High: backups only when someone remembers**: no reminder, no "last
+- [x] **High: backups only when someone remembers**: no reminder, no "last
   backed up". Set explicit Android backup rules too.
-- [ ] **Medium: a failed database update on the phone traps the data**
+  Done: 2026-10-31: the Recipes page nudges (no backup yet, or two weeks old; Later waits three days), Backups shows when one was last saved. Android's own backup is turned off instead of given rules.
+- [x] **Medium: a failed database update on the phone traps the data**
   (Backup needs the server running). Copy the database aside first.
-- [ ] **Low: the phone account's password is saved only after setup
+  Done: 2026-10-31: the "couldn't start" screen has Save my data, which copies the data out without the server (Rescue in mobile/bentoserver, tested with go test).
+- [x] **Low: the phone account's password is saved only after setup
   succeeds**; if the app is killed in between, nobody knows it.
+  Done: 2026-10-31: saved first, put back if setup fails.
 
 ### Friends' own servers
 - [ ] **High: a stranger can't get a server** without Node/npm; only Xel
@@ -85,8 +90,9 @@ code unless marked *(inferred)*.
   (`/api/cookbook/setup` before anyone has set it up). A one-time code
   shown in the server window would fix it.
 - [ ] **Medium: app and server versions can drift** with no warning.
-- [ ] **Medium: a wrong or unreachable server address gives no useful
+- [x] **Medium: a wrong or unreachable server address gives no useful
   message** on the login screen.
+  Done: 2026-10-31: the login screen says it couldn't reach the address, with what to check.
 - [ ] **Medium: no in-app backup or download** in server mode; nightly
   backups sit on the same disk.
 
@@ -123,10 +129,21 @@ code unless marked *(inferred)*.
   readers *(inferred)*.
 - [ ] The friends' start script says "send it to Claude".
 
-## The decision to make
+## The decision (2026-10-31)
 
-Pick one path for outside users first:
-- **Phone-only mode on Google Play**: needs a real-phone test, backup
-  reminders, account deletion, the privacy wording, a Play build.
-- **Friends running their own servers**: needs a published zip, https,
-  and the importer fix.
+**Phone-only is the default** for outside users (and the Google Play
+path); a server is an optional extra for households that want to share,
+with a guided setup later. So the order is:
+1. Login: phone-only first, "Connect to a server" as the smaller choice;
+   phones that can't run it go straight to the server choice.
+2. Save the phone account's password before setting it up.
+3. "Delete my account" (Play requires it; phone-only erases the phone's
+   Bento).
+4. Backup reminders and "Last backed up".
+5. Never trap data when the phone's server won't start.
+6. Privacy policy wording.
+7. Then: a real-phone test, the Play build (no updater, no store logos,
+   AAB), the 16 KB check; later, the guided server setup.
+
+(The other path, friends running their own servers, needs a published
+zip, https, and the importer fix, which is done.)

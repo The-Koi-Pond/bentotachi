@@ -5,7 +5,8 @@
 //
 // It's built into an Android library with gomobile (see mobile/README.md);
 // the app's BentoLocalServerPlugin calls it. gomobile turns these functions
-// into Java methods: Bentoserver.start(...), .stop(), .backup(), .restore().
+// into Java methods: Bentoserver.start(...), .stop(), .backup(), .rescue(...),
+// .restore().
 package bentoserver
 
 import (
@@ -155,6 +156,28 @@ func Backup() (string, error) {
 		return "", fmt.Errorf("couldn't make the backup: %w", err)
 	}
 	return filepath.Join(folder, name), nil
+}
+
+// Rescue copies everything in dataDir into a backup zip without starting the
+// server, and returns the zip's path: for when the server won't start (say,
+// an app update whose database change fails), so the data is never stuck
+// on the phone. The zip has the same layout as Backup's, so Restore (or a
+// real server) can use it. The server must not be running.
+func Rescue(dataDir string) (string, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if app != nil {
+		return "", errors.New("Bento's server is running; use Backup instead")
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, "data.db")); err != nil {
+		return "", errors.New("there's no Bento data on this phone")
+	}
+	zip := dataDir + "-rescued.zip"
+	_ = os.Remove(zip)
+	if err := archive.Create(dataDir, zip, "backups"); err != nil {
+		return "", fmt.Errorf("couldn't copy Bento's data: %w", err)
+	}
+	return zip, nil
 }
 
 // Restore replaces everything with a backup zip (from Backup, or from a

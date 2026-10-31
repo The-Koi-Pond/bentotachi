@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { errorMessage } from "../pb";
-import { backUpPhone, leavePhoneMode, phoneAccount, restorePhone } from "../phoneMode";
+import { backUpPhone, lastBackup, leavePhoneMode, phoneAccount, restorePhone } from "../phoneMode";
+import { daysAgo } from "../backupReminder";
+import { formatDay, localToday } from "../dates";
 
 // ⋮ → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
 // this phone, so this is where it's saved somewhere safe, restored, or moved
@@ -10,12 +12,16 @@ export default function Backups() {
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const account = phoneAccount();
+  const [last, setLast] = useState(lastBackup);
 
   async function backUp() {
     setBusy(true);
     setStatus(null);
     try {
-      if (await backUpPhone()) setStatus({ text: "Backup saved.", isError: false });
+      if (await backUpPhone()) {
+        setStatus({ text: "Backup saved.", isError: false });
+        setLast(lastBackup());
+      }
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
@@ -54,6 +60,11 @@ export default function Backups() {
       <section className="card stack">
         <h2>Save a backup</h2>
         <p className="muted">Everything in one file. Save it somewhere off this phone, like Google Drive.</p>
+        <p className={last ? "small-note" : "small-note warning-text"}>
+          {last
+            ? `Last saved ${daysAgo(new Date(), last)} (${formatDay(localToday(last), { weekday: "short", day: "numeric", month: "short" })}).`
+            : "No backup saved from this phone yet."}
+        </p>
         <button className="button primary" onClick={() => void backUp()} disabled={busy}>
           Save a backup
         </button>

@@ -3538,44 +3538,20 @@ em.soft {
   background: var(--accent);
 }
 
-/* The login screen's first question in the app: "Just me, on this phone"
-   or "Connect to a server". */
-.login-choices {
+/* Under "Bento on this phone" on the first login screen: the smaller
+   choice, connecting to a household's server. */
+.login-other {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
-.login-choice {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 14px 16px;
-  text-align: left;
-  font: inherit;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.login-choice:hover {
-  border-color: var(--accent);
-}
-
-.login-choice:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.login-choice strong {
-  font-size: 1.05rem;
-}
-
-.login-choice .muted {
-  font-size: 0.9rem;
+.login-other p {
+  margin: 0;
+  font-size: 0.92rem;
 }
 
 /* "Starting Bento…" while the phone's own server starts. */
@@ -3717,4 +3693,22 @@ em.soft {
   color: var(--bg);
   font-weight: 700;
   text-decoration: underline;
+}
+
+/* "No backup yet" on a phone-only Bento's Recipes page: like the offline
+   note, with Later and Back up side by side. */
+.backup-nudge {
+  flex-wrap: wrap;
+}
+
+.nudge-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Something to act on, but not an error ("No backup saved yet"). */
+.warning-text {
+  color: var(--danger);
+  font-weight: 600;
 }

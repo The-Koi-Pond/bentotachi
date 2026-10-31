@@ -171,6 +171,16 @@ Changes already live in the browser version, not yet in a published APK
   (`.paprikarecipes`, which Paprika, Mealie and Tandoor import). Uses
   fflate (zip library). In the app it saves through Android's "save as"
   screen (new BentoFilesPlugin; needs the next APK, and trying on a phone).
+- Phone-only first (decided 2026-10-31, see docs/REVIEW.md): a new app
+  opens on "Bento on this phone" (just a name), with "Connect to a server"
+  under it; phones that can't run it (not 64-bit ARM) go straight to the
+  server. An unreachable server address now says so. Profile → Delete my
+  account (phone-only: Delete everything). Backup nudge on the Recipes page
+  and "Last saved" on Backups. "Save my data" when the phone's server won't
+  start (Go `Rescue`). The phone account's password is saved before setup.
+  Android's own backup to Google is off (`allowBackup="false"`). Privacy
+  policy updated for all of this (live once pushed). All needs the next
+  APK and a real-phone test.
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

@@ -45,6 +45,7 @@ import { forEveryone, useSingleUser } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
 import { alsoDeleted } from "../deleteWarning";
+import BackupNudge from "../BackupNudge";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -581,6 +582,7 @@ export default function RecipeList() {
       </div>
 
       {offline && <OfflineNote />}
+      <BackupNudge recipes={all.length} />
       {managing && <p className="muted">Tap the bin on a recipe to delete it. Tap ✓ at the top when you're done.</p>}
       {managing && error && <p className="error">{error}</p>}
       {shown.length === 0 && (
