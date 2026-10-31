@@ -122,7 +122,20 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-(Nothing yet.)
+- Pantry fixes from Xel's first big scanning session (new `note`,
+  `opened_location` and `opened` fields on pantry items; `brand` holds up to
+  120 characters):
+  - A scan nothing has (Open Food Facts doesn't know it) shows the number and
+    asks to scan once more: the Pi's log showed the scanner often misreading
+    the first few digits. Two matching scans, a typed number, or "It
+    matches" count as sure.
+  - Same thing, another brand: a scanned product named like a pantry item
+    offers "Add to Brown sugar" (barcode goes on it, brand joins its brands,
+    "Coles, White Mill"). Typing a name already used offers the same button
+    instead of only an error. "Preferred brand" is now "Brands we buy".
+  - "Once opened, keep in" (like Fridge): the row gets "Opened → Fridge",
+    which moves it there; marking it Out puts it back in its own place.
+  - A note on each item ("3 cans"), shown under its name.
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

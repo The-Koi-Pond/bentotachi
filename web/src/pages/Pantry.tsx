@@ -14,14 +14,20 @@ import StoreLogo from "../StoreLogo";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { barcodesOf, itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
+import { guessPantryItem } from "../pantryLinks";
+import { brandsOf, placeOf, withBrand } from "../pantryItem";
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
 // looked up (null if it doesn't know), for ones not in the pantry yet.
+// The scanner sometimes misreads a digit (giving a number nothing has), so a
+// scan nothing has is only believed once it's scanned the same twice, typed,
+// or checked against the packet: `sure`.
 interface Scanned {
   code: string;
   looking: boolean;
   product: BarcodeProduct | null;
   lookupError: string;
+  sure: boolean;
 }
 
 const STATUSES: { value: PantryStatus; label: string }[] = [
@@ -56,7 +62,10 @@ const DEFAULT_PLACES: Record<string, string[]> = {
 };
 
 function placeOptions(existing: PantryItem[]): string[] {
-  return uniqueLabels([...Object.keys(DEFAULT_PLACES), ...existing.map((i) => i.location)]);
+  return uniqueLabels([
+    ...Object.keys(DEFAULT_PLACES),
+    ...existing.flatMap((i) => [i.location, i.opened_location ?? ""]),
+  ]);
 }
 
 function subcategoryOptions(existing: PantryItem[], place: string): string[] {
@@ -76,8 +85,12 @@ interface Fields {
   expires: string;
   // Its product page in a store, as typed or picked; "" for none.
   storeUrl: string;
-  // The brand we like, or "".
+  // The brands we buy ("Coles, White Mill"), or "".
   brand: string;
+  // "3 cans", or "".
+  note: string;
+  // Where it goes once opened, or "" for nowhere else.
+  openedLocation: string;
 }
 
 // `key` identifies a drawer for opening/closing: the place, or place/subcategory.
@@ -95,15 +108,17 @@ interface Group {
 
 // Place -> subcategory -> items. Spelling differences in case ("fridge" vs
 // "Fridge") land in the same group. Items with no place go last under
-// "Other"; items with no subcategory go first within their place.
+// "Other"; items with no subcategory go first within their place. Opened
+// items go in their once-opened place (see placeOf).
 function groupItems(items: PantryItem[]): Group[] {
   const places = new Map<string, { label: string; subs: Map<string, { label: string; items: PantryItem[] }> }>();
   for (const item of items) {
-    const placeKey = norm(item.location);
-    if (!places.has(placeKey)) places.set(placeKey, { label: item.location.trim() || "Other", subs: new Map() });
+    const { location, subcategory } = placeOf(item);
+    const placeKey = norm(location);
+    if (!places.has(placeKey)) places.set(placeKey, { label: location.trim() || "Other", subs: new Map() });
     const subs = places.get(placeKey)!.subs;
-    const subKey = norm(item.subcategory);
-    if (!subs.has(subKey)) subs.set(subKey, { label: item.subcategory.trim(), items: [] });
+    const subKey = norm(subcategory);
+    if (!subs.has(subKey)) subs.set(subKey, { label: subcategory.trim(), items: [] });
     subs.get(subKey)!.items.push(item);
   }
 
@@ -161,6 +176,8 @@ export default function Pantry() {
   const [searchingStores, setSearchingStores] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // Says where an item went when it moved drawers ("Opened", or running out).
+  const [notice, setNotice] = useState("");
   // Drawers start closed each visit; this holds the ones opened since.
   const [openDrawers, setOpenDrawers] = useState<Set<string>>(new Set());
   // A store product page to add as a new item: shared to Bento from another
@@ -182,6 +199,13 @@ export default function Pantry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedStoreLink]);
 
+  // The notice goes away by itself after a few seconds.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
   const items = pantry.items;
 
@@ -192,17 +216,37 @@ export default function Pantry() {
   const isOnList = (item: PantryItem) =>
     waiting.some((w) => w.pantry_item === item.id || (!w.pantry_item && norm(w.text) === norm(item.name)));
 
-  async function setStatus(item: PantryItem, status: PantryStatus) {
-    if (item.status === status) return;
+  async function save(item: PantryItem, patch: Partial<PantryItem>, movedTo: string) {
     setError("");
-    pantry.upsert({ ...item, status });
+    setNotice(movedTo);
+    pantry.upsert({ ...item, ...patch });
     try {
-      // The server puts "out" items on the shopping list by itself.
-      await pantryItems().update(item.id, { status });
+      await pantryItems().update(item.id, patch);
     } catch (err) {
       pantry.upsert(item);
+      setNotice("");
       setError(errorMessage(err));
     }
+  }
+
+  // The server puts "out" items on the shopping list by itself. An opened
+  // one that runs out goes back to its own place, for the next unopened one.
+  function setStatus(item: PantryItem, status: PantryStatus) {
+    if (item.status === status) return;
+    const putBack = status === "out" && item.opened;
+    const place = item.location.trim();
+    void save(
+      item,
+      putBack ? { status, opened: false } : { status },
+      putBack && norm(placeOf(item).location) !== norm(place)
+        ? `${item.name} is out, so it's back in ${place ? `the ${place}` : "Other"}, ready for the next one.`
+        : "",
+    );
+  }
+
+  function setOpened(item: PantryItem, opened: boolean) {
+    const moved = placeOf({ ...item, opened }).location.trim();
+    void save(item, { opened }, `${item.name} is now in ${moved ? `the ${moved}` : "Other"}.`);
   }
 
   async function addToList(item: PantryItem) {
@@ -218,9 +262,11 @@ export default function Pantry() {
 
   // A barcode from the scanner or the barcode box: shows the item it belongs
   // to, or looks it up to start a new one.
-  async function takeBarcode(text: string) {
+  // Typed numbers aren't misread, and a scan matching the last one is sure.
+  async function takeBarcode(text: string, typed = false) {
     const code = normaliseBarcode(text);
     setError("");
+    setNotice("");
     if (!code) {
       setError("That doesn't look like a barcode (8 to 14 digits).");
       return;
@@ -229,7 +275,8 @@ export default function Pantry() {
     setFromStore(null);
     setEditingScanned(false);
     const known = !!itemWithBarcode(items ?? [], code);
-    setScanned({ code, looking: !known, product: null, lookupError: "" });
+    const sure = typed || scanned?.code === code;
+    setScanned({ code, looking: !known, product: null, lookupError: "", sure });
     if (known) return;
     let product: BarcodeProduct | null = null;
     let lookupError = "";
@@ -251,11 +298,15 @@ export default function Pantry() {
     }
   }
 
-  // "Already in the pantry under another name": the barcode goes on it.
-  async function addBarcodeTo(item: PantryItem, code: string) {
+  // A scanned packet of something already in the pantry (maybe another
+  // brand of it): the barcode goes on that item, and the brand joins its
+  // brands.
+  async function addBarcodeTo(item: PantryItem, code: string, brand: string) {
     setError("");
     try {
-      pantry.upsert(await pantryItems().update(item.id, { barcodes: withBarcode(item, code) }));
+      pantry.upsert(
+        await pantryItems().update(item.id, { barcodes: withBarcode(item, code), brand: withBrand(item.brand, brand) })
+      );
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -334,7 +385,7 @@ export default function Pantry() {
         </span>
       </div>
 
-      {typingBarcode && !canScan && <BarcodeBox onCode={(code) => void takeBarcode(code)} />}
+      {typingBarcode && !canScan && <BarcodeBox onCode={(code) => void takeBarcode(code, true)} />}
 
       {scanned && (
         <ScanResult
@@ -344,14 +395,17 @@ export default function Pantry() {
           isOnList={isOnList}
           onEdit={setEditingScanned}
           onStatus={setStatus}
+          onOpened={setOpened}
           onAddToList={addToList}
+          onScanAgain={() => void scan()}
+          onSure={() => setScanned({ ...scanned, sure: true })}
           onAdded={(item) => pantry.upsert(item)}
           onSaved={(item) => {
             pantry.upsert(item);
             setEditingScanned(false);
           }}
           onDelete={(item) => void remove(item).then((removed) => removed && setScanned(null))}
-          onAddBarcodeTo={(item) => void addBarcodeTo(item, scanned.code)}
+          onAddBarcodeTo={(item, brand) => void addBarcodeTo(item, scanned.code, brand ?? scanned.product?.brand ?? "")}
           onClose={() => setScanned(null)}
         />
       )}
@@ -419,6 +473,11 @@ export default function Pantry() {
       )}
 
       {error && <p className="error">{error}</p>}
+      {notice && (
+        <p className="toast" role="status">
+          {notice}
+        </p>
+      )}
       {items.length > 0 && shown.length === 0 && (
         <p className="muted">
           {filter === "soon" ? "Nothing needs using up soon." : `Nothing is marked “${filter}”.`} Nice.
@@ -469,6 +528,7 @@ export default function Pantry() {
                                 onList={isOnList(item)}
                                 onEdit={() => setEditingId(item.id)}
                                 onStatus={(status) => setStatus(item, status)}
+                                onOpened={(opened) => setOpened(item, opened)}
                                 onAddToList={() => addToList(item)}
                               />
                             )}
@@ -517,7 +577,8 @@ function BarcodeBox({ onCode }: { onCode: (code: string) => void }) {
 
 // What a scanned barcode is: the pantry item it's on (to mark low or out, or
 // edit), or else a new item filled in from Open Food Facts, or the barcode
-// put on an item already in the pantry under another name.
+// put on an item already in the pantry (like another brand of it). A number
+// nothing has is checked first, in case the scanner misread it.
 function ScanResult({
   scanned,
   items,
@@ -525,7 +586,10 @@ function ScanResult({
   isOnList,
   onEdit,
   onStatus,
+  onOpened,
   onAddToList,
+  onScanAgain,
+  onSure,
   onAdded,
   onSaved,
   onDelete,
@@ -538,11 +602,15 @@ function ScanResult({
   isOnList: (item: PantryItem) => boolean;
   onEdit: (editing: boolean) => void;
   onStatus: (item: PantryItem, status: PantryStatus) => void;
+  onOpened: (item: PantryItem, opened: boolean) => void;
   onAddToList: (item: PantryItem) => void;
+  onScanAgain: () => void;
+  onSure: () => void;
   onAdded: (item: PantryItem) => void;
   onSaved: (item: PantryItem) => void;
   onDelete: (item: PantryItem) => void;
-  onAddBarcodeTo: (item: PantryItem) => void;
+  // The brand: the scanned product's unless given.
+  onAddBarcodeTo: (item: PantryItem, brand?: string) => void;
   onClose: () => void;
 }) {
   const [otherId, setOtherId] = useState("");
@@ -571,6 +639,7 @@ function ScanResult({
             onList={isOnList(found)}
             onEdit={() => onEdit(true)}
             onStatus={(status) => onStatus(found, status)}
+            onOpened={(opened) => onOpened(found, opened)}
             onAddToList={() => onAddToList(found)}
           />
         )}
@@ -584,13 +653,58 @@ function ScanResult({
       </p>
     );
 
+  const { product } = scanned;
+  if (!product && !scanned.lookupError && !scanned.sure)
+    return (
+      <section className="card stack scan-result" role="status">
+        <h2>Nothing has this number</h2>
+        <p className="barcode-number">{scanned.code}</p>
+        <p className="muted small-note">
+          Scanners sometimes misread a digit, so scan it once more to check. Or check the number against the one under
+          the barcode on the packet.
+        </p>
+        <div className="actions">
+          <button className="button ghost small" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="button small" onClick={onSure}>
+            It matches
+          </button>
+          {canScan && (
+            <button className="button primary small" onClick={onScanAgain}>
+              📷 Scan again
+            </button>
+          )}
+        </div>
+      </section>
+    );
+
+  // An item it's probably another packet of: "Coles Brown Sugar 1kg" ->
+  // Brown sugar.
+  const likely = product ? guessPantryItem(product.name, items) : null;
+
   return (
     <>
+      {likely && (
+        <section className="card stack scan-result">
+          <p>
+            Is this <strong>{likely.name}</strong>? It's already in the pantry
+            {likely.brand || likely.location ? ` (${[likely.brand, likely.location].filter(Boolean).join(", ")})` : ""}.
+          </p>
+          <div className="actions">
+            <button className="button primary small" onClick={() => onAddBarcodeTo(likely)}>
+              Add to {likely.name}
+            </button>
+          </div>
+        </section>
+      )}
       <AddPantryItem
         key={scanned.code}
         existing={items}
         fromBarcode={scanned}
         onAdded={onAdded}
+        onUseExisting={onAddBarcodeTo}
+        onScanAgain={canScan ? onScanAgain : undefined}
         onClose={onClose}
       />
       {items.length > 0 && (
@@ -630,14 +744,19 @@ function PantryRow({
   onList,
   onEdit,
   onStatus,
+  onOpened,
   onAddToList,
 }: {
   item: PantryItem;
   onList: boolean;
   onEdit: () => void;
   onStatus: (status: PantryStatus) => void;
+  onOpened: (opened: boolean) => void;
   onAddToList: () => void;
 }) {
+  // Only for things kept somewhere else once opened, while we have some.
+  const openedPlace = (item.opened_location ?? "").trim();
+  const canOpen = !!openedPlace && norm(openedPlace) !== norm(item.location) && item.status !== "out";
   return (
     <div className="pantry-row">
       <div className="pantry-main">
@@ -657,11 +776,22 @@ function PantryRow({
           ))}
         </div>
       </div>
+      {item.note?.trim() && <span className="pantry-note">{item.note}</span>}
       {itemExpiry(item) && (
         <span className={`expiry expiry-${itemExpiry(item)}`}>{describeExpiry(item.expires)}</span>
       )}
-      {(item.brand || item.store_url) && (
+      {(item.brand || item.store_url || canOpen) && (
         <span className="pantry-extra">
+          {canOpen && (
+            <button
+              className="opened-toggle"
+              aria-pressed={!!item.opened}
+              onClick={() => onOpened(!item.opened)}
+              title={item.opened ? `Tap to put it back in ${item.location || "Other"}, unopened` : undefined}
+            >
+              {item.opened ? "Opened" : `Opened → ${openedPlace}`}
+            </button>
+          )}
           {item.brand && <span className="pantry-brand">{item.brand}</span>}
           {item.store_url && <StoreLink url={item.store_url} itemName={item.name} />}
         </span>
@@ -789,13 +919,24 @@ function ItemFields({
       </label>
       <label>
         <span className="label-text">
-          Preferred brand <span className="optional">(optional)</span>
+          Note <span className="optional">(optional)</span>
+        </span>
+        <input
+          value={fields.note}
+          onChange={(e) => onChange({ note: e.target.value })}
+          maxLength={200}
+          placeholder="e.g. 3 cans"
+        />
+      </label>
+      <label>
+        <span className="label-text">
+          Brands we buy <span className="optional">(optional)</span>
         </span>
         <input
           value={fields.brand}
           onChange={(e) => onChange({ brand: e.target.value })}
-          maxLength={60}
-          placeholder="e.g. Lea & Perrins"
+          maxLength={120}
+          placeholder="e.g. Coles, White Mill"
         />
       </label>
       <div className="row">
@@ -822,6 +963,15 @@ function ItemFields({
           onChange={(subcategory) => onChange({ subcategory })}
         />
       </div>
+      <CategorySelect
+        label="Once opened, keep in"
+        value={fields.openedLocation}
+        options={withCurrent(places, fields.openedLocation)}
+        emptyLabel="The same place"
+        newLabel="+ New place…"
+        newPlaceholder="New place, e.g. Door shelf"
+        onChange={(openedLocation) => onChange({ openedLocation })}
+      />
       <label>
         <span className="label-text">
           Expires <span className="optional">(optional)</span>
@@ -836,8 +986,8 @@ function ItemFields({
         </span>
       </label>
       <StoreLinkField
-        // Store searches include the brand: "Lea & Perrins Worcestershire".
-        name={[fields.brand, fields.name].map((part) => part.trim()).filter(Boolean).join(" ")}
+        // Store searches include the (first) brand: "Lea & Perrins Worcestershire".
+        name={[brandsOf(fields.brand)[0] ?? "", fields.name].map((part) => part.trim()).filter(Boolean).join(" ")}
         value={fields.storeUrl}
         onChange={(storeUrl) => onChange({ storeUrl })}
       />
@@ -1023,6 +1173,8 @@ function AddPantryItem({
   fromStore,
   fromBarcode,
   onAdded,
+  onUseExisting,
+  onScanAgain,
   onClose,
 }: {
   existing: PantryItem[];
@@ -1031,6 +1183,10 @@ function AddPantryItem({
   // Or a scanned barcode, with what Open Food Facts says it is.
   fromBarcode?: Scanned;
   onAdded: (item: PantryItem) => void;
+  // For a scanned barcode named like an item already in the pantry: put the
+  // barcode (and brand) on that item instead.
+  onUseExisting?: (item: PantryItem, brand: string) => void;
+  onScanAgain?: () => void;
   onClose?: () => void;
 }) {
   const product = fromBarcode?.product ?? null;
@@ -1041,7 +1197,11 @@ function AddPantryItem({
     expires: "",
     storeUrl: fromStore?.url ?? "",
     brand: product?.brand ?? "",
+    note: "",
+    openedLocation: "",
   });
+  // The item already in the pantry with the name typed, once Add finds it.
+  const [duplicate, setDuplicate] = useState<PantryItem | null>(null);
   // The scanned barcode goes on the first item added (not ones after it).
   const [barcode, setBarcode] = useState(fromBarcode?.code ?? "");
   // Putting a store link into a new item suggests a name from it, and keeps
@@ -1065,16 +1225,21 @@ function AddPantryItem({
   const nameRef = useRef<HTMLInputElement>(null);
   // An item half filled in (the place chosen is kept between items, so that
   // alone doesn't count).
-  useUnsavedChanges(!!(fields.name.trim() || fields.brand.trim() || fields.expires || fields.storeUrl.trim()));
+  useUnsavedChanges(
+    !!(fields.name.trim() || fields.brand.trim() || fields.note.trim() || fields.expires || fields.storeUrl.trim())
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     const name = fields.name.trim();
-    const duplicate = existing.find((i) => norm(i.name) === norm(name));
-    if (duplicate) {
+    const same = existing.find((i) => norm(i.name) === norm(name));
+    setDuplicate(same ?? null);
+    if (same) {
       setError(
-        `“${duplicate.name}” is already in the pantry${duplicate.location ? ` (${duplicate.location})` : ""}.` +
-          (barcode ? " To give it this barcode, pick it below." : ""),
+        `“${same.name}” is already in the pantry${same.location ? ` (${same.location})` : ""}.` +
+          (barcode && onUseExisting
+            ? " If this is the same thing (another brand is fine), add it to that one. Or give this one a different name."
+            : " Give this one a different name, or change that one."),
       );
       return;
     }
@@ -1096,12 +1261,15 @@ function AddPantryItem({
           store_url: storeUrl,
           brand: fields.brand.trim(),
           barcodes: barcode ? [barcode] : [],
+          note: fields.note.trim(),
+          opened_location: fields.openedLocation.trim(),
         })
       );
       setBarcode("");
-      // Keep the place and subcategory chosen, so adding a whole shelf is
-      // quick. Each item has its own expiry, store link and brand, so those are cleared.
-      setFields((previous) => ({ ...previous, name: "", expires: "", storeUrl: "", brand: "" }));
+      // Keep the places and subcategory chosen, so adding a whole shelf is
+      // quick. Each item has its own expiry, store link, brand and note, so
+      // those are cleared.
+      setFields((previous) => ({ ...previous, name: "", expires: "", storeUrl: "", brand: "", note: "" }));
       setResetKey((key) => key + 1);
       nameRef.current?.focus();
     } catch (err) {
@@ -1126,6 +1294,15 @@ function AddPantryItem({
               Scanned: “{product.name}
               {product.quantity && `, ${product.quantity}`}” (from Open Food Facts). Shorten the name to what recipes call
               it, like “Basmati rice”, so they find it.
+              {onScanAgain && (
+                <>
+                  {" "}
+                  Not what you scanned?{" "}
+                  <button type="button" className="link-button" onClick={onScanAgain}>
+                    Scan again
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -1137,6 +1314,13 @@ function AddPantryItem({
       )}
       <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} />
       {error && <p className="error">{error}</p>}
+      {error && duplicate && barcode && onUseExisting && (
+        <div className="actions">
+          <button type="button" className="button small" onClick={() => onUseExisting(duplicate, fields.brand)}>
+            Add to {duplicate.name}
+          </button>
+        </div>
+      )}
       <div className="actions">
         {onClose && (
           <button type="button" className="button ghost" onClick={onClose}>
@@ -1171,6 +1355,8 @@ function EditPantryItem({
     expires: expiryDate(item.expires),
     storeUrl: item.store_url ?? "",
     brand: item.brand ?? "",
+    note: item.note ?? "",
+    openedLocation: item.opened_location ?? "",
   });
   const [barcodes, setBarcodes] = useState(() => barcodesOf(item));
   const [error, setError] = useState("");
@@ -1196,7 +1382,7 @@ function EditPantryItem({
     const name = fields.name.trim();
     const duplicate = existing.find((i) => i.id !== item.id && norm(i.name) === norm(name));
     if (duplicate) {
-      setError(`“${duplicate.name}” is already in the pantry.`);
+      setError(`“${duplicate.name}” is already in the pantry. Give this one a different name.`);
       return;
     }
     const storeUrl = cleanStoreUrl(fields.storeUrl);
@@ -1206,6 +1392,8 @@ function EditPantryItem({
     }
     setBusy(true);
     setError("");
+    const note = fields.note.trim();
+    const openedLocation = fields.openedLocation.trim();
     try {
       const saved = await pantryItems().update(item.id, {
         name,
@@ -1215,10 +1403,18 @@ function EditPantryItem({
         store_url: storeUrl,
         brand: fields.brand.trim(),
         barcodes,
+        note,
+        opened_location: openedLocation,
+        // Nowhere else to keep it once opened: it's just in its place.
+        opened: openedLocation ? !!item.opened : false,
       });
-      // A server not restarted since store links and brands were added says
-      // "saved" but quietly drops them.
-      if ((storeUrl && saved.store_url !== storeUrl) || (fields.brand.trim() && saved.brand !== fields.brand.trim())) {
+      // A server not restarted since newer fields were added says "saved"
+      // but quietly drops them.
+      if (
+        (storeUrl && saved.store_url !== storeUrl) ||
+        (fields.brand.trim() && saved.brand !== fields.brand.trim()) ||
+        (note && saved.note !== note)
+      ) {
         setError("The server didn't keep everything. It needs restarting: close the Bento server window and open Start Bento.bat again.");
         setBusy(false);
         return;

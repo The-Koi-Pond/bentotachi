@@ -3647,3 +3647,56 @@ em.soft {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+/* A pantry item's note ("3 cans"), under its name. */
+.pantry-note {
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+/* "Opened → Fridge" on things kept somewhere else once opened. Pressed:
+   it's open (and shown in that place); tap again to undo. */
+.opened-toggle {
+  min-height: 32px;
+  padding: 2px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.opened-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* A scanned number nothing has, big enough to check against the packet. */
+.barcode-number {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A short message that floats above the tab bar for a few seconds, like
+   where a pantry item moved to. */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 12px);
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  color: var(--bg);
+  background: var(--text);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}

@@ -107,10 +107,17 @@ export interface PantryItem extends RecordModel {
   expires: string;
   // Its product page in an online store (see stores.ts), or "".
   store_url: string;
-  // The brand we like, like "Lea & Perrins", or "".
+  // The brands we buy, like "Lea & Perrins" or "Coles, White Mill", or ""
+  // (see pantryItem.ts).
   brand: string;
   // Barcodes on its packets, like ["9300633603161"] (see barcodes.ts).
   barcodes: string[] | null;
+  // Anything worth writing down, like "3 cans", or "".
+  note?: string;
+  // Where it goes once opened, like "Fridge", or "". While opened it shows
+  // there (see placeOf in pantryItem.ts).
+  opened_location?: string;
+  opened?: boolean;
   created: string;
   updated: string;
 }
