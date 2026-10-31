@@ -69,8 +69,9 @@ code unless marked *(inferred)*.
 - [ ] **Medium: store logos** in the Play build (planned).
 
 ### Phone-only mode
-- [ ] **High: never tried on a real phone**; arm64 only, so older 32-bit
+- [x] **High: never tried on a real phone**; arm64 only, so older 32-bit
   phones would fail. Hide the option where it can't run.
+  Done: Done: 2026-11-01 on a Pixel 7 Pro (Android 17, 4 KB pages): first screen, setup in 1.5 s, importing from links and through the built-in browser (taste.com.au), the home-network refusal, the backup nudge, Save a backup, Restore (a later change was undone), Export (3 recipes and photos, read cleanly), Delete everything, and dark mode. Phones that can't run it go to the server choice (supported(), not tried on such a phone). Not tried: Save my data on a phone whose server won't start (go test covers it).
 - [ ] **High: never gets app updates** (its own server has no releases, so
   the check always says "up to date").
 - [x] **High: backups only when someone remembers**: no reminder, no "last

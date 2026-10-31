@@ -101,7 +101,10 @@ public class BentoLocalServerPlugin extends Plugin {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("application/zip");
-            intent.putExtra(Intent.EXTRA_TITLE, pendingBackup.getName());
+            // Named here, in the phone's own time: the Go server's clock is UTC
+            // on Android, so its file name can be a day off.
+            String now = new java.text.SimpleDateFormat("yyyy-MM-dd-HHmm", java.util.Locale.ROOT).format(new java.util.Date());
+            intent.putExtra(Intent.EXTRA_TITLE, "bentotachi-backup-" + now + ".zip");
             getActivity().runOnUiThread(() -> startActivityForResult(call, intent, "backupSaved"));
         });
     }
@@ -120,7 +123,7 @@ public class BentoLocalServerPlugin extends Plugin {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("application/zip");
-            intent.putExtra(Intent.EXTRA_TITLE, "bento-saved-data.zip");
+            intent.putExtra(Intent.EXTRA_TITLE, "bentotachi-saved-data.zip");
             getActivity().runOnUiThread(() -> startActivityForResult(call, intent, "backupSaved"));
         });
     }
