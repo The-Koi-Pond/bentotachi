@@ -109,9 +109,13 @@ keep recipes readable without internet, and avoid subscriptions.
    - [ ] A Play build without the self-updater: no "new version" banner or
          APK downloads, and no `REQUEST_INSTALL_PACKAGES` (Play only allows
          it for app stores).
-   - [ ] Replace or drop the stores' logos (Coles, Woolworths, Walmart,
-         Target, Kroger) in the Play build; Play is strict about other
-         brands' logos.
+   - [ ] Store logos stay in the app (decided 2026-11-01): small icons that
+         label a link to that store are normal, and the Household page says
+         they belong to their owners and Bentotachi isn't connected with any
+         store. Keep them out of the Play listing, screenshots and icon
+         (Play's impersonation rules are about implying a connection). If a
+         store or Google ever objects, swap them for coloured letter badges
+         in StoreLogo.tsx.
    - [ ] App bundle (.aab), Play App Signing, store listing, data safety
          form, privacy policy link (the website's privacy.html).
    - [ ] Play-signed builds can't update self-installed ones: everyone

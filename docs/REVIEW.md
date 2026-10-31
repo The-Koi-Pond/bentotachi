@@ -66,7 +66,8 @@ code unless marked *(inferred)*.
   friends to Tailscale only.
 - [ ] **Medium: 16 KB page-size rule** for native code on Android 15+: check
   the phone-server library *(inferred)*.
-- [ ] **Medium: store logos** in the Play build (planned).
+- [x] **Medium: store logos** in the Play build (planned).
+  Decided 2026-11-01: they stay, inside the app only (not in the Play listing, screenshots or icon), with a line on the Household page that they belong to their owners and Bentotachi isn't connected with any store. Letter badges if anyone objects.
 
 ### Phone-only mode
 - [x] **High: never tried on a real phone**; arm64 only, so older 32-bit
@@ -143,7 +144,7 @@ with a guided setup later. So the order is:
 4. Backup reminders and "Last backed up".
 5. Never trap data when the phone's server won't start.
 6. Privacy policy wording.
-7. Then: a real-phone test, the Play build (no updater, no store logos,
+7. Then: a real-phone test, the Play build (no updater; store logos stay, see above;
    AAB), the 16 KB check; later, the guided server setup.
 
 (The other path, friends running their own servers, needs a published

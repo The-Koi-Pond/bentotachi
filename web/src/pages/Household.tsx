@@ -120,6 +120,11 @@ function CountrySetting() {
           "Bentotachi doesn't know stores there yet, so store search is hidden. You can still paste any shop's product link into a pantry item."
         )}
       </p>
+      {stores.length > 0 && (
+        <p className="muted small-note">
+          Store names and logos belong to their owners. Bentotachi isn't connected with any store.
+        </p>
+      )}
       {status && (
         <p className={status.isError ? "error" : "success"} role="status">
           {status.text}
