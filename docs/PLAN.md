@@ -167,6 +167,10 @@ Changes already live in the browser version, not yet in a published APK
   off the plan show "Removed … Undo" for 6 seconds before really deleting.
   Deleting a recipe now says what goes with it ("Its 2 nights on the
   dinner plan and 1 rating will be deleted too.").
+- ⋮ → Export recipes: every recipe with its photo as one Paprika file
+  (`.paprikarecipes`, which Paprika, Mealie and Tandoor import). Uses
+  fflate (zip library). In the app it saves through Android's "save as"
+  screen (new BentoFilesPlugin; needs the next APK, and trying on a phone).
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

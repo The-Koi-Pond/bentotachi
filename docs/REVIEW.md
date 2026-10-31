@@ -48,7 +48,8 @@ code unless marked *(inferred)*.
   deletes its plan nights, cooked history and ratings without saying so;
   shopping items, "Clear ticked" and plan nights have no undo.
   Done: 2026-10-31. Shopping items, Clear ticked and plan nights show Undo for 6 seconds before really deleting (web/src/undo.tsx); deleting a recipe says what else goes (web/src/deleteWarning.ts). Recipes themselves still can't be undone.
-- [ ] **Medium: no recipe export** (and no import from other apps).
+- [x] **Medium: no recipe export** (and no import from other apps).
+  Done: 2026-10-31, export only: ⋮ → Export recipes saves every recipe with its photo as a Paprika file (web/src/paprikaExport.ts), read back cleanly the way Mealie and Tandoor read it; not tried in Paprika itself. Android saving (BentoFilesPlugin) compiles but is untried on a phone. Importing from other apps is still to do.
 
 ### Google Play
 - [ ] **Blocker: the self-updater** (`REQUEST_INSTALL_PACKAGES`). Planned:

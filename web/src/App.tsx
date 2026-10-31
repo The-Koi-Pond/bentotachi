@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Household from "./pages/Household";
 import Categories from "./pages/Categories";
 import Backups from "./pages/Backups";
+import Export from "./pages/Export";
 import SettingsMenu from "./SettingsMenu";
 import { PlusIcon } from "./icons";
 import TabBar from "./TabBar";
@@ -91,6 +92,7 @@ function Screens() {
           <Route path="/household" element={<Household />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/backups" element={<Backups />} />
+          <Route path="/export" element={<Export />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

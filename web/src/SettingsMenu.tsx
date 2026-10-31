@@ -106,6 +106,12 @@ export default function SettingsMenu() {
               <span className="menu-item-detail">For store search and recipe hints</span>
             </Link>
           )}
+          {user && (
+            <Link to="/export" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
+              Export recipes
+              <span className="menu-item-detail">As a Paprika file, for other apps or a copy</span>
+            </Link>
+          )}
           {user && <QuickSetting userId={user.id} value={quickMinutes} />}
           {wakeLock.supported && (
             <button role="menuitemcheckbox" aria-checked={wakeLock.on} onClick={wakeLock.toggle}>
