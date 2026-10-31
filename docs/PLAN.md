@@ -122,6 +122,10 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+(Nothing yet.)
+
+Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
+
 - Barcodes in the pantry (new `barcodes` field on pantry items, and
   `/api/cookbook/barcode/{code}`, which asks Open Food Facts): "📷 Scan" in
   the app (Google's scanner screen, no camera permission) or the "Barcode"
