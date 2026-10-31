@@ -12,6 +12,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BentoUpdaterPlugin.class);
         registerPlugin(BentoSharePlugin.class);
         registerPlugin(BentoLocalServerPlugin.class);
+        registerPlugin(BentoScannerPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

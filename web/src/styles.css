@@ -3588,3 +3588,62 @@ em.soft {
 .phone-password {
   word-break: break-all;
 }
+
+/* A scanned barcode's card at the top of the pantry. */
+.scan-result .pantry-row {
+  border: none;
+  padding: 0;
+}
+
+/* "Barcodes: 9300633603161 ✕  📷 Add one" in a pantry item's edit form. */
+.barcode-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.barcode-list .label-text {
+  width: 100%;
+  font-weight: 600;
+}
+
+.barcode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 10px;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+
+.chip-remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.chip-remove:hover {
+  color: var(--text);
+}
+
+/* A page title whose buttons go onto a second line when there are too many
+   for a phone (the Pantry's Scan, Search stores and + Add item). */
+.section-head.wraps {
+  flex-wrap: wrap;
+}
+
+.section-head.wraps .title-actions {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

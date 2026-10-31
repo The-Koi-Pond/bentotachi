@@ -109,6 +109,8 @@ export interface PantryItem extends RecordModel {
   store_url: string;
   // The brand we like, like "Lea & Perrins", or "".
   brand: string;
+  // Barcodes on its packets, like ["9300633603161"] (see barcodes.ts).
+  barcodes: string[] | null;
   created: string;
   updated: string;
 }

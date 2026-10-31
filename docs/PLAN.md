@@ -122,7 +122,15 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-(Nothing yet.)
+- Barcodes in the pantry (new `barcodes` field on pantry items, and
+  `/api/cookbook/barcode/{code}`, which asks Open Food Facts): "📷 Scan" in
+  the app (Google's scanner screen, no camera permission) or the "Barcode"
+  box in a browser (typing, or a USB scanner). A barcode Bento knows shows
+  its item to mark Have / Low / Out or edit; a new one opens "Add item"
+  with the name and brand filled in, or goes on an item already there under
+  another name. The edit form lists an item's barcodes (✕ to remove, 📷 to
+  add). Privacy policy mentions Open Food Facts. Scanning itself still to
+  be tried on a phone.
 
 Released in 1.9.0 (2026-10-31; 16 MB now, as it carries the phone server
 for phone-only mode, which only shows on a fresh install):

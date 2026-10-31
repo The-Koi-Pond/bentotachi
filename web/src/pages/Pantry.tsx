@@ -12,6 +12,17 @@ import { normaliseSiteUrl } from "../recipeSites";
 import StoreLink from "../StoreLink";
 import StoreLogo from "../StoreLogo";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { barcodesOf, itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
+import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
+
+// A barcode just scanned (or typed): what Open Food Facts says it is, once
+// looked up (null if it doesn't know), for ones not in the pantry yet.
+interface Scanned {
+  code: string;
+  looking: boolean;
+  product: BarcodeProduct | null;
+  lookupError: string;
+}
 
 const STATUSES: { value: PantryStatus; label: string }[] = [
   { value: "have", label: "Have" },
@@ -155,6 +166,10 @@ export default function Pantry() {
   // A store product page to add as a new item: shared to Bento from another
   // app ("#/pantry?add=<link>"), or picked in Search stores.
   const [fromStore, setFromStore] = useState<{ url: string; name: string } | null>(null);
+  const [scanned, setScanned] = useState<Scanned | null>(null);
+  const [editingScanned, setEditingScanned] = useState(false);
+  // In a browser: the box for typing a barcode (or a USB scanner's).
+  const [typingBarcode, setTypingBarcode] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedStoreLink = searchParams.get("add");
 
@@ -201,15 +216,63 @@ export default function Pantry() {
     }
   }
 
-  async function remove(item: PantryItem) {
-    if (!window.confirm(`Remove “${item.name}” from the pantry${forEveryone(singleUser)}?`)) return;
+  // A barcode from the scanner or the barcode box: shows the item it belongs
+  // to, or looks it up to start a new one.
+  async function takeBarcode(text: string) {
+    const code = normaliseBarcode(text);
+    setError("");
+    if (!code) {
+      setError("That doesn't look like a barcode (8 to 14 digits).");
+      return;
+    }
+    setAdding(false);
+    setFromStore(null);
+    setEditingScanned(false);
+    const known = !!itemWithBarcode(items ?? [], code);
+    setScanned({ code, looking: !known, product: null, lookupError: "" });
+    if (known) return;
+    let product: BarcodeProduct | null = null;
+    let lookupError = "";
+    try {
+      product = await lookUpBarcode(code);
+    } catch (err) {
+      lookupError = errorMessage(err);
+    }
+    setScanned((current) => (current?.code === code ? { ...current, looking: false, product, lookupError } : current));
+  }
+
+  async function scan() {
+    setError("");
+    try {
+      const code = await scanBarcode();
+      if (code) await takeBarcode(code);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  // "Already in the pantry under another name": the barcode goes on it.
+  async function addBarcodeTo(item: PantryItem, code: string) {
+    setError("");
+    try {
+      pantry.upsert(await pantryItems().update(item.id, { barcodes: withBarcode(item, code) }));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  // Whether it was removed.
+  async function remove(item: PantryItem): Promise<boolean> {
+    if (!window.confirm(`Remove “${item.name}” from the pantry${forEveryone(singleUser)}?`)) return false;
     setError("");
     try {
       await pantryItems().delete(item.id);
       pantry.removeLocally(item.id);
       setEditingId(null);
+      return true;
     } catch (err) {
       setError(errorMessage(err));
+      return false;
     }
   }
 
@@ -220,7 +283,8 @@ export default function Pantry() {
     filter === "all" ? true : filter === "soon" ? needsUsingSoon(i) : i.status === filter
   );
   const groups = groupItems(shown);
-  const showForm = adding || items.length === 0;
+  // A scanned barcode brings its own form (see ScanResult).
+  const showForm = !scanned && (adding || items.length === 0);
 
   // A Low/Out filter shows its (short) results with every drawer open.
   const filtering = filter !== "all";
@@ -237,9 +301,22 @@ export default function Pantry() {
 
   return (
     <div className="stack narrow">
-      <div className="section-head">
+      <div className="section-head wraps">
         <h1>Pantry</h1>
         <span className="title-actions">
+          {canScan ? (
+            <button className="button small" onClick={() => void scan()}>
+              📷 Scan
+            </button>
+          ) : (
+            <button
+              className={`button small ${typingBarcode ? "primary" : ""}`}
+              onClick={() => setTypingBarcode((open) => !open)}
+              aria-expanded={typingBarcode}
+            >
+              Barcode
+            </button>
+          )}
           {stores.length > 0 && (
             <button
               className={`button small ${searchingStores ? "primary" : ""}`}
@@ -256,6 +333,28 @@ export default function Pantry() {
           )}
         </span>
       </div>
+
+      {typingBarcode && !canScan && <BarcodeBox onCode={(code) => void takeBarcode(code)} />}
+
+      {scanned && (
+        <ScanResult
+          scanned={scanned}
+          items={items}
+          editing={editingScanned}
+          isOnList={isOnList}
+          onEdit={setEditingScanned}
+          onStatus={setStatus}
+          onAddToList={addToList}
+          onAdded={(item) => pantry.upsert(item)}
+          onSaved={(item) => {
+            pantry.upsert(item);
+            setEditingScanned(false);
+          }}
+          onDelete={(item) => void remove(item).then((removed) => removed && setScanned(null))}
+          onAddBarcodeTo={(item) => void addBarcodeTo(item, scanned.code)}
+          onClose={() => setScanned(null)}
+        />
+      )}
 
       {searchingStores && stores.length > 0 && (
         <StoreSearch
@@ -385,6 +484,144 @@ export default function Pantry() {
         </section>
       ))}
     </div>
+  );
+}
+
+// In a browser: type a barcode's number, or point a USB barcode scanner at a
+// packet (it types the number and presses Enter by itself).
+function BarcodeBox({ onCode }: { onCode: (code: string) => void }) {
+  const [text, setText] = useState("");
+  return (
+    <form
+      className="add-row"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!text.trim()) return;
+        onCode(text);
+        setText("");
+      }}
+    >
+      <input
+        aria-label="Barcode"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="Barcode number, or use a USB scanner"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        autoFocus
+      />
+      <button className="button primary">Find</button>
+    </form>
+  );
+}
+
+// What a scanned barcode is: the pantry item it's on (to mark low or out, or
+// edit), or else a new item filled in from Open Food Facts, or the barcode
+// put on an item already in the pantry under another name.
+function ScanResult({
+  scanned,
+  items,
+  editing,
+  isOnList,
+  onEdit,
+  onStatus,
+  onAddToList,
+  onAdded,
+  onSaved,
+  onDelete,
+  onAddBarcodeTo,
+  onClose,
+}: {
+  scanned: Scanned;
+  items: PantryItem[];
+  editing: boolean;
+  isOnList: (item: PantryItem) => boolean;
+  onEdit: (editing: boolean) => void;
+  onStatus: (item: PantryItem, status: PantryStatus) => void;
+  onAddToList: (item: PantryItem) => void;
+  onAdded: (item: PantryItem) => void;
+  onSaved: (item: PantryItem) => void;
+  onDelete: (item: PantryItem) => void;
+  onAddBarcodeTo: (item: PantryItem) => void;
+  onClose: () => void;
+}) {
+  const [otherId, setOtherId] = useState("");
+  const found = itemWithBarcode(items, scanned.code);
+
+  if (found)
+    return (
+      <section className="card stack scan-result">
+        <div className="section-head">
+          <h2>In the pantry</h2>
+          <button className="button ghost small" onClick={onClose}>
+            Done
+          </button>
+        </div>
+        {editing ? (
+          <EditPantryItem
+            item={found}
+            existing={items}
+            onSaved={onSaved}
+            onCancel={() => onEdit(false)}
+            onDelete={() => onDelete(found)}
+          />
+        ) : (
+          <PantryRow
+            item={found}
+            onList={isOnList(found)}
+            onEdit={() => onEdit(true)}
+            onStatus={(status) => onStatus(found, status)}
+            onAddToList={() => onAddToList(found)}
+          />
+        )}
+      </section>
+    );
+
+  if (scanned.looking)
+    return (
+      <p className="card muted scan-result" role="status">
+        Looking up {scanned.code}…
+      </p>
+    );
+
+  return (
+    <>
+      <AddPantryItem
+        key={scanned.code}
+        existing={items}
+        fromBarcode={scanned}
+        onAdded={onAdded}
+        onClose={onClose}
+      />
+      {items.length > 0 && (
+        <form
+          className="card stack scan-result"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const item = items.find((i) => i.id === otherId);
+            if (item) onAddBarcodeTo(item);
+          }}
+        >
+          <label>
+            Already in the pantry under another name?
+            <select value={otherId} onChange={(e) => setOtherId(e.target.value)}>
+              <option value="">Pick it…</option>
+              {[...items]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                    {item.location ? ` (${item.location})` : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <button className="button" disabled={!otherId}>
+            Add this barcode to it
+          </button>
+        </form>
+      )}
+    </>
   );
 }
 
@@ -784,23 +1021,29 @@ function cleanStoreUrl(text: string): string | null {
 function AddPantryItem({
   existing,
   fromStore,
+  fromBarcode,
   onAdded,
   onClose,
 }: {
   existing: PantryItem[];
   // A store product page to start from, if any.
   fromStore?: { url: string; name: string } | null;
+  // Or a scanned barcode, with what Open Food Facts says it is.
+  fromBarcode?: Scanned;
   onAdded: (item: PantryItem) => void;
   onClose?: () => void;
 }) {
+  const product = fromBarcode?.product ?? null;
   const [fields, setFields] = useState<Fields>({
-    name: fromStore ? nameFromStore(fromStore) : "",
+    name: fromStore ? nameFromStore(fromStore) : (product?.name ?? ""),
     location: "",
     subcategory: "",
     expires: "",
     storeUrl: fromStore?.url ?? "",
-    brand: "",
+    brand: product?.brand ?? "",
   });
+  // The scanned barcode goes on the first item added (not ones after it).
+  const [barcode, setBarcode] = useState(fromBarcode?.code ?? "");
   // Putting a store link into a new item suggests a name from it, and keeps
   // updating that suggestion (while the link is typed) until someone types
   // their own name.
@@ -829,7 +1072,10 @@ function AddPantryItem({
     const name = fields.name.trim();
     const duplicate = existing.find((i) => norm(i.name) === norm(name));
     if (duplicate) {
-      setError(`“${duplicate.name}” is already in the pantry${duplicate.location ? ` (${duplicate.location})` : ""}.`);
+      setError(
+        `“${duplicate.name}” is already in the pantry${duplicate.location ? ` (${duplicate.location})` : ""}.` +
+          (barcode ? " To give it this barcode, pick it below." : ""),
+      );
       return;
     }
     const storeUrl = cleanStoreUrl(fields.storeUrl);
@@ -849,8 +1095,10 @@ function AddPantryItem({
           expires: toStoredDate(fields.expires),
           store_url: storeUrl,
           brand: fields.brand.trim(),
+          barcodes: barcode ? [barcode] : [],
         })
       );
+      setBarcode("");
       // Keep the place and subcategory chosen, so adding a whole shelf is
       // quick. Each item has its own expiry, store link and brand, so those are cleared.
       setFields((previous) => ({ ...previous, name: "", expires: "", storeUrl: "", brand: "" }));
@@ -869,6 +1117,22 @@ function AddPantryItem({
         <p className="muted small-note">
           From {storeName(fromStore.url)}. Shorten the name to what recipes call it, like “Worcestershire sauce”, so
           they find it.
+        </p>
+      )}
+      {fromBarcode && barcode && (
+        <p className="muted small-note">
+          {product ? (
+            <>
+              Scanned: “{product.name}
+              {product.quantity && `, ${product.quantity}`}” (from Open Food Facts). Shorten the name to what recipes call
+              it, like “Basmati rice”, so they find it.
+            </>
+          ) : (
+            <>
+              {fromBarcode.lookupError || "Open Food Facts doesn't know this barcode."} Type what it is, and Bento will
+              know it next time.
+            </>
+          )}
         </p>
       )}
       <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} />
@@ -908,10 +1172,24 @@ function EditPantryItem({
     storeUrl: item.store_url ?? "",
     brand: item.brand ?? "",
   });
+  const [barcodes, setBarcodes] = useState(() => barcodesOf(item));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [opened] = useState(() => JSON.stringify(fields));
-  useUnsavedChanges(JSON.stringify(fields) !== opened);
+  const [opened] = useState(() => JSON.stringify([fields, barcodes]));
+  useUnsavedChanges(JSON.stringify([fields, barcodes]) !== opened);
+
+  async function scanAnother() {
+    setError("");
+    try {
+      const code = normaliseBarcode((await scanBarcode()) ?? "");
+      if (!code) return;
+      const other = existing.find((i) => i.id !== item.id && barcodesOf(i).includes(code));
+      if (other) setError(`That barcode is already on “${other.name}”.`);
+      else setBarcodes(withBarcode({ barcodes }, code));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -936,6 +1214,7 @@ function EditPantryItem({
         expires: toStoredDate(fields.expires),
         store_url: storeUrl,
         brand: fields.brand.trim(),
+        barcodes,
       });
       // A server not restarted since store links and brands were added says
       // "saved" but quietly drops them.
@@ -958,6 +1237,29 @@ function EditPantryItem({
         fields={fields}
         onChange={(patch) => setFields((previous) => ({ ...previous, ...patch }))}
       />
+      {(barcodes.length > 0 || canScan) && (
+        <div className="barcode-list">
+          <span className="label-text">Barcodes</span>
+          {barcodes.map((code) => (
+            <span key={code} className="barcode-chip">
+              {code}
+              <button
+                type="button"
+                className="chip-remove"
+                aria-label={`Remove barcode ${code}`}
+                onClick={() => setBarcodes(barcodes.filter((other) => other !== code))}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+          {canScan && (
+            <button type="button" className="button small" onClick={() => void scanAnother()}>
+              📷 Add one
+            </button>
+          )}
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
       <div className="actions">
         <button type="button" className="button danger small push-left" onClick={onDelete}>
