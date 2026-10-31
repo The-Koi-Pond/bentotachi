@@ -15,8 +15,11 @@ import {
 } from "@dnd-kit/core";
 import {
   averageStars,
+  cookedLog,
   displayName,
   errorMessage,
+  mealPlan,
+  pb,
   personStyle,
   recipeCategories,
   recipeRatings,
@@ -41,6 +44,7 @@ import { useShelfDrawers } from "../shelfDrawers";
 import { forEveryone, useSingleUser } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
+import { alsoDeleted } from "../deleteWarning";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -316,8 +320,24 @@ export default function RecipeList() {
     setExcluded(excludedTags.includes(tag) ? excludedTags.filter((t) => t !== tag) : [...excludedTags, tag]);
   }
 
+  // The server deletes the recipe's plan nights, cooked days and ratings
+  // with it, so the question says so.
   async function deleteRecipe(recipe: Recipe) {
-    if (!window.confirm(`Delete “${recipe.title}”${forEveryone(singleUser)}? This can't be undone.`)) return;
+    const options = { filter: pb.filter("recipe = {:id}", { id: recipe.id }), fields: "id" };
+    const total = (page: Promise<{ totalItems: number }>) => page.then((p) => p.totalItems);
+    let extras = "";
+    try {
+      const [planned, cooked, ratings] = await Promise.all([
+        total(mealPlan().getList(1, 1, options)),
+        total(cookedLog().getList(1, 1, options)),
+        total(recipeRatings().getList(1, 1, options)),
+      ]);
+      extras = alsoDeleted({ planned, cooked, ratings });
+    } catch {
+      // Couldn't count: the question still warns it can't be undone.
+    }
+    if (!window.confirm(`Delete “${recipe.title}”${forEveryone(singleUser)}? ${extras ? `${extras} ` : ""}This can't be undone.`))
+      return;
     setDeletingId(recipe.id);
     setError("");
     try {

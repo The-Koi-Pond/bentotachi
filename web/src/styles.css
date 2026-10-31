@@ -3700,3 +3700,21 @@ em.soft {
   border-radius: var(--radius);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
+
+/* "Removed “Milk”. Undo": the button sits at the far end, in the toast's
+   own text color so it's readable on it. */
+.undo-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.undo-toast .link-button {
+  flex: none;
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--bg);
+  font-weight: 700;
+  text-decoration: underline;
+}

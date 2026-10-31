@@ -7,6 +7,7 @@ import StoreLink from "../StoreLink";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, SHOPPING_QUEUE_KEY, isOffline, read, write } from "../offline";
 import OfflineNote from "../OfflineNote";
+import { useUndo } from "../undo";
 import { isUnsent, queueAdd, queueCheck, sendQueued, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
 
 export default function ShoppingList() {
@@ -33,6 +34,8 @@ export default function ShoppingList() {
       return next;
     });
   const sending = useRef(false);
+  // Removing shows "Undo" for a moment before it really happens.
+  const undo = useUndo();
 
   // Back online with changes waiting: send them, then load the list fresh.
   useEffect(() => {
@@ -107,31 +110,40 @@ export default function ShoppingList() {
     // Added offline and not sent yet: just forget it.
     if (isUnsent(item.id)) return setQueue((queue) => queue.filter((change) => change.id !== item.id));
     if (offline) return setError("Removing things needs a connection. Tick it off instead, and remove it later.");
-    removeLocally(item.id);
-    try {
-      await shoppingItems().delete(item.id);
-    } catch (err) {
-      upsert(item);
-      setError(errorMessage(err));
-    }
+    undo.offer([item.id], `Removed “${item.text}”.`, async () => {
+      removeLocally(item.id);
+      try {
+        await shoppingItems().delete(item.id);
+      } catch (err) {
+        upsert(item);
+        setError(errorMessage(err));
+      }
+    });
   }
 
-  async function clearTicked(ticked: ShoppingItem[]) {
+  function clearTicked(ticked: ShoppingItem[]) {
     setError("");
     if (offline) return setError("Clearing needs a connection. The ticked things can wait until you're back online.");
-    ticked.forEach((item) => removeLocally(item.id));
-    const results = await Promise.allSettled(ticked.map((item) => shoppingItems().delete(item.id)));
-    const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (failed) {
-      setError(`Couldn't clear everything: ${errorMessage(failed.reason)}`);
-      reload();
-    }
+    const count = ticked.length;
+    undo.offer(
+      ticked.map((item) => item.id),
+      `Cleared ${count} ticked ${count === 1 ? "thing" : "things"}.`,
+      async () => {
+        ticked.forEach((item) => removeLocally(item.id));
+        const results = await Promise.allSettled(ticked.map((item) => shoppingItems().delete(item.id)));
+        const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+        if (failed) {
+          setError(`Couldn't clear everything: ${errorMessage(failed.reason)}`);
+          reload();
+        }
+      }
+    );
   }
 
   if (!items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Loading the list…</p>;
 
   // Still to buy: in the order they were added. Got it: most recent first.
-  const shown = withQueued(items, queue);
+  const shown = withQueued(items, queue).filter((item) => !undo.hidden.has(item.id));
   const toBuy = shown.filter((i) => !i.checked).sort((a, b) => a.created.localeCompare(b.created));
   const ticked = shown.filter((i) => i.checked).sort((a, b) => b.updated.localeCompare(a.updated));
   const waiting = queue.length;
@@ -200,6 +212,7 @@ export default function ShoppingList() {
           </ul>
         </section>
       )}
+      {undo.toast}
     </div>
   );
 }

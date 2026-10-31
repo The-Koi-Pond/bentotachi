@@ -23,6 +23,7 @@ import { CartIcon, CloseIcon, GripIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
+import { useUndo } from "../undo";
 
 // How many days are shown at once: this week and next.
 const DAYS_SHOWN = 14;
@@ -61,6 +62,8 @@ export default function MealPlan() {
   const [dragging, setDragging] = useState<MealPlanEntry | null>(null);
   const [shoppingOpen, setShoppingOpen] = useState(false);
   const [error, setError] = useState("");
+  // Removing a night shows "Undo" for a moment before it really happens.
+  const undo = useUndo();
 
   function changeView(next: View) {
     setView(next);
@@ -81,7 +84,9 @@ export default function MealPlan() {
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
 
-  const byDate = new Map(plan.items.map((entry) => [datePart(entry.date), entry]));
+  const byDate = new Map(
+    plan.items.filter((entry) => !undo.hidden.has(entry.id)).map((entry) => [datePart(entry.date), entry])
+  );
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(start, i));
 
   // For the chooser: which recipes are already planned from today on, and when.
@@ -98,6 +103,8 @@ export default function MealPlan() {
     setPicking(null);
     setError("");
     try {
+      // A night holds one dinner: one just removed must be gone first.
+      await undo.settle();
       plan.upsert(
         await mealPlan().create(
           {
@@ -114,15 +121,18 @@ export default function MealPlan() {
     }
   }
 
-  async function remove(entry: MealPlanEntry) {
+  function remove(entry: MealPlanEntry) {
     setError("");
-    plan.removeLocally(entry.id);
-    try {
-      await mealPlan().delete(entry.id);
-    } catch (err) {
-      setError(errorMessage(err));
-      plan.reload();
-    }
+    const what = entry.expand?.recipe?.title ?? entry.note;
+    undo.offer([entry.id], what ? `Removed “${what}” from the plan.` : "Removed from the plan.", async () => {
+      plan.removeLocally(entry.id);
+      try {
+        await mealPlan().delete(entry.id);
+      } catch (err) {
+        setError(errorMessage(err));
+        plan.reload();
+      }
+    });
   }
 
   // Moves a dinner to another night, swapping with whatever is there. A swap
@@ -133,6 +143,8 @@ export default function MealPlan() {
     if (!moving || from === to) return;
     const there = byDate.get(to);
     setError("");
+    // Onto a night whose dinner was just removed: that one goes first.
+    await undo.settle();
     if (there) {
       plan.upsert({ ...moving, recipe: there.recipe, note: there.note, expand: there.expand });
       plan.upsert({ ...there, recipe: moving.recipe, note: moving.note, expand: moving.expand });
@@ -290,6 +302,7 @@ export default function MealPlan() {
         />
       )}
       {shoppingOpen && <WeekShoppingSheet entries={plan.items} today={today} onClose={() => setShoppingOpen(false)} />}
+      {undo.toast}
     </div>
   );
 }

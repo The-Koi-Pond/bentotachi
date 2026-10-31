@@ -44,9 +44,10 @@ code unless marked *(inferred)*.
 - [x] **High: the shopping list doesn't work offline** (only recipes are
   kept on the phone): the usual case in a shop.
   Done: 2026-10-31. Kept on the phone; ticking off and adding work offline and are sent when back online (web/src/offlineShopping.ts). Removing and Clear ticked wait for a connection. The pantry page itself isn't offline yet.
-- [ ] **Medium: deleting is silent and final.** Deleting a recipe also
+- [x] **Medium: deleting is silent and final.** Deleting a recipe also
   deletes its plan nights, cooked history and ratings without saying so;
   shopping items, "Clear ticked" and plan nights have no undo.
+  Done: 2026-10-31. Shopping items, Clear ticked and plan nights show Undo for 6 seconds before really deleting (web/src/undo.tsx); deleting a recipe says what else goes (web/src/deleteWarning.ts). Recipes themselves still can't be undone.
 - [ ] **Medium: no recipe export** (and no import from other apps).
 
 ### Google Play

@@ -163,6 +163,10 @@ Changes already live in the browser version, not yet in a published APK
   again (the "back online" event, coming back to the app, Try again, or
   every 30 seconds). Removing and "Clear ticked" wait for a connection.
   Lists never load from the browser's own cache any more.
+- Undo: removing a shopping item, "Clear ticked items" and taking a dinner
+  off the plan show "Removed … Undo" for 6 seconds before really deleting.
+  Deleting a recipe now says what goes with it ("Its 2 nights on the
+  dinner plan and 1 rating will be deleted too.").
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 
