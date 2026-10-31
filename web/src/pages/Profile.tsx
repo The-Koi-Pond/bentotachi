@@ -37,7 +37,7 @@ function DeleteSection({ user }: { user: User }) {
 
   async function remove() {
     const question = phone
-      ? "Delete everything in Bento on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Backups.)"
+      ? "Delete everything in Bentotachi on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Backups.)"
       : `Delete your account, ${displayName(user)}? Your picture and ratings go with it. Recipes and list items you added stay for the household. This can't be undone.`;
     if (!window.confirm(question)) return;
     setBusy(true);
@@ -57,11 +57,11 @@ function DeleteSection({ user }: { user: User }) {
   }
 
   return (
-    <Section title={phone ? "Delete Bento's data" : "Delete my account"}>
+    <Section title={phone ? "Delete Bentotachi's data" : "Delete my account"}>
       <p className="muted small-note">
         {phone
-          ? "Deletes everything Bento keeps on this phone, and starts again as new."
-          : "Deletes your account from this Bento. What you added for the household stays."}
+          ? "Deletes everything Bentotachi keeps on this phone, and starts again as new."
+          : "Deletes your account from this Bentotachi. What you added for the household stays."}
       </p>
       <div className="actions">
         <button className="button danger small push-left" onClick={() => void remove()} disabled={busy}>
@@ -192,7 +192,7 @@ function NameSection({ user }: { user: User }) {
       <form className="stack" onSubmit={save}>
         <label>
           Display name
-          <span className="hint">Your name around Bento, like on ratings and the dinner plan.</span>
+          <span className="hint">Your name around Bentotachi, like on ratings and the dinner plan.</span>
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={user.username} />
         </label>
         <label>

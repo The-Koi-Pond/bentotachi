@@ -181,6 +181,13 @@ Changes already live in the browser version, not yet in a published APK
   Android's own backup to Google is off (`allowBackup="false"`). Privacy
   policy updated for all of this (live once pushed). All needs the next
   APK and a real-phone test.
+- Renamed **Bentotachi** (decided 2026-11-01: plain "Bento" is crowded,
+  with a "Bento Box" meal planner on Google Play and the BentoBox restaurant
+  platform). Everything people see says Bentotachi: the app's name on the
+  phone, screens and messages, the website and privacy policy. The new
+  drawn title (branding/make_svg_title.py) is an SVG, light and dark. The
+  app ID `com.xel.bento`, saved settings, the Pi service, code names and the
+  friends' server package (Start Bento.bat, its guide) keep "Bento".
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

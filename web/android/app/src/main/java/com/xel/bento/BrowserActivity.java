@@ -279,7 +279,7 @@ public class BrowserActivity extends AppCompatActivity {
 
     private String buttonLabel() {
         if ("pantry".equals(mode)) return "Add to pantry";
-        return linkMode ? "Link this item" : "Save to Bento";
+        return linkMode ? "Link this item" : "Save to Bentotachi";
     }
 
     private void savePage() {

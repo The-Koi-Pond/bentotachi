@@ -1150,7 +1150,7 @@ function StoreSearch({
       <p className="muted small-note">
         {hasBuiltInBrowser
           ? "Add from a store to put a product in the pantry, linked to its page. To link something already in the pantry, tap its name and use Store link."
-          : "To link something in the pantry to its product page, tap its name and use Store link. Or share a product page to Bento from the phone."}
+          : "To link something in the pantry to its product page, tap its name and use Store link. Or share a product page to Bentotachi from the phone."}
       </p>
     </section>
   );
@@ -1306,7 +1306,7 @@ function AddPantryItem({
             </>
           ) : (
             <>
-              {fromBarcode.lookupError || "Open Food Facts doesn't know this barcode."} Type what it is, and Bento will
+              {fromBarcode.lookupError || "Open Food Facts doesn't know this barcode."} Type what it is, and Bentotachi will
               know it next time.
             </>
           )}

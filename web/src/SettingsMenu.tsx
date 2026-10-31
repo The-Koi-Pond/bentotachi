@@ -16,7 +16,7 @@ function updateDetail(update: UpdateState): string {
     case "checking":
       return "Checking…";
     case "current":
-      return `Up to date (Bento ${update.installed})`;
+      return `Up to date (Bentotachi ${update.installed})`;
     case "available":
       return `You have ${update.installed}`;
     case "installing":
@@ -95,7 +95,7 @@ export default function SettingsMenu() {
           )}
           {user && !phone && (
             <Link to="/household" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
-              {singleUser ? "Share Bento" : "Household"}
+              {singleUser ? "Share Bentotachi" : "Household"}
               <span className="menu-item-detail">{singleUser ? "Add someone to use it with you; country and spoons" : "Who has an account; country and spoons"}</span>
             </Link>
           )}
@@ -122,7 +122,7 @@ export default function SettingsMenu() {
           <button role="menuitemcheckbox" aria-checked={drawers.startClosed} onClick={() => drawers.setStartClosed(!drawers.startClosed)}>
             <span className="menu-item-text">
               Categories start closed
-              <span className="menu-item-detail">Each time you open Bento</span>
+              <span className="menu-item-detail">Each time you open Bentotachi</span>
             </span>
             <span className="switch" aria-hidden="true" />
           </button>

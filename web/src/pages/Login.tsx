@@ -69,7 +69,7 @@ export default function Login() {
         <div className="card stack login-card">
           {brand}
           <p className="muted">
-            This Bento runs on this phone only. Log in with an account from the backup you restored.
+            This Bentotachi runs on this phone only. Log in with an account from the backup you restored.
           </p>
           <LoginForm server="" phone />
           <button
@@ -100,7 +100,7 @@ export default function Login() {
           {brand}
           <PhoneSetupForm />
           <div className="login-other">
-            <p className="muted">Sharing with your household? A Bento server keeps everyone's phones in step.</p>
+            <p className="muted">Sharing with your household? A Bentotachi server keeps everyone's phones in step.</p>
             <button className="button" onClick={() => setStep("server")}>
               Connect to a server
             </button>
@@ -115,7 +115,7 @@ export default function Login() {
         {brand}
         {isAndroidApp && phoneOk === false && firstRun && (
           <p className="muted small-note">
-            This phone can't run Bento by itself (it needs a newer, 64-bit phone), so it connects to a Bento server.
+            This phone can't run Bentotachi by itself (it needs a newer, 64-bit phone), so it connects to a Bentotachi server.
           </p>
         )}
         {isAndroidApp && (
@@ -146,7 +146,7 @@ export default function Login() {
         {needsSetup ? <SetupForm server={server} /> : <LoginForm server={server} />}
         {isAndroidApp && phoneOk && (
           <button className="link-button" onClick={() => setStep("phone")}>
-            ← Or use Bento on this phone only
+            ← Or use Bentotachi on this phone only
           </button>
         )}
       </div>
@@ -175,7 +175,7 @@ function PhoneSetupForm() {
   return (
     <form className="stack" onSubmit={submit}>
       <div className="setup-intro">
-        <h2>Bento on this phone</h2>
+        <h2>Bentotachi on this phone</h2>
         <p className="muted">
           Everything stays on this phone, so save a backup now and then (⋮ → Backups). You can move to a server later,
           to share with your household.
@@ -187,7 +187,7 @@ function PhoneSetupForm() {
       </label>
       {error && <p className="error">{error}</p>}
       <button className="button primary" disabled={busy}>
-        {busy ? "Setting up… (a few seconds)" : "Start using Bento"}
+        {busy ? "Setting up… (a few seconds)" : "Start using Bentotachi"}
       </button>
     </form>
   );
@@ -288,15 +288,15 @@ function SetupForm({ server }: { server: string }) {
   return (
     <form className="stack" onSubmit={submit}>
       <div className="setup-intro">
-        <h2>Set up your Bento</h2>
+        <h2>Set up your Bentotachi</h2>
         <p className="muted">
-          This Bento is brand new. Make your account first; you can add the rest of your household after, from the ⋮
+          This Bentotachi is brand new. Make your account first; you can add the rest of your household after, from the ⋮
           menu.
         </p>
       </div>
       <label>
         Your name
-        <span className="hint">Your name around Bento, like on ratings.</span>
+        <span className="hint">Your name around Bentotachi, like on ratings.</span>
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required />
       </label>
       <label>
@@ -335,7 +335,7 @@ function SetupForm({ server }: { server: string }) {
       </p>
       {error && <p className="error">{error}</p>}
       <button className="button primary" disabled={busy}>
-        {busy ? "Setting up…" : "Set up Bento"}
+        {busy ? "Setting up…" : "Set up Bentotachi"}
       </button>
     </form>
   );

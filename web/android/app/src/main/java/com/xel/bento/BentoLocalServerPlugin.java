@@ -67,7 +67,7 @@ public class BentoLocalServerPlugin extends Plugin {
             } catch (Throwable e) {
                 // Throwable, not Exception: a phone the server wasn't built
                 // for can't even load it.
-                call.reject("Bento couldn't start on this phone: " + e.getMessage());
+                call.reject("Bentotachi couldn't start on this phone: " + e.getMessage());
             }
         });
     }

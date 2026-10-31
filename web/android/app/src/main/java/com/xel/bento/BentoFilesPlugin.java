@@ -71,7 +71,7 @@ public class BentoFilesPlugin extends Plugin {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(call.getString("mime", "application/octet-stream"));
-        intent.putExtra(Intent.EXTRA_TITLE, call.getString("name", "Bento file"));
+        intent.putExtra(Intent.EXTRA_TITLE, call.getString("name", "Bentotachi file"));
         startActivityForResult(call, intent, "picked");
     }
 

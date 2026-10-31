@@ -1,8 +1,9 @@
-# Bento
+# Bentotachi
 
 A shared household cookbook, shopping list and pantry. Import recipes from
 links, keep them in one place, shop from one live list, and keep track of
-what's running low. (The project folder is still called `Cookbook`.)
+what's running low. "Bento" for short, which is also its name inside the
+code. (The project folder is still called `Cookbook`.)
 
 - `server/` is the backend: [PocketBase](https://pocketbase.io), a single
   program with a built-in database, logins and live updates.

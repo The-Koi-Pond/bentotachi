@@ -1,13 +1,13 @@
-import title from "./assets/bento-title.png";
-import titleDark from "./assets/bento-title-dark.png";
+import title from "./assets/bentotachi-title.svg";
+import titleDark from "./assets/bentotachi-title-dark.svg";
 import logo from "./assets/bento-logo.png";
 
-// The "Bento" title, in dark letters or (in dark mode) cream ones.
+// The "Bentotachi" title, in dark letters or (in dark mode) cream ones.
 export function BentoTitle({ className }: { className?: string }) {
   return (
     <picture>
       <source srcSet={titleDark} media="(prefers-color-scheme: dark)" />
-      <img src={title} alt="Bento" className={className} />
+      <img src={title} alt="Bentotachi" className={className} />
     </picture>
   );
 }

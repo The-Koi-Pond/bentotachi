@@ -60,7 +60,7 @@ func start(dataDir, hooksDir, migrationsDir string) (int, error) {
 		return e.Next()
 	})
 	if err := pb.Bootstrap(); err != nil {
-		return 0, fmt.Errorf("couldn't open Bento's data: %w", err)
+		return 0, fmt.Errorf("couldn't open Bentotachi's data: %w", err)
 	}
 
 	free, err := freePort()
@@ -83,7 +83,7 @@ func start(dataDir, hooksDir, migrationsDir string) (int, error) {
 			if err == nil {
 				err = errors.New("it stopped straight away")
 			}
-			return 0, fmt.Errorf("Bento's server didn't start: %w", err)
+			return 0, fmt.Errorf("Bentotachi's server didn't start: %w", err)
 		default:
 		}
 		if response, err := http.Get(health); err == nil {
@@ -94,7 +94,7 @@ func start(dataDir, hooksDir, migrationsDir string) (int, error) {
 		}
 		if time.Now().After(deadline) {
 			stopApp(pb)
-			return 0, errors.New("Bento's server took too long to start")
+			return 0, errors.New("Bentotachi's server took too long to start")
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -106,7 +106,7 @@ func start(dataDir, hooksDir, migrationsDir string) (int, error) {
 func freePort() (int, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return 0, fmt.Errorf("no free port for Bento's server: %w", err)
+		return 0, fmt.Errorf("no free port for Bentotachi's server: %w", err)
 	}
 	defer listener.Close()
 	return listener.Addr().(*net.TCPAddr).Port, nil
@@ -144,7 +144,7 @@ func Backup() (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if app == nil {
-		return "", errors.New("Bento's server isn't running")
+		return "", errors.New("Bentotachi's server isn't running")
 	}
 	folder := filepath.Join(app.DataDir(), "backups")
 	old, _ := filepath.Glob(filepath.Join(folder, "bento-*.zip"))
@@ -167,15 +167,15 @@ func Rescue(dataDir string) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if app != nil {
-		return "", errors.New("Bento's server is running; use Backup instead")
+		return "", errors.New("Bentotachi's server is running; use Backup instead")
 	}
 	if _, err := os.Stat(filepath.Join(dataDir, "data.db")); err != nil {
-		return "", errors.New("there's no Bento data on this phone")
+		return "", errors.New("there's no Bentotachi data on this phone")
 	}
 	zip := dataDir + "-rescued.zip"
 	_ = os.Remove(zip)
 	if err := archive.Create(dataDir, zip, "backups"); err != nil {
-		return "", fmt.Errorf("couldn't copy Bento's data: %w", err)
+		return "", fmt.Errorf("couldn't copy Bentotachi's data: %w", err)
 	}
 	return zip, nil
 }
@@ -187,7 +187,7 @@ func Restore(zipPath string) (int, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if app == nil {
-		return 0, errors.New("Bento's server isn't running")
+		return 0, errors.New("Bentotachi's server isn't running")
 	}
 	dataDir, hooksDir, migrationsDir := lastDirs[0], lastDirs[1], lastDirs[2]
 
@@ -195,11 +195,11 @@ func Restore(zipPath string) (int, error) {
 	incoming := dataDir + "-restoring"
 	_ = os.RemoveAll(incoming)
 	if err := archive.Extract(zipPath, incoming); err != nil {
-		return port, fmt.Errorf("that file isn't a Bento backup: %w", err)
+		return port, fmt.Errorf("that file isn't a Bentotachi backup: %w", err)
 	}
 	if _, err := os.Stat(filepath.Join(incoming, "data.db")); err != nil {
 		_ = os.RemoveAll(incoming)
-		return port, errors.New("that file isn't a Bento backup (it has no data.db)")
+		return port, errors.New("that file isn't a Bentotachi backup (it has no data.db)")
 	}
 
 	stopApp(app)

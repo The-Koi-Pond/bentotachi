@@ -256,7 +256,7 @@ export function errorMessage(err: unknown): string {
     message?: string;
     response?: { message?: string; data?: Record<string, { message?: string }> };
   };
-  if (e.status === 0) return "Can't reach the Bento server. Is it running, and are you connected?";
+  if (e.status === 0) return "Can't reach the Bentotachi server. Is it running, and are you connected?";
   // Rejected fields come back separately ("name: Value must be unique."),
   // and are more useful than the general "Failed to create record."
   const field = Object.entries(e.response?.data ?? {}).find(([, detail]) => detail?.message);

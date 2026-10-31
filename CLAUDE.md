@@ -1,9 +1,12 @@
 # Bento: handoff guide
 
-**Bento** is a shared cookbook / shopping list / pantry app for Xel's
-household of three. The folder, `web/package.json` name and the
-`/api/cookbook/import` route keep the old "cookbook" name on purpose (internal
-only); use "Bento" in anything people see.
+**Bentotachi** ("Bento" for short) is a shared cookbook / shopping list /
+pantry app for Xel's household of three. Renamed from Bento on 2026-11-01:
+use "Bentotachi" in anything people see. Internal names keep "bento" (app
+ID `com.xel.bento`, `bento.*` storage keys, plugin and Go names, the Pi's
+`bento` service, the friends' Start Bento.bat); changing the app ID would
+make phones treat it as a different app. The folder, `web/package.json` name
+and the `/api/cookbook/import` route keep the older "cookbook" name.
 Xel has minimal hands-on coding experience: write the code, explain choices
 plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
 How to run: `README.md`.

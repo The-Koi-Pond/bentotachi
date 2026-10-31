@@ -30,7 +30,7 @@ export default function Backups() {
   }
 
   async function restore() {
-    if (!window.confirm("Replace everything in Bento on this phone with a backup? What's here now will be gone.")) return;
+    if (!window.confirm("Replace everything in Bentotachi on this phone with a backup? What's here now will be gone.")) return;
     setBusy(true);
     setStatus(null);
     try {
@@ -44,7 +44,7 @@ export default function Backups() {
   }
 
   function switchToServer() {
-    if (!window.confirm("Switch to a server? Bento's data stays on this phone, in case you come back to it.")) return;
+    if (!window.confirm("Switch to a server? Bentotachi's data stays on this phone, in case you come back to it.")) return;
     leavePhoneMode();
     window.location.reload();
   }
@@ -53,8 +53,8 @@ export default function Backups() {
     <div className="stack narrow">
       <h1>Backups</h1>
       <p>
-        Bento is running on this phone only. Your recipes, photos, lists and plans are kept here and nowhere else, so if
-        the phone is lost or Bento is uninstalled, they're gone, unless you've saved a backup.
+        Bentotachi is running on this phone only. Your recipes, photos, lists and plans are kept here and nowhere else, so if
+        the phone is lost or Bentotachi is uninstalled, they're gone, unless you've saved a backup.
       </p>
 
       <section className="card stack">
@@ -73,7 +73,7 @@ export default function Backups() {
 
       <section className="card stack">
         <h2>Restore a backup</h2>
-        <p className="muted">Replaces everything in Bento on this phone with a backup file you pick.</p>
+        <p className="muted">Replaces everything in Bentotachi on this phone with a backup file you pick.</p>
         <button className="button" onClick={() => void restore()} disabled={busy}>
           Restore a backup…
         </button>
@@ -82,7 +82,7 @@ export default function Backups() {
       <section className="card stack">
         <h2>Moving to a server</h2>
         <p className="muted">
-          To share Bento with your household, it needs a server (like a Raspberry Pi at home). A backup from here works
+          To share Bentotachi with your household, it needs a server (like a Raspberry Pi at home). A backup from here works
           on a new one: whoever runs it restores your backup from its admin page (Settings → Backups). Then tap “Switch to
           a server” below, type its address, and log in with:
         </p>

@@ -153,7 +153,7 @@ export default function Browse() {
       <p className="muted">
         {hasBuiltInBrowser ? (
           <>
-            Open a site, find a recipe you like, then tap <strong>Save to Bento</strong> at the top.
+            Open a site, find a recipe you like, then tap <strong>Save to Bentotachi</strong> at the top.
           </>
         ) : (
           <>

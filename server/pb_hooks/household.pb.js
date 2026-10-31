@@ -24,7 +24,7 @@ routerAdd("POST", "/api/cookbook/setup", (e) => {
     // Checked inside the transaction, so two people setting up at the same
     // moment can't both get in.
     if (txApp.countRecords("users") > 0) {
-      throw new BadRequestError("This Bento is already set up. Log in instead.");
+      throw new BadRequestError("This Bentotachi is already set up. Log in instead.");
     }
     const user = new Record(txApp.findCollectionByNameOrId("users"));
     user.set("username", username);

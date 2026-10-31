@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   // The app's permanent ID on phones. Changing it later makes Android treat
   // it as a different app (everyone would reinstall).
   appId: "com.xel.bento",
-  appName: "Bento",
+  appName: "Bentotachi",
   webDir: "dist",
   server: {
     // The app loads itself from http://localhost inside the phone. Keep this

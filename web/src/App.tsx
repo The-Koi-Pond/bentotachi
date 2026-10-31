@@ -61,7 +61,7 @@ function Screens() {
       <ShareReceiver />
       <UnsavedChangesGuard />
       <header className="topbar">
-        <Link to="/" className="brand" aria-label="Bento: back to the recipes">
+        <Link to="/" className="brand" aria-label="Bentotachi: back to the recipes">
           <BentoTitle className="brand-title" />
         </Link>
         <nav>

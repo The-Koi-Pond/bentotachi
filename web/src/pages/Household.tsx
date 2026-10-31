@@ -96,7 +96,7 @@ function CountrySetting() {
       <h2>Country</h2>
       <label>
         <span className="hint">
-          Decides the grocery stores Bento offers in the Pantry, and the units recipes give hints in, for everyone
+          Decides the grocery stores Bentotachi offers in the Pantry, and the units recipes give hints in, for everyone
           here.
         </span>
         <select value={country} onChange={(e) => void change(e.target.value)} aria-label="Country">
@@ -117,7 +117,7 @@ function CountrySetting() {
             ))}
           </>
         ) : (
-          "Bento doesn't know stores there yet, so store search is hidden. You can still paste any shop's product link into a pantry item."
+          "Bentotachi doesn't know stores there yet, so store search is hidden. You can still paste any shop's product link into a pantry item."
         )}
       </p>
       {status && (

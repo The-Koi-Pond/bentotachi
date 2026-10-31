@@ -29,7 +29,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   if (!html) {
     // Never this computer or the home network (see safe_url.js).
     if (!safeUrl.isPublicUrl(url)) {
-      throw new BadRequestError("Bento only imports from public websites, not addresses on your own network.");
+      throw new BadRequestError("Bentotachi only imports from public websites, not addresses on your own network.");
     }
     let page;
     try {

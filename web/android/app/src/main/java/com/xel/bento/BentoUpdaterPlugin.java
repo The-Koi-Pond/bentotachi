@@ -42,7 +42,7 @@ public class BentoUpdaterPlugin extends Plugin {
             );
             settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getContext().startActivity(settings);
-            call.reject("Allow Bento to install apps, then tap Update again.", "NEEDS_PERMISSION");
+            call.reject("Allow Bentotachi to install apps, then tap Update again.", "NEEDS_PERMISSION");
             return;
         }
 

@@ -80,7 +80,7 @@ export default function PantryLinkSheet({
         </div>
         <p className="muted link-now">
           {current.item
-            ? `${current.kind === "guessed" ? "Bento guessed" : "Linked to"}: ${current.item.name}`
+            ? `${current.kind === "guessed" ? "Bentotachi guessed" : "Linked to"}: ${current.item.name}`
             : current.kind === "notPantry"
               ? "Marked as not a pantry item."
               : "Not linked to anything in the pantry yet."}

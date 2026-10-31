@@ -42,7 +42,7 @@ export default function Export() {
         exported.push(toPaprika(recipe, await photoOf(recipe), stars));
       }
       setProgress("Saving…");
-      const name = `Bento recipes ${localToday()}.paprikarecipes`;
+      const name = `Bentotachi recipes ${localToday()}.paprikarecipes`;
       const saved = await saveFile(name, "application/octet-stream", paprikaFile(exported));
       if (saved) setStatus({ text: `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${name}”.`, isError: false });
     } catch (err) {

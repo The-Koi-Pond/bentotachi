@@ -17,7 +17,7 @@ export default function UpdateBanner() {
   return (
     <div className="update-banner" role="status">
       <p>
-        <strong>Bento {latest.versionName} is ready.</strong>
+        <strong>Bentotachi {latest.versionName} is ready.</strong>
         {latest.notes && <span className="muted"> {latest.notes}</span>}
       </p>
       {update.status === "error" && <p className="error">{update.message}</p>}

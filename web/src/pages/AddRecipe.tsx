@@ -158,7 +158,7 @@ export default function AddRecipe() {
         {error && <ImportError error={error} handLink={handLink} />}
         {error && hasBuiltInBrowser && /^https?:\/\//i.test(url.trim()) && (
           <button type="button" className="button" onClick={openInBrowser} disabled={busy}>
-            Open it in Bento's browser
+            Open it in Bentotachi's browser
           </button>
         )}
         <button className="button primary" disabled={busy}>

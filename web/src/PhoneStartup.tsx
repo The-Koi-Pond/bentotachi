@@ -43,7 +43,7 @@ export default function PhoneStartup({ children }: { children: ReactNode }) {
         <BentoLogo className="login-logo" />
         {state === "starting" ? (
           <p className="muted" role="status">
-            Starting Bento…
+            Starting Bentotachi…
           </p>
         ) : (
           <>

@@ -112,7 +112,7 @@ export async function setUpPhone(name: string) {
     }
   }
   write(MODE_KEY, "phone");
-  if (!(await logInOnPhone())) throw new Error("Bento is already set up on this phone with another account. Log in with it below.");
+  if (!(await logInOnPhone())) throw new Error("Bentotachi is already set up on this phone with another account. Log in with it below.");
 }
 
 // Back to choosing on the login screen. What's on the phone stays there, in
