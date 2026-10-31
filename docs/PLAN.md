@@ -153,6 +153,10 @@ Changes already live in the browser version, not yet in a published APK
   page as "Country & spoons" (it had no way to change the country before).
   Not done: a per-recipe spoon choice, for recipes typed in from an
   Australian cookbook (they count as 15 ml).
+- From the review (docs/REVIEW.md): the importer refuses addresses on this
+  computer or the home network, for the page and for its photo
+  (server/pb_hooks/safe_url.js). Live on the Pi with `npm run deploy`; the
+  phone-only server gets it in the next APK.
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

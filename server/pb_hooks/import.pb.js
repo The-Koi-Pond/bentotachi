@@ -13,6 +13,7 @@
 routerAdd("POST", "/api/cookbook/import", (e) => {
   // Handlers can't see variables from outside themselves, so load helpers here.
   const parser = require(`${__hooks}/recipe_parse.js`);
+  const safeUrl = require(`${__hooks}/safe_url.js`);
 
   const body = e.requestInfo().body;
   const url = String(body.url || "").trim();
@@ -26,6 +27,10 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   }
 
   if (!html) {
+    // Never this computer or the home network (see safe_url.js).
+    if (!safeUrl.isPublicUrl(url)) {
+      throw new BadRequestError("Bento only imports from public websites, not addresses on your own network.");
+    }
     let page;
     try {
       page = $http.send({
@@ -68,7 +73,10 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
 
   // Save a copy of the photo so it works offline and survives the site
   // changing. A missing photo is fine, so failures here are only logged.
-  if (recipe.imageUrl) {
+  // The page chooses this address, so it gets the same check.
+  if (recipe.imageUrl && !safeUrl.isPublicUrl(recipe.imageUrl)) {
+    e.app.logger().warn("Skipped a recipe photo on a private address", "url", recipe.imageUrl);
+  } else if (recipe.imageUrl) {
     try {
       const image = $http.send({
         url: recipe.imageUrl,

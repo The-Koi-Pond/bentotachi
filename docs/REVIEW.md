@@ -1,0 +1,129 @@
+# Bento review (2026-10-31)
+
+A whole-app look before offering Bento to people outside our household:
+gaps our own use doesn't show, and how Bento compares with the well-known
+apps. Tick things off here as they're done (and note them in PLAN.md's
+"Waiting for the next app release" list as usual).
+
+## How Bento compares (October 2026)
+
+Bento is ahead of Paprika 3 on: separate logins per person (Paprika 3 has
+one shared account), a pantry linked to recipes and the shopping list,
+barcode scanning, cooking history ("Last had…"), spoon/unit/regional-name
+hints, and being free with no company account or tracking.
+
+Paprika is ahead on: scaling servings, timers you tap in the method, bulk
+export and import (`.paprikarecipes` is the format people move recipes
+in), a shopping list sorted by aisle with duplicates combined, breakfast
+and lunch in the plan, iPhone and desktop apps, and 16 languages.
+
+Worth knowing:
+- Paprika 4 went to open beta on 2026-09-28 (paprikaapp.com/news). Its
+  paid "Premium" adds barcode scanning, family accounts, photo scanning and
+  nutrition, so Bento being free and private is a real selling point.
+- Self-hosted Mealie and Tandoor have more features (Tandoor imports ~23
+  formats) but need Docker and a server, and don't work offline.
+- AnyList: great shared lists, no bulk export. Plan to Eat: planning
+  first, no free tier. Samsung Food: free with ads and tracking.
+- What people expect in 2026: one-tap import (now also TikTok/Instagram
+  and photos of cookbooks), real scaling and unit conversion, cook mode
+  with step timers, a plan that feeds an aisle-sorted list, real household
+  sharing, offline use, owning your data (export, Paprika import),
+  nutrition, fair one-off pricing.
+
+## Issues found
+
+Severity: blocker (stops a Play listing), high, medium, low. Checked in the
+code unless marked *(inferred)*.
+
+### Do first (helps everyone)
+- [x] **High: the importer fetches any address** (`import.pb.js`), including
+  home-network devices, and so does the photo link a page gives it. Refuse
+  loopback, private and link-local addresses; cap download sizes.
+  Done: 2026-10-31, server/pb_hooks/safe_url.js (written addresses only: PocketBase can't check where a name points or refuse redirects). No download size cap (PocketBase's fetch has none).
+- [ ] **High: the shopping list doesn't work offline** (only recipes are
+  kept on the phone): the usual case in a shop.
+- [ ] **Medium: deleting is silent and final.** Deleting a recipe also
+  deletes its plan nights, cooked history and ratings without saying so;
+  shopping items, "Clear ticked" and plan nights have no undo.
+- [ ] **Medium: no recipe export** (and no import from other apps).
+
+### Google Play
+- [ ] **Blocker: the self-updater** (`REQUEST_INSTALL_PACKAGES`). Planned:
+  a Play build without it.
+- [ ] **Blocker: no "Delete my account" in the app** (Play requires one for
+  apps that create accounts) *(policy from memory; check in Play Console)*.
+- [ ] **High: privacy policy** doesn't mention phone-only mode, Android's
+  own backup (`allowBackup`), or Google's scanner.
+- [ ] **High: plain http** (`cleartext: true`): passwords travel
+  unencrypted on home Wi-Fi; the Data safety form would have to say so.
+  Tailscale users are fine. Fix: https via `tailscale serve`, or guide
+  friends to Tailscale only.
+- [ ] **Medium: 16 KB page-size rule** for native code on Android 15+: check
+  the phone-server library *(inferred)*.
+- [ ] **Medium: store logos** in the Play build (planned).
+
+### Phone-only mode
+- [ ] **High: never tried on a real phone**; arm64 only, so older 32-bit
+  phones would fail. Hide the option where it can't run.
+- [ ] **High: never gets app updates** (its own server has no releases, so
+  the check always says "up to date").
+- [ ] **High: backups only when someone remembers**: no reminder, no "last
+  backed up". Set explicit Android backup rules too.
+- [ ] **Medium: a failed database update on the phone traps the data**
+  (Backup needs the server running). Copy the database aside first.
+- [ ] **Low: the phone account's password is saved only after setup
+  succeeds**; if the app is killed in between, nobody knows it.
+
+### Friends' own servers
+- [ ] **High: a stranger can't get a server** without Node/npm; only Xel
+  can build the zip. Publish it (GitHub Releases), link the guide.
+- [ ] **Medium: a new server can be claimed by whoever reaches it first**
+  (`/api/cookbook/setup` before anyone has set it up). A one-time code
+  shown in the server window would fix it.
+- [ ] **Medium: app and server versions can drift** with no warning.
+- [ ] **Medium: a wrong or unreachable server address gives no useful
+  message** on the login screen.
+- [ ] **Medium: no in-app backup or download** in server mode; nightly
+  backups sit on the same disk.
+
+### Scale
+- [ ] **Medium: the Recipes page loads every recipe in full** and copies it
+  all for offline reading; past ~1,000 recipes the offline copy may stop
+  saving without telling anyone *(inferred)*.
+- [ ] **Medium: the plan, cooked log and pantry load their whole history**
+  on many pages.
+- [ ] **Medium: recipe photos upload at full size**; HEIC is refused, and a
+  too-big imported photo may fail the whole import *(inferred)*.
+
+### Other countries and languages
+- [ ] **Medium: English only**, but dates follow the phone's language, so a
+  Dutch phone mixes Dutch dates with English text.
+- [ ] **Medium: Dutch units**: dl, decimal commas ("1,5 kg") and el/tl
+  spoons aren't understood.
+- [ ] **Low: the week always starts on Monday** (Americans expect Sunday).
+
+### Missing features (compared with other apps)
+- [ ] Scaling servings
+- [ ] Timers you tap in the method
+- [ ] Import from Paprika and other apps
+- [ ] Shopping list grouped by aisle, duplicates combined
+- [ ] More than dinner in the plan
+- [ ] Print or share a recipe
+- [ ] Reset a forgotten password without the admin page
+
+### Small things
+- [ ] `added_by` / `cooked_by` can be set to anyone by the app (members
+  could fake who added something).
+- [ ] Past days on the plan are faded to 55%, likely too faint to read.
+- [ ] Labels starting with an emoji are read out as emoji names by screen
+  readers *(inferred)*.
+- [ ] The friends' start script says "send it to Claude".
+
+## The decision to make
+
+Pick one path for outside users first:
+- **Phone-only mode on Google Play**: needs a real-phone test, backup
+  reminders, account deletion, the privacy wording, a Play build.
+- **Friends running their own servers**: needs a published zip, https,
+  and the importer fix.
