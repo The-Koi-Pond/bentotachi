@@ -3537,3 +3537,54 @@ em.soft {
   border-radius: 50%;
   background: var(--accent);
 }
+
+/* The login screen's first question in the app: "Just me, on this phone"
+   or "Connect to a server". */
+.login-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.login-choice:hover {
+  border-color: var(--accent);
+}
+
+.login-choice:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.login-choice strong {
+  font-size: 1.05rem;
+}
+
+.login-choice .muted {
+  font-size: 0.9rem;
+}
+
+/* "Starting Bento…" while the phone's own server starts. */
+.phone-startup {
+  align-items: center;
+  text-align: center;
+}
+
+/* The phone account's long password on the Backups page. */
+.phone-password {
+  word-break: break-all;
+}

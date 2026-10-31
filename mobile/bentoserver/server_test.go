@@ -1,0 +1,94 @@
+package bentoserver
+
+// Runs the phone server on the PC with Bento's real hooks and migrations:
+// from the mobile folder, `go test ./...`.
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestStartBackupRestore(t *testing.T) {
+	server, _ := filepath.Abs(filepath.Join("..", "..", "server"))
+	dataDir := filepath.Join(t.TempDir(), "pb_data")
+	hooks, migrations := filepath.Join(server, "pb_hooks"), filepath.Join(server, "pb_migrations")
+
+	port, err := Start(dataDir, hooks, migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer Stop()
+	again, err := Start(dataDir, hooks, migrations)
+	if err != nil || again != port {
+		t.Fatalf("starting twice should keep the same server: %d %v", again, err)
+	}
+	base := fmt.Sprintf("http://127.0.0.1:%d", port)
+
+	call := func(method, path, token string, body any) map[string]any {
+		t.Helper()
+		data, _ := json.Marshal(body)
+		request, _ := http.NewRequest(method, base+path, bytes.NewReader(data))
+		request.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			request.Header.Set("Authorization", token)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		raw, _ := io.ReadAll(response.Body)
+		if response.StatusCode >= 300 {
+			t.Fatalf("%s %s: %d %s", method, path, response.StatusCode, raw)
+		}
+		var result map[string]any
+		_ = json.Unmarshal(raw, &result)
+		return result
+	}
+
+	// A new server needs setting up, through Bento's own setup step.
+	if call("GET", "/api/cookbook/setup", "", nil)["needsSetup"] != true {
+		t.Fatal("a new server should need setting up")
+	}
+	call("POST", "/api/cookbook/setup", "", map[string]string{"username": "sam", "name": "Sam", "password": "a-long-password"})
+	token := call("POST", "/api/collections/users/auth-with-password", "", map[string]string{"identity": "sam", "password": "a-long-password"})["token"].(string)
+	call("POST", "/api/collections/recipes/records", token, map[string]string{"title": "Soup"})
+
+	zip, err := Backup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(zip); err != nil {
+		t.Fatal("the backup file wasn't made:", err)
+	}
+
+	// Change something after the backup, then restore it.
+	call("POST", "/api/collections/recipes/records", token, map[string]string{"title": "Pie"})
+	port, err = Restore(zip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base = fmt.Sprintf("http://127.0.0.1:%d", port)
+	token = call("POST", "/api/collections/users/auth-with-password", "", map[string]string{"identity": "sam", "password": "a-long-password"})["token"].(string)
+	items := call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["title"] != "Soup" {
+		t.Fatalf("after restoring, only Soup should be there: %v", items)
+	}
+
+	// Something that isn't a backup changes nothing.
+	junk := filepath.Join(t.TempDir(), "junk.zip")
+	_ = os.WriteFile(junk, []byte("not a zip"), 0o644)
+	if _, err := Restore(junk); err == nil {
+		t.Fatal("restoring a junk file should fail")
+	}
+	items = call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("a failed restore shouldn't change anything: %v", items)
+	}
+}

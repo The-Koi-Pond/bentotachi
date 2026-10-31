@@ -1,10 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl } from "../pb";
+import { isPhoneMode, leavePhoneMode, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
-// "Set up your Bento" instead, to make the first account.
+// "Set up your Bento" instead, to make the first account. In the app, with
+// no server chosen yet, it first asks: "Just me, on this phone" (phone-only
+// mode, see phoneMode.ts) or "Connect to a server".
 export default function Login() {
+  const phone = isPhoneMode();
+  const [step, setStep] = useState<"choose" | "phone" | "server">(() =>
+    isAndroidApp && !phone && !savedServerUrl() ? "choose" : "server",
+  );
   const [server, setServer] = useState(savedServerUrl);
   // Whether the server needs setting up: null until we know (or can't tell).
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
@@ -12,6 +19,7 @@ export default function Login() {
   // Asks the server whether it has any accounts yet. In the app this waits
   // for a server address.
   function checkSetup() {
+    if (phone) return;
     if (isAndroidApp) {
       if (!server.trim()) return;
       setServerUrl(normaliseServerUrl(server));
@@ -27,16 +35,76 @@ export default function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const brand = (
+    <div className="login-brand">
+      <BentoLogo className="login-logo" />
+      <h1>
+        <BentoTitle className="login-title" />
+      </h1>
+      <p className="login-tagline">Recipes · Plan · Pantry · Together</p>
+    </div>
+  );
+
+  // Phone-only, but logged out: after restoring a backup made elsewhere,
+  // log in with one of its accounts.
+  if (phone)
+    return (
+      <main className="login">
+        <div className="card stack login-card">
+          {brand}
+          <p className="muted">
+            This Bento runs on this phone only. Log in with an account from the backup you restored.
+          </p>
+          <LoginForm server="" phone />
+          <button
+            className="link-button"
+            onClick={() => {
+              leavePhoneMode();
+              window.location.reload();
+            }}
+          >
+            Connect to a server instead
+          </button>
+        </div>
+      </main>
+    );
+
+  if (step === "choose")
+    return (
+      <main className="login">
+        <div className="card stack login-card">
+          {brand}
+          <div className="login-choices">
+            <button className="login-choice" onClick={() => setStep("phone")}>
+              <strong>Just me, on this phone</strong>
+              <span className="muted">Nothing to set up. Your recipes stay on this phone, and you can back them up.</span>
+            </button>
+            <button className="login-choice" onClick={() => setStep("server")}>
+              <strong>Connect to a server</strong>
+              <span className="muted">For a household sharing one Bento, or one a friend runs.</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+
+  if (step === "phone")
+    return (
+      <main className="login">
+        <div className="card stack login-card">
+          {brand}
+          <PhoneSetupForm />
+          <button className="link-button" onClick={() => setStep("choose")}>
+            ← Back
+          </button>
+        </div>
+      </main>
+    );
+
   return (
     <main className="login">
       <div className="card stack login-card">
-        <div className="login-brand">
-          <BentoLogo className="login-logo" />
-          <h1>
-            <BentoTitle className="login-title" />
-          </h1>
-          <p className="login-tagline">Recipes · Plan · Pantry · Together</p>
-        </div>
+        {brand}
         {isAndroidApp && (
           <label>
             Server address
@@ -57,12 +125,56 @@ export default function Login() {
           </label>
         )}
         {needsSetup ? <SetupForm server={server} /> : <LoginForm server={server} />}
+        {isAndroidApp && (
+          <button className="link-button" onClick={() => setStep("choose")}>
+            ← Or use Bento on this phone only
+          </button>
+        )}
       </div>
     </main>
   );
 }
 
-function LoginForm({ server }: { server: string }) {
+// "Just me, on this phone": only a name; Bento makes the account.
+function PhoneSetupForm() {
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await setUpPhone(name);
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={submit}>
+      <div className="setup-intro">
+        <h2>Bento on this phone</h2>
+        <p className="muted">
+          Everything stays on this phone, so save a backup now and then (⋮ → Backups). You can move to a server later,
+          to share with your household.
+        </p>
+      </div>
+      <label>
+        Your name
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required autoFocus />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <button className="button primary" disabled={busy}>
+        {busy ? "Setting up… (a few seconds)" : "Start using Bento"}
+      </button>
+    </form>
+  );
+}
+
+function LoginForm({ server, phone = false }: { server: string; phone?: boolean }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -70,18 +182,20 @@ function LoginForm({ server }: { server: string }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (isAndroidApp && !server.trim()) {
+    if (isAndroidApp && !phone && !server.trim()) {
       setError("Type the server address first.");
       return;
     }
     setBusy(true);
     setError("");
-    if (isAndroidApp) setServerUrl(normaliseServerUrl(server));
+    if (isAndroidApp && !phone) setServerUrl(normaliseServerUrl(server));
     // Usernames are stored in lowercase, so "Xel" works too. (An email
     // still works as well, for older accounts.)
     const identity = username.trim().includes("@") ? username.trim() : username.trim().toLowerCase();
     try {
       await pb.collection("users").authWithPassword(identity, password);
+      // Phone-only: log in by itself from now on.
+      if (phone) rememberPhoneAccount({ username: identity, password });
     } catch (err) {
       setError((err as { status?: number }).status === 400 ? "Wrong username or password." : errorMessage(err));
     } finally {

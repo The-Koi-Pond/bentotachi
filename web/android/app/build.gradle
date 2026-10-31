@@ -24,6 +24,15 @@ android {
         versionCode 12
         versionName "1.8.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // A test copy that installs beside the real Bento, as "Bento (test)":
+        //   gradlew assembleDebug -PbentoTest
+        // Normal builds and releases are unchanged.
+        if (project.hasProperty("bentoTest")) {
+            applicationIdSuffix ".test"
+            manifestPlaceholders = [appLabel: "Bento (test)"]
+        } else {
+            manifestPlaceholders = [appLabel: "@string/app_name"]
+        }
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -47,7 +56,29 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    // The phone server is big; packing it compressed keeps the APK download
+    // much smaller (Android unpacks it once when installing).
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+    }
+    // Phone-only mode: Bento's server code goes into the app as files, for the
+    // server built into it (BentoLocalServerPlugin copies them out).
+    sourceSets {
+        main { assets.srcDirs += layout.buildDirectory.dir("generated/bentoServerCode") }
+    }
 }
+
+// Copies server/pb_hooks and server/pb_migrations into the app on every
+// build, so the phone server always runs the same code as the Pi.
+def copyServerCode = tasks.register("copyBentoServerCode", Sync) {
+    from("../../../server/pb_hooks") {
+        into "bento-server/pb_hooks"
+        exclude "*.d.ts"
+    }
+    from("../../../server/pb_migrations") { into "bento-server/pb_migrations" }
+    into layout.buildDirectory.dir("generated/bentoServerCode")
+}
+tasks.named("preBuild") { dependsOn copyServerCode }
 
 repositories {
     flatDir{
@@ -56,7 +87,9 @@ repositories {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], exclude: ['*-sources.jar'], dir: 'libs')
+    // The server phone-only mode runs (made by "npm run server-lib").
+    implementation files('libs/bentoserver.aar')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"

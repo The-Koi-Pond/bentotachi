@@ -7,6 +7,7 @@ import { useSingleUser } from "./household";
 import Avatar from "./Avatar";
 import { ChevronIcon, MoreIcon } from "./icons";
 import { forgetOfflineCopy } from "./offline";
+import { isPhoneMode } from "./phoneMode";
 import { canSelfUpdate, checkForUpdate, installUpdate, useUpdateState, type UpdateState } from "./appUpdates";
 
 // The small line under "Check for updates".
@@ -37,6 +38,7 @@ export default function SettingsMenu() {
   const singleUser = useSingleUser();
   const update = useUpdateState();
   const quickMinutes = useQuickMinutes();
+  const phone = isPhoneMode();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -83,8 +85,15 @@ export default function SettingsMenu() {
             </Link>
           )}
           {/* The app's server can change (PC now, Pi later); log out to change it. */}
-          {isAndroidApp && <p className="menu-note">Server: {pb.baseURL.replace(/^https?:\/\//, "")}</p>}
-          {user && (
+          {isAndroidApp && !phone && <p className="menu-note">Server: {pb.baseURL.replace(/^https?:\/\//, "")}</p>}
+          {/* Phone-only: nobody else can reach it, so backups instead of sharing. */}
+          {phone && (
+            <Link to="/backups" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
+              Backups
+              <span className="menu-item-detail">Save or restore a backup, or move to a server</span>
+            </Link>
+          )}
+          {user && !phone && (
             <Link to="/household" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
               {singleUser ? "Share Bento" : "Household"}
               <span className="menu-item-detail">{singleUser ? "Add someone to use it with you" : "Who has an account; add someone"}</span>
@@ -104,7 +113,7 @@ export default function SettingsMenu() {
             </span>
             <span className="switch" aria-hidden="true" />
           </button>
-          {canSelfUpdate && (
+          {canSelfUpdate && !phone && (
             <button
               role="menuitem"
               onClick={() => void (update.status === "available" ? installUpdate() : checkForUpdate())}
@@ -116,15 +125,18 @@ export default function SettingsMenu() {
               </span>
             </button>
           )}
-          <button
-            role="menuitem"
-            onClick={() => {
-              forgetOfflineCopy();
-              pb.authStore.clear();
-            }}
-          >
-            Log out
-          </button>
+          {/* Phone-only Bento logs itself in; leaving it is on the Backups page. */}
+          {!phone && (
+            <button
+              role="menuitem"
+              onClick={() => {
+                forgetOfflineCopy();
+                pb.authStore.clear();
+              }}
+            >
+              Log out
+            </button>
+          )}
         </div>
       )}
     </div>

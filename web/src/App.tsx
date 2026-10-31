@@ -13,6 +13,7 @@ import MealPlan from "./pages/MealPlan";
 import Profile from "./pages/Profile";
 import Household from "./pages/Household";
 import Categories from "./pages/Categories";
+import Backups from "./pages/Backups";
 import SettingsMenu from "./SettingsMenu";
 import { PlusIcon } from "./icons";
 import TabBar from "./TabBar";
@@ -21,6 +22,7 @@ import { ShareReceiver } from "./shareReceiver";
 import { forgetOfflineCopy } from "./offline";
 import UpdateBanner from "./UpdateBanner";
 import { UnsavedChangesGuard } from "./unsavedChanges";
+import { isPhoneMode, logInOnPhone } from "./phoneMode";
 
 export default function App() {
   const user = useCurrentUser();
@@ -32,8 +34,10 @@ export default function App() {
     if (!pb.authStore.isValid) return;
     pb.collection("users")
       .authRefresh()
-      .catch((err) => {
+      .catch(async (err) => {
         if (err.status === 401 || err.status === 403) {
+          // On a phone-only Bento, just log back in with the phone's account.
+          if (isPhoneMode() && (await logInOnPhone())) return;
           forgetOfflineCopy();
           pb.authStore.clear();
         }
@@ -86,6 +90,7 @@ function Screens() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/household" element={<Household />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/backups" element={<Backups />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

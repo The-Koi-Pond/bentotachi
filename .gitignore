@@ -37,3 +37,6 @@ share/
 # web/scripts/piConfig.mjs), and Claude's notes about the household.
 web/scripts/pi.json
 CLAUDE.local.md
+
+# The phone server library (made by "npm run server-lib" from mobile/).
+web/android/app/libs/bentoserver*

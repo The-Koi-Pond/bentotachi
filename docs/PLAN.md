@@ -89,12 +89,20 @@ keep recipes readable without internet, and avoid subscriptions.
          before that, while nobody had seen or copied it): free to use,
          change and share, but not to sell or make money with.
 7. **Phone-only mode** (Bento with no server to set up):
-   - [ ] PocketBase built into the Android app (Go, via gomobile), running
-         privately on the phone with the same hooks and migrations; the
-         login screen offers "Just me, on this phone" or "Connect to a
-         server".
-   - [ ] Backup and restore on the phone (a file to keep somewhere safe),
-         and moving to a real server later.
+   - [x] PocketBase built into the Android app (mobile/, gomobile; see
+         mobile/README.md), running privately on the phone with the same
+         hooks and migrations; the login screen offers "Just me, on this
+         phone" (just a name) or "Connect to a server". Tested on the PC
+         (`go test`); the emulator can't run it.
+   - [x] ⋮ → Backups (phone-only): save a backup file, restore one, and the
+         login to use once it's restored on a real server.
+   - [ ] Try it on a real phone ("Bento (test)", `-PbentoTest`): first
+         start, adding and importing recipes, photos, closing and reopening,
+         backup and restore.
+   - [ ] Privacy policy: Android's own backup (`allowBackup`) can copy a
+         phone-only Bento to the person's Google account; say so.
+   - [ ] When `cleartext` is turned off, still allow 127.0.0.1 (the phone
+         server) in a network security config.
 8. **Google Play** (Android only for now):
    - [ ] Developer account (US$25 once, ID check). New personal accounts
          need a closed test with 12+ testers for 14 days before going public.

@@ -1,0 +1,56 @@
+// Builds the server that phone-only mode runs inside the Android app
+// (mobile/bentoserver, with Go and gomobile) into
+// android/app/libs/bentoserver.aar. Runs as part of `npm run android`, and
+// only rebuilds when the Go code has changed since the last build.
+//
+//   npm run server-lib            (from the web folder)
+//
+// Needs Go, and gomobile set up once (see mobile/README.md). Builds for real
+// phones (arm64) only: the PC's emulator can't run it either way (its x86
+// Android blocks a system call the database uses, and its ARM translation
+// can't run Go), so phone-only mode is tested on a real phone. "-s -w" leaves out debugging
+// information, which phones never need (it nearly halves the size).
+
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const web = join(dirname(fileURLToPath(import.meta.url)), "..");
+const mobile = join(web, "..", "mobile");
+const libs = join(web, "android", "app", "libs");
+const aar = join(libs, "bentoserver.aar");
+
+// The newest change to the Go code.
+function newest(folder) {
+  let latest = 0;
+  for (const entry of readdirSync(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory()) latest = Math.max(latest, newest(path));
+    else if (/\.(go|mod|sum)$/.test(entry.name)) latest = Math.max(latest, statSync(path).mtimeMs);
+  }
+  return latest;
+}
+
+if (existsSync(aar) && statSync(aar).mtimeMs > newest(mobile)) {
+  console.log("Phone server library is up to date.");
+  process.exit(0);
+}
+
+const sdk = process.env.ANDROID_HOME ?? join(process.env.LOCALAPPDATA ?? "", "Android", "Sdk");
+const ndkFolder = join(sdk, "ndk");
+const ndk = process.env.ANDROID_NDK_HOME ?? (existsSync(ndkFolder) ? join(ndkFolder, readdirSync(ndkFolder).sort().pop()) : "");
+if (!ndk) {
+  console.error("No Android NDK found. Install it in Android Studio: SDK Manager > SDK Tools > NDK.");
+  process.exit(1);
+}
+const goBin = join(execFileSync("go", ["env", "GOPATH"], { encoding: "utf8" }).trim(), "bin");
+const env = { ...process.env, ANDROID_HOME: sdk, ANDROID_NDK_HOME: ndk, PATH: `${goBin}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}` };
+
+mkdirSync(libs, { recursive: true });
+console.log("> gomobile bind (building the phone server, about a minute)");
+execFileSync(
+  "gomobile",
+  ["bind", "-target=android/arm64", "-androidapi", "24", "-trimpath", "-ldflags=-s -w", "-javapkg", "com.xel.bento.server", "-o", aar, "./bentoserver"],
+  { cwd: mobile, env, stdio: "inherit" },
+);
