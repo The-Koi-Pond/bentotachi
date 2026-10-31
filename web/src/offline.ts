@@ -1,13 +1,20 @@
-// Offline reading: each time recipes load, the phone keeps a copy (text only,
+// Offline use: each time recipes load, the phone keeps a copy (text only,
 // no photos), so they can still be read without a connection, e.g. in a
-// shop with no signal. Only reading works offline; changes need the server.
+// shop with no signal. The shopping list (and the pantry items it shows
+// brands from) is kept the same way, and can be ticked off and added to
+// offline (see offlineShopping.ts). Other changes need the server.
 
 import type { Recipe, RecipeRating } from "./pb";
 
 const RECIPES_KEY = "bento.offline.recipes";
 const RATINGS_KEY = "bento.offline.ratings";
+// Copies kept by useLiveRecords (see its offlineKey).
+export const SHOPPING_KEY = "bento.offline.shopping";
+export const PANTRY_KEY = "bento.offline.pantry";
+// Shopping list changes made offline, waiting to be sent.
+export const SHOPPING_QUEUE_KEY = "bento.offline.shoppingQueue";
 
-function read<T>(key: string): T[] | null {
+export function read<T>(key: string): T[] | null {
   try {
     const saved = localStorage.getItem(key);
     return saved ? (JSON.parse(saved) as T[]) : null;
@@ -16,7 +23,7 @@ function read<T>(key: string): T[] | null {
   }
 }
 
-function write(key: string, list: unknown[]) {
+export function write(key: string, list: unknown[]) {
   try {
     localStorage.setItem(key, JSON.stringify(list));
   } catch {
@@ -62,11 +69,11 @@ export function isOffline(err: unknown): boolean {
   return (err as { status?: number })?.status === 0;
 }
 
-// Logging out forgets the copy, so the next person on this phone doesn't see it.
+// Logging out forgets the copy (and unsent list changes), so the next person
+// on this phone doesn't see them.
 export function forgetOfflineCopy() {
   try {
-    localStorage.removeItem(RECIPES_KEY);
-    localStorage.removeItem(RATINGS_KEY);
+    for (const key of [RECIPES_KEY, RATINGS_KEY, SHOPPING_KEY, PANTRY_KEY, SHOPPING_QUEUE_KEY]) localStorage.removeItem(key);
   } catch {
     // Nothing to forget.
   }

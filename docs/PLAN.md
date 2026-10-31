@@ -157,6 +157,12 @@ Changes already live in the browser version, not yet in a published APK
   computer or the home network, for the page and for its photo
   (server/pb_hooks/safe_url.js). Live on the Pi with `npm run deploy`; the
   phone-only server gets it in the next APK.
+- The shopping list works offline: the phone keeps a copy (and the pantry
+  items it shows brands from); ticking off and adding work with no signal,
+  are shown straight away, and are sent when the server can be reached
+  again (the "back online" event, coming back to the app, Try again, or
+  every 30 seconds). Removing and "Clear ticked" wait for a connection.
+  Lists never load from the browser's own cache any more.
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

@@ -1,23 +1,42 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RecordModel } from "pocketbase";
 import { errorMessage, pb } from "./pb";
+import { isOffline, read, write } from "./offline";
 
 // Loads a whole collection and keeps it up to date while anyone changes it.
 // Also hands back helpers to update what's on screen straight away, before
 // the server confirms (the live update then simply replaces it).
-export function useLiveRecords<T extends RecordModel>(collection: string, expand?: string) {
+//
+// With an offlineKey (see offline.ts), the phone keeps a copy of the list,
+// and shows it when the server can't be reached (`offline` is then true).
+export function useLiveRecords<T extends RecordModel>(collection: string, expand?: string, offlineKey?: string) {
   const [items, setItems] = useState<T[] | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [offline, setOffline] = useState(false);
 
   const reload = useCallback(() => {
     pb.collection<T>(collection)
-      .getFullList({ expand })
+      // Never an old answer the browser kept: offline should look offline.
+      .getFullList({ expand, cache: "no-store" })
       .then((list) => {
         setItems(list);
         setLoadError("");
+        setOffline(false);
       })
-      .catch((err) => setLoadError(errorMessage(err)));
-  }, [collection, expand]);
+      .catch((err) => {
+        const saved = offlineKey && isOffline(err) ? read<T>(offlineKey) : null;
+        if (saved) {
+          setItems((current) => current ?? saved);
+          setOffline(true);
+          setLoadError("");
+        } else setLoadError(errorMessage(err));
+      });
+  }, [collection, expand, offlineKey]);
+
+  // The copy follows what's on screen (including changes made offline).
+  useEffect(() => {
+    if (offlineKey && items) write(offlineKey, items);
+  }, [offlineKey, items]);
 
   const upsert = useCallback((item: T) => {
     setItems((previous) => previous && [...previous.filter((i) => i.id !== item.id), item]);
@@ -51,18 +70,20 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
       });
 
     // Phones pause apps in the background and can miss updates, so reload
-    // whenever the app comes back to the front.
+    // whenever the app comes back to the front, or the connection comes back.
     const onVisible = () => {
       if (document.visibilityState === "visible") reload();
     };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", reload);
 
     return () => {
       stopped = true;
       unsubscribe?.();
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", reload);
     };
   }, [collection, expand, reload, upsert, removeLocally]);
 
-  return { items, loadError, reload, upsert, removeLocally };
+  return { items, loadError, offline, setOffline, reload, upsert, removeLocally };
 }

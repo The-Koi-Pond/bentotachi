@@ -41,8 +41,9 @@ code unless marked *(inferred)*.
   home-network devices, and so does the photo link a page gives it. Refuse
   loopback, private and link-local addresses; cap download sizes.
   Done: 2026-10-31, server/pb_hooks/safe_url.js (written addresses only: PocketBase can't check where a name points or refuse redirects). No download size cap (PocketBase's fetch has none).
-- [ ] **High: the shopping list doesn't work offline** (only recipes are
+- [x] **High: the shopping list doesn't work offline** (only recipes are
   kept on the phone): the usual case in a shop.
+  Done: 2026-10-31. Kept on the phone; ticking off and adding work offline and are sent when back online (web/src/offlineShopping.ts). Removing and Clear ticked wait for a connection. The pantry page itself isn't offline yet.
 - [ ] **Medium: deleting is silent and final.** Deleting a recipe also
   deletes its plan nights, cooked history and ratings without saying so;
   shopping items, "Clear ticked" and plan nights have no undo.
