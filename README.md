@@ -114,3 +114,11 @@ backups and signing key never go in.
 - Tests: from the project folder, `node --test "server/test/*.test.js"`,
   and from `web`, `node --test "test/*.test.ts"`
 - Type check: `cd web` then `npm run typecheck`
+
+## Licence
+
+Bento is free, and meant to stay that way. It's under the
+[PolyForm Noncommercial License 1.0.0](LICENSE): you're welcome to use it,
+change it and share it, including your own free versions, but not to sell
+it or use it to make money (no paid apps, no ads). The store logos are their
+owners' trademarks and aren't covered.

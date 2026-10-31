@@ -83,10 +83,11 @@ keep recipes readable without internet, and avoid subscriptions.
          `CLAUDE.local.md`); made-up examples in the code and docs.
    - [x] Website in `site/` (landing page and privacy policy), published by
          `.github/workflows/pages.yml`.
-   - [ ] Create the repository, push a fresh history (the old one is kept
-         privately), turn on Pages.
-   - [ ] Decide on a licence (none yet: people can read the code but not
-         reuse it).
+   - [x] Created the repository, pushed a fresh history (the old one is
+         kept privately), turned on Pages (2026-10-31).
+   - [x] Licence: PolyForm Noncommercial 1.0.0 (2026-10-31; briefly MIT
+         before that, while nobody had seen or copied it): free to use,
+         change and share, but not to sell or make money with.
 7. **Phone-only mode** (Bento with no server to set up):
    - [ ] PocketBase built into the Android app (Go, via gomobile), running
          privately on the phone with the same hooks and migrations; the
