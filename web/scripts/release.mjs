@@ -1,0 +1,87 @@
+// Builds a new version of the Android app and publishes it to the server,
+// where the installed apps find it and offer to update.
+//
+//   npm run release -- "What changed, in a few words"          1.2.0 -> 1.2.1
+//   npm run release -- minor "A new feature"                    1.2.1 -> 1.3.0
+//   npm run release -- major "Something big"                    1.3.0 -> 2.0.0
+//
+// Steps: bump the version in android/app/build.gradle, build the web app,
+// build the APK (signed with Bento's key if android/keystore.properties
+// exists, otherwise with Android Studio's test key), then copy it into
+// server/releases/ with latest.json describing it.
+
+import { execSync } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const web = join(dirname(fileURLToPath(import.meta.url)), "..");
+const android = join(web, "android");
+const releases = join(web, "..", "server", "releases");
+const gradleFile = join(android, "app", "build.gradle");
+const args = process.argv.slice(2);
+const step = ["major", "minor", "patch"].includes(args[0]) ? args.shift() : "patch";
+const notes = args.join(" ").trim();
+
+// Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,
+// which is too old for Android's build tools.
+const javaHome = process.env.BENTO_JAVA_HOME || "C:\\Program Files\\Android\\Android Studio\\jbr";
+
+function run(command, cwd) {
+  console.log(`\n> ${command}`);
+  execSync(command, { cwd, stdio: "inherit", env: { ...process.env, JAVA_HOME: javaHome } });
+}
+
+// 1. Next version number. versionCode is what Android compares (it just
+//    counts up); versionName is what people see, like 1.2.1.
+const gradle = readFileSync(gradleFile, "utf8");
+const current = Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
+const currentName = gradle.match(/versionName\s+"([^"]*)"/)?.[1];
+if (!current || !currentName) throw new Error("Couldn't find versionCode/versionName in android/app/build.gradle");
+const versionCode = current + 1;
+const versionName = nextVersionName(currentName, step);
+
+// "1.2" counts as 1.2.0.
+function nextVersionName(name, part) {
+  const [major = 1, minor = 0, patch = 0] = name.split(".").map((n) => Number(n) || 0);
+  if (part === "major") return `${major + 1}.0.0`;
+  if (part === "minor") return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
+}
+writeFileSync(
+  gradleFile,
+  gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`).replace(/versionName\s+"[^"]*"/, `versionName "${versionName}"`)
+);
+console.log(`Building Bento ${versionName} (version ${versionCode})`);
+
+// 2. Web app into the Android project, then 3. the APK. If either fails,
+//    put the old version number back so the next try reuses this one.
+const signed = existsSync(join(android, "keystore.properties"));
+try {
+  run("npm run android", web);
+  if (!signed) console.warn("\nNo android/keystore.properties: signing with Android Studio's test key.");
+  run(`"${join(android, "gradlew.bat")}" ${signed ? "assembleRelease" : "assembleDebug"} --console=plain`, android);
+} catch (err) {
+  writeFileSync(gradleFile, gradle);
+  console.error(`\nThe build failed, so nothing was published. The version is back to ${current}.`);
+  process.exit(1);
+}
+const built = signed
+  ? join(android, "app", "build", "outputs", "apk", "release", "app-release.apk")
+  : join(android, "app", "build", "outputs", "apk", "debug", "app-debug.apk");
+
+// 4. Publish: the APK and a description of it. Keep the previous APK too,
+//    and remove older ones.
+mkdirSync(releases, { recursive: true });
+const file = `bento-${versionCode}.apk`;
+copyFileSync(built, join(releases, file));
+writeFileSync(
+  join(releases, "latest.json"),
+  JSON.stringify({ versionCode, versionName, file, notes, signedWith: signed ? "bento" : "test", published: new Date().toISOString() }, null, 2)
+);
+for (const old of readdirSync(releases)) {
+  const code = Number(old.match(/^bento-(\d+)\.apk$/)?.[1]);
+  if (code && code < versionCode - 1) rmSync(join(releases, old));
+}
+
+console.log(`\nPublished Bento ${versionName}. Installed apps will offer the update next time they're opened.`);

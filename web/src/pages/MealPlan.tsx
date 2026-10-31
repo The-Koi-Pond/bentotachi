@@ -1,0 +1,529 @@
+import { useState } from "react";
+import { Link } from "react-router";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { errorMessage, mealPlan, pb, type CookedEntry, type MealPlanEntry, type Recipe } from "../pb";
+import RecipePhoto from "../RecipePhoto";
+import { lastHadByRecipe } from "../cookHistory";
+import { addDays, addMonths, datePart, dayNumber, formatDay, localToday, monthStart, toStoredDate, weekStart } from "../dates";
+import { CartIcon, CloseIcon, GripIcon } from "../icons";
+import { useLiveRecords } from "../useLiveRecords";
+import RecipeChooser from "../RecipeChooser";
+import WeekShoppingSheet from "../WeekShoppingSheet";
+
+// How many days are shown at once: this week and next.
+const DAYS_SHOWN = 14;
+
+// A dinner lands on the night under your finger (or mouse). With the
+// keyboard there is no pointer, so it goes to the nearest night instead.
+const dropTarget: CollisionDetection = (args) => {
+  const underPointer = pointerWithin(args);
+  return underPointer.length > 0 ? underPointer : closestCenter(args);
+};
+
+type View = "list" | "month";
+const VIEW_KEY = "bento.planView";
+
+function savedView(): View {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "month" ? "month" : "list";
+  } catch {
+    return "list";
+  }
+}
+
+// The dinner plan, as a two-week list (one row per night) or a month grid.
+// In both, dinners can be dragged to another night; if that night already
+// has one, they swap.
+export default function MealPlan() {
+  const plan = useLiveRecords<MealPlanEntry>("meal_plan", "recipe");
+  const cooked = useLiveRecords<CookedEntry>("cooked");
+  const today = localToday();
+  const [view, setView] = useState<View>(savedView);
+  const [start, setStart] = useState(() => weekStart(today));
+  const [month, setMonth] = useState(() => monthStart(today));
+  // Month view: the day whose details show under the grid.
+  const [selected, setSelected] = useState(today);
+  const [picking, setPicking] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<MealPlanEntry | null>(null);
+  const [shoppingOpen, setShoppingOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  function changeView(next: View) {
+    setView(next);
+    setPicking(null);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // Not remembered; it'll start on the list next time.
+    }
+  }
+
+  // Drag from the handle with a mouse or finger (after moving a few pixels,
+  // so a tap isn't a drag), or with the keyboard (Space, arrows, Space).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
+
+  const byDate = new Map(plan.items.map((entry) => [datePart(entry.date), entry]));
+  const days = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(start, i));
+
+  // For the chooser: which recipes are already planned from today on, and when.
+  const upcoming = new Map<string, string[]>();
+  for (const [date, entry] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    if (date >= today && entry.recipe) upcoming.set(entry.recipe, [...(upcoming.get(entry.recipe) ?? []), date]);
+  }
+  // And when each recipe was last had: on the plan before today, or marked
+  // "We cooked this" (see cookHistory.ts).
+  const lastHad = lastHadByRecipe(plan.items, cooked.items ?? [], today);
+
+  // Plans a night: a recipe, or a note like "Take-away night" instead.
+  async function add(date: string, what: { recipe: Recipe } | { note: string }) {
+    setPicking(null);
+    setError("");
+    try {
+      plan.upsert(
+        await mealPlan().create(
+          {
+            date: toStoredDate(date),
+            recipe: "recipe" in what ? what.recipe.id : "",
+            note: "note" in what ? what.note : "",
+            added_by: pb.authStore.record?.id,
+          },
+          { expand: "recipe" }
+        )
+      );
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  async function remove(entry: MealPlanEntry) {
+    setError("");
+    plan.removeLocally(entry.id);
+    try {
+      await mealPlan().delete(entry.id);
+    } catch (err) {
+      setError(errorMessage(err));
+      plan.reload();
+    }
+  }
+
+  // Moves a dinner to another night, swapping with whatever is there. A swap
+  // trades the two nights' contents (recipe and note), so each night keeps
+  // its own entry.
+  async function move(from: string, to: string) {
+    const moving = byDate.get(from);
+    if (!moving || from === to) return;
+    const there = byDate.get(to);
+    setError("");
+    if (there) {
+      plan.upsert({ ...moving, recipe: there.recipe, note: there.note, expand: there.expand });
+      plan.upsert({ ...there, recipe: moving.recipe, note: moving.note, expand: moving.expand });
+    } else {
+      plan.upsert({ ...moving, date: toStoredDate(to) });
+    }
+    try {
+      if (there) {
+        await mealPlan().update(moving.id, { recipe: there.recipe, note: there.note });
+        await mealPlan().update(there.id, { recipe: moving.recipe, note: moving.note });
+      } else {
+        await mealPlan().update(moving.id, { date: toStoredDate(to) });
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+      plan.reload();
+    }
+  }
+
+  function onDragStart(event: DragStartEvent) {
+    setDragging(byDate.get(String(event.active.id)) ?? null);
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    setDragging(null);
+    if (event.over) void move(String(event.active.id), String(event.over.id));
+  }
+
+  const isList = view === "list";
+  const rangeLabel = isList
+    ? `${formatDay(days[0], { day: "numeric", month: "short" })} – ${formatDay(days[days.length - 1], {
+        day: "numeric",
+        month: "short",
+      })}`
+    : formatDay(month, { month: "long", year: "numeric" });
+  const atToday = isList ? start === weekStart(today) : month === monthStart(today);
+
+  function step(direction: 1 | -1) {
+    setPicking(null);
+    if (isList) setStart(addDays(start, 7 * direction));
+    else setMonth(addMonths(month, direction));
+  }
+
+  function goToToday() {
+    setPicking(null);
+    setStart(weekStart(today));
+    setMonth(monthStart(today));
+    setSelected(today);
+  }
+
+  return (
+    <div className="stack narrow">
+      <div className="section-head">
+        <h1>Dinner plan</h1>
+        <div className="view-switch" role="group" aria-label="View">
+          <button aria-pressed={isList} onClick={() => changeView("list")}>
+            List
+          </button>
+          <button aria-pressed={!isList} onClick={() => changeView("month")}>
+            Month
+          </button>
+        </div>
+      </div>
+
+      <div className="plan-toolbar">
+        <strong className="plan-range">{rangeLabel}</strong>
+        <div className="week-nav">
+          <button
+            className="icon-button small"
+            onClick={() => step(-1)}
+            aria-label={isList ? "Previous week" : "Previous month"}
+          >
+            ‹
+          </button>
+          <button className="button small" onClick={goToToday} disabled={atToday}>
+            Today
+          </button>
+          <button className="icon-button small" onClick={() => step(1)} aria-label={isList ? "Next week" : "Next month"}>
+            ›
+          </button>
+        </div>
+      </div>
+      <p className="muted plan-hint">
+        {isList ? (
+          <>
+            Drag a dinner by its <GripIcon /> handle to move it; drop it on another dinner to swap.
+          </>
+        ) : (
+          "Tap a day to see or add its dinner. Drag a dinner's picture to another day to move it, or onto another dinner to swap."
+        )}
+      </p>
+      <div className="plan-actions">
+        <button className="button small" onClick={() => setShoppingOpen(true)}>
+          <CartIcon size={18} />
+          Shop for these
+        </button>
+      </div>
+      {error && <p className="error">{error}</p>}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={dropTarget}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setDragging(null)}
+      >
+        {isList ? (
+          <ol className="plan-days">
+            {days.map((date, i) => (
+              <DayRow
+                key={date}
+                date={date}
+                today={today}
+                weekBreak={i === 7}
+                entry={byDate.get(date)}
+                onAdd={() => setPicking(date)}
+                onRemove={remove}
+              />
+            ))}
+          </ol>
+        ) : (
+          <>
+            <MonthGrid
+              month={month}
+              today={today}
+              selected={selected}
+              byDate={byDate}
+              onSelect={(date) => {
+                setSelected(date);
+                setPicking(null);
+              }}
+            />
+            <SelectedDay
+              date={selected}
+              entry={byDate.get(selected)}
+              onAdd={() => setPicking(selected)}
+              onRemove={remove}
+            />
+          </>
+        )}
+        {/* The copy of a dinner that follows your finger while dragging. */}
+        <DragOverlay>
+          {dragging && (isList ? <DinnerCard entry={dragging} lifted /> : <CellThumb entry={dragging} lifted />)}
+        </DragOverlay>
+      </DndContext>
+
+      {picking && (
+        <RecipeChooser
+          date={picking}
+          upcoming={upcoming}
+          lastHad={lastHad}
+          onPick={(recipe) => void add(picking, { recipe })}
+          onNote={(note) => void add(picking, { note })}
+          onClose={() => setPicking(null)}
+        />
+      )}
+      {shoppingOpen && <WeekShoppingSheet entries={plan.items} today={today} onClose={() => setShoppingOpen(false)} />}
+    </div>
+  );
+}
+
+// A month as a Monday-to-Sunday grid. Each day shows its number and, if a
+// dinner is planned, a small picture of it that can be dragged.
+function MonthGrid({
+  month,
+  today,
+  selected,
+  byDate,
+  onSelect,
+}: {
+  month: string;
+  today: string;
+  selected: string;
+  byDate: Map<string, MealPlanEntry>;
+  onSelect: (date: string) => void;
+}) {
+  const gridStart = weekStart(month);
+  const weeks = Math.ceil((dayNumber(addMonths(month, 1)) - dayNumber(gridStart)) / 7);
+  const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(gridStart, i));
+
+  return (
+    <div className="month-grid">
+      {cells.slice(0, 7).map((date) => (
+        <span key={`head-${date}`} className="month-weekday" aria-hidden="true">
+          {formatDay(date, { weekday: "narrow" })}
+        </span>
+      ))}
+      {cells.map((date) => (
+        <MonthCell
+          key={date}
+          date={date}
+          inMonth={monthStart(date) === month}
+          isToday={date === today}
+          isSelected={date === selected}
+          entry={byDate.get(date)}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MonthCell({
+  date,
+  inMonth,
+  isToday,
+  isSelected,
+  entry,
+  onSelect,
+}: {
+  date: string;
+  inMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  entry: MealPlanEntry | undefined;
+  onSelect: (date: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: date });
+  const dinner = entry ? entryLabel(entry) : undefined;
+  const classes = ["month-cell", inMonth ? "" : "other-month", isToday ? "today" : "", isSelected ? "selected" : "", isOver ? "drop-here" : ""];
+
+  return (
+    <div ref={setNodeRef} className={classes.join(" ")}>
+      <button
+        className="month-cell-button"
+        onClick={() => onSelect(date)}
+        aria-pressed={isSelected}
+        aria-label={`${formatDay(date, { weekday: "long", day: "numeric", month: "long" })}${dinner ? `: ${dinner}` : ""}`}
+      >
+        <span className="month-day">{Number(date.slice(8))}</span>
+        {entry && <DraggableThumb entry={entry} />}
+      </button>
+    </div>
+  );
+}
+
+// The dinner's picture in a month cell; dragging it moves the dinner. (A tap
+// still selects the day, because a drag only starts after moving a little.)
+function DraggableThumb({ entry }: { entry: MealPlanEntry }) {
+  const { setNodeRef, listeners, isDragging } = useDraggable({ id: datePart(entry.date) });
+  return (
+    <span ref={setNodeRef} className={`cell-thumb-wrap ${isDragging ? "dragging" : ""}`} {...listeners}>
+      <CellThumb entry={entry} />
+    </span>
+  );
+}
+
+function CellThumb({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: boolean }) {
+  const recipe = entry.expand?.recipe;
+  if (recipe?.image) {
+    return <RecipePhoto recipe={recipe} size="card" className={`cell-thumb ${lifted ? "lifted" : ""}`} />;
+  }
+  return (
+    <span className={`cell-thumb dinner-no-photo ${recipe ? "" : "note"} ${lifted ? "lifted" : ""}`} aria-hidden="true">
+      {recipe ? "🍲" : "📝"}
+    </span>
+  );
+}
+
+// Under the month grid: the chosen day's dinner, or a way to add one.
+function SelectedDay({
+  date,
+  entry,
+  onAdd,
+  onRemove,
+}: {
+  date: string;
+  entry: MealPlanEntry | undefined;
+  onAdd: () => void;
+  onRemove: (entry: MealPlanEntry) => void;
+}) {
+  return (
+    <section className="selected-day" aria-label={`Dinner on ${formatDay(date)}`}>
+      <h2>{formatDay(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
+      {entry ? (
+        <div className="dinner-slot">
+          <DinnerCard entry={entry} />
+          <button
+            className="icon-button small"
+            onClick={() => onRemove(entry)}
+            aria-label={`Take ${entryLabel(entry)} off the plan`}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      ) : (
+        <button className="plan-add" onClick={onAdd}>
+          + Add dinner
+        </button>
+      )}
+    </section>
+  );
+}
+
+function DayRow({
+  date,
+  today,
+  weekBreak,
+  entry,
+  onAdd,
+  onRemove,
+}: {
+  date: string;
+  today: string;
+  weekBreak: boolean;
+  entry: MealPlanEntry | undefined;
+  onAdd: () => void;
+  onRemove: (entry: MealPlanEntry) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: date });
+  const when = date === today ? "today" : date < today ? "past" : "";
+
+  return (
+    <li ref={setNodeRef} className={`plan-day ${when} ${isOver ? "drop-here" : ""} ${weekBreak ? "week-break" : ""}`}>
+      <div className="plan-date">
+        <strong>{date === today ? "Today" : formatDay(date, { weekday: "short" })}</strong>
+        <span>{formatDay(date, { day: "numeric", month: "short" })}</span>
+      </div>
+      <div className="plan-slot">
+        {entry ? (
+          <DraggableDinner entry={entry} onRemove={onRemove} />
+        ) : (
+          <button className="plan-add" onClick={onAdd}>
+            + Add dinner
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: (entry: MealPlanEntry) => void }) {
+  const date = datePart(entry.date);
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: date });
+  return (
+    <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
+      <button
+        className="drag-handle"
+        aria-label={`Move ${entryLabel(entry)} to another night`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripIcon />
+      </button>
+      <DinnerCard entry={entry} />
+      <button
+        className="icon-button small"
+        onClick={() => onRemove(entry)}
+        aria-label={`Take ${entryLabel(entry)} off the plan`}
+      >
+        <CloseIcon />
+      </button>
+    </div>
+  );
+}
+
+// What a night holds, in words: the recipe's name, or the note.
+function entryLabel(entry: MealPlanEntry): string {
+  return entry.expand?.recipe?.title || entry.note || "this dinner";
+}
+
+function DinnerCard({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: boolean }) {
+  const recipe = entry.expand?.recipe;
+  // A note night ("Take-away night") isn't a link; there's no recipe to open.
+  if (!recipe) {
+    return (
+      <span className={`dinner-card note-card ${lifted ? "lifted" : ""}`}>
+        <span className="dinner-no-photo note" aria-hidden="true">
+          📝
+        </span>
+        <span className="dinner-title">{entry.note || "A recipe that's been deleted"}</span>
+      </span>
+    );
+  }
+  const content = (
+    <>
+      {recipe.image ? (
+        <RecipePhoto recipe={recipe} size="card" />
+      ) : (
+        <span className="dinner-no-photo" aria-hidden="true">
+          🍲
+        </span>
+      )}
+      <span className="dinner-title">{recipe.title}</span>
+    </>
+  );
+  return lifted ? (
+    <span className="dinner-card lifted">{content}</span>
+  ) : (
+    <Link to={`/recipes/${recipe.id}`} className="dinner-card">
+      {content}
+    </Link>
+  );
+}

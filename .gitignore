@@ -1,0 +1,39 @@
+node_modules/
+
+# PocketBase program and its zip contents (downloaded separately, see README)
+server/pocketbase
+server/pocketbase.exe
+server/CHANGELOG.md
+server/LICENSE.md
+server/*.zip
+
+# The live database and uploaded photos. Back these up; never commit them.
+server/pb_data/
+
+# Built app (made by "npm run build")
+server/pb_public/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Android app build (made by "npm run android")
+web/dist/
+
+# Published Android app versions (made by "npm run release")
+server/releases/
+
+# Bento's signing key and its password. Back these up; never commit them.
+web/android/keystore.properties
+signing/
+*.jks
+
+# Copies of the live database made before risky changes. Never commit them.
+backups/
+
+# Zips of Bento made for friends (made by "npm run package")
+share/
+
+# This household's own setup: the Pi's address and login (see
+# web/scripts/piConfig.mjs), and Claude's notes about the household.
+web/scripts/pi.json
+CLAUDE.local.md

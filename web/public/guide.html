@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setting up Bento</title>
+    <style>
+      :root {
+        --bg: #faf6f1;
+        --surface: #ffffff;
+        --text: #2b2420;
+        --muted: #6f625a;
+        --border: #e8ddd3;
+        --accent: #b4532a;
+        --soft: #f6e4da;
+        --warn: #fff4d6;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1917;
+          --surface: #27221f;
+          --text: #f1ebe5;
+          --muted: #b3a79d;
+          --border: #3d3530;
+          --accent: #e07a4f;
+          --soft: #3a2a22;
+          --warn: #3a3220;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 64px;
+        font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.9rem;
+        line-height: 1.2;
+        margin: 0 0 8px;
+      }
+      h2 {
+        margin: 40px 0 8px;
+        font-size: 1.35rem;
+        scroll-margin-top: 16px;
+      }
+      h3 {
+        margin: 24px 0 4px;
+        font-size: 1.05rem;
+      }
+      .lead {
+        color: var(--muted);
+        margin-top: 0;
+      }
+      ol.steps > li {
+        margin-bottom: 12px;
+      }
+      code,
+      kbd {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 0.92em;
+        padding: 1px 6px;
+        background: var(--soft);
+        border-radius: 6px;
+        overflow-wrap: anywhere;
+      }
+      .card {
+        padding: 14px 16px;
+        margin: 16px 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+      }
+      .note {
+        padding: 12px 16px;
+        margin: 16px 0;
+        background: var(--warn);
+        border-radius: 12px;
+      }
+      .note strong:first-child {
+        display: block;
+      }
+      nav ol {
+        margin: 8px 0 0;
+        padding-left: 1.3em;
+      }
+      a {
+        color: var(--accent);
+      }
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Setting up your own Bento</h1>
+      <p class="lead">
+        Bento is a recipe, shopping list, pantry and dinner-plan app for a household. It runs on a computer at your
+        place (the "server"), and everyone uses it from their phone. Nothing goes to anyone else's computer.
+      </p>
+
+      <div class="card">
+        <strong>You'll need</strong>
+        <ul>
+          <li>A Windows computer that's on while you want to use Bento (Mac or Linux works too, see <a href="#other">the end</a>).</li>
+          <li>Android phones for the app. Any phone or computer can also use Bento in its web browser.</li>
+          <li>About 15 minutes.</li>
+        </ul>
+        <nav>
+          <strong>Steps</strong>
+          <ol>
+            <li><a href="#unzip">Unzip Bento</a></li>
+            <li><a href="#start">Start the server</a></li>
+            <li><a href="#setup">Make your account</a></li>
+            <li><a href="#household">Add your household</a></li>
+            <li><a href="#phones">Get it on the phones</a></li>
+            <li><a href="#everyday">Everyday use, backups and updates</a></li>
+          </ol>
+        </nav>
+      </div>
+
+      <h2 id="unzip">1. Unzip Bento</h2>
+      <ol class="steps">
+        <li>Right-click the Bento zip file and choose <strong>Extract All…</strong>, then <strong>Extract</strong>.</li>
+        <li>
+          Move the <strong>Bento</strong> folder somewhere it can stay, like your <strong>Documents</strong>. Everything
+          Bento saves (recipes, photos, lists) lives inside it, in <code>server\pb_data</code>.
+        </li>
+      </ol>
+      <div class="note">
+        <strong>Don't run it from inside the zip.</strong>
+        Opening the zip and double-clicking things there doesn't work; extract it first.
+      </div>
+
+      <h2 id="start">2. Start the server</h2>
+      <ol class="steps">
+        <li>In the Bento folder, double-click <strong>Start Bento.bat</strong>. A black window opens.</li>
+        <li>
+          If Windows says <strong>"Windows protected your PC"</strong>: click <strong>More info</strong>, then
+          <strong>Run anyway</strong>. (It says this about any program it hasn't seen before.)
+        </li>
+        <li>
+          If a <strong>Windows Security / Firewall</strong> box asks about <em>pocketbase</em>: tick
+          <strong>Private networks</strong> and click <strong>Allow</strong>. This is what lets phones reach it.
+        </li>
+        <li>
+          When the window says <strong>Server started</strong>, it's running. <strong>Leave the window open</strong>
+          (you can minimise it); closing it stops Bento.
+        </li>
+      </ol>
+
+      <h2 id="setup">3. Make your account</h2>
+      <ol class="steps">
+        <li>On the same computer, open a web browser and go to <code>http://localhost:8090</code></li>
+        <li>
+          You'll see <strong>Set up your Bento</strong>. Type your name, a username (like <code>sam</code>) and a
+          password, then click <strong>Set up Bento</strong>. You're in.
+        </li>
+      </ol>
+      <p>
+        This also makes you the server's admin, for the rare times you need its admin page (see
+        <a href="#admin">The admin page</a>). Its login is <code>yourusername@bento.local</code> with the same password.
+      </p>
+
+      <h2 id="household">4. Add your household</h2>
+      <p>
+        <strong>Just you?</strong> Skip this step. With one account, Bento leaves out the sharing parts (like who
+        added each recipe) until you add someone.
+      </p>
+      <ol class="steps">
+        <li>
+          In Bento, tap the <strong>⋮</strong> button (top right), then <strong>Share Bento</strong> (called
+          <strong>Household</strong> once there are two of you).
+        </li>
+        <li>
+          Tap <strong>+ Add someone</strong> and give them a name, username and starting password. Bento shows you what
+          to tell them. They can change their password later under <strong>⋮ → Profile</strong>.
+        </li>
+      </ol>
+      <p class="muted">Anyone in the household can add people, so you can share the job.</p>
+      <p>
+        <strong>Your country</strong> is on the same page, under <strong>Country</strong>. Bento guesses it when you
+        first log in, and it decides which grocery stores the Pantry offers (Australia: Coles and Woolworths; United
+        States: Walmart, Target and Kroger). Somewhere else? Pick <strong>Somewhere else</strong>, and you can still
+        paste any shop's product link into a pantry item.
+      </p>
+
+      <h2 id="phones">5. Get it on the phones</h2>
+      <p>
+        First the phones need a way to reach the computer. There are two ways; try the first, and use the second if it
+        doesn't work or you want Bento away from home too.
+      </p>
+
+      <h3>Way A: on the same Wi-Fi</h3>
+      <ol class="steps">
+        <li>
+          Find the computer's address: on the computer, open <strong>Settings → Network &amp; internet</strong>, click
+          your connection (<strong>Wi-Fi</strong> or <strong>Ethernet</strong>), and look for
+          <strong>IPv4 address</strong>, something like <code>192.168.1.20</code>.
+        </li>
+        <li>
+          Your <strong>server address</strong> is that plus <code>:8090</code>, like <code>192.168.1.20:8090</code>.
+        </li>
+        <li>
+          Check it: on a phone connected to the same Wi-Fi, open the browser and go to
+          <code>http://192.168.1.20:8090</code> (with your numbers). The Bento login should appear.
+        </li>
+      </ol>
+      <div class="note">
+        <strong>Doesn't load?</strong>
+        Some routers keep Wi-Fi devices apart from cabled computers, or the firewall step was skipped. Run Start
+        Bento.bat again and allow it if Windows asks, or use Way B, which always works.
+      </div>
+
+      <h3>Way B: with Tailscale (works anywhere)</h3>
+      <ol class="steps">
+        <li>
+          Install <strong>Tailscale</strong> (free, from <a href="https://tailscale.com/download">tailscale.com/download</a>)
+          on the computer and on each phone, and sign in with the <strong>same account</strong> on all of them.
+        </li>
+        <li>
+          In Tailscale on the computer, find its address: it starts with <code>100.</code>, like
+          <code>100.64.12.34</code>.
+        </li>
+        <li>Your <strong>server address</strong> is that plus <code>:8090</code>, like <code>100.64.12.34:8090</code>.</li>
+      </ol>
+
+      <h3>Install the app</h3>
+      <ol class="steps">
+        <li>
+          On the phone's browser, go to <code>http://YOUR-SERVER-ADDRESS/api/cookbook/app/download</code>, like
+          <code>http://192.168.1.20:8090/api/cookbook/app/download</code>. It downloads <strong>Bento.apk</strong>.
+        </li>
+        <li>
+          Open the download. If Android asks, allow your browser to <strong>install unknown apps</strong>. If
+          <strong>Play Protect</strong> warns about it, tap <strong>More details → Install anyway</strong>. (It warns
+          about every app that isn't from the Play Store.)
+        </li>
+        <li>Open Bento, type the <strong>server address</strong> (like <code>192.168.1.20:8090</code>), your username and password.</li>
+      </ol>
+      <p class="muted">
+        iPhones and computers can use Bento in the browser instead: go to <code>http://YOUR-SERVER-ADDRESS</code>. The
+        app is Android only.
+      </p>
+
+      <h2 id="everyday">6. Everyday use, backups and updates</h2>
+      <h3>Keep the server running</h3>
+      <p>
+        Bento only works while the black window is open on the computer. After the computer restarts, double-click
+        <strong>Start Bento.bat</strong> again.
+      </p>
+      <p>
+        <strong>To start it automatically:</strong> press <kbd>Windows key + R</kbd>, type <code>shell:startup</code>
+        and press Enter. Right-click <strong>Start Bento.bat</strong>, choose <strong>Create shortcut</strong> (on
+        Windows 11 it's under <strong>Show more options</strong>), and move the shortcut into the folder that opened.
+      </p>
+
+      <h3>Back up</h3>
+      <p>
+        Everything is in the <code>server\pb_data</code> folder. Every so often, close the black window, copy that
+        folder somewhere safe (like a USB stick), then start Bento again. To restore, put the copy back in the same
+        place.
+      </p>
+
+      <h3>Update to a new Bento</h3>
+      <ol class="steps">
+        <li>Close the black window, and copy <code>server\pb_data</code> somewhere safe first, just in case.</li>
+        <li>
+          Unzip the new Bento and copy everything from it over your Bento folder, <strong>except</strong> don't touch
+          <code>server\pb_data</code> (the new zip doesn't have one, so copying over is safe).
+        </li>
+        <li>Start Bento again. Phones offer the app update the next time Bento is opened.</li>
+      </ol>
+
+      <h3 id="admin">The admin page</h3>
+      <p>
+        For the rare jobs Bento itself doesn't do, like resetting a forgotten password or removing someone: on the
+        computer, go to <code>http://localhost:8090/_/</code> and log in with <code>yourusername@bento.local</code> and
+        the password you set up with.
+      </p>
+      <ul>
+        <li>
+          <strong>Reset a password:</strong> click <strong>users</strong> on the left, click the person, switch on
+          <strong>change password</strong>, type the new password in both boxes, and click
+          <strong>Save changes</strong>.
+        </li>
+        <li>
+          <strong>Remove someone:</strong> click the person, then the <strong>⋯</strong> at the top right of their
+          details, then <strong>Delete</strong>. Their ratings go with them; recipes they added stay.
+        </li>
+      </ul>
+      <p class="muted">
+        The admin login keeps the password you set up with, even if you change your Bento password later in Profile.
+        To change it, click your admin email at the top right of the admin page, then <strong>Manage superusers</strong>,
+        click yourself, and use <strong>change password</strong> the same way.
+      </p>
+
+      <h2 id="other">Not on Windows?</h2>
+      <p>Bento's server is a program called PocketBase, which also runs on Mac and Linux (including a Raspberry Pi).</p>
+      <ol class="steps">
+        <li>
+          Download <strong>PocketBase version 0.40.6</strong> for your system from
+          <a href="https://github.com/pocketbase/pocketbase/releases/tag/v0.40.6">its release page</a> (the file
+          ending <code>darwin_arm64.zip</code> for newer Macs, <code>linux_arm64.zip</code> for a Raspberry Pi 4 or 5).
+          It has to be this version.
+        </li>
+        <li>Unzip it and put the <code>pocketbase</code> file in Bento's <code>server</code> folder.</li>
+        <li>
+          Open Terminal, go to that folder (<code>cd</code> then drag the folder in), and run
+          <code>./pocketbase serve --http 0.0.0.0:8090</code>. On a Mac, if it's blocked, allow it in
+          <strong>System Settings → Privacy &amp; Security</strong> and run it again.
+        </li>
+        <li>Then carry on from <a href="#setup">step 3</a>.</li>
+      </ol>
+
+      <h2>If something goes wrong</h2>
+      <ul>
+        <li>
+          <strong>The black window closes straight away, or says "address already in use":</strong> Bento is probably
+          already running in another window. Look on the taskbar.
+        </li>
+        <li>
+          <strong>The login screen doesn't show "Set up your Bento":</strong> someone already set it up. Log in with
+          that account, or use the admin page to check the users.
+        </li>
+        <li><strong>A phone can't connect:</strong> check the black window is open, then try the address in the phone's browser first (step 5).</li>
+      </ul>
+    </main>
+  </body>
+</html>

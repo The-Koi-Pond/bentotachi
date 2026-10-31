@@ -1,0 +1,141 @@
+/* Bento's website (GitHub Pages), in the app's own colours. */
+:root {
+  --bg: #faf6f1;
+  --surface: #ffffff;
+  --text: #2b2420;
+  --muted: #7a6d64;
+  --border: #e6ddd3;
+  --accent: #b4532a;
+  --accent-soft: #f6e4da;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917;
+    --surface: #27221f;
+    --text: #f1ebe5;
+    --muted: #a89a8f;
+    --border: #3d3530;
+    --accent: #e07a4f;
+    --accent-soft: #3a2a22;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1,
+h2 {
+  line-height: 1.25;
+}
+
+h2 {
+  margin-top: 40px;
+}
+
+.hero {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
+.hero .logo {
+  width: 120px;
+  height: 120px;
+}
+
+.hero .title {
+  display: block;
+  width: min(320px, 80%);
+  height: auto;
+  margin: 8px auto 0;
+}
+
+.title-dark {
+  display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title-light {
+    display: none !important;
+  }
+  .title-dark {
+    display: block !important;
+  }
+}
+
+.tagline {
+  margin: 8px 0 0;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: 0.9rem;
+}
+
+.lead {
+  font-size: 1.15rem;
+  text-align: center;
+  margin: 24px auto 0;
+  max-width: 34em;
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+
+.features li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.features strong {
+  display: block;
+}
+
+.note {
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}

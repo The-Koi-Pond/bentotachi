@@ -1,0 +1,3539 @@
+:root {
+  --bg: #faf6f1;
+  --surface: #ffffff;
+  --text: #2b2420;
+  --muted: #7a6d64;
+  --border: #e6ddd3;
+  --accent: #b4532a;
+  --accent-text: #ffffff;
+  --accent-soft: #f6e4da;
+  --danger: #b3261e;
+  --success: #2e7d32;
+  /* Pantry statuses: background when selected, and its text colour. */
+  --have: #2e7d32;
+  --have-text: #ffffff;
+  --low: #e0a100;
+  --low-text: #2b2420;
+  --out: #c62828;
+  --out-text: #ffffff;
+  --gold: #e0a100;
+  --heart: #d6336c;
+  --radius: 12px;
+  --tabbar-height: 60px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1917;
+    --surface: #27221f;
+    --text: #f1ebe5;
+    --muted: #a89a8f;
+    --border: #3d3530;
+    --accent: #e07a4f;
+    --accent-text: #1c1917;
+    --accent-soft: #3a2a22;
+    --danger: #f2827a;
+    --success: #81c784;
+    --have: #66bb6a;
+    --have-text: #1c1917;
+    --low: #ffca28;
+    --low-text: #1c1917;
+    --out: #ef5350;
+    --out-text: #1c1917;
+    --gold: #ffca28;
+    --heart: #f06595;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1,
+h2 {
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.7rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  /* Room at the bottom so the tab bar never covers content. */
+  padding: 16px 16px calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 32px);
+}
+
+/* Bottom tab bar */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.tabbar a {
+  flex: 1;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.tabbar a.active {
+  color: var(--accent);
+}
+
+.tabbar a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  /* Above everything on the page, including card hearts. */
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px 6px 16px;
+  padding-top: max(6px, env(safe-area-inset-top));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The top bar's buttons (Manage, +, ⋮): all the same small circle with the
+   same size icon, so the orange + doesn't look bigger than the rest. */
+.topbar .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.topbar .icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Settings menu */
+
+.menu {
+  position: relative;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.icon-button[aria-expanded="true"] {
+  background: var(--accent-soft);
+}
+
+/* Filled orange circle: the main action (+), or Manage while it's on. */
+.icon-button.primary,
+.icon-button.primary:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.icon-button:focus-visible,
+.menu-panel button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+}
+
+.menu-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.menu-panel button:hover {
+  background: var(--accent-soft);
+}
+
+.menu-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.menu-panel button:disabled {
+  cursor: default;
+}
+
+/* "Bento 1.3 is ready [Update] [Later]" */
+.update-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.update-banner p {
+  margin: 0;
+}
+
+.menu-note {
+  margin: 0;
+  padding: 6px 12px 8px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s;
+}
+
+[aria-checked="true"] > .switch {
+  background: var(--accent);
+}
+
+[aria-checked="true"] > .switch::after {
+  transform: translateX(16px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.brand:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The drawn "Bento" title in the top bar. */
+.brand-title {
+  display: block;
+  height: 30px;
+  width: auto;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.narrow {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  margin: 0;
+}
+
+.success {
+  color: var(--success);
+  margin: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-head .button {
+  gap: 6px;
+}
+
+/* Shopping list */
+
+.add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.shopping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.shopping-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 14px;
+}
+
+.shopping-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.shopping-list label {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  font-weight: 400;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.shopping-list label > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.shopping-list .ticked .item-text {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.item-source {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Dinner plan */
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.week-nav .icon-button {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* "List | Month" */
+.view-switch {
+  display: flex;
+  padding: 3px;
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.view-switch button {
+  min-height: 32px;
+  padding: 2px 14px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.view-switch button[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+
+.view-switch button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The date range (or month) and the ‹ Today › buttons. */
+.plan-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-hint {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.plan-hint svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+.plan-days {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.plan-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 6px 8px 6px 12px;
+  transition: background 0.1s;
+}
+
+.plan-day + .plan-day {
+  border-top: 1px solid var(--border);
+}
+
+/* A thicker line between this week and next. */
+.plan-day.week-break {
+  border-top: 3px solid var(--border);
+}
+
+.plan-day.past {
+  opacity: 0.55;
+}
+
+.plan-day.today .plan-date strong {
+  color: var(--accent);
+}
+
+/* The night a dragged dinner would land on. */
+.plan-day.drop-here {
+  background: var(--accent-soft);
+}
+
+.plan-date {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 52px;
+  line-height: 1.2;
+}
+
+.plan-date span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.plan-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-add {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  color: var(--muted);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.plan-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dinner-slot {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* The original stays put (faded) while its copy follows your finger. */
+.dinner-slot.dragging {
+  opacity: 0.35;
+}
+
+/* Only the handle starts a drag, so scrolling the list still works. */
+.drag-handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:focus-visible,
+.plan-add:focus-visible,
+.dinner-card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dinner-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.dinner-card img,
+.dinner-no-photo {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.dinner-no-photo {
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+}
+
+.dinner-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The copy that follows your finger while dragging. */
+.dinner-card.lifted {
+  padding: 6px 10px 6px 6px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+}
+
+/* The dinner chooser: a panel that slides up from the bottom. */
+.sheet {
+  width: min(760px, 100%);
+  max-width: 100%;
+  max-height: 88vh;
+  margin: auto auto 0;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25);
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.sheet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 88vh;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sheet-head h2 {
+  font-size: 1.1rem;
+}
+
+/* "or choose a recipe", between the note box and the recipe search. */
+.sheet-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.sheet-divider::before,
+.sheet-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+/* Note nights ("Take-away night") have a paper tile instead of a photo. */
+.dinner-no-photo.note {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+}
+
+.note-card .dinner-title {
+  font-style: italic;
+}
+
+.filter-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chooser-count {
+  align-self: center;
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+/* The scrolling list of recipes to choose from. */
+.chooser-list {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0 -6px;
+}
+
+.chooser-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.chooser-list button:hover {
+  background: var(--accent-soft);
+}
+
+.chooser-list button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.chooser-list img,
+.chooser-list .dinner-no-photo {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.chooser-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chooser-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.chooser-heart {
+  display: inline-flex;
+  color: var(--heart);
+}
+
+.chooser-details {
+  font-size: 0.82rem;
+}
+
+.chooser-planned {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* "Out of Rice" under a recipe in the dinner chooser. */
+.chooser-out {
+  color: var(--out);
+  font-weight: 600;
+}
+
+/* "🎲 Surprise me" and the recipe count. */
+.chooser-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Bento's random pick, above the list. */
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border-radius: 12px;
+}
+
+.suggestion-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.suggestion-recipe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-recipe img,
+.suggestion-recipe .dinner-no-photo {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Month view */
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.month-weekday {
+  padding-bottom: 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--muted);
+}
+
+.month-cell {
+  border-radius: 8px;
+}
+
+.month-cell-button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 1 / 1.15;
+  padding: 3px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.month-cell-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.month-day {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: left;
+}
+
+.month-cell.other-month .month-cell-button {
+  opacity: 0.4;
+}
+
+.month-cell.today .month-day {
+  color: var(--accent);
+}
+
+.month-cell.today .month-cell-button {
+  border-color: var(--accent);
+}
+
+.month-cell.selected .month-cell-button {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* The day a dragged dinner would land on. */
+.month-cell.drop-here .month-cell-button {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* The dinner picture fills the rest of the day. Dragging it doesn't scroll. */
+.cell-thumb-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  touch-action: none;
+  cursor: grab;
+}
+
+.cell-thumb-wrap.dragging {
+  opacity: 0.35;
+}
+
+.cell-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.cell-thumb.dinner-no-photo {
+  font-size: 1rem;
+}
+
+/* The copy that follows your finger while dragging in the month view. */
+.cell-thumb.lifted {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+}
+
+.selected-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.selected-day h2 {
+  font-size: 1rem;
+}
+
+/* "📅 Plan" on a recipe page, and its little pop-up. */
+.title-actions {
+  position: relative;
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.title-actions .button {
+  gap: 6px;
+}
+
+.plan-popup {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.plan-popup p {
+  margin: 0;
+}
+
+/* Browse */
+
+.site-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.site-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.site-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 14px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-row:hover {
+  background: var(--accent-soft);
+}
+
+.site-row:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.site-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-name {
+  font-weight: 600;
+}
+
+.site-about,
+.site-note {
+  font-size: 0.88rem;
+}
+
+.site-note {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.site-go {
+  flex: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Pantry */
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chips button {
+  min-height: 36px;
+  padding: 4px 14px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filter-chips button[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.filter-chips button.plain {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Collapsible drawers for places and subcategories */
+
+.pantry-group h2,
+.pantry-subgroup h3 {
+  margin: 0;
+}
+
+.drawer-toggle {
+  display: flex;
+  /* Badges move under the name when there isn't room beside it. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.drawer-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.place-toggle {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.sub-toggle {
+  min-height: 40px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: transform 0.15s;
+}
+
+.drawer-toggle[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+.drawer-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 6px;
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.badge {
+  white-space: nowrap;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.badge-low {
+  background: var(--low);
+  color: var(--low-text);
+}
+
+.badge-out {
+  background: var(--out);
+  color: var(--out-text);
+}
+
+/* Expiry badges are outlined, so they don't read as Low/Out. */
+.badge-expired {
+  border: 1.5px solid var(--out);
+  color: var(--out);
+}
+
+.badge-soon {
+  border: 1.5px solid var(--low);
+  color: var(--text);
+}
+
+.expiry {
+  font-size: 0.85rem;
+}
+
+.expiry-later {
+  color: var(--muted);
+}
+
+.expiry-soon {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.expiry-soon::before {
+  content: "● ";
+  color: var(--low);
+}
+
+.expiry-expired {
+  color: var(--out);
+  font-weight: 700;
+}
+
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pantry-group {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 0 12px 26px;
+}
+
+.pantry-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pantry-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.pantry-list > li + li {
+  border-top: 1px solid var(--border);
+}
+
+.pantry-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 8px 14px;
+}
+
+.pantry-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pantry-name {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pantry-name:focus-visible,
+.status-picker button:focus-visible,
+.link-button:focus-visible,
+.filter-chips button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.status-picker {
+  flex: none;
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.status-picker button {
+  min-width: 48px;
+  min-height: 36px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.status-picker button + button {
+  border-left: 1px solid var(--border);
+}
+
+.status-picker .status-have[aria-pressed="true"] {
+  background: var(--have);
+  color: var(--have-text);
+}
+
+.status-picker .status-low[aria-pressed="true"] {
+  background: var(--low);
+  color: var(--low-text);
+}
+
+.status-picker .status-out[aria-pressed="true"] {
+  background: var(--out);
+  color: var(--out-text);
+}
+
+.on-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.link-button {
+  align-self: flex-start;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.pantry-edit {
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.push-right {
+  margin-left: auto;
+}
+
+.icon-button.small {
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+}
+
+.hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 400;
+}
+
+/* Forms */
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+input[type="file"] {
+  padding: 8px;
+}
+
+select {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* "+ New place…": a text box with a Cancel button beside it. */
+.new-category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.new-category input {
+  flex: 1;
+  min-width: 0;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.button:focus-visible,
+.step:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.search {
+  font-size: 1.05rem;
+  padding: 12px 14px;
+}
+
+/* Buttons */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.button.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+
+.button.small {
+  min-height: 36px;
+  padding: 4px 14px;
+  font-size: 0.92rem;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* A row of buttons, lined up on the right: the main one (Save, Add…) last,
+   in the right-hand corner, with Cancel just before it. Delete, Remove or
+   Reset go first with .push-left, away on the left. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.push-left {
+  margin-right: auto;
+}
+
+/* Profile picture's Change/Remove sit beside the picture, not at a form's end. */
+.profile-picture .actions {
+  justify-content: flex-start;
+}
+
+/* Login and empty state */
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.login .login-card {
+  width: min(400px, 100%);
+}
+
+/* The onigiri above the drawn title on the login screen. */
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.login-brand h1 {
+  margin: 0;
+  line-height: 0;
+}
+
+.login-logo {
+  width: 112px;
+  height: auto;
+}
+
+.login-title {
+  height: 64px;
+  width: auto;
+}
+
+/* "RECIPES · PLAN · PANTRY · TOGETHER" under the title. Written in normal
+   case so screen readers say the words, not the letters. */
+.login-tagline {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.empty {
+  text-align: center;
+  align-items: center;
+}
+
+/* Recipe list */
+
+.recipe-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.recipe-card {
+  position: relative;
+  /* Flex column keeps contents at the top; buttons centre them otherwise. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.recipe-card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Delete mode: a red bin where the heart usually sits on each card. */
+.delete-toggle {
+  position: absolute;
+  /* Above the card, which comes after it in the page and would cover it. */
+  z-index: 1;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #fff;
+  background: var(--danger);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+  cursor: pointer;
+}
+
+.delete-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.delete-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.recipe-card.deleting {
+  opacity: 0.4;
+}
+
+.recipe-card img,
+.no-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.no-photo {
+  display: grid;
+  place-items: center;
+  font-size: 2.5rem;
+  background: var(--accent-soft);
+}
+
+.recipe-card-text {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+
+/* Names stay on one line and end in "…" if too long. */
+.recipe-card-text strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phones: three small cards per row. */
+@media (max-width: 520px) {
+  .recipe-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .recipe-card {
+    border-radius: 10px;
+  }
+
+  .recipe-card-text {
+    padding: 6px 8px 8px;
+    font-size: 0.85rem;
+    line-height: 1.25;
+  }
+
+  .recipe-card-text .muted {
+    font-size: 0.78rem;
+  }
+
+  .no-photo {
+    font-size: 1.6rem;
+  }
+}
+
+/* Recipe page */
+
+.hero,
+.photo-preview {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.photo-preview {
+  max-width: 300px;
+}
+
+/* Ratings, favorites and thumbs up */
+
+.star-gold {
+  color: var(--gold);
+}
+
+.reactions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.reaction-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.star-picker {
+  display: flex;
+  flex: none;
+}
+
+.star-picker button {
+  width: 34px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--border);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.star-picker button.on {
+  color: var(--gold);
+}
+
+.star-picker button:focus-visible,
+.favorites-button:focus-visible,
+.heart-toggle:focus-visible,
+.thumb-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* Heart beside "What we think": outline when off, filled pink when on. */
+.heart-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--heart);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.heart-toggle:hover {
+  background: var(--accent-soft);
+}
+
+/* Over the recipe photo: in its top-right corner, hanging a little off the
+   edge like a badge, on a round white backdrop. */
+.hero-wrap {
+  position: relative;
+}
+
+.heart-toggle.on-photo {
+  position: absolute;
+  /* Above the photo (and on cards, above the card that comes after it). */
+  z-index: 1;
+  top: -8px;
+  right: -8px;
+  background: rgb(255 255 255 / 0.95);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+/* Not a favorite yet: a quiet grey heart. Its circle is solid, as half of
+   it sits off the photo. */
+.heart-toggle.on-photo[aria-pressed="false"] {
+  color: #8a827c;
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+
+.heart-toggle.on-photo[aria-pressed="false"]:hover,
+.heart-toggle.on-photo[aria-pressed="false"]:focus-visible {
+  color: var(--heart);
+}
+
+/* Smaller heart for recipe cards; still a comfortable tap target. */
+.heart-toggle.on-photo.small {
+  top: -6px;
+  right: -6px;
+  width: 30px;
+  height: 30px;
+}
+
+/* Cards: the heart sits beside the card's link, over its photo. */
+.recipe-tile {
+  position: relative;
+}
+
+.card-photo {
+  position: relative;
+  display: block;
+}
+
+/* ⚡ in the top-left corner of a quick recipe's picture. */
+.quick-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  /* Bright yellow on a dark disc with a white ring: food photos are mostly
+     yellows and browns, which a gold badge disappeared into. */
+  color: #ffd43b;
+  background: rgb(28 24 21 / 0.85);
+  border: 1.5px solid rgb(255 255 255 / 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+.hero-wrap .quick-badge {
+  top: 10px;
+  left: 10px;
+  width: 44px;
+  height: 44px;
+}
+
+.quick-button {
+  flex: none;
+  padding: 8px 12px;
+  color: #a37500;
+}
+
+.quick-button.primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #2b2420;
+}
+
+.quick-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* "Quick means [30 min or less]" in the settings menu. */
+.menu-setting {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 12px;
+  font-weight: 400;
+}
+
+.menu-setting > span {
+  white-space: nowrap;
+}
+
+.menu-setting select {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.reaction-toggles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Each person's stars as a small pill in their color. */
+.rating-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--person, var(--accent));
+  border-radius: 999px;
+}
+
+/* Thumbs up beside "What we think": grey outline when off, filled in your
+   own color (or the orange, if you haven't picked one) when on. */
+.thumb-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.thumb-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.thumb-toggle[aria-pressed="true"] {
+  color: var(--person, var(--accent));
+}
+
+/* A person's name in their color. */
+.person-name {
+  font-weight: 700;
+  color: var(--person, var(--accent));
+}
+
+/* Color swatches (Profile > My color). */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swatch {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-height: 0;
+  padding: 0;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+.swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.swatch:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* "★ 4 average" followed by each person's pill. */
+.rating-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Recipe list: heart filter and the details line on cards */
+
+.favorites-button {
+  flex: none;
+  padding: 8px 12px;
+  color: var(--heart);
+}
+
+.favorites-button.primary {
+  background: var(--heart);
+  border-color: var(--heart);
+  color: #fff;
+}
+
+.card-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+}
+
+.card-thumb {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.description-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.description-box.expandable {
+  cursor: pointer;
+}
+
+.description {
+  margin: 0;
+  /* Keep line breaks typed into hand-written descriptions. */
+  white-space: pre-line;
+}
+
+.description.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-row .button {
+  flex: none;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+.tags li a {
+  display: inline-block;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* Tag filter on the recipe list */
+
+.tag-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Icon only, the same size as the ⚡ and ♥ buttons beside it. */
+.tags-button {
+  flex: none;
+  padding: 8px 12px;
+}
+
+.tag-bar .link-button {
+  align-self: center;
+}
+
+.tag-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tag-chip.selected {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.tag-chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tag-chip:focus-visible,
+.tags a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tag-count {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.recipe section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipe section > p {
+  margin: 0;
+}
+
+.checklist,
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checklist label {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  font-weight: 400;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+/* An ingredient with its pantry status on the right. */
+.ingredient-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ingredient-row label {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-dot {
+  flex: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.status-dot.status-have {
+  background: var(--have);
+}
+
+.status-dot.status-low {
+  background: var(--low);
+}
+
+.status-dot.status-out {
+  background: var(--out);
+}
+
+/* "● Have" beside an ingredient. A dotted outline means Bento guessed. */
+.pantry-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  margin-top: 3px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pantry-chip.guessed {
+  border-style: dashed;
+}
+
+.pantry-chip.status-low {
+  border-color: var(--low);
+}
+
+.pantry-chip.status-out {
+  border-color: var(--out);
+  color: var(--out);
+}
+
+/* Faint, so lines like "water" stay quiet. */
+.pantry-link-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 3px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.pantry-link-button:hover,
+.pantry-link-button:focus-visible {
+  opacity: 1;
+  background: var(--accent-soft);
+}
+
+.pantry-chip:focus-visible,
+.pantry-link-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.link-now {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.chooser-list .status-dot {
+  margin: 0 6px;
+}
+
+.chooser-list button[aria-pressed="true"] {
+  background: var(--accent-soft);
+}
+
+.list-heading {
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.step {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.step.done {
+  opacity: 0.55;
+}
+
+.step-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.notes {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.small-print {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-size: 0.92rem;
+}
+
+.small-print p {
+  margin: 0;
+}
+
+/* Buttons above the plan: "Shop for these". */
+.plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* "Shop for the planned dinners" panel. */
+.week-dinners {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.week-list {
+  margin: 0;
+}
+
+.week-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.week-row-for {
+  font-size: 0.8rem;
+}
+
+.week-row-state {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.week-row-state.status-out {
+  color: var(--out);
+}
+
+.suggestion .dinner-no-photo {
+  background: var(--surface);
+}
+
+/* "12 recipes" and the Sort menu, above the recipe grid. */
+.list-options {
+  display: flex;
+  /* On very narrow phones Sort drops below rather than overflowing. */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 8px;
+  font-size: 0.88rem;
+}
+
+.sort-picker {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}
+
+.sort-picker select {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.88rem;
+}
+
+/* Our own sites on the Browse tab: the link, then a ✕ to remove it. */
+.site-saved {
+  display: flex;
+  align-items: center;
+}
+
+.site-saved .site-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-saved .site-remove {
+  flex: none;
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.add-site-button {
+  align-self: flex-start;
+}
+
+/* "Last had 2 weeks ago" on a recipe page. */
+.plan-history {
+  margin: -4px 0 0;
+  font-size: 0.88rem;
+}
+
+/* "Offline. Showing the recipes saved on this phone…" */
+.offline-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: var(--accent-soft);
+  border-radius: 12px;
+}
+
+.offline-note .button {
+  flex: none;
+}
+
+/* Profile pictures, or a first letter on the person's color. */
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-initial {
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--person, var(--accent));
+}
+
+/* The top of the ⋮ menu: your picture and name, opening Profile. */
+.menu-panel .menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+
+.menu-panel .menu-profile:hover,
+.menu-panel .menu-profile:focus-visible {
+  background: var(--accent-soft);
+}
+
+.menu-profile .menu-item-text {
+  flex: 1;
+}
+
+.menu-profile svg {
+  color: var(--muted);
+}
+
+/* Profile page: the picture beside your name and its buttons. */
+.profile-picture {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-picture-side {
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 1.15rem;
+}
+
+.profile-color {
+  gap: 10px;
+}
+
+/* "Coles ↗": a pantry item's product page (pantry rows and the shopping list). */
+.store-link {
+  flex: none;
+  align-self: flex-start;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.store-link:hover,
+.store-link:focus-visible {
+  text-decoration: underline;
+}
+
+.shopping-list .store-link {
+  align-self: center;
+  padding: 6px 4px;
+}
+
+/* The Store link box in a pantry item's form, with its store buttons. */
+.store-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.store-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.small-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* A store's logo standing in for its name (Coles, Woolworths). */
+.store-logo {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 5px;
+}
+
+.store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.store-buttons .button {
+  gap: 6px;
+}
+
+.store-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* A pantry item's brand and store link, under its name. */
+.pantry-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.pantry-brand,
+.item-brand {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* On the shopping list, the brand sits on its own line under the item. */
+.item-brand {
+  display: block;
+}
+
+/* A field's name with "(optional)" beside it, on one line. */
+.label-text {
+  display: block;
+}
+
+.optional {
+  font-size: 0.85em;
+  font-weight: 400;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+/* A rating pill with thumbs-down reasons: a button that shows them. */
+button.rating-pill {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.rating-pill[aria-expanded="true"] {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--person, var(--accent));
+}
+
+button.rating-pill:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Thumbs-down reasons as tags ("baked pineapple"). */
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.reason-tag button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: -6px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.reason-tag button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Your own reasons, under the stars, while your thumbs down is on. */
+.reasons-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.reasons-question {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Someone's reasons, shown after tapping their pill. */
+.dislike-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  border-left: 3px solid var(--person, var(--accent));
+  border-radius: 8px;
+}
+
+/* Recipe cards: someone's thumbs down, quieter than a thumbs up. */
+.card-thumb.down {
+  color: var(--muted);
+}
+
+/* Stars plus thumbs up, thumbs down and (without a photo) the heart: a
+   little narrower each, so the row fits a phone. On very narrow screens
+   the buttons wrap onto a second line rather than sticking out. */
+.reaction-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reactions .star-picker button {
+  width: 31px;
+}
+
+.reaction-toggles {
+  gap: 0;
+  margin-left: auto;
+}
+
+.reaction-toggles .thumb-toggle,
+.reaction-toggles .heart-toggle {
+  width: 38px;
+}
+
+/* The + at the end of your reasons, and the small box it turns into. */
+.reason-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.reason-add.with-text {
+  padding: 0 12px 0 8px;
+}
+
+.reason-add svg {
+  width: 16px;
+  height: 16px;
+}
+
+.reason-add:hover,
+.reason-add:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.reason-typing {
+  padding: 0;
+  border-color: var(--accent);
+}
+
+.reason-typing input {
+  width: 11em;
+  min-height: 28px;
+  padding: 2px 12px;
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  outline: none;
+}
+
+/* "Added by" in the tag panel: one chip per person, in their color. */
+.tag-panel-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tag-panel-label {
+  font-size: 0.85rem;
+}
+
+.tag-chip.person-chip {
+  font-weight: 600;
+  color: var(--person, var(--accent));
+  background: none;
+  border-color: var(--person, var(--accent));
+}
+
+.tag-chip.person-chip.selected {
+  color: #fff;
+  background: var(--person, var(--accent));
+}
+
+footer .person-name {
+  text-decoration: none;
+}
+
+footer .person-name:hover,
+footer .person-name:focus-visible {
+  text-decoration: underline;
+}
+
+/* The ⋮ menu's Household link, styled like its buttons. */
+.menu-panel .menu-link {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.menu-panel .menu-link:hover,
+.menu-panel .menu-link:focus-visible {
+  background: var(--accent-soft);
+}
+
+/* Household page: everyone with an account. */
+.household-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px;
+}
+
+.household-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.household-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.household-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.household-username {
+  font-size: 0.85rem;
+}
+
+/* "Alex can log in now. Tell them:" */
+.added-person {
+  border-color: var(--have);
+}
+
+.login-details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.login-details dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.login-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* "Set up your Bento" on a brand-new server. */
+.setup-intro h2 {
+  margin: 0 0 4px;
+}
+
+.setup-intro p {
+  margin: 0;
+}
+
+/* A box with a ✕ inside on the right that empties it (Add recipe's link). */
+.clearable {
+  position: relative;
+}
+
+.clearable input {
+  padding-right: 48px;
+}
+
+.clearable .clear-field {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.clearable .clear-field:hover,
+.clearable .clear-field:focus-visible {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.clearable .clear-field:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Recipes page shelves: one per category, each a drawer that opens and
+   closes, holding all its recipe cards. */
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The grip to drag a shelf, then its name (which opens and closes it). */
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: -8px;
+}
+
+.shelf-head h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.shelf-handle,
+.shelf-handle-space {
+  flex: none;
+  width: 32px;
+}
+
+.shelf.dragging {
+  opacity: 0.4;
+}
+
+/* The shelf a dragged one would take the place of. */
+.shelf.drop-here .shelf-head {
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.shelf-lifted {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 10px 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+}
+
+.shelf .recipe-grid {
+  padding-bottom: 8px;
+}
+
+.shelf-toggle {
+  font-weight: 700;
+}
+
+.shelf-toggle .drawer-counts {
+  margin-left: 0;
+  font-weight: 400;
+}
+
+/* Between the recipe count and Sort: "One list · Edit categories" (or
+   "Show shelves"). */
+.list-options-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* "91 recipes" stays on one line beside them. */
+.list-options > .muted {
+  white-space: nowrap;
+}
+
+.list-options-link {
+  flex: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: inherit;
+  text-decoration: none;
+}
+
+.list-options-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.shelf-empty {
+  margin: 0;
+  padding: 0 0 8px 26px;
+}
+
+/* Categories page */
+.category-head {
+  display: flex;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.category-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.category-moves {
+  display: flex;
+  margin-left: auto;
+  font-size: 1.1rem;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip.static {
+  cursor: default;
+}
+
+.tag-chip.selected .tag-count {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.category-edit,
+.add-typed-tag {
+  align-self: flex-start;
+}
+
+.category-suggestions {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.field-label {
+  font-weight: 600;
+}
+
+/* Recipe form: tappable tags under the tag box. */
+.tag-field {
+  gap: 10px;
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tag-suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-suggestion-row .tag-panel-label {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+}
+
+/* Tags the recipe itself mentions: outlined, to stand out from the rest. */
+.tag-chip.suggested {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Recipe list tag panel: "Show recipes [With | Without]" above the tags. */
+.tag-panel-mode {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* A left-out tag above the list: outlined in red, "without dessert ×". */
+.tag-chip.excluded {
+  background: var(--surface);
+  border-color: var(--danger);
+  font-weight: 600;
+}
+
+.tag-without {
+  font-weight: 400;
+  color: var(--danger);
+}
+
+/* Recipe page: changing one part right here (✎ beside its heading). */
+.facts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* "Add to shopping list" under a recipe's ingredients. */
+.add-to-list {
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.section-edit {
+  flex: none;
+}
+
+.inline-editor .hint {
+  margin: 0;
+}
+
+.add-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+
+/* Quick tags: "+" after a recipe's tags, and × on each while open. */
+.tags .tag-add,
+.tags .tag-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tags .tag-add {
+  color: var(--accent);
+  font-weight: 700;
+  background: none;
+  border: 1px dashed var(--accent);
+}
+
+.tags .tag-add.open {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-style: solid;
+}
+
+.tags .tag-add:focus-visible,
+.tags .tag-remove:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.quick-tag-panel {
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Recipe text in *asterisks*: soft grey italics (see SoftText.tsx). */
+em.soft {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Household page: the country's store logos after "Stores:". */
+.country-stores {
+  margin: 0;
+}
+
+.country-stores .store-logo {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Photo framer: drag the photo inside a card-shaped frame, zoom with the
+   slider. touch-action: none so dragging doesn't scroll the page. */
+.framer-frame {
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.framer-frame:active {
+  cursor: grabbing;
+}
+
+.framer-frame:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.framer-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.framer-zoom {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.framer-zoom input {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+/* The photo on a recipe page can be double-tapped to adjust it. */
+.hero {
+  cursor: zoom-in;
+}
+
+.photo-adjust {
+  align-self: flex-start;
+}
+
+.photo-preview {
+  aspect-ratio: 3 / 2;
+}
+
+/* How round each zoomed photo's clip is (photoFraming.ts): the same as its
+   own corners. Cards and the framer's frame are clipped by their box. */
+.hero,
+.photo-preview {
+  --photo-radius: var(--radius);
+}
+
+.cell-thumb {
+  --photo-radius: 5px;
+}
+
+.chooser-list img {
+  --photo-radius: 8px;
+}
+
+/* A zoomed photo is enlarged in place (photoFraming.ts), and browsers keep
+   room for the enlarged size even though it's clipped back, which could
+   make the page scroll sideways. The boxes around photos clip it instead.
+   (overflow: hidden first for browsers without clip.) */
+.hero-clip,
+.card-photo,
+.cell-thumb-wrap,
+.dinner-card,
+.chooser-list button,
+.photo-preview-box {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* Just the recipe page's photo (not its heart, which hangs off the edge). */
+.hero-clip {
+  display: block;
+  border-radius: var(--radius);
+}
+
+.hero-clip .hero {
+  display: block;
+}
+
+.photo-preview-box {
+  display: block;
+  max-width: 300px;
+  border-radius: var(--radius);
+}
+
+/* Recipe timer (RecipeTimer.tsx): "⏱ Time it" under the times, then a card
+   with a prep and a cook clock. */
+.timer-start {
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+.recipe-timer {
+  gap: 10px;
+}
+
+.timer-stages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.timer-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.timer-stage.current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.timer-stage.later {
+  opacity: 0.55;
+}
+
+.timer-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.timer-clock {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-stage.done-stage .timer-clock {
+  font-size: 1.15rem;
+  padding-top: 6px;
+}
+
+.timer-paused {
+  margin: 0;
+}
+
+.timer-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.timer-result {
+  margin: 0;
+  font-weight: 600;
+}
+
+.recipe-timer p.muted {
+  margin: 0;
+}
+
+.timer-rounding {
+  font-weight: 400;
+  font-size: 0.88rem;
+}
+
+/* "Last had … · We cooked this" under the ratings on a recipe page. */
+.cook-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.cook-history .plan-history {
+  margin: 0;
+}
+
+.cooked-button {
+  flex: none;
+}
+
+.cooked-undo {
+  flex: none;
+  font-size: 0.88rem;
+}
+
+/* Extra times like "Cool 420 = 7 h ✕" under Prep / Cook / Total in the
+   recipe editors. */
+.extra-times {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.extra-time {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.8rem 3.2rem 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.extra-time-hint {
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+/* Room for "1440" without the up/down arrows (phones don't show them). */
+.extra-time input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.extra-time input[type="number"]::-webkit-inner-spin-button,
+.extra-time input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* A recipe text box with B / I / U above it (FormatTextarea.tsx). The
+   buttons come after the box in the page, so they're moved up here. */
+.format-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.format-bar {
+  order: -1;
+  display: flex;
+  gap: 4px;
+}
+
+.format-button {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.format-button:hover {
+  background: var(--accent-soft);
+}
+
+.format-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.format-bold {
+  font-weight: 800;
+}
+
+.format-soft {
+  font-style: italic;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.format-underline {
+  text-decoration: underline;
+}
+
+/* Author's notes as separate boxes, like the method (NoteList.tsx). */
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-list p {
+  margin: 0;
+}
+
+.note-item {
+  display: flex;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.note-lines,
+.note-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.note-text {
+  padding: 4px 0;
+}
+
+/* A dash or bullet: a dot in the same place as a step's number. */
+.note-bullet {
+  flex: none;
+  width: 28px;
+  height: 1.5em;
+  display: grid;
+  place-items: center;
+}
+
+.note-bullet::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}

@@ -1,0 +1,187 @@
+import { useEffect, useState } from "react";
+import { errorMessage, type Recipe } from "./pb";
+import { extraTimes, formatMinutes, totalMinutes } from "./format";
+import {
+  clock,
+  elapsed,
+  finished,
+  paused,
+  recipeMinutes,
+  resumed,
+  startCooking,
+  startTimer,
+  type TimerState,
+} from "./cookTiming";
+
+// "⏱ Time it" on a recipe: a prep-then-cook stopwatch to find out how long
+// the recipe really takes, then an offer to save that as its times. Kept on
+// this device per recipe, so it carries on if the page is left or the
+// phone locks (see cookTiming.ts).
+
+const key = (recipeId: string) => `bento.timer.${recipeId}`;
+
+function load(recipeId: string): TimerState | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key(recipeId)) ?? "null");
+    return saved && typeof saved.stage === "string" ? (saved as TimerState) : null;
+  } catch {
+    return null;
+  }
+}
+
+function store(recipeId: string, state: TimerState | null) {
+  try {
+    if (state) localStorage.setItem(key(recipeId), JSON.stringify(state));
+    else localStorage.removeItem(key(recipeId));
+  } catch {
+    // Not kept: the timer still works while the page stays open.
+  }
+}
+
+export default function RecipeTimer({
+  recipe,
+  onSave,
+  onFinished,
+}: {
+  recipe: Recipe;
+  onSave: (changes: Partial<Recipe>) => Promise<void>;
+  // Finishing means it was cooked: the recipe page marks it cooked today.
+  onFinished: () => void;
+}) {
+  const [state, setStateRaw] = useState<TimerState | null>(() => load(recipe.id));
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const setState = (next: TimerState | null) => {
+    setStateRaw(next);
+    store(recipe.id, next);
+    setNow(Date.now());
+  };
+
+  // Tick once a second while a stage is running.
+  const running = !!state && state.stage !== "done" && state.runningSince !== null;
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [running]);
+
+  if (!state) {
+    return (
+      <button className="link-button timer-start" onClick={() => setState(startTimer(Date.now()))}>
+        ⏱ Time it
+      </button>
+    );
+  }
+
+  const time = elapsed(state, now);
+  // Each button reads the clock when it's tapped: while paused nothing
+  // re-renders, so a time taken at render would be from when it paused.
+  const act = (change: (current: TimerState, at: number) => TimerState) => setState(change(state, Date.now()));
+
+  // Stop part-way asks first (it can't be undone); Discard on the result
+  // doesn't, as that's what it says.
+  function forget() {
+    setState(null);
+    setError("");
+  }
+
+  function stop() {
+    if (time.prep + time.cook > 60_000 && !window.confirm("Stop timing and forget it?")) return;
+    forget();
+  }
+
+  async function save() {
+    const prep = recipeMinutes(time.prep);
+    const cook = recipeMinutes(time.cook);
+    setBusy(true);
+    setError("");
+    try {
+      // The total keeps any extra times like "Cool 7 h", which aren't timed.
+      const extra = extraTimes(recipe).reduce((sum, time) => sum + time.minutes, 0);
+      await onSave({ prep_minutes: prep, cook_minutes: cook, total_minutes: prep + cook + extra });
+      setState(null);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+    setBusy(false);
+  }
+
+  if (state.stage === "done") {
+    const prep = recipeMinutes(time.prep);
+    const cook = recipeMinutes(time.cook);
+    const said = [
+      recipe.prep_minutes ? `prep ${formatMinutes(recipe.prep_minutes)}` : "",
+      recipe.cook_minutes ? `cook ${formatMinutes(recipe.cook_minutes)}` : "",
+    ].filter(Boolean);
+    const recipeTotal = totalMinutes(recipe);
+    return (
+      <section className="card stack recipe-timer" aria-label="Recipe timer">
+        <h2 className="timer-title">⏱ You took {formatMinutes(prep + cook) || "under a minute"}</h2>
+        <p className="timer-result">
+          Prep {prep ? formatMinutes(prep) : "none"}, cook {formatMinutes(cook) || "none"}.
+          {(prep >= 10 || cook >= 10) && <span className="muted timer-rounding"> (Rounded to 5 minutes, like recipes.)</span>}
+        </p>
+        <p className="muted">
+          {said.length
+            ? `The recipe says ${said.join(", ")}${recipeTotal && said.length > 1 ? ` (${formatMinutes(recipeTotal)})` : ""}.`
+            : recipeTotal
+              ? `The recipe says ${formatMinutes(recipeTotal)} in all.`
+              : "The recipe doesn't say how long it takes."}
+        </p>
+        <p className="muted">✓ Marked as cooked today.</p>
+        {error && <p className="error">{error}</p>}
+        <div className="actions">
+          <button className="button ghost" onClick={forget} disabled={busy}>
+            Discard
+          </button>
+          <button className="button primary" onClick={() => void save()} disabled={busy}>
+            {busy ? "Saving…" : "Save these times"}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const isPaused = state.runningSince === null;
+  const cooking = state.stage === "cook";
+  return (
+    <section className="card stack recipe-timer" aria-label="Recipe timer">
+      <div className="timer-stages">
+        <div className={`timer-stage ${cooking ? "done-stage" : "current"}`}>
+          <span className="timer-label">Prep</span>
+          <span className="timer-clock">{cooking && time.prep < 1000 ? "none" : clock(time.prep)}</span>
+        </div>
+        <div className={`timer-stage ${cooking ? "current" : "later"}`}>
+          <span className="timer-label">Cook</span>
+          <span className="timer-clock">{cooking ? clock(time.cook) : "–"}</span>
+        </div>
+      </div>
+      {isPaused && <p className="muted timer-paused">Paused</p>}
+      <div className="actions">
+        <button className="button ghost push-left" onClick={stop}>
+          Stop
+        </button>
+        <button className="button" onClick={() => act(isPaused ? resumed : paused)}>
+          {isPaused ? "Resume" : "Pause"}
+        </button>
+        {cooking ? (
+          <button
+            className="button primary"
+            onClick={() => {
+              act(finished);
+              onFinished();
+            }}
+          >
+            Finished
+          </button>
+        ) : (
+          <button className="button primary" onClick={() => act(startCooking)}>
+            {time.prep < 60_000 ? "No prep, start cooking" : "Prep done, start cooking"}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
