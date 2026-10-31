@@ -142,6 +142,17 @@ Changes already live in the browser version, not yet in a published APK
   Heijn's and Jumbo's block automated browsers from Australia, so a Dutch
   tester should try them. Product names from Dutch links and titles are
   tidied ("Nu bij Dirk", "bestellen", Jumbo's "-67649PAK", "6 stuks").
+- Spoons and millilitres (web/src/volumes.ts; new `tablespoon` field on
+  household_settings): "Our tablespoon" on the Household page (15 ml, or
+  the Australian 20 ml). A recipe's tablespoon is guessed from its website
+  (`.au` sites: 20 ml; RecipeTin Eats uses 15 ml), and when it isn't ours
+  the hint says "2 tbsp (your 1 tbsp + 2 tsp)". Outside the US, cups (not
+  in Australia), fl oz, pints, quarts and gallons get ml; in the US, ml and
+  litres get cups or spoons. "1-1/2" now counts as one and a half (it was
+  read as 1 to ½, in weight hints too). Phone-only mode gets the Household
+  page as "Country & spoons" (it had no way to change the country before).
+  Not done: a per-recipe spoon choice, for recipes typed in from an
+  Australian cookbook (they count as 15 ml).
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

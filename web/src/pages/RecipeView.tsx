@@ -27,9 +27,10 @@ import PlanButton from "../PlanButton";
 import { datePart, formatDay, localToday, timeAgo, toStoredDate } from "../dates";
 import { isOffline, saveRecipe, savedRecipes } from "../offline";
 import OfflineNote from "../OfflineNote";
-import { useCountry, useSingleUser } from "../household";
+import { useCountry, useSingleUser, useTablespoon } from "../household";
 import { withRegionalHint } from "../regionalNames";
 import { withWeightHint } from "../weights";
+import { recipeMeasures, withVolumeHint, type RecipeMeasures } from "../volumes";
 import { withTemperatureHint } from "../temperatures";
 import { withLengthHint } from "../lengths";
 import QuickTags from "../QuickTags";
@@ -41,12 +42,32 @@ import PhotoFramer from "../PhotoFramer";
 import RecipeTimer from "../RecipeTimer";
 
 // An ingredient or method line with soft hints for the household: weights,
-// temperatures and lengths in its units ("1½ lbs (680 g)", "350°F
-// (180°C)", "1-inch (2.5 cm)") and its names ("bell pepper (capsicum)").
-// Only for showing: the saved line, its pantry link and the shopping list
-// keep the original text.
-const withHints = (line: string, country: string) =>
-  withRegionalHint(withLengthHint(withTemperatureHint(withWeightHint(line, country), country), country), country);
+// temperatures, lengths and liquids in its units ("1½ lbs (680 g)", "350°F
+// (180°C)", "1-inch (2.5 cm)", "1 cup (240 ml)"), tablespoons in its spoons
+// ("2 tbsp (your 1 tbsp + 2 tsp)") and its names ("bell pepper
+// (capsicum)"). Only for showing: the saved line, its pantry link and the
+// shopping list keep the original text.
+interface Hints {
+  country: string;
+  measures: RecipeMeasures;
+  tablespoon: number;
+}
+
+// The recipe's spoons and cups are guessed from its website (volumes.ts).
+function useHints(sourceUrl: string): Hints {
+  const [country] = useCountry();
+  const [tablespoon] = useTablespoon();
+  return { country, measures: recipeMeasures(sourceUrl), tablespoon };
+}
+
+const withHints = (line: string, { country, measures, tablespoon }: Hints) =>
+  withRegionalHint(
+    withLengthHint(
+      withTemperatureHint(withWeightHint(withVolumeHint(line, country, measures, tablespoon), country), country),
+      country,
+    ),
+    country,
+  );
 
 // Shown with the ingredient and method boxes.
 const SOFT_HINT = " Select words and press B, I or U to make them bold, soft grey italics or underlined.";
@@ -59,8 +80,9 @@ export default function RecipeView() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState("");
   const singleUser = useSingleUser();
-  // For hints like "1 red bell pepper (capsicum)" in the household's words.
-  const [country] = useCountry();
+  // For hints like "1 red bell pepper (capsicum)" in the household's words
+  // and units.
+  const hints = useHints(recipe?.source_url ?? "");
   // Ticked-off ingredients and steps, only for this cooking session.
   const [done, setDone] = useState<Set<string>>(new Set());
   const ratings = useRecipeRatings(id);
@@ -302,7 +324,7 @@ export default function RecipeView() {
                   <button className={`step ${done.has(key) ? "done" : ""}`} onClick={() => toggle(key)} aria-pressed={done.has(key)}>
                     <span className="step-number">{stepNumber}</span>
                     <span>
-                      <SoftText text={withHints(line, country)} />
+                      <SoftText text={withHints(line, hints)} />
                     </span>
                   </button>
                 </li>
@@ -421,7 +443,7 @@ function IngredientsSection({
 }) {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
   const pantryList = pantry.items ?? [];
-  const [country] = useCountry();
+  const hints = useHints(recipe.source_url ?? "");
   const lines = recipe.ingredients ?? [];
   const pickable = lines.flatMap((line, i) => (headingOf(line) === null ? [i] : []));
   const [picking, setPicking] = useState(false);
@@ -531,12 +553,12 @@ function IngredientsSection({
               {picking ? (
                 <label>
                   <input type="checkbox" checked={picked.has(i)} onChange={() => togglePicked(i)} />
-                  <SoftText text={withHints(line, country)} />
+                  <SoftText text={withHints(line, hints)} />
                 </label>
               ) : (
                 <label className={done.has(key) ? "done" : ""}>
                   <input type="checkbox" checked={done.has(key)} onChange={() => onToggleDone(key)} />
-                  <SoftText text={withHints(line, country)} />
+                  <SoftText text={withHints(line, hints)} />
                 </label>
               )}
               {pantry.items && <PantryChip line={line} link={linkOf(line)} onClick={() => setLinking(line)} />}

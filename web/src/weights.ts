@@ -32,6 +32,15 @@ export function parseNumber(text: string): number {
   return Number(t);
 }
 
+// An amount from a match's groups 1 and 2: [low, high] for a range, or
+// [amount, null]. "1-1/2" is one and a half, not 1 to ½ (ranges go up).
+export function amountRange(match: RegExpMatchArray): [number, number | null] {
+  const low = parseNumber(match[1]);
+  if (!match[2]) return [low, null];
+  const high = parseNumber(match[2]);
+  return high < low && high < 1 ? [low + high, null] : [low, high];
+}
+
 const round = (n: number, step: number) => Math.round(n / step) * step;
 const oneDecimal = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -60,9 +69,10 @@ function gramsPer(unit: string): number {
 // The converted amount for a match: "680 g", "455–905 g", "900 g–1.4 kg".
 function converted(match: RegExpMatchArray, show: (grams: number) => [string, string]): string {
   const grams = gramsPer(match[3]);
-  const [low, lowUnit] = show(parseNumber(match[1]) * grams);
-  if (!match[2]) return `${low} ${lowUnit}`;
-  const [high, highUnit] = show(parseNumber(match[2]) * grams);
+  const [lowAmount, highAmount] = amountRange(match);
+  const [low, lowUnit] = show(lowAmount * grams);
+  if (highAmount === null) return `${low} ${lowUnit}`;
+  const [high, highUnit] = show(highAmount * grams);
   return lowUnit === highUnit ? `${low}–${high} ${highUnit}` : `${low} ${lowUnit}–${high} ${highUnit}`;
 }
 

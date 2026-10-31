@@ -50,3 +50,7 @@ test("leaves alone lines with both, fluid ounces, and things that aren't weights
 test("anywhere else weighs in grams, like Australia", () => {
   assert.equal(withWeightHint("2 lbs carrots", "OTHER"), "2 lbs *(905 g)* carrots");
 });
+
+test("1-1/2 lbs is one and a half pounds, not 1 to ½", () => {
+  assert.equal(withWeightHint("1-1/2 lbs ground beef", "AU"), "1-1/2 lbs *(680 g)* ground beef");
+});

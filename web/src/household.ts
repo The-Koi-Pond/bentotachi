@@ -38,15 +38,27 @@ export function refreshHousehold() {
     });
 }
 
-// The household's settings record (household_settings, one per Bento):
-// for now its country, which decides the grocery stores offered. null
-// until loaded.
-let settings: { id: string; country: string } | null = null;
+// The household's settings record (household_settings, one per Bento): its
+// country, which decides the grocery stores offered and the units hints
+// use, and what its tablespoon holds. null until loaded.
+interface Settings {
+  id: string;
+  country: string;
+  tablespoon: number;
+}
+let settings: Settings | null = null;
 let askingSettings = false;
 
-function setSettings(next: { id: string; country: string } | null) {
-  settings = next;
+function setSettings(next: { id: string; country: string; tablespoon?: number } | null) {
+  settings = next && { id: next.id, country: next.country, tablespoon: next.tablespoon ?? 0 };
   for (const listener of listeners) listener();
+}
+
+async function saveSettings(current: Settings | null, patch: Partial<Omit<Settings, "id">>) {
+  const saved = current
+    ? await pb.collection("household_settings").update(current.id, patch)
+    : await pb.collection("household_settings").create(patch);
+  setSettings({ id: saved.id, country: saved.country, tablespoon: saved.tablespoon });
 }
 
 function loadSettings() {
@@ -56,13 +68,13 @@ function loadSettings() {
     .getList(1, 1, { sort: "created" })
     .then(async (page) => {
       const record = page.items[0];
-      if (record?.country) return setSettings({ id: record.id, country: record.country });
+      if (record?.country) return setSettings({ id: record.id, country: record.country, tablespoon: record.tablespoon });
       // A brand-new Bento: start from this browser's guess, and keep it.
       const country = browserCountry();
       const saved = record
         ? await pb.collection("household_settings").update(record.id, { country })
         : await pb.collection("household_settings").create({ country });
-      setSettings({ id: saved.id, country: saved.country });
+      setSettings({ id: saved.id, country: saved.country, tablespoon: saved.tablespoon });
     })
     .catch(() => {})
     .finally(() => {
@@ -83,13 +95,17 @@ export function useCountry(): [string, (country: string) => Promise<void>] {
   useEffect(() => {
     if (current === null) loadSettings();
   }, [current]);
-  async function change(country: string) {
-    const saved = current
-      ? await pb.collection("household_settings").update(current.id, { country })
-      : await pb.collection("household_settings").create({ country });
-    setSettings({ id: saved.id, country: saved.country });
-  }
-  return [current?.country ?? browserCountry(), change];
+  return [current?.country ?? browserCountry(), (country) => saveSettings(current, { country })];
+}
+
+// What the household's tablespoon holds, in ml: 15 (most spoons, and until
+// someone chooses) or 20 (the Australian standard).
+export function useTablespoon(): [number, (ml: number) => Promise<void>] {
+  const current = useSyncExternalStore(subscribe, () => settings);
+  useEffect(() => {
+    if (current === null) loadSettings();
+  }, [current]);
+  return [current?.tablespoon === 20 ? 20 : 15, (tablespoon) => saveSettings(current, { tablespoon })];
 }
 
 // The grocery stores to offer, for the household's country.

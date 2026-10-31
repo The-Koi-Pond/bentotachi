@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, type User } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import Avatar from "../Avatar";
-import { refreshHousehold, useCountry } from "../household";
+import { refreshHousehold, useCountry, useTablespoon } from "../household";
+import { isPhoneMode } from "../phoneMode";
 import { COUNTRIES, OTHER_COUNTRY } from "../country";
 import { storesIn } from "../stores";
 import StoreLogo from "../StoreLogo";
@@ -20,7 +21,20 @@ const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]
 // Everyone with an account on this Bento, and a way to add someone. Anyone
 // in the household can add people; changing or removing accounts is done on
 // the server's admin page (see the setup guide).
+// In phone-only mode nobody else can join, so it's just the settings.
 export default function Household() {
+  if (isPhoneMode())
+    return (
+      <div className="stack narrow">
+        <h1>Country & spoons</h1>
+        <CountrySetting />
+        <TablespoonSetting />
+      </div>
+    );
+  return <People />;
+}
+
+function People() {
   const me = useCurrentUser();
   const people = useLiveRecords<User>("users");
   const list = [...(people.items ?? [])].sort((a, b) => displayName(a).localeCompare(displayName(b)));
@@ -48,6 +62,7 @@ export default function Household() {
       )}
       <AddPerson onAdded={people.upsert} />
       <CountrySetting />
+      <TablespoonSetting />
       <p className="muted small-note">
         To reset someone's forgotten password or remove an account, use the server's admin page. The{" "}
         <a href="guide.html#admin" target="_blank" rel="noreferrer">
@@ -80,7 +95,10 @@ function CountrySetting() {
     <section className="card stack">
       <h2>Country</h2>
       <label>
-        <span className="hint">Decides the grocery stores Bento offers in the Pantry, for everyone here.</span>
+        <span className="hint">
+          Decides the grocery stores Bento offers in the Pantry, and the units recipes give hints in, for everyone
+          here.
+        </span>
         <select value={country} onChange={(e) => void change(e.target.value)} aria-label="Country">
           {COUNTRIES.map((option) => (
             <option key={option.code} value={option.code}>
@@ -102,6 +120,45 @@ function CountrySetting() {
           "Bento doesn't know stores there yet, so store search is hidden. You can still paste any shop's product link into a pantry item."
         )}
       </p>
+      {status && (
+        <p className={status.isError ? "error" : "success"} role="status">
+          {status.text}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// What the household's tablespoon holds. Recipes written for the other size
+// (Australian sites use 20 ml, nearly everyone else 15 ml) get a hint in
+// these spoons (see volumes.ts). Saves as soon as it's changed.
+function TablespoonSetting() {
+  const [tablespoon, setTablespoon] = useTablespoon();
+  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+
+  async function change(next: number) {
+    setStatus(null);
+    try {
+      await setTablespoon(next);
+      setStatus({ text: "Saved.", isError: false });
+    } catch (err) {
+      setStatus({ text: errorMessage(err), isError: true });
+    }
+  }
+
+  return (
+    <section className="card stack">
+      <h2>Our tablespoon</h2>
+      <label>
+        <span className="hint">
+          Not sure? Count how many teaspoons fill it: 3 means 15 ml, 4 means 20 ml. Recipes written for the other size
+          get a hint, like “2 tbsp (your 1 tbsp + 2 tsp)”.
+        </span>
+        <select value={tablespoon} onChange={(e) => void change(Number(e.target.value))} aria-label="Our tablespoon">
+          <option value={15}>15 ml (most spoons)</option>
+          <option value={20}>20 ml (the Australian standard)</option>
+        </select>
+      </label>
       {status && (
         <p className={status.isError ? "error" : "success"} role="status">
           {status.text}
