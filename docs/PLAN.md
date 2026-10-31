@@ -136,6 +136,12 @@ Changes already live in the browser version, not yet in a published APK
   - "Once opened, keep in" (like Fridge): the row gets "Opened → Fridge",
     which moves it there; marking it Out puts it back in its own place.
   - A note on each item ("3 cans"), shown under its name.
+- The Netherlands as a household country (guessed from the Europe/Amsterdam
+  time zone too): Albert Heijn, Jumbo, Plus and Dirk in the pantry's store
+  search, with their logos. Plus's and Dirk's searches were checked; Albert
+  Heijn's and Jumbo's block automated browsers from Australia, so a Dutch
+  tester should try them. Product names from Dutch links and titles are
+  tidied ("Nu bij Dirk", "bestellen", Jumbo's "-67649PAK", "6 stuks").
 
 Released in 1.10.0 (2026-10-31; Xel is trying the scanner on their phone):
 

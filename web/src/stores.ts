@@ -8,8 +8,13 @@
 // products; Kroger's search page opened (products need a nearby store picked,
 // which a test browser in Australia can't); Walmart asks automated browsers
 // "Robot or human?", so it was checked only by its standard addresses.
+// Netherlands, checked 2026-10-31 in a real browser: Plus's and Dirk's
+// searches showed products. Albert Heijn and Jumbo refused every automated
+// browser from Australia ("Access Denied"), so they use their standard
+// search addresses, unchecked. Lidl and Picnic are left out: Lidl doesn't
+// sell groceries online, and Picnic is app-only.
 
-export type CountryCode = "AU" | "US";
+export type CountryCode = "AU" | "US" | "NL";
 
 export interface Store {
   name: string;
@@ -30,6 +35,10 @@ export const STORES: Store[] = [
   { name: "Walmart", country: "US", host: "walmart.com", search: "https://www.walmart.com/search?q={q}" },
   { name: "Target", country: "US", host: "target.com", search: "https://www.target.com/s?searchTerm={q}" },
   { name: "Kroger", country: "US", host: "kroger.com", search: "https://www.kroger.com/search?query={q}" },
+  { name: "Albert Heijn", country: "NL", host: "ah.nl", search: "https://www.ah.nl/zoeken?query={q}" },
+  { name: "Jumbo", country: "NL", host: "jumbo.com", search: "https://www.jumbo.com/zoeken/producten?searchTerms={q}" },
+  { name: "Plus", country: "NL", host: "plus.nl", search: "https://www.plus.nl/zoekresultaten?SearchTerm={q}" },
+  { name: "Dirk", country: "NL", host: "dirk.nl", search: "https://www.dirk.nl/zoeken/producten/{q}" },
 ];
 
 // The stores to offer in a country (none for countries Bento doesn't know
@@ -71,9 +80,9 @@ export function isStoreLink(url: string): boolean {
 }
 
 // Pack sizes at the end of a product name: "250mL", "1.5kg", "12 pack",
-// "6 x 375ml", "10 fl oz", "1 gal", "16 ct".
+// "6 x 375ml", "10 fl oz", "1 gal", "16 ct", "6 stuks" (Dutch: pieces).
 const PACK_SIZE =
-  /(\s*[|,-]?\s*(\d+\s*x\s*)?\d+(\.\d+)?\s*(ml|l|g|kg|pk|pack|each|ea|fl\.?\s*oz|oz|lbs?|gal|ct|count)\b\.?)+$/i;
+  /(\s*[|,-]?\s*(\d+\s*x\s*)?\d+(\.\d+)?\s*(ml|l|g|kg|pk|pack|each|ea|fl\.?\s*oz|oz|lbs?|gal|ct|count|stuks?|st)\b\.?)+$/i;
 
 function tidyName(name: string): string {
   const words = name.replace(PACK_SIZE, "").replace(/\s+/g, " ").trim();
@@ -90,12 +99,13 @@ export function productNameFromUrl(url: string): string {
     return "";
   }
   // The last part with letters in it (Woolworths and Walmart put a number
-  // after it, Target "-/A-12345678").
+  // after it, Target "-/A-12345678", Albert Heijn a code before it).
   const slug = [...parts].reverse().find((part) => /[a-z]/i.test(part) && !/^A-\d+$/.test(part)) ?? "";
   if (/^(product|productdetails|shop|search|ip|p)$/i.test(slug)) return "";
   const words = decodeURIComponent(slug)
     .replace(/\.html?$/i, "")
-    .replace(/[-_]\d{4,}$/, "")
+    // A product number at the end, maybe with letters (Jumbo: "-67649PAK").
+    .replace(/[-_]\d{4,}[a-z]{0,4}$/i, "")
     // Target spells symbols as their HTML numbers: "rao-39-s" is "rao's",
     // "salt-38-pepper" is "salt & pepper", "-8482" is ™.
     .replace(/-39-/g, "'")
@@ -107,7 +117,9 @@ export function productNameFromUrl(url: string): string {
 
 // A starting name from a product page's title:
 // "Buy Lea & Perrins Worcestershire Sauce | 250mL | Coles" -> "Lea & Perrins Worcestershire Sauce";
-// "Lea & Perrins Worcestershire Sauce, 10 fl oz - Walmart.com" -> "Lea & Perrins Worcestershire Sauce".
+// "Lea & Perrins Worcestershire Sauce, 10 fl oz - Walmart.com" -> "Lea & Perrins Worcestershire Sauce";
+// "Calvé Pindakaas. Nu bij Dirk | Dirk" -> "Calvé Pindakaas" ("now at Dirk");
+// "AH Pindakaas bestellen | Albert Heijn" -> "AH Pindakaas" ("order").
 export function productNameFromTitle(title: string): string {
   const storeNames = STORES.map((store) => store.name.toLowerCase());
   const parts = title
@@ -119,5 +131,11 @@ export function productNameFromTitle(title: string): string {
         !storeNames.includes(part.toLowerCase().replace(/\.com$/, "")) &&
         !/^(online|shop)$/i.test(part),
     );
-  return tidyName((parts[0] ?? "").replace(/^buy\s+/i, "").replace(/,\s*$/, ""));
+  return tidyName(
+    (parts[0] ?? "")
+      .replace(/^buy\s+/i, "")
+      .replace(/\.?\s+nu bij .+$/i, "")
+      .replace(/\s+bestellen$/i, "")
+      .replace(/,\s*$/, ""),
+  );
 }

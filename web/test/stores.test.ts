@@ -44,3 +44,27 @@ test("product names from US store titles", () => {
   assert.equal(productNameFromTitle("Rao's Homemade Arrabbiata Sauce - 24oz : Target"), "Rao's Homemade Arrabbiata Sauce");
   assert.equal(productNameFromTitle("Kroger® Worcestershire Sauce, 10 fl oz - Kroger"), "Kroger® Worcestershire Sauce");
 });
+
+test("Dutch stores", () => {
+  assert.deepEqual(storesIn("NL").map((s) => s.name), ["Albert Heijn", "Jumbo", "Plus", "Dirk"]);
+  const [ah, jumbo, plus, dirk] = storesIn("NL");
+  assert.equal(storeSearchUrl(ah, "pindakaas"), "https://www.ah.nl/zoeken?query=pindakaas");
+  assert.equal(storeSearchUrl(jumbo, "halfvolle melk"), "https://www.jumbo.com/zoeken/producten?searchTerms=halfvolle%20melk");
+  assert.equal(storeSearchUrl(plus, "pindakaas"), "https://www.plus.nl/zoekresultaten?SearchTerm=pindakaas");
+  assert.equal(storeSearchUrl(dirk, "halfvolle melk"), "https://www.dirk.nl/zoeken/producten/halfvolle%20melk");
+  assert.equal(storeFor("https://www.ah.nl/producten/product/wi1525/ah-halfvolle-melk")?.name, "Albert Heijn");
+});
+
+test("product names from Dutch store links and titles", () => {
+  // Real links from Plus's and Dirk's searches (2026-10-31).
+  assert.equal(productNameFromUrl("https://www.plus.nl/product/calve-pindakaas-regular-pot-350-g-191311"), "Calve pindakaas regular pot");
+  assert.equal(
+    productNameFromUrl("https://www.dirk.nl/boodschappen/brood-beleg-koek/broodbeleg/calv%c3%a9%20pindakaas/44286"),
+    "Calvé pindakaas",
+  );
+  assert.equal(productNameFromUrl("https://www.ah.nl/producten/product/wi1525/ah-halfvolle-melk"), "Ah halfvolle melk");
+  assert.equal(productNameFromUrl("https://www.jumbo.com/producten/jumbo-halfvolle-melk-1l-67649PAK"), "Jumbo halfvolle melk");
+  assert.equal(productNameFromTitle("Calvé Pindakaas. Nu bij Dirk | Dirk"), "Calvé Pindakaas");
+  assert.equal(productNameFromTitle("AH Pindakaas bestellen | Albert Heijn"), "AH Pindakaas");
+  assert.equal(productNameFromTitle("Jumbo Eieren 6 stuks | Jumbo"), "Jumbo Eieren");
+});

@@ -19,3 +19,9 @@ test("a language without a region falls back to the time zone", () => {
   assert.equal(guessCountry(["en"], "America/Toronto"), "OTHER");
   assert.equal(guessCountry([], ""), "OTHER");
 });
+
+test("a Dutch time zone means the Netherlands, whatever the language says", () => {
+  assert.equal(guessCountry(["en-US", "en"], "Europe/Amsterdam"), "NL");
+  assert.equal(guessCountry(["nl-NL"], "Europe/Brussels"), "NL");
+  assert.equal(guessCountry(["nl-BE"], "Europe/Brussels"), "OTHER");
+});
