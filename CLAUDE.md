@@ -55,6 +55,11 @@ How to run: `README.md`.
   opens Android's installer. Updates only install if signed with the same
   key as the installed app: `android/keystore.properties` (gitignored)
   switches release builds to Bento's own key.
+- The website (github.com/The-Koi-Pond/bento → the-koi-pond.github.io/bento)
+  is the `site/` folder, published by `.github/workflows/pages.yml` on push.
+  `site/privacy.html` is the Google Play privacy policy. Never delete
+  `site/google11869a0aeef0ff1c.html`: it's the Search Console ownership
+  check, and Google re-checks it.
 - The live server is the Raspberry Pi (`~/bento/server`, systemd service
   `bento`); see README "Where Bento runs". Its address and login are in
   `web/scripts/pi.json` and `CLAUDE.local.md`, both private (gitignored):
