@@ -5,7 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bentotachi</title>
     <meta name="description" content="Bentotachi: a recipe box, dinner plan, shopping list and pantry for your household. Free, private, and only slightly screaming." />
-    <link rel="icon" href="onigiri.svg" />
+    <link rel="canonical" href="https://thekoipond.dev/bento/" />
+    <!-- The preview card Bluesky, Discord, messages and so on show for a link. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://thekoipond.dev/bento/" />
+    <meta property="og:site_name" content="The Koi Pond" />
+    <meta property="og:title" content="Bentotachi" />
+    <meta
+      property="og:description"
+      content="A recipe box, dinner plan, shopping list and pantry for your household. Free, private, and only slightly screaming."
+    />
+    <meta property="og:image" content="https://thekoipond.dev/bento/og-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ben the onigiri on his chopsticks, above the word Bentotachi" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="onigiri.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <meta name="theme-color" content="#faf6f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141b1b" media="(prefers-color-scheme: dark)" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body class="home">
@@ -17,7 +35,7 @@
         <p class="tagline">RECIPES • PLAN • PANTRY • TOGETHER</p>
         <p class="status">
           <span>Testing with friends ·</span> <span>Not on Google Play yet ·</span>
-          <a href="#get">How to get it ↓</a>
+          <a href="#get">How to get it <span aria-hidden="true">↓</span></a>
         </p>
       </header>
 
@@ -109,17 +127,17 @@
         from a fourth jar of cumin and you've got a dollar or two spare, it'd genuinely make my day.
       </p>
       <div class="cta">
-        <a class="button" href="https://ko-fi.com/bentotachi">Tip on Ko-fi ♡</a>
+        <a class="button" href="https://ko-fi.com/bentotachi">Tip on Ko-fi <span aria-hidden="true">♡</span></a>
         <p class="muted">Optional, forever. No perks, no guilt, no nagging.</p>
       </div>
-
-      <footer>
-        <a href="https://ko-fi.com/bentotachi">Ko-fi ♡</a>
-        <a href="privacy.html">Privacy policy</a>
-        <a href="https://github.com/The-Koi-Pond/bento">Source code</a>
-        <a href="https://github.com/The-Koi-Pond/bento/issues">Complain about the screaming</a>
-        <a class="made-by" href="https://thekoipond.dev/"><img src="deki.svg" alt="" width="26" height="27" />Made by The Koi Pond</a>
-      </footer>
     </main>
+
+    <footer>
+      <a href="https://ko-fi.com/bentotachi">Ko-fi <span aria-hidden="true">♡</span></a>
+      <a href="privacy.html">Privacy policy</a>
+      <a href="https://github.com/The-Koi-Pond/bento">Source code</a>
+      <a href="https://github.com/The-Koi-Pond/bento/issues">Complain about the screaming</a>
+      <a class="made-by" href="https://thekoipond.dev/"><img src="deki.svg" alt="" width="26" height="27" />Made by The Koi Pond</a>
+    </footer>
   </body>
 </html>
