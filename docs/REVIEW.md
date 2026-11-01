@@ -112,7 +112,8 @@ code unless marked *(inferred)*.
   Dutch phone mixes Dutch dates with English text.
 - [ ] **Medium: Dutch units**: dl, decimal commas ("1,5 kg") and el/tl
   spoons aren't understood.
-- [ ] **Low: the week always starts on Monday** (Americans expect Sunday).
+- [x] **Low: the week always starts on Monday** (Americans expect Sunday).
+  Done: 2026-11-02: Sunday when the household's country is the US (dates.ts firstDayFor), in the list and the month grid.
 
 ### Missing features (compared with other apps)
 - [x] Scaling servings

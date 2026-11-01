@@ -172,6 +172,7 @@ Changes already live in the browser version, not yet in a published APK
   permission in the Android app, so the buzz needs the next APK). A locked
   phone doesn't run the app, so the beep comes when it's opened again;
   ⋮ → Keep screen on avoids that.
+- The plan's weeks start on Sunday for US households (list and month).
 
 Released in 1.11.0 (2026-11-02):
 

@@ -11,6 +11,7 @@ import {
   monthStart,
   toStoredDate,
   weekStart,
+  firstDayFor,
 } from "../src/dates.ts";
 
 test("moves between months, across year ends", () => {
@@ -33,6 +34,16 @@ test("finds the Monday of the week", () => {
   assert.equal(weekStart("2026-11-08"), "2026-11-02"); // the Sunday after
   assert.equal(weekStart("2026-10-30"), "2026-10-26"); // a Friday
   assert.equal(weekStart("2027-01-01"), "2026-12-28"); // across the year end
+});
+
+test("American weeks start on Sunday", () => {
+  assert.equal(firstDayFor("US"), "sunday");
+  assert.equal(firstDayFor("AU"), "monday");
+  assert.equal(firstDayFor("NL"), "monday");
+  assert.equal(weekStart("2026-11-01", "sunday"), "2026-11-01"); // a Sunday
+  assert.equal(weekStart("2026-11-07", "sunday"), "2026-11-01"); // the Saturday after
+  assert.equal(weekStart("2026-11-02", "sunday"), "2026-11-01"); // a Monday
+  assert.equal(weekStart("2027-01-01", "sunday"), "2026-12-27"); // across the year end
 });
 
 test("today is the device's local date", () => {

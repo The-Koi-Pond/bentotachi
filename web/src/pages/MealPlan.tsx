@@ -18,13 +18,25 @@ import {
 import { errorMessage, mealPlan, pb, type CookedEntry, type MealPlanEntry, type Recipe } from "../pb";
 import RecipePhoto from "../RecipePhoto";
 import { lastHadByRecipe } from "../cookHistory";
-import { addDays, addMonths, datePart, dayNumber, formatDay, localToday, monthStart, toStoredDate, weekStart } from "../dates";
+import {
+  addDays,
+  addMonths,
+  datePart,
+  dayNumber,
+  firstDayFor,
+  formatDay,
+  localToday,
+  monthStart,
+  toStoredDate,
+  weekStart,
+  type FirstDay,
+} from "../dates";
 import { CartIcon, CloseIcon, GripIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
-import { usePlanMeals } from "../household";
+import { useCountry, usePlanMeals } from "../household";
 import { MEALS, MEAL_NAMES, mealOf, mealWord, mealsForDay, parseSlot, planTitle, slotKey, type Meal } from "../meals";
 
 // How many days are shown at once: this week and next.
@@ -62,9 +74,14 @@ export default function MealPlan() {
   const plan = useLiveRecords<MealPlanEntry>("meal_plan", "recipe");
   const cooked = useLiveRecords<CookedEntry>("cooked");
   const [meals] = usePlanMeals();
+  // Weeks start on Sunday in the US, Monday elsewhere.
+  const firstDay = firstDayFor(useCountry()[0]);
   const today = localToday();
   const [view, setView] = useState<View>(savedView);
-  const [start, setStart] = useState(() => weekStart(today));
+  // The list's first day, or null for this week's (which follows firstDay
+  // once the household's country has loaded).
+  const [chosenStart, setStart] = useState<string | null>(null);
+  const start = chosenStart ?? weekStart(today, firstDay);
   const [month, setMonth] = useState(() => monthStart(today));
   // Month view: the day whose details show under the grid.
   const [selected, setSelected] = useState(today);
@@ -207,7 +224,7 @@ export default function MealPlan() {
         month: "short",
       })}`
     : formatDay(month, { month: "long", year: "numeric" });
-  const atToday = isList ? start === weekStart(today) : month === monthStart(today);
+  const atToday = isList ? start === weekStart(today, firstDay) : month === monthStart(today);
 
   function step(direction: 1 | -1) {
     setPicking(null);
@@ -217,7 +234,7 @@ export default function MealPlan() {
 
   function goToToday() {
     setPicking(null);
-    setStart(weekStart(today));
+    setStart(null);
     setMonth(monthStart(today));
     setSelected(today);
   }
@@ -298,6 +315,7 @@ export default function MealPlan() {
           <>
             <MonthGrid
               month={month}
+              firstDay={firstDay}
               today={today}
               selected={selected}
               byDate={byDate}
@@ -341,24 +359,27 @@ export default function MealPlan() {
   );
 }
 
-// A month as a Monday-to-Sunday grid. Each day shows its number and, if a
-// meal is planned, a small picture of it that can be dragged (its dinner,
-// or its first meal), with "+1" when it has more.
+// A month as a Monday-to-Sunday grid (Sunday-to-Saturday in the US). Each
+// day shows its number and, if a meal is planned, a small picture of it
+// that can be dragged (its dinner, or its first meal), with "+1" when it
+// has more.
 function MonthGrid({
   month,
+  firstDay,
   today,
   selected,
   byDate,
   onSelect,
 }: {
   month: string;
+  firstDay: FirstDay;
   today: string;
   selected: string;
   // Each day's meals, in plan order.
   byDate: Map<string, MealPlanEntry[]>;
   onSelect: (date: string) => void;
 }) {
-  const gridStart = weekStart(month);
+  const gridStart = weekStart(month, firstDay);
   const weeks = Math.ceil((dayNumber(addMonths(month, 1)) - dayNumber(gridStart)) / 7);
   const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(gridStart, i));
 

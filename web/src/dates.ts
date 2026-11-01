@@ -33,11 +33,20 @@ export function addDays(date: string, days: number): string {
   return fromDayNumber(dayNumber(date) + days);
 }
 
-// The Monday on or before the date.
-export function weekStart(date: string): string {
-  // 1970-01-01 was a Thursday, so day 0 is Thursday; Monday is 4 days on.
-  const mondayOffset = (dayNumber(date) - 4 + 7 * 1000) % 7;
-  return addDays(date, -mondayOffset);
+// Which day a week starts on: Monday almost everywhere, Sunday in the US
+// (see firstDayFor).
+export type FirstDay = "monday" | "sunday";
+
+export function firstDayFor(country: string): FirstDay {
+  return country === "US" ? "sunday" : "monday";
+}
+
+// The Monday (or Sunday) on or before the date.
+export function weekStart(date: string, firstDay: FirstDay = "monday"): string {
+  // 1970-01-01 was a Thursday, so day 0 is Thursday; Monday is 4 days on,
+  // Sunday 3.
+  const offset = (dayNumber(date) - (firstDay === "sunday" ? 3 : 4) + 7 * 1000) % 7;
+  return addDays(date, -offset);
 }
 
 // "2026-11-17" -> "2026-11-01"
