@@ -76,6 +76,14 @@ h2 {
   scroll-margin-top: 24px; /* a jump link stops a little above the heading */
 }
 
+/* Ben, in a mood that suits the section, sitting on top of its heading. */
+.home h2 .mood {
+  display: block;
+  width: 80px;
+  height: auto;
+  margin: 0 auto 6px;
+}
+
 /* A quiet aside on its own line under a heading. */
 h2 .aside {
   display: block;
