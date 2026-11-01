@@ -4,25 +4,28 @@ import { errorMessage, pb } from "../pb";
 import { browseAndSave, hasBuiltInBrowser } from "../bentoBrowser";
 import { CloseIcon } from "../icons";
 import { savedPageLink, trimSavedPage } from "../savedPage";
+import { BenMood } from "../Brand";
 
 // An import error, with its "add it by hand" turned into the link to the
 // add-by-hand form. Errors that don't say it get "You can still add it by
-// hand." on the end, so there's always a way on.
+// hand." on the end, so there's always a way on. The onigiri screams beside it.
 function ImportError({ error, handLink }: { error: string; handLink: string }) {
   const match = error.match(/^([\s\S]*?)(add (?:it|the recipe) by hand)(\.?)\s*$/i);
-  if (match) {
-    return (
-      <p className="error">
-        {match[1]}
-        <Link to={handLink}>{match[2]}</Link>
-        {match[3]}
-      </p>
-    );
-  }
   return (
-    <p className="error">
-      {error} You can still <Link to={handLink}>add it by hand</Link>.
-    </p>
+    <div className="with-ben">
+      <BenMood mood="scream" small />
+      {match ? (
+        <p className="error">
+          {match[1]}
+          <Link to={handLink}>{match[2]}</Link>
+          {match[3]}
+        </p>
+      ) : (
+        <p className="error">
+          {error} You can still <Link to={handLink}>add it by hand</Link>.
+        </p>
+      )}
+    </div>
   );
 }
 

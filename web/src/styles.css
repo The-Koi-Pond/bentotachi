@@ -1569,6 +1569,29 @@ legend {
   align-items: center;
 }
 
+/* The onigiri in a mood (Brand.tsx): on empty screens, and small beside a
+   message (.with-ben). */
+.ben-mood {
+  display: block;
+  width: 120px;
+  height: auto;
+}
+
+.ben-mood.small {
+  flex: none;
+  width: 72px;
+}
+
+.with-ben {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.with-ben > p {
+  margin: 0;
+}
+
 /* Recipe list */
 
 .recipe-grid {

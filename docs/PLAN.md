@@ -196,6 +196,9 @@ Changes already live in the browser version, not yet in a published APK
   orange chopsticks instead of the leaves and sakura (friends found two
   flowers too much next to the title). It's an SVG on the login screen and
   website, and the new app icon and launch screen (branding/README.md).
+- Ben's moods (the onigiri, docs/VISION.md): holding his chopsticks on
+  "No recipes yet", sweating at an empty pantry, screaming by an import
+  error, bitten in Profile's delete section, and a halo by "Backup saved."
 - Jade, the second accent (docs/VISION.md): the title's leaf is jade with
   baran ridges, tags are jade (selected ones solid jade), and success
   messages like "Saved." are jade instead of green. An umeboshi (the

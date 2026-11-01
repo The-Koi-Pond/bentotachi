@@ -34,6 +34,10 @@ Copy the three SVGs (`bentotachi-title.svg`, `bentotachi-title-dark.svg`,
   are plain circles and ellipses, so moods can change them.
 - Both need Python with Pillow and numpy (the mascot also scipy), and
   Inkscape 1.4, whose tracer does the curves.
+- `make_ben_moods.py` makes Ben's moods (`ben-sweat.svg`, `ben-scream.svg`,
+  `ben-bitten.svg`, `ben-ready.svg`, `ben-halo.svg`) from `onigiri.svg`:
+  `python ../branding/make_ben_moods.py src/assets src/assets`. Run it again
+  whenever onigiri.svg changes.
 - `make_icons.py` makes the Android launcher icons (every density; the
   adaptive and round icons are sized so a round launcher doesn't cut off the
   chopstick ends), the Android launch screens, and the web tab icons in

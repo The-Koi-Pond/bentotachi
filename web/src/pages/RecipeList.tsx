@@ -46,6 +46,7 @@ import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
 import { alsoDeleted } from "../deleteWarning";
 import BackupNudge from "../BackupNudge";
+import { BenMood } from "../Brand";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -355,8 +356,9 @@ export default function RecipeList() {
   if (all.length === 0) {
     return (
       <div className="empty card stack">
+        <BenMood mood="ready" />
         <h2>No recipes yet</h2>
-        <p>Add your first one from a link, or type it in by hand.</p>
+        <p>Add your first one from a link, or type it in by hand. Chopsticks at the ready.</p>
         <Link to="/add" className="button primary">
           + Add recipe
         </Link>

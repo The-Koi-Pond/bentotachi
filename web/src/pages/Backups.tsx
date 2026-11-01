@@ -3,6 +3,7 @@ import { errorMessage } from "../pb";
 import { backUpPhone, lastBackup, leavePhoneMode, phoneAccount, restorePhone } from "../phoneMode";
 import { daysAgo } from "../backupReminder";
 import { formatDay, localToday } from "../dates";
+import { BenMood } from "../Brand";
 
 // ⋮ → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
 // this phone, so this is where it's saved somewhere safe, restored, or moved
@@ -68,7 +69,15 @@ export default function Backups() {
         <button className="button primary" onClick={() => void backUp()} disabled={busy}>
           Save a backup
         </button>
-        {status && <p className={status.isError ? "error" : "success"}>{status.text}</p>}
+        {status &&
+          (status.isError ? (
+            <p className="error">{status.text}</p>
+          ) : (
+            <div className="with-ben">
+              <BenMood mood="halo" small />
+              <p className="success">{status.text}</p>
+            </div>
+          ))}
       </section>
 
       <section className="card stack">

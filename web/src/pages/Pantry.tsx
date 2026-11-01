@@ -11,6 +11,7 @@ import { hasBuiltInBrowser, pickPageLink } from "../bentoBrowser";
 import { normaliseSiteUrl } from "../recipeSites";
 import StoreLink from "../StoreLink";
 import StoreLogo from "../StoreLogo";
+import { BenMood } from "../Brand";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { barcodesOf, itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
@@ -443,10 +444,13 @@ export default function Pantry() {
       )}
 
       {items.length === 0 ? (
-        <p className="muted">
-          Add the things you keep in stock. Group them by where they live, like “Fridge” or “Cupboard”, with optional
-          subcategories like “Baking” or “Spices”.
-        </p>
+        <div className="with-ben">
+          <BenMood mood="sweat" small />
+          <p className="muted">
+            Nothing in here yet (it's making someone nervous). Add the things you keep in stock. Group them by where
+            they live, like “Fridge” or “Cupboard”, with optional subcategories like “Baking” or “Spices”.
+          </p>
+        </div>
       ) : (
         <div className="filter-chips" role="group" aria-label="Show">
           {(

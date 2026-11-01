@@ -80,16 +80,21 @@ with baran's ridges (the green divider in a bento box), and an orange
 chopstick underline. Together with the mascot it's one bento: the filling,
 the divider, the chopsticks, the rice.
 
-**Mascot.** A screaming onigiri skewered on orange chopsticks
-(`branding/make_svg_mascot.py`). The scream is the point. Every part is its
+**Mascot.** Ben (to us; the app needn't name him), a screaming onigiri
+skewered on orange chopsticks (`branding/make_svg_mascot.py`). The scream is
+the point. Every part is its
 own shape, so moods can change the eyes, add sweat, take a bite out of it.
 
 - **Each detail once.** The umeboshi is in the title, so the mascot doesn't
   get one (friends found the old sakura on both too much).
-- **Moods for the mascot** on empty and error screens, one silly detail at
-  a time: sweating at an empty pantry, screaming harder when an import
-  fails, a bite missing on "Delete everything", relieved when a backup is
-  saved. *(guess: not made yet)*
+- **Ben's moods** (`branding/make_ben_moods.py`, built from his own SVG so
+  they always match him): sweating at an empty pantry, screaming (>< eyes,
+  a grain of rice flying off) by an import error, bitten beside "Delete
+  everything", holding his chopsticks on "No recipes yet", and a halo by
+  "Backup saved." One or two details each: ChatGPT's mockups had more, and
+  less is clearer. He keeps his orange chopsticks in every mood. Big (120
+  px) on empty screens, small (72 px) beside a message. The words beside
+  him still carry the information.
 - Detailed versions where there's room, simple ones where it's small (the
   app icon, next to the title).
 

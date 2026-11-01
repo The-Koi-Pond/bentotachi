@@ -5,6 +5,7 @@ import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { erasePhone, isPhoneMode } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
+import { BenMood } from "../Brand";
 
 const users = () => pb.collection<User>("users");
 
@@ -58,11 +59,14 @@ function DeleteSection({ user }: { user: User }) {
 
   return (
     <Section title={phone ? "Delete Bentotachi's data" : "Delete my account"}>
-      <p className="muted small-note">
-        {phone
-          ? "Deletes everything Bentotachi keeps on this phone, and starts again as new."
-          : "Deletes your account from this Bentotachi. What you added for the household stays."}
-      </p>
+      <div className="with-ben">
+        <BenMood mood="bitten" small />
+        <p className="muted small-note">
+          {phone
+            ? "Deletes everything Bentotachi keeps on this phone, and starts again as new."
+            : "Deletes your account from this Bentotachi. What you added for the household stays."}
+        </p>
+      </div>
       <div className="actions">
         <button className="button danger small push-left" onClick={() => void remove()} disabled={busy}>
           {busy ? "Deleting…" : phone ? "Delete everything" : "Delete my account"}
