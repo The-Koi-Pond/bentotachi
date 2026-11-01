@@ -1,33 +1,41 @@
 # Bentotachi's logo and title
 
-Xel's originals:
+Xel's originals (both made with ChatGPT, on a flat cream background):
 
-- `BentoLogo.png`: the onigiri (already has a see-through background).
-- `BentotachiTitle.png`: the drawn "Bentotachi" title (made with ChatGPT),
-  on a flat cream background. (The old "Bento" title and its script are in
-  the git history, before November 2026.)
+- `Onigiri.png`: the mascot, a screaming onigiri skewered on chopsticks.
+  The screaming is on purpose: Bentotachi doesn't take itself seriously.
+- `BentotachiTitle.png`: the drawn "Bentotachi" title.
+
+(The old onigiri with the leaves and sakura, and the old "Bento" title, are
+in the git history, before November 2026.)
 
 The scripts turn them into what the app uses. Run them from the `web`
 folder:
 
 ```
 python ../branding/make_svg_title.py ../branding/BentotachiTitle.png src/assets
-python ../branding/make_icons.py ../branding/BentoLogo.png android/app/src/main/res public <any scratch folder>
+python ../branding/make_svg_mascot.py ../branding/Onigiri.png src/assets
+"C:\Program Files\Inkscape\bin\inkscape.com" src/assets/onigiri.svg --export-type=png --export-width=1024 --export-filename=<scratch folder>/onigiri.png
+python ../branding/make_icons.py <scratch folder>/onigiri.png android/app/src/main/res public <scratch folder>
 ```
 
-- `make_svg_title.py` traces the title into clean SVGs:
-  `src/assets/bentotachi-title.svg` (dark letters) and
-  `bentotachi-title-dark.svg` (cream letters, for dark mode). It needs
-  Python with Pillow and numpy, and Inkscape 1.4 (its tracer does the
-  curves). Copy both files to `../site/` too, for the website.
-- `make_icons.py` makes the Android launcher icons (every density, plus the
-  adaptive icon sized so round launchers don't clip the leaf), the Android
-  launch screens, and the web tab icons in `public/`. It needs Pillow, numpy
-  and scipy. The fourth folder gets a preview of the icon in circle and
-  square shapes.
+Copy the three SVGs (`bentotachi-title.svg`, `bentotachi-title-dark.svg`,
+`onigiri.svg`) to `../site/` too, for the website.
 
-`src/assets/bento-logo.png` (the login screen's onigiri) is the logo cropped
-and shrunk to 360 px.
+- `make_svg_title.py` traces the title into clean SVGs:
+  `bentotachi-title.svg` (dark letters) and `bentotachi-title-dark.svg`
+  (cream letters, for dark mode).
+- `make_svg_mascot.py` traces the onigiri into `onigiri.svg`, with a
+  see-through background. Each part has its own id (chopsticks, body,
+  shade, highlight, blush, eyes, outline-and-nori), and the eyes and blush
+  are plain circles and ellipses, so moods can change them.
+- Both need Python with Pillow and numpy (the mascot also scipy), and
+  Inkscape 1.4, whose tracer does the curves.
+- `make_icons.py` makes the Android launcher icons (every density; the
+  adaptive and round icons are sized so a round launcher doesn't cut off the
+  chopstick ends), the Android launch screens, and the web tab icons in
+  `public/`. It needs Pillow. The fourth folder gets a preview of the icon in
+  circle and square shapes.
 
 The colours: chopstick orange #C8643A (clear on both the light and dark
 backgrounds), letters #361F17 or, in dark mode, #F1EBE5. The icon background

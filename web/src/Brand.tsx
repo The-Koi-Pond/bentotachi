@@ -1,6 +1,6 @@
 import title from "./assets/bentotachi-title.svg";
 import titleDark from "./assets/bentotachi-title-dark.svg";
-import logo from "./assets/bento-logo.png";
+import logo from "./assets/onigiri.svg";
 
 // The "Bentotachi" title, in dark letters or (in dark mode) cream ones.
 export function BentoTitle({ className }: { className?: string }) {

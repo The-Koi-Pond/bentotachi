@@ -192,6 +192,10 @@ Changes already live in the browser version, not yet in a published APK
   drawn title (branding/make_svg_title.py) is an SVG, light and dark. The
   app ID `com.xel.bento`, saved settings, the Pi service, code names and the
   friends' server package (Start Bento.bat, its guide) keep "Bento".
+- The new mascot (2026-11-01): the screaming onigiri, now skewered on
+  orange chopsticks instead of the leaves and sakura (friends found two
+  flowers too much next to the title). It's an SVG on the login screen and
+  website, and the new app icon and launch screen (branding/README.md).
 - Phone-only backups are suggested as `bentotachi-backup-<date>-<time>.zip`
   in the phone's own time (the phone's server runs on UTC, so the old
   `bento-…` name could be a day off). Phone-only mode was tested on a real

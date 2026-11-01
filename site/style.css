@@ -60,8 +60,8 @@ h2 {
 }
 
 .hero .logo {
-  width: 120px;
-  height: 120px;
+  width: 160px;
+  height: auto;
 }
 
 .hero .title {
