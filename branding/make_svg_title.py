@@ -95,6 +95,17 @@ ume_scale = 70 * S / (xs.max() - xs.min())
 ume_place = (f"translate({36 * S} {150 * S}) scale({ume_scale:.4f}) "
              f"translate({-(xs.min() + xs.max()) / 2:.1f} {-(ys.min() + ys.max()) / 2:.1f})")
 
+# The picture's edges, trimmed to what's drawn (plus a hair), so the title
+# fills whatever space it's given. In enlarged units, like the traced paths.
+ink_y, ink_x = np.nonzero(parts["letters"] | parts["leaf"])
+ume_half_w, ume_half_h = 35 * S, (ys.max() - ys.min()) * ume_scale / 2
+pad = 2 * S
+view_x0 = min(ink_x.min(), 36 * S - ume_half_w, 101.7 * S) - pad
+view_y0 = min(ink_y.min(), 150 * S - ume_half_h) - pad
+view_x1 = max(ink_x.max(), 663.8 * S) + pad
+view_y1 = max(ink_y.max(), 198.5 * S, 150 * S + ume_half_h) + pad
+view_box = f"{view_x0:.0f} {view_y0:.0f} {view_x1 - view_x0:.0f} {view_y1 - view_y0:.0f}"
+
 stick = ("M 109.1,188.3 C 279,181.6 496,171.7 653.6,166.5 C 660.6,166.2 663.1,170.2 663.3,175.7 "
          "L 663.8,190.1 C 664,195.7 660.2,198.4 655.1,198.4 L 109.1,198.5 C 103.8,198.5 101.7,196.5 "
          "101.7,193.7 C 101.7,190.8 104.3,188.6 109.1,188.3 Z")
@@ -118,7 +129,7 @@ def ridges(colour, width, opacity, shift):
 
 
 def title(letter_colour):
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 {18 * S} {690 * S} {188 * S}" role="img" aria-label="Bentotachi">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{view_box}" role="img" aria-label="Bentotachi">
 <title>Bentotachi</title>
 <g transform="scale({S})">
   <path d="{stick}" fill="#c8643a"/>

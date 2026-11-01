@@ -314,10 +314,11 @@ main {
   outline-offset: 2px;
 }
 
-/* The drawn "Bento" title in the top bar. */
+/* The drawn title in the top bar: as tall as the buttons beside it, so it
+   reads well without making the bar any taller. */
 .brand-title {
   display: block;
-  height: 30px;
+  height: 36px;
   width: auto;
 }
 
