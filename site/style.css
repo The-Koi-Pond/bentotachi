@@ -13,7 +13,7 @@
   color-scheme: light;
 }
 
-/* Dark mode is "night water", like the app (The Koi Pond's BRAND.md). */
+/* Dark mode is "pond at night", like the app (The Koi Pond's BRAND.md). */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #141b1b;

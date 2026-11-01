@@ -7,15 +7,16 @@
   --accent: #b4532a;
   --accent-text: #ffffff;
   --accent-soft: #f6e4da;
-  /* Jade, the second accent (the title's leaf): tags and good news.
-     Orange stays for buttons and links. */
+  /* Jade, the second accent (the title's leaf): "done, have, on" (tags,
+     ticks, switches that are on, good news, pantry "have"). Orange stays
+     for "do this, selected, now": buttons, links, the selected thing. */
   --jade-soft: #e2efeb;
   --jade-strong: #3f7668;
   --jade-strong-text: #ffffff;
   --danger: #b3261e;
-  --success: #3a7062;
+  --success: #3f7668;
   /* Pantry statuses: background when selected, and its text colour. */
-  --have: #2e7d32;
+  --have: #3f7668;
   --have-text: #ffffff;
   --low: #e0a100;
   --low-text: #2b2420;
@@ -28,7 +29,7 @@
   color-scheme: light;
 }
 
-/* Dark mode is "night water" (The Koi Pond's BRAND.md, chosen 2026-11-01):
+/* Dark mode is "pond at night" (The Koi Pond's BRAND.md, chosen 2026-11-01):
    the pond at night, a teal-tinted near-black, as bright as the warm stone
    it replaced, so every contrast ratio stayed the same. */
 @media (prefers-color-scheme: dark) {
@@ -45,8 +46,8 @@
     --jade-strong: #7fbfae;
     --jade-strong-text: #141b1b;
     --danger: #f2827a;
-    --success: #8fd3c1;
-    --have: #66bb6a;
+    --success: #7fbfae;
+    --have: #7fbfae;
     --have-text: #141b1b;
     --low: #ffca28;
     --low-text: #141b1b;
@@ -310,8 +311,10 @@ main {
   transition: transform 0.15s;
 }
 
+/* Jade means "done, have, on"; orange keeps "do this, selected, now"
+   (The Koi Pond's BRAND.md). A switch that's on is calm, so it's jade. */
 [aria-checked="true"] > .switch {
-  background: var(--accent);
+  background: var(--jade-strong);
 }
 
 [aria-checked="true"] > .switch::after {
@@ -1405,7 +1408,7 @@ input[type="checkbox"] {
   width: 22px;
   height: 22px;
   flex: none;
-  accent-color: var(--accent);
+  accent-color: var(--jade-strong); /* ticked = done: jade */
 }
 
 input[type="file"] {
@@ -3609,7 +3612,7 @@ em.soft {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--jade-strong);
 }
 
 /* Under "Bento on this phone" on the first login screen: the smaller
@@ -3718,10 +3721,12 @@ em.soft {
   cursor: pointer;
 }
 
+/* Normal text, not jade, on the jade tint: jade text there is just under
+   4.5:1 in light mode. */
 .opened-toggle[aria-pressed="true"] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--jade-soft);
+  border-color: var(--jade-strong);
+  color: var(--text);
   font-weight: 600;
 }
 
