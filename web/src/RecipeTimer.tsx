@@ -130,7 +130,9 @@ export default function RecipeTimer({
               ? `The recipe says ${formatMinutes(recipeTotal)} in all.`
               : "The recipe doesn't say how long it takes."}
         </p>
-        <p className="muted">✓ Marked as cooked today.</p>
+        <p className="muted">
+          <span aria-hidden="true">✓</span> Marked as cooked today.
+        </p>
         {error && <p className="error">{error}</p>}
         <div className="actions">
           <button className="button ghost" onClick={forget} disabled={busy}>

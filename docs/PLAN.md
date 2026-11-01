@@ -128,6 +128,18 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- From the review (docs/REVIEW.md), the small things:
+  - "Added by" and "Cooked by" always name whoever is logged in
+    (server/pb_hooks/who_added.pb.js; checked by test/who-added.check.mjs),
+    so a member can't put something under someone else's name.
+  - Past nights on the plan are no longer faded to 55%: the day's name goes
+    grey and photos fade, the dinner's name stays readable.
+  - Emoji at the start of buttons ("📷 Scan", "🎲 Surprise me", ✓, ♡) are
+    hidden from screen readers, which read them out by name.
+  - The friends' Start Bento.bat no longer says "send it to Claude".
+
+Released in 1.11.0 (2026-11-02):
+
 - Pantry fixes from Xel's first big scanning session (new `note`,
   `opened_location` and `opened` fields on pantry items; `brand` holds up to
   120 characters):

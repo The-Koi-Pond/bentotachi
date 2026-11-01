@@ -124,12 +124,16 @@ code unless marked *(inferred)*.
 - [ ] Reset a forgotten password without the admin page
 
 ### Small things
-- [ ] `added_by` / `cooked_by` can be set to anyone by the app (members
+- [x] `added_by` / `cooked_by` can be set to anyone by the app (members
   could fake who added something).
-- [ ] Past days on the plan are faded to 55%, likely too faint to read.
-- [ ] Labels starting with an emoji are read out as emoji names by screen
+  Done: 2026-11-02, server/pb_hooks/who_added.pb.js sets them to whoever is logged in and keeps them on edits (test/who-added.check.mjs). The admin page can still change them.
+- [x] Past days on the plan are faded to 55%, likely too faint to read.
+  Done: 2026-11-02: the day's name goes grey and photos fade; the dinner's name keeps full contrast.
+- [x] Labels starting with an emoji are read out as emoji names by screen
   readers *(inferred)*.
-- [ ] The friends' start script says "send it to Claude".
+  Done: 2026-11-02: the decorative emoji and ✓/♡ on buttons and notes are aria-hidden. Not tried with a real screen reader.
+- [x] The friends' start script says "send it to Claude".
+  Done: 2026-11-02: "send it to whoever set Bentotachi up for you".
 
 ## The decision (2026-10-31)
 

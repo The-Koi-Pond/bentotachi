@@ -209,7 +209,7 @@ export default function RecipeChooser({
         <div className="filter-chips" role="group" aria-label="Quick notes">
           {NOTE_SUGGESTIONS.map((suggestion) => (
             <button key={suggestion} onClick={() => onNote(suggestion)}>
-              📝 {suggestion}
+              <span aria-hidden="true">📝</span> {suggestion}
             </button>
           ))}
         </div>
@@ -235,12 +235,12 @@ export default function RecipeChooser({
             onClick={() => setHaveOnly(!haveOnly)}
             title="Recipes where nothing in the pantry is out"
           >
-            🥕 We have it
+            <span aria-hidden="true">🥕</span> We have it
           </button>
         </div>
         <div className="chooser-tools">
           <button className="button small" onClick={surprise} disabled={shown.length === 0}>
-            🎲 Surprise me
+            <span aria-hidden="true">🎲</span> Surprise me
           </button>
           {all && <span className="muted chooser-count">{shown.length} recipes</span>}
         </div>

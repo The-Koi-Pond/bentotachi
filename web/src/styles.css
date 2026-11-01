@@ -526,8 +526,16 @@ main {
   border-top: 3px solid var(--border);
 }
 
-.plan-day.past {
-  opacity: 0.55;
+/* Past nights step back without becoming hard to read: the day's name goes
+   grey and photos fade, but the dinner's name keeps full contrast. */
+.plan-day.past .plan-date strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.plan-day.past img,
+.plan-day.past .dinner-no-photo {
+  opacity: 0.6;
 }
 
 .plan-day.today .plan-date strong {

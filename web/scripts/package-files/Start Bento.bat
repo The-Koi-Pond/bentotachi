@@ -9,5 +9,5 @@ echo Starting Bento. Leave this window open; close it to stop the server.
 echo.
 pocketbase.exe serve --http 0.0.0.0:8090
 echo.
-echo The server has stopped. If there's an error above, send it to Claude.
+echo The server has stopped. If there's an error above, copy it and send it to whoever set Bentotachi up for you.
 pause

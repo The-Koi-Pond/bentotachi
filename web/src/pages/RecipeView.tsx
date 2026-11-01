@@ -735,7 +735,7 @@ function CookHistory({
         </button>
       ) : (
         <button className="button small cooked-button" onClick={onCooked}>
-          ✓ We cooked this
+          <span aria-hidden="true">✓</span> We cooked this
         </button>
       )}
     </div>
