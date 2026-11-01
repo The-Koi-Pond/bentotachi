@@ -99,6 +99,10 @@ h2 {
   max-width: 34em;
 }
 
+.lead + .lead {
+  margin-top: 12px;
+}
+
 .features {
   list-style: none;
   padding: 0;
@@ -106,6 +110,18 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 12px;
+}
+
+/* A last box left on its own in a row stretches across it, so there's no
+   empty gap next to it (with an odd number of boxes, two to a row). */
+@media (min-width: 600px) {
+  .features {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .features li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 .features li {
