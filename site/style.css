@@ -170,3 +170,16 @@ footer {
   flex-wrap: wrap;
   gap: 8px 20px;
 }
+
+/* "Made by The Koi Pond", with a tiny Deki: on its own line at the end. */
+footer .made-by {
+  flex-basis: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+footer .made-by img {
+  width: 26px;
+  height: auto;
+}
