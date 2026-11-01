@@ -8,6 +8,9 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
+ * Sharing to and from Bento. send() opens Android's share sheet for a recipe
+ * (see below).
+ *
  * "Share to Bento": text (usually a recipe link) shared to Bento from another
  * app waits here until the web app takes it with BentoShare.take(), which
  * resolves with { text } or { text: null }. If Bento was already open, it
@@ -41,6 +44,25 @@ public class BentoSharePlugin extends Plugin {
         answer.put("text", pending);
         pending = null;
         call.resolve(answer);
+    }
+
+    /**
+     * The other way: sharing from Bento (a recipe as text) through Android's
+     * share sheet. send({ title, text }) resolves once the sheet is open.
+     */
+    @PluginMethod
+    public void send(PluginCall call) {
+        String text = call.getString("text", "");
+        if (text.trim().isEmpty()) {
+            call.reject("Nothing to share.");
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        intent.putExtra(Intent.EXTRA_SUBJECT, call.getString("title", ""));
+        getActivity().startActivity(Intent.createChooser(intent, call.getString("title", "Share")));
+        call.resolve();
     }
 
     private static String sharedText(Intent intent) {

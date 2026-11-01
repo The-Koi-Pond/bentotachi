@@ -80,6 +80,30 @@ export function CalendarIcon({ size = 24 }: { size?: number }) {
   );
 }
 
+// Three joined dots: share (Lucide "share-2").
+export function ShareIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+      <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+    </Icon>
+  );
+}
+
+// A printer (Lucide "printer").
+export function PrintIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+      <rect x="6" y="14" width="12" height="8" rx="1" />
+    </Icon>
+  );
+}
+
 // A stopwatch: a step's timer (Lucide "timer").
 export function TimerIcon({ size = 24 }: { size?: number }) {
   return (

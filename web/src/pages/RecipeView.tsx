@@ -41,6 +41,7 @@ import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
 import RecipeTimer from "../RecipeTimer";
 import ScaleControl, { scaledServings } from "../ScaleControl";
+import ShareButton from "../ShareButton";
 import { scaleLine } from "../scaling";
 import { stepTimes } from "../stepTimers";
 import { startTimer, useStepTimers } from "../StepTimerTray";
@@ -219,15 +220,19 @@ export default function RecipeView() {
         <>
           <div className="title-row">
             <h1>{recipe.title}</h1>
-            {!offline && (
-              <span className="title-actions">
-                <PlanButton recipe={recipe} />
-                <Link to={`/recipes/${recipe.id}/edit`} className="button small">
-                  <PencilIcon />
-                  Edit
-                </Link>
-              </span>
-            )}
+            <span className="title-actions">
+              {!offline && (
+                <>
+                  <PlanButton recipe={recipe} />
+                  <Link to={`/recipes/${recipe.id}/edit`} className="button small">
+                    <PencilIcon />
+                    Edit
+                  </Link>
+                </>
+              )}
+              {/* Works offline too: it's only the text. */}
+              <ShareButton recipe={recipe} scale={scale} />
+            </span>
           </div>
           {recipe.description && <DescriptionPreview key={recipe.id} text={recipe.description} />}
 

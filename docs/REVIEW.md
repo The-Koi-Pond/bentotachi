@@ -126,7 +126,8 @@ code unless marked *(inferred)*.
   Done: 2026-11-02: "By aisle" (the default) or "As added" (web/src/aisles.ts): linked things go where the pantry keeps them, others are guessed from their name (English words only), unknowns under Other. Typing something already on the list says so instead of adding it twice; typing something ticked puts it back. Adding from recipes already skipped what's waiting, and "Shop for these" already merges.
 - [x] More than dinner in the plan
   Done: 2026-11-02: breakfast and lunch, turned on under Household → Meals on the plan (dinner only until then). New `meal` field on plan entries; one of each meal a day.
-- [ ] Print or share a recipe
+- [x] Print or share a recipe
+  Done: 2026-11-02: Share beside the title sends the recipe as text at its scaled size (web/src/recipeText.ts): Android's share sheet in the app (BentoSharePlugin.send, compiles, untried on a phone), the browser's where there is one, otherwise copied. Print (browsers, wider screens) uses a print layout of just the recipe.
 - [ ] Reset a forgotten password without the admin page
 
 ### Small things

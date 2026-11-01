@@ -2181,11 +2181,18 @@ legend {
   overflow: hidden;
 }
 
+/* The title beside Plan, Edit and Share, wrapping onto more lines; on a
+   very narrow phone the buttons move under it instead of squeezing it. */
 .title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
+}
+
+.title-row h1 {
+  flex: 1 1 8rem;
 }
 
 .title-row .button {
@@ -3990,4 +3997,80 @@ em.soft {
 .warning-text {
   color: var(--danger);
   font-weight: 600;
+}
+
+/* Share and Print beside a recipe's title (ShareButton.tsx): just the icon.
+   Print only where there's room: on a phone the title needs it, and people
+   share from phones rather than print. */
+.button.icon-only {
+  padding: 8px 10px;
+}
+
+@media (max-width: 599px) {
+  .print-button {
+    display: none;
+  }
+}
+
+/* Printing a recipe: black on white, just the recipe. The bars, buttons,
+   ratings, tags, cooking history and pantry links stay on screen; steps
+   keep their numbers (they're buttons on screen, so they're kept). */
+@media print {
+  :root {
+    --bg: #fff;
+    --surface: #fff;
+    --text: #000;
+    --muted: #444;
+    --border: #bbb;
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .topbar,
+  .tabbar,
+  .timer-tray,
+  .toast,
+  .update-banner,
+  .title-actions,
+  .reactions,
+  .quick-tags,
+  .cook-history,
+  .scale-row,
+  .step-timers,
+  .add-notes,
+  .heart-toggle,
+  .recipe button:not(.step),
+  .recipe input[type="checkbox"] {
+    display: none !important;
+  }
+
+  .ingredient-row label {
+    padding: 2px 0;
+  }
+
+  .hero-wrap {
+    max-width: 60%;
+  }
+
+  .step {
+    padding: 4px 0;
+    border: none;
+    break-inside: avoid;
+  }
+
+  .ingredient-row {
+    break-inside: avoid;
+  }
+
+  a {
+    color: inherit;
+  }
 }

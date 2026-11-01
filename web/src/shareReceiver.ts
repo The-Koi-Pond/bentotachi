@@ -5,13 +5,36 @@ import { isAndroidApp } from "./pb";
 import { sharedLink } from "./recipeSites";
 import { isStoreLink } from "./stores";
 
-// "Share to Bento" (BentoSharePlugin.java in the Android project).
+// "Share to Bento", and sharing from it (BentoSharePlugin.java in the
+// Android project).
 interface BentoSharePlugin {
   take(): Promise<{ text: string | null }>;
+  send(options: { title: string; text: string }): Promise<void>;
   addListener(event: "shared", listener: () => void): Promise<{ remove: () => Promise<void> }>;
 }
 
 const BentoShare = registerPlugin<BentoSharePlugin>("BentoShare");
+
+// Shares text from Bento: Android's share sheet in the app, the browser's
+// where it has one (phones, Safari, Edge), or else copied, ready to paste.
+// Says which happened.
+export async function shareText(title: string, text: string): Promise<"shared" | "copied" | "cancelled"> {
+  if (isAndroidApp) {
+    await BentoShare.send({ title, text });
+    return "shared";
+  }
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text });
+      return "shared";
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return "cancelled";
+      // Not allowed here (some desktop browsers): copy it instead.
+    }
+  }
+  await navigator.clipboard.writeText(text);
+  return "copied";
+}
 
 // When a link is shared to Bento from another app (at start-up, or while
 // Bento is open), go to Add recipe and import it there, or, for a store's

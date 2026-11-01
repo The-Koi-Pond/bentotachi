@@ -177,6 +177,13 @@ Changes already live in the browser version, not yet in a published APK
   scaling), dl and cl, el and tl (eetlepel, theelepel), and 15 ml spoons
   for Dutch and Belgian sites. "1,000 g" is now read as a thousand (it was
   read as 000 g before, giving no hint).
+- Share a recipe (the share button beside its title): the name, servings
+  and times, ingredients at the size it's scaled to, the numbered method
+  and where it's from, as text (web/src/recipeText.ts). In the app it opens
+  Android's share sheet (new BentoShare.send, so it needs the next APK; try
+  it on the phone); in a browser its own share sheet, or it's copied.
+  Print (browsers, not on phone-width screens) prints just the recipe. On
+  a very narrow phone, Plan, Edit and Share move under the title.
 
 Released in 1.11.0 (2026-11-02):
 
