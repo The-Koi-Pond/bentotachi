@@ -42,5 +42,5 @@ gradlew assembleDebug -PbentoTest
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-That installs "Bento (test)" (`com.xel.bento.test`), separate from Bento
+That installs "Bentotachi (test)" (`com.xel.bento.test`), separate from Bento
 itself.

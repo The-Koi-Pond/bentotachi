@@ -2,13 +2,15 @@
 
 **Bentotachi** ("Bento" for short) is a shared cookbook / shopping list /
 pantry app for Xel's household of three. Renamed from Bento on 2026-11-01:
-use "Bentotachi" in anything people see. Internal names keep "bento" (app
-ID `com.xel.bento`, `bento.*` storage keys, plugin and Go names, the Pi's
-`bento` service, the friends' Start Bento.bat); changing the app ID would
-make phones treat it as a different app. `web/package.json`'s name and the
-`/api/cookbook/import` route keep the older "cookbook" name. The folder is
-`C:\Projects\TheKoiPond\bento` (moved from `C:\Projects\Cookbook` on
-2026-11-01), next to The Koi Pond's other projects: see
+use "Bentotachi" in anything people see (the repository, website, folder,
+guide and server window followed on 2026-11-02). Internal names keep
+"bento" (app ID `com.xel.bento`, `bento.*` storage keys, plugin and Go
+names, the Pi's `~/bento` folder and `bento` service); changing the app ID
+would make phones treat it as a different app, and changing the storage
+keys would lose everyone's saved settings. `web/package.json`'s name and
+the `/api/cookbook/...` routes keep the older "cookbook" name. The folder
+is `C:\Projects\TheKoiPond\bentotachi` (it was `C:\Projects\Cookbook`, then
+`...\TheKoiPond\bento`), next to The Koi Pond's other projects: see
 `C:\Projects\TheKoiPond\README.md`.
 Xel has minimal hands-on coding experience: write the code, explain choices
 plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
@@ -67,17 +69,19 @@ How to run: `README.md`.
   opens Android's installer. Updates only install if signed with the same
   key as the installed app: `android/keystore.properties` (gitignored)
   switches release builds to Bento's own key.
-- The website (github.com/The-Koi-Pond/bento → thekoipond.dev/bento, since
-  2026-11-01; the old the-koi-pond.github.io/bento address redirects there)
-  is the `site/` folder, published by `.github/workflows/pages.yml` on push.
+- The website (github.com/The-Koi-Pond/bentotachi → thekoipond.dev/bentotachi,
+  since 2026-11-02; it was /bento before the repository was renamed, and
+  the home page repository's `bento/` folder redirects old links) is the
+  `site/` folder, published by `.github/workflows/pages.yml` on push.
   The domain's home page is its own repository,
   github.com/The-Koi-Pond/the-koi-pond.github.io (C:\Projects\TheKoiPond\the-koi-pond.github.io);
   the domain is Xel's, at Cloudflare.
   `site/privacy.html` is the Google Play privacy policy. Never delete
-  `site/google11869a0aeef0ff1c.html`: it's the Search Console ownership
-  check, and Google re-checks it.
+  `site/google11869a0aeef0ff1c.html` (or its copy in the home page's
+  `bento/` folder): it's the Search Console ownership check, and Google
+  re-checks it.
 - The live server is the Raspberry Pi (`~/bento/server`, systemd service
-  `bento`); see README "Where Bento runs". Its address and login are in
+  `bento`); see README "Where it runs". Its address and login are in
   `web/scripts/pi.json` and `CLAUDE.local.md`, both private (gitignored):
   this repository is public, so never commit the household's addresses,
   logins, network names or people's names (use made-up examples).
@@ -85,7 +89,8 @@ How to run: `README.md`.
   2026-10-30; say when you do, since Bento blinks off for a few seconds),
   `npm run backup` pulls its nightly backups. The PC's
   `server/pb_data` is a stale pre-move copy; test on throwaway servers.
-  The friends' zip uses web/scripts/package-files/Start Bento.bat.
+  The friends' zip uses web/scripts/package-files/Start Bentotachi.bat;
+  `server/Start Bentotachi here.bat` is the PC's fallback (asks for YES).
 - Native code: BrowserActivity + BentoBrowserPlugin (built-in browser, Save
   to Bento), BentoUpdaterPlugin; registered in MainActivity.
 - `androidScheme: "http"` must never change (it would wipe phones' saved

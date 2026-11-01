@@ -1419,7 +1419,7 @@ function EditPantryItem({
         (fields.brand.trim() && saved.brand !== fields.brand.trim()) ||
         (note && saved.note !== note)
       ) {
-        setError("The server didn't keep everything. It needs restarting: close the Bento server window and open Start Bento.bat again.");
+        setError("The server didn't keep everything. It needs restarting: close the Bentotachi server window and open Start Bentotachi.bat again.");
         setBusy(false);
         return;
       }

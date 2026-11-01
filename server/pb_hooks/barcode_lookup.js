@@ -3,7 +3,7 @@
 // separate so it can be tested (server/test/barcode_lookup.test.js).
 
 // Open Food Facts asks apps to say who they are.
-const USER_AGENT = "Bentotachi/1.9 (household pantry app; https://github.com/The-Koi-Pond/bento)";
+const USER_AGENT = "Bentotachi/1.9 (household pantry app; https://github.com/The-Koi-Pond/bentotachi)";
 
 // Barcodes are 8 to 14 digits (EAN-8, UPC-A, EAN-13, GTIN-14).
 function isBarcode(code) {

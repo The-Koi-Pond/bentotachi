@@ -52,7 +52,7 @@ writeFileSync(
   gradleFile,
   gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`).replace(/versionName\s+"[^"]*"/, `versionName "${versionName}"`)
 );
-console.log(`Building Bento ${versionName} (version ${versionCode})`);
+console.log(`Building Bentotachi ${versionName} (version ${versionCode})`);
 
 // 2. Web app into the Android project, then 3. the APK. If either fails,
 //    put the old version number back so the next try reuses this one.
@@ -84,4 +84,4 @@ for (const old of readdirSync(releases)) {
   if (code && code < versionCode - 1) rmSync(join(releases, old));
 }
 
-console.log(`\nPublished Bento ${versionName}. Installed apps will offer the update next time they're opened.`);
+console.log(`\nPublished Bentotachi ${versionName}. Installed apps will offer the update next time they're opened.`);

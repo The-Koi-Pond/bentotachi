@@ -36,6 +36,6 @@ routerAdd("GET", "/api/cookbook/app/download", (e) => {
   } catch (err) {
     throw new NotFoundError("No app version has been published yet.");
   }
-  e.response.header().set("Content-Disposition", `attachment; filename="bento-${info.versionName}.apk"`);
+  e.response.header().set("Content-Disposition", `attachment; filename="bentotachi-${info.versionName}.apk"`);
   return e.blob(200, "application/vnd.android.package-archive", apk);
 });

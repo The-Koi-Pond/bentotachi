@@ -541,7 +541,7 @@ function IngredientsSection({
       if (saved.ingredient_links?.[key] !== pantryItemId) {
         onRecipeChange(before);
         setStatus({
-          text: "The server didn't keep that link. It needs restarting: close the Bento server window and open Start Bento.bat again.",
+          text: "The server didn't keep that link. It needs restarting: close the Bentotachi server window and open Start Bentotachi.bat again.",
           isError: true,
         });
         return;

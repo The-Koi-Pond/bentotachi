@@ -48,7 +48,7 @@ await new Promise((resolve, reject) => {
   send.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Copying to the Pi failed (exit ${code}).`))));
 });
 
-console.log("Restarting Bento on the Pi…");
+console.log("Restarting Bentotachi on the Pi…");
 onPi("sudo -n /usr/bin/systemctl restart bento");
 
 // Wait for it to answer again. (No process.exit: on Windows, exiting
@@ -60,7 +60,7 @@ for (let attempt = 0; attempt < 30 && !running; attempt++) {
     if (response.ok) {
       running = true;
       const latest = await (await fetch(`${PI_URL}/api/cookbook/app/latest`)).json().catch(() => ({}));
-      console.log(`\nBento is running on the Pi again${latest.versionName ? ` (app ${latest.versionName} available)` : ""}.`);
+      console.log(`\nBentotachi is running on the Pi again${latest.versionName ? ` (app ${latest.versionName} available)` : ""}.`);
     }
   } catch {
     // Not up yet.
@@ -68,6 +68,6 @@ for (let attempt = 0; attempt < 30 && !running; attempt++) {
   if (!running) await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 if (!running) {
-  console.error("\nBento didn't come back on the Pi within 30 seconds. On the Pi, `journalctl -u bento -n 30` shows why.");
+  console.error("\nBentotachi didn't come back on the Pi within 30 seconds. On the Pi, `journalctl -u bento -n 30` shows why.");
   process.exitCode = 1;
 }

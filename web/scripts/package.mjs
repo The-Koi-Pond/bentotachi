@@ -1,11 +1,11 @@
-// Makes a zip of Bento for friends to run their own server:
+// Makes a zip of Bentotachi for friends to run their own server:
 //
 //   npm run package          (from the web folder)
 //
 // It builds the web app, then copies only what a new server needs into
-// share/Bento-<version>.zip: the PocketBase program, Bento's database
+// share/Bentotachi-<version>.zip: the PocketBase program, Bento's database
 // changes and hooks, the built app, the latest Android app from
-// server/releases, Start Bento.bat, and the setup guide. Never the
+// server/releases, Start Bentotachi.bat, and the setup guide. Never the
 // database (pb_data), backups, the signing key or its password: it only
 // copies the files listed below, and checks before zipping.
 //
@@ -25,8 +25,8 @@ const share = join(root, "share");
 const latest = JSON.parse(readFileSync(join(server, "releases", "latest.json"), "utf8"));
 const version = latest.versionName;
 const staging = join(share, "staging");
-const bento = join(staging, "Bento");
-const zip = join(share, `Bento-${version}.zip`);
+const bento = join(staging, "Bentotachi");
+const zip = join(share, `Bentotachi-${version}.zip`);
 
 console.log(`> npm run build`);
 execSync("npm run build", { cwd: web, stdio: "inherit" });
@@ -34,10 +34,10 @@ execSync("npm run build", { cwd: web, stdio: "inherit" });
 rmSync(staging, { recursive: true, force: true });
 mkdirSync(join(bento, "server", "releases"), { recursive: true });
 
-// [from, to] inside the Bento folder. Nothing else is copied.
+// [from, to] inside the Bentotachi folder. Nothing else is copied.
 const copies = [
-  [join(web, "scripts", "package-files", "Start Bento.bat"), "Start Bento.bat"],
-  [join(web, "public", "guide.html"), "HOW TO SET UP BENTO.html"],
+  [join(web, "scripts", "package-files", "Start Bentotachi.bat"), "Start Bentotachi.bat"],
+  [join(web, "public", "guide.html"), "HOW TO SET UP BENTOTACHI.html"],
   [join(server, "pocketbase.exe"), "server/pocketbase.exe"],
   [join(server, "pb_migrations"), "server/pb_migrations"],
   [join(server, "pb_hooks"), "server/pb_hooks"],
@@ -68,9 +68,9 @@ if (private_.length) {
 
 // Windows' own tar can make zip files.
 rmSync(zip, { force: true });
-execSync(`"${process.env.SystemRoot}\\System32\\tar.exe" -a -c -f "${zip}" -C "${staging}" Bento`, { stdio: "inherit" });
+execSync(`"${process.env.SystemRoot}\\System32\\tar.exe" -a -c -f "${zip}" -C "${staging}" Bentotachi`, { stdio: "inherit" });
 rmSync(staging, { recursive: true, force: true });
 
 const megabytes = (statSync(zip).size / 1024 / 1024).toFixed(1);
-console.log(`\nMade ${relative(root, zip)} (${megabytes} MB, ${files.length} files, Bento ${version}).`);
-console.log("Send it to a friend along with 'HOW TO SET UP BENTO.html' inside it.");
+console.log(`\nMade ${relative(root, zip)} (${megabytes} MB, ${files.length} files, Bentotachi ${version}).`);
+console.log("Send it to a friend; 'HOW TO SET UP BENTOTACHI.html' inside it walks them through.");

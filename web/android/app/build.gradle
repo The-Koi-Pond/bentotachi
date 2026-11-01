@@ -1,8 +1,9 @@
 apply plugin: 'com.android.application'
 
 // Bento's signing key. android/keystore.properties (never committed) says
-// where the key file is and its password:
-//   storeFile=C:/Projects/TheKoiPond/bento/signing/bento-release.jks
+// where the key file is and its password. A relative storeFile is read from
+// this folder (web/android/app), so it survives the project folder moving:
+//   storeFile=../../../signing/bento-release.jks
 //   storePassword=...
 //   keyAlias=bento
 //   keyPassword=...

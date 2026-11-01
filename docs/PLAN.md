@@ -78,7 +78,7 @@ keep recipes readable without internet, and avoid subscriptions.
    - [ ] Everyone switches their app's server to the Pi's address.
    - [ ] `tailscale serve` for an HTTPS address, then an app update that
          turns off `cleartext` (insecure connections).
-6. **Public on GitHub** (github.com/The-Koi-Pond/bento):
+6. **Public on GitHub** (github.com/The-Koi-Pond/bentotachi):
    - [x] Household details moved to private files (`web/scripts/pi.json`,
          `CLAUDE.local.md`); made-up examples in the code and docs.
    - [x] Website in `site/` (landing page and privacy policy), published by
