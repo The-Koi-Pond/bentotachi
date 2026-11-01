@@ -8,13 +8,17 @@
     <link rel="icon" href="onigiri.svg" />
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body class="home">
     <main>
       <header class="hero">
         <img class="logo" src="onigiri.svg" alt="" width="160" height="115" />
         <img class="title title-light" src="bentotachi-title.svg" alt="Bentotachi" />
         <img class="title title-dark" src="bentotachi-title-dark.svg" alt="Bentotachi" />
         <p class="tagline">RECIPES • PLAN • PANTRY • TOGETHER</p>
+        <p class="status">
+          <span>Testing with friends ·</span> <span>Not on Google Play yet ·</span>
+          <a href="#get">How to get it ↓</a>
+        </p>
       </header>
 
       <p class="lead">
@@ -22,15 +26,12 @@
         actually.
       </p>
       <p class="lead">
-        Everything lives on your own phone. Want to share with the people you live with? Run a little server at home (a
-        Raspberry Pi or an old PC will do).
-      </p>
-      <p class="lead">
-        We never see or share your recipes. Not even Nonna's prized marinara. <em>Especially</em> not Nonna's prized
-        marinara. No cloud, no company servers: it stays on your phone, or your own server.
+        Everything lives on your own phone: no cloud, no company servers, and we never see your recipes. Not even
+        Nonna's prized marinara. <em>Especially</em> not Nonna's prized marinara. Sharing with the people you live with?
+        Run a little server at home (a Raspberry Pi or an old PC will do).
       </p>
 
-      <h2 class="centred">What it does <span class="aside">(besides screaming)</span></h2>
+      <h2>What it does <span class="aside">(besides screaming)</span></h2>
       <ul class="features">
         <li>
           <strong>Save recipes from anywhere</strong>Paste a link, share one straight from your browser, or type in
@@ -64,7 +65,7 @@
         </li>
       </ul>
 
-      <h2>Getting Bentotachi</h2>
+      <h2 id="get">Getting Bentotachi</h2>
       <p class="note">
         Bentotachi is a small household project, currently being tested on friends (who agreed to this, mostly). It
         isn't on Google Play yet.
@@ -95,14 +96,16 @@
         That said: I'd love to claim I enjoy being poor, but Ben screams enough for both of us. If Bentotachi saved you
         from a fourth jar of cumin and you've got a dollar or two spare, it'd genuinely make my day.
       </p>
-      <p><a class="button" href="https://ko-fi.com/bentotachi">Tip on Ko-fi ♡</a></p>
-      <p class="muted">Optional, forever. No perks, no guilt, no nagging.</p>
+      <div class="cta">
+        <a class="button" href="https://ko-fi.com/bentotachi">Tip on Ko-fi ♡</a>
+        <p class="muted">Optional, forever. No perks, no guilt, no nagging.</p>
+      </div>
 
       <footer>
-        <a href="https://ko-fi.com/bentotachi">Free forever, but I wouldn't say no to a coffee ♡</a>
+        <a href="https://ko-fi.com/bentotachi">Ko-fi ♡</a>
         <a href="privacy.html">Privacy policy</a>
         <a href="https://github.com/The-Koi-Pond/bento">Source code</a>
-        <a href="https://github.com/The-Koi-Pond/bento/issues">Questions, problems and complaints about the screaming</a>
+        <a href="https://github.com/The-Koi-Pond/bento/issues">Complain about the screaming</a>
         <a class="made-by" href="https://thekoipond.dev/"><img src="deki.svg" alt="" width="26" height="27" />Made by The Koi Pond</a>
       </footer>
     </main>

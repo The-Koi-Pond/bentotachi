@@ -28,6 +28,14 @@
   }
 }
 
+/* Pond Pebbles, The Koi Pond's display font (built in the studio repo,
+   the-koi-pond.github.io/font; copied here so this site stands alone). */
+@font-face {
+  font-family: "Pond Pebbles";
+  src: url("PondPebbles.woff2") format("woff2");
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -39,8 +47,9 @@ body {
   font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* About 70 characters a line on desktop: easy reading. */
 main {
-  max-width: 720px;
+  max-width: 680px;
   margin: 0 auto;
   padding: 32px 16px 64px;
 }
@@ -58,16 +67,36 @@ h2 {
   margin-top: 40px;
 }
 
-h2.centred {
+/* Home page headings: centred, in Pond Pebbles. (The privacy policy keeps
+   plain, left-aligned headings, which are easier to scan.) */
+.home h2 {
   text-align: center;
+  font: 400 2.1rem/1.15 "Pond Pebbles", system-ui, sans-serif;
+  margin-bottom: 16px;
+  scroll-margin-top: 24px; /* a jump link stops a little above the heading */
 }
 
 /* A quiet aside on its own line under a heading. */
 h2 .aside {
   display: block;
-  font-size: 0.95rem;
-  font-weight: 400;
+  font: 400 0.95rem/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--muted);
+}
+
+/* Where the app stands, right under the tagline, with a jump to the
+   "Getting Bentotachi" section. */
+.status {
+  display: inline-block;
+  margin: 14px 0 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--jade-soft);
+  font-size: 0.9rem;
+}
+
+/* On a phone, break only between the phrases, never inside one. */
+.status > * {
+  white-space: nowrap;
 }
 
 .hero {
@@ -161,6 +190,16 @@ h2 .aside {
   color: var(--muted);
 }
 
+/* The Ko-fi button and its note, centred under the centred heading. */
+.cta {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.cta p {
+  margin: 10px 0 0;
+}
+
 /* The Ko-fi link: an orange pill, like the app's buttons. */
 .button {
   display: inline-block;
@@ -180,6 +219,7 @@ footer {
   font-size: 0.95rem;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px 20px;
 }
 
@@ -187,6 +227,7 @@ footer {
 footer .made-by {
   flex-basis: 100%;
   display: inline-flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
 }
