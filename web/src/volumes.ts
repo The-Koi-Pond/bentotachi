@@ -35,18 +35,21 @@ export function recipeMeasures(sourceUrl: string): RecipeMeasures {
   if (host.endsWith(".au")) return { tablespoon: 20, cup: 250, fluidOunce: 29.57, pint: 473 };
   if (host.endsWith(".nz")) return { ...US, cup: 250 };
   if (host.endsWith(".uk")) return { tablespoon: 15, cup: 250, fluidOunce: 28.41, pint: 568 };
+  // Dutch and Belgian sites: 15 ml spoons, metric cups when they use any.
+  if (host.endsWith(".nl") || host.endsWith(".be")) return { tablespoon: 15, cup: 250, fluidOunce: 29.57, pint: 473 };
   return US;
 }
 
 // As in weights.ts: an amount (groups 1 and 2 for a range), then the unit
 // (group 3).
-const AMOUNT = String.raw`(?<!\d)(?<!\d\.)(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*`;
+const AMOUNT = String.raw`(?<!\d)(?<!\d[.,])(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*`;
 const unit = (names: string) => new RegExp(String.raw`${AMOUNT}(${names})(?![a-z])`, "gi");
-const TABLESPOONS = unit(String.raw`tablespoons?|tbsps?\.?|tbs\.?|tbl\.?`);
-const TEASPOONS = unit(String.raw`teaspoons?|tsps?\.?`);
+// Dutch recipes write el (eetlepel) and tl (theelepel).
+const TABLESPOONS = unit(String.raw`tablespoons?|tbsps?\.?|tbs\.?|tbl\.?|el|eetlepels?`);
+const TEASPOONS = unit(String.raw`teaspoons?|tsps?\.?|tl|theelepels?`);
 const CUPS = unit(String.raw`cups?`);
 const US_LIQUIDS = unit(String.raw`fl\.?\s*oz\.?|fluid\s+ounces?|pints?|pt\.?|quarts?|qts?\.?|gallons?|gal\.?`);
-const METRIC = unit(String.raw`ml|millilit(?:re|er)s?|l|lit(?:re|er)s?`);
+const METRIC = unit(String.raw`ml|millilit(?:re|er)s?|dl|decilit(?:re|er)s?|cl|centilit(?:re|er)s?|l|lit(?:re|er)s?`);
 const GRAMS = unit(String.raw`kgs?|kilos?|kilograms?|grams?|gr|g`);
 
 const FRACTION_SIGNS: [number, string][] = [
@@ -104,7 +107,7 @@ function liquidMillilitres(name: string, measures: RecipeMeasures): number {
   return measures.cup;
 }
 
-const metricMillilitres = (name: string) => (/^l/i.test(name) ? 1000 : 1);
+const metricMillilitres = (name: string) => (/^l/i.test(name) ? 1000 : /^d/i.test(name) ? 100 : /^c/i.test(name) ? 10 : 1);
 
 // "1 tbsp + 1 tsp to 2 tbsp + 2 tsp" for a range.
 function hintFor(match: RegExpMatchArray, show: (amount: number) => string): string {

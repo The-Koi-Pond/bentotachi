@@ -8,13 +8,15 @@
 const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875 };
 
 // "1 1/2", "1/2", "3 ½", "1½", "½", "1.5", "2" (lengths.ts and
-// temperatures.ts read numbers the same way).
-export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)`;
+// temperatures.ts read numbers the same way). A comma is a thousands
+// separator before three digits ("1,000 g") and a decimal comma before one
+// or two, as Dutch and most of Europe write it ("1,5 kg", "2,25 l").
+export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
 // An amount (groups 1 and 2: "1-2", "1–2", "1 to 2"), then its unit (group 3),
 // maybe joined by a hyphen ("14.5-ounce can"). ("1/2" and "1.5" are read
 // whole from their start, so only a digit, or a digit and point, is kept
 // out in front: "250 g/8oz" and "approx.1 pound" still count.)
-const AMOUNT = String.raw`(?<!\d)(?<!\d\.)(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*`;
+const AMOUNT = String.raw`(?<!\d)(?<!\d[.,])(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*`;
 // "fl oz" is matched too, so it can be skipped rather than read as "oz".
 const POUNDS_OUNCES = new RegExp(String.raw`${AMOUNT}(fl\.?\s*oz\.?|lbs?\.?|pounds?|oz\.?|ounces?)(?![a-z])`, "gi");
 const GRAMS = new RegExp(String.raw`${AMOUNT}(kgs?|kilos?|kilograms?|grams?|gr|g)(?![a-z])`, "gi");
@@ -29,6 +31,8 @@ export function parseNumber(text: string): number {
   if (fraction) return Number(fraction[1]) / Number(fraction[2]);
   const unicode = t.match(/^(\d*)\s?([½¼¾⅓⅔⅛⅜⅝⅞])$/);
   if (unicode) return Number(unicode[1] || 0) + FRACTIONS[unicode[2]];
+  if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(t)) return Number(t.replace(/,/g, ""));
+  if (/^\d+,\d{1,2}$/.test(t)) return Number(t.replace(",", "."));
   return Number(t);
 }
 

@@ -14,7 +14,7 @@ export interface StepTime {
 }
 
 const UNIT = String.raw`(hours?|hrs?|h|minutes?|mins?|seconds?|secs?)`;
-const AMOUNT = new RegExp(String.raw`(?<![\d.])(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*${UNIT}\.?(?![a-z])`, "gi");
+const AMOUNT = new RegExp(String.raw`(?<!\d)(?<!\d[.,])(${NUMBER})(?:\s*(?:-|–|to)\s*(${NUMBER}))?\s*-?\s*${UNIT}\.?(?![a-z])`, "gi");
 // Said in words.
 const WORDS: [RegExp, number][] = [
   [/\bhalf an hour\b/i, 1800],

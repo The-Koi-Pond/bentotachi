@@ -5,7 +5,7 @@
 
 import { NUMBER, parseNumber } from "./weights.ts";
 
-const LEAD = String.raw`(?<!\d)(?<!\d\.)`;
+const LEAD = String.raw`(?<!\d)(?<!\d[.,])`;
 // An inch is "inch", "inches" or a " (straight or curly) right after the
 // number, maybe joined by a hyphen ("1-inch", "1/2"").
 const INCH = String.raw`(?:\s*-?\s*inch(?:es)?(?![a-z])|\s?["”″](?![a-z]))`;

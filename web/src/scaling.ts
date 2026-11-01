@@ -14,16 +14,18 @@
 import { NUMBER, parseNumber } from "./weights.ts";
 
 const RANGE = String.raw`(${NUMBER})(?:(\s*(?:-|–|to)\s*)(${NUMBER}))?`;
-const UNITS = String.raw`kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)s?|l|lit(?:re|er)s?|cups?|tablespoons?|tbsps?\.?|tbs\.?|tbl\.?|teaspoons?|tsps?\.?|fl\.?\s*oz\.?|fluid\s+ounces?|lbs?\.?|pounds?|oz\.?|ounces?|pints?|pt\.?|quarts?|qts?\.?|gallons?|gal\.?`;
+// Dutch recipes too: dl and cl, el (eetlepel, tablespoon), tl (theelepel,
+// teaspoon).
+const UNITS = String.raw`kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)s?|dl|cl|l|lit(?:re|er)s?|cups?|tablespoons?|tbsps?\.?|tbs\.?|tbl\.?|teaspoons?|tsps?\.?|el|eetlepels?|tl|theelepels?|fl\.?\s*oz\.?|fluid\s+ounces?|lbs?\.?|pounds?|oz\.?|ounces?|pints?|pt\.?|quarts?|qts?\.?|gallons?|gal\.?`;
 const UNIT_AFTER = new RegExp(String.raw`^(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 // Soft marks or bullet-ish characters may come before the amount.
 const LEADING = new RegExp(String.raw`^([\s*_•·-]*)${RANGE}`);
 // The same amount another way: "/8 oz", " (250 ml", " or 1 cup".
 const ALTERNATIVE = new RegExp(String.raw`^(\s*(?:\/|\(|or\s|,)?\s*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 // (The empty group stands where LEADING's prefix is, so both read alike.)
-const MEASURED = new RegExp(String.raw`(?<![\d.])()${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
+const MEASURED = new RegExp(String.raw`(?<!\d)(?<!\d[.,])()${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 
-const METRIC = /^(?:kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)s?|l|lit(?:re|er)s?)$/i;
+const METRIC = /^(?:kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)s?|dl|cl|l|lit(?:re|er)s?)$/i;
 const BIG_METRIC = /^(?:kgs?|kilos?|kilograms?|l|lit(?:re|er)s?)$/i;
 
 // Whole unit words that change with the amount.
@@ -77,9 +79,12 @@ function metricAmount(n: number, unit: string): string {
 
 function scaledAmount(text: string, factor: number, unit: string): string {
   const n = parseNumber(text) * factor;
-  if (unit && METRIC.test(unit.trim())) return metricAmount(n, unit.trim());
-  // Written with a decimal point: keep decimals ("1.5 cups" -> "2.25 cups").
-  if (/\.\d/.test(text)) return String(Math.round(n * 100) / 100);
+  // Written with a decimal comma ("1,5 kg"): the answer gets one too.
+  const comma = /^\d+,\d{1,2}$/.test(text.trim());
+  const decimals = (s: string) => (comma ? s.replace(".", ",") : s);
+  if (unit && METRIC.test(unit.trim())) return decimals(metricAmount(n, unit.trim()));
+  // Written with decimals: keep them ("1.5 cups" -> "2.25 cups").
+  if (comma || /\.\d/.test(text)) return decimals(String(Math.round(n * 100) / 100));
   return kitchenFraction(n);
 }
 

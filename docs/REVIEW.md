@@ -110,8 +110,9 @@ code unless marked *(inferred)*.
 ### Other countries and languages
 - [ ] **Medium: English only**, but dates follow the phone's language, so a
   Dutch phone mixes Dutch dates with English text.
-- [ ] **Medium: Dutch units**: dl, decimal commas ("1,5 kg") and el/tl
+- [x] **Medium: Dutch units**: dl, decimal commas ("1,5 kg") and el/tl
   spoons aren't understood.
+  Done: 2026-11-02: decimal commas (a comma before 1–2 digits; "1,000" is still a thousand, which it wasn't read as before), dl and cl, el and tl, and 15 ml spoons for .nl/.be sites, in hints, scaling and timers (test/dutch.test.ts).
 - [x] **Low: the week always starts on Monday** (Americans expect Sunday).
   Done: 2026-11-02: Sunday when the household's country is the US (dates.ts firstDayFor), in the list and the month grid.
 

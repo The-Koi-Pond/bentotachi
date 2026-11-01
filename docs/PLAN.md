@@ -173,6 +173,10 @@ Changes already live in the browser version, not yet in a published APK
   phone doesn't run the app, so the beep comes when it's opened again;
   ⋮ → Keep screen on avoids that.
 - The plan's weeks start on Sunday for US households (list and month).
+- Dutch amounts (test/dutch.test.ts): "1,5 kg" (a decimal comma, kept when
+  scaling), dl and cl, el and tl (eetlepel, theelepel), and 15 ml spoons
+  for Dutch and Belgian sites. "1,000 g" is now read as a thousand (it was
+  read as 000 g before, giving no hint).
 
 Released in 1.11.0 (2026-11-02):
 
