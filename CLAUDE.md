@@ -9,6 +9,9 @@ make phones treat it as a different app. The folder, `web/package.json` name
 and the `/api/cookbook/import` route keep the older "cookbook" name.
 Xel has minimal hands-on coding experience: write the code, explain choices
 plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
+What Bentotachi is, its promises, voice (cheeky, but the joke never
+replaces the information) and look: `docs/VISION.md`. Check new screens,
+wording and features against it.
 How to run: `README.md`.
 
 ## Layout
