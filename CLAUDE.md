@@ -61,8 +61,12 @@ How to run: `README.md`.
   opens Android's installer. Updates only install if signed with the same
   key as the installed app: `android/keystore.properties` (gitignored)
   switches release builds to Bento's own key.
-- The website (github.com/The-Koi-Pond/bento → the-koi-pond.github.io/bento)
+- The website (github.com/The-Koi-Pond/bento → thekoipond.dev/bento, since
+  2026-11-01; the old the-koi-pond.github.io/bento address redirects there)
   is the `site/` folder, published by `.github/workflows/pages.yml` on push.
+  The domain's home page is its own repository,
+  github.com/The-Koi-Pond/the-koi-pond.github.io (C:\Projects\the-koi-pond.github.io);
+  the domain is Xel's, at Cloudflare.
   `site/privacy.html` is the Google Play privacy policy. Never delete
   `site/google11869a0aeef0ff1c.html`: it's the Search Console ownership
   check, and Google re-checks it.
