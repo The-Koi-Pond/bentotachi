@@ -5,8 +5,11 @@ pantry app for Xel's household of three. Renamed from Bento on 2026-11-01:
 use "Bentotachi" in anything people see. Internal names keep "bento" (app
 ID `com.xel.bento`, `bento.*` storage keys, plugin and Go names, the Pi's
 `bento` service, the friends' Start Bento.bat); changing the app ID would
-make phones treat it as a different app. The folder, `web/package.json` name
-and the `/api/cookbook/import` route keep the older "cookbook" name.
+make phones treat it as a different app. `web/package.json`'s name and the
+`/api/cookbook/import` route keep the older "cookbook" name. The folder is
+`C:\Projects\TheKoiPond\bento` (moved from `C:\Projects\Cookbook` on
+2026-11-01), next to The Koi Pond's other projects: see
+`C:\Projects\TheKoiPond\README.md`.
 Xel has minimal hands-on coding experience: write the code, explain choices
 plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
 What Bentotachi is, its promises, voice (cheeky, but the joke never
@@ -65,7 +68,7 @@ How to run: `README.md`.
   2026-11-01; the old the-koi-pond.github.io/bento address redirects there)
   is the `site/` folder, published by `.github/workflows/pages.yml` on push.
   The domain's home page is its own repository,
-  github.com/The-Koi-Pond/the-koi-pond.github.io (C:\Projects\the-koi-pond.github.io);
+  github.com/The-Koi-Pond/the-koi-pond.github.io (C:\Projects\TheKoiPond\the-koi-pond.github.io);
   the domain is Xel's, at Cloudflare.
   `site/privacy.html` is the Google Play privacy policy. Never delete
   `site/google11869a0aeef0ff1c.html`: it's the Search Console ownership

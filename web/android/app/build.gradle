@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 // Bento's signing key. android/keystore.properties (never committed) says
 // where the key file is and its password:
-//   storeFile=C:/Projects/Cookbook/signing/bento-release.jks
+//   storeFile=C:/Projects/TheKoiPond/bento/signing/bento-release.jks
 //   storePassword=...
 //   keyAlias=bento
 //   keyPassword=...

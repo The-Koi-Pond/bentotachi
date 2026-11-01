@@ -19,7 +19,7 @@ Run these in PowerShell, one block at a time.
 1. Download PocketBase into the `server` folder:
 
    ```powershell
-   cd C:\Projects\Cookbook\server
+   cd C:\Projects\TheKoiPond\bento\server
    Invoke-WebRequest https://github.com/pocketbase/pocketbase/releases/download/v0.40.6/pocketbase_0.40.6_windows_amd64.zip -OutFile pocketbase.zip
    Expand-Archive pocketbase.zip -DestinationPath . -Force
    Remove-Item pocketbase.zip
@@ -35,7 +35,7 @@ Run these in PowerShell, one block at a time.
 3. Build the app and start the server:
 
    ```powershell
-   cd C:\Projects\Cookbook\web
+   cd C:\Projects\TheKoiPond\bento\web
    npm install
    npm run build
    cd ..\server
