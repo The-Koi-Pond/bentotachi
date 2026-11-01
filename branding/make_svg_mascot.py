@@ -32,9 +32,13 @@ dark = lum < 90  # the outline and the nori
 body = ndimage.binary_fill_holes(dark)  # the outline and everything inside it
 inside = ndimage.binary_erosion(body, iterations=4 * S) & ~dark
 orange = (r > 170) & (g > 70) & (g < 150) & (b < 110)
+sticks = orange & ~body
+# Shapes that meet the outline go a little under it instead of sharing its
+# edge: two smoothed edges in the same place leave a pale rim (seen on the
+# dark website) and gaps where the chopsticks meet the onigiri.
 parts = {
-    "chopsticks": orange & ~body,
-    "body": body,
+    "chopsticks": sticks | (ndimage.binary_dilation(sticks, iterations=6 * S) & body),
+    "body": ndimage.binary_erosion(body, iterations=5 * S),
     "shade": inside & (r > 235) & (g > 225) & (g < 243) & (b < 228) & (b > 205),
     "highlight": inside & (g > 252) & (b > 252),
     "dark": dark,
