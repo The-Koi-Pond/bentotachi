@@ -59,6 +59,18 @@
   box-sizing: border-box;
 }
 
+/* When the phone or computer asks for less motion, nothing slides or fades:
+   switches and highlights change straight away. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -2857,6 +2869,33 @@ footer .person-name:focus-visible {
 
 .menu-panel .menu-link:hover,
 .menu-panel .menu-link:focus-visible {
+  background: var(--accent-soft);
+}
+
+/* "A Koi Pond app" with a small Deki, quietly at the bottom of the menu. */
+.menu-panel .menu-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 8px 12px 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+}
+
+.menu-panel .menu-credit img {
+  width: 22px;
+  height: auto;
+}
+
+.menu-panel .menu-credit:hover,
+.menu-panel .menu-credit:focus-visible {
+  color: var(--text);
   background: var(--accent-soft);
 }
 

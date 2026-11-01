@@ -9,6 +9,7 @@ import { ChevronIcon, MoreIcon } from "./icons";
 import { forgetOfflineCopy } from "./offline";
 import { isPhoneMode } from "./phoneMode";
 import { canSelfUpdate, checkForUpdate, installUpdate, useUpdateState, type UpdateState } from "./appUpdates";
+import deki from "./assets/deki.svg";
 
 // The small line under "Check for updates".
 function updateDetail(update: UpdateState): string {
@@ -165,6 +166,18 @@ export default function SettingsMenu() {
               Log out
             </button>
           )}
+          {/* The studio credit every Koi Pond app carries, with Deki (the
+              studio's mascot). Fine in every build, Google Play's included. */}
+          <a
+            href="https://thekoipond.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            role="menuitem"
+            className="menu-credit"
+            onClick={() => setOpen(false)}
+          >
+            <img src={deki} alt="" width="22" height="23" />A Koi Pond app
+          </a>
         </div>
       )}
     </div>
