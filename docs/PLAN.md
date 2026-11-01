@@ -108,7 +108,9 @@ keep recipes readable without internet, and avoid subscriptions.
          need a closed test with 12+ testers for 14 days before going public.
    - [ ] A Play build without the self-updater: no "new version" banner or
          APK downloads, and no `REQUEST_INSTALL_PACKAGES` (Play only allows
-         it for app stores).
+         it for app stores). With `canSelfUpdate` off, the ⋮ menu's "Support
+         Bentotachi ♡" (Ko-fi) link disappears too: Google pulls apps over
+         donation links (docs/VISION.md). Check it's gone in the Play build.
    - [ ] Store logos stay in the app (decided 2026-11-01): small icons that
          label a link to that store are normal, and the Household page says
          they belong to their owners and Bentotachi isn't connected with any

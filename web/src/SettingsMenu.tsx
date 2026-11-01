@@ -138,6 +138,21 @@ export default function SettingsMenu() {
               </span>
             </button>
           )}
+          {/* The tip link: never in the Google Play app (docs/VISION.md), which
+              is the build that can't update itself. */}
+          {(!isAndroidApp || canSelfUpdate) && (
+            <a
+              href="https://ko-fi.com/bentotachi"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              className="menu-link"
+              onClick={() => setOpen(false)}
+            >
+              Support Bentotachi ♡
+              <span className="menu-item-detail">Free forever, but I wouldn't say no to a coffee</span>
+            </a>
+          )}
           {/* Phone-only Bento logs itself in; leaving it is on the Backups page. */}
           {!phone && (
             <button

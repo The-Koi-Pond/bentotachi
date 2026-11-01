@@ -8,6 +8,7 @@
   --accent: #b4532a;
   --accent-soft: #f6e4da;
   --jade-soft: #e2efeb;
+  --accent-text: #ffffff;
   --radius: 12px;
   color-scheme: light;
 }
@@ -22,6 +23,7 @@
     --accent: #e07a4f;
     --accent-soft: #3a2a22;
     --jade-soft: #243631;
+    --accent-text: #1c1917;
     color-scheme: dark;
   }
 }
@@ -145,6 +147,17 @@ h2 {
 
 .muted {
   color: var(--muted);
+}
+
+/* The Ko-fi link: an orange pill, like the app's buttons. */
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 footer {
