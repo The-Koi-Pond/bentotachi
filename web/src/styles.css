@@ -446,6 +446,19 @@ main {
   border-radius: var(--radius);
 }
 
+/* By aisle: a small heading row before each aisle's things (aisles.ts). */
+.shopping-list li.aisle-heading {
+  min-height: 0;
+  padding: 10px 14px 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.shopping-list li.aisle-heading + li {
+  border-top: none;
+}
+
 .shopping-list li {
   display: flex;
   align-items: center;

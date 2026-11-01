@@ -9,6 +9,20 @@ import { PANTRY_KEY, SHOPPING_KEY, SHOPPING_QUEUE_KEY, isOffline, read, write } 
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
 import { isUnsent, queueAdd, queueCheck, sendQueued, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
+import { aisleOf, byAisle } from "../aisles";
+
+// What's still to buy, grouped by aisle in walking order (aisles.ts), or
+// simply in the order it was added. Remembered on this device.
+type Order = "aisle" | "added";
+const ORDER_KEY = "bento.shoppingOrder";
+
+function savedOrder(): Order {
+  try {
+    return localStorage.getItem(ORDER_KEY) === "added" ? "added" : "aisle";
+  } catch {
+    return "aisle";
+  }
+}
 
 export default function ShoppingList() {
   const { items, loadError, offline, setOffline, reload, upsert, removeLocally } = useLiveRecords<ShoppingItem>(
@@ -21,6 +35,9 @@ export default function ShoppingList() {
   const pantry = useLiveRecords<PantryItem>("pantry_items", undefined, PANTRY_KEY);
   const pantryById = new Map((pantry.items ?? []).map((p) => [p.id, p]));
   const [error, setError] = useState("");
+  // "Milk is already on the list", after typing something that is.
+  const [notice, setNotice] = useState("");
+  const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
   // Something typed into "Add to the list" but not added yet.
   useUnsavedChanges(text.trim() !== "");
@@ -75,12 +92,30 @@ export default function ShoppingList() {
     setOffline(true);
   }
 
+  function changeOrder(next: Order) {
+    setOrder(next);
+    try {
+      localStorage.setItem(ORDER_KEY, next);
+    } catch {
+      // Not remembered; it'll start by aisle next time.
+    }
+  }
+
   async function add(event: FormEvent) {
     event.preventDefault();
     const value = text.trim();
     if (!value) return;
     setText("");
     setError("");
+    setNotice("");
+    // Already on the list: don't add it twice. Already bought (ticked):
+    // put that one back instead.
+    const same = shown.find((item) => item.text.trim().toLowerCase() === value.toLowerCase());
+    if (same && !same.checked) return setNotice(`“${same.text}” is already on the list.`);
+    if (same) {
+      setNotice(`“${same.text}” is back on the list.`);
+      return toggle(same);
+    }
     if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date()));
     try {
       upsert(await shoppingItems().create({ text: value, checked: false, added_by: pb.authStore.record?.id }));
@@ -147,10 +182,24 @@ export default function ShoppingList() {
   const toBuy = shown.filter((i) => !i.checked).sort((a, b) => a.created.localeCompare(b.created));
   const ticked = shown.filter((i) => i.checked).sort((a, b) => b.updated.localeCompare(a.updated));
   const waiting = queue.length;
+  const aisles = byAisle(toBuy, (item) => aisleOf(item.text, pantryById.get(item.pantry_item)));
+  const row = (item: ShoppingItem) => (
+    <ShoppingRow key={item.id} item={item} pantryItem={pantryById.get(item.pantry_item)} onToggle={toggle} onRemove={remove} />
+  );
 
   return (
     <div className="stack narrow">
-      <h1>Shopping list</h1>
+      <div className="section-head">
+        <h1>Shopping list</h1>
+        <div className="view-switch" role="group" aria-label="Order">
+          <button aria-pressed={order === "aisle"} onClick={() => changeOrder("aisle")}>
+            By aisle
+          </button>
+          <button aria-pressed={order === "added"} onClick={() => changeOrder("added")}>
+            As added
+          </button>
+        </div>
+      </div>
       {offline && (
         <OfflineNote onRetry={reload}>
           Showing the list saved on this phone. Ticking off and adding still work
@@ -172,24 +221,30 @@ export default function ShoppingList() {
         </button>
       </form>
       {error && <p className="error">{error}</p>}
+      {notice && (
+        <p className="muted" role="status">
+          {notice}
+        </p>
+      )}
 
       {toBuy.length === 0 && ticked.length === 0 && (
         <p className="muted">The list is empty. Add things here, or from a recipe's ingredients.</p>
       )}
 
-      {toBuy.length > 0 && (
-        <ul className="shopping-list">
-          {toBuy.map((item) => (
-            <ShoppingRow
-              key={item.id}
-              item={item}
-              pantryItem={pantryById.get(item.pantry_item)}
-              onToggle={toggle}
-              onRemove={remove}
-            />
-          ))}
-        </ul>
-      )}
+      {toBuy.length > 0 &&
+        (order === "added" ? (
+          <ul className="shopping-list">{toBuy.map(row)}</ul>
+        ) : (
+          // One card, with a small heading row before each aisle's things.
+          <ul className="shopping-list">
+            {aisles.flatMap(({ aisle, things }) => [
+              <li key={aisle} className="aisle-heading">
+                {aisle}
+              </li>,
+              ...things.map(row),
+            ])}
+          </ul>
+        ))}
 
       {ticked.length > 0 && (
         <section className="stack">
@@ -199,17 +254,7 @@ export default function ShoppingList() {
               Clear ticked items
             </button>
           </div>
-          <ul className="shopping-list">
-            {ticked.map((item) => (
-              <ShoppingRow
-              key={item.id}
-              item={item}
-              pantryItem={pantryById.get(item.pantry_item)}
-              onToggle={toggle}
-              onRemove={remove}
-            />
-            ))}
-          </ul>
+          <ul className="shopping-list">{ticked.map(row)}</ul>
         </section>
       )}
       {undo.toast}

@@ -156,6 +156,13 @@ Changes already live in the browser version, not yet in a published APK
   this (1.11.0) still work: what they plan is a dinner (meal_plan.pb.js),
   though they'd only show one meal a day. Checked by
   server/test/meals.check.mjs and in Chromium and Firefox.
+- The shopping list by aisle (web/src/aisles.ts, test/aisles.test.ts): Fruit
+  & veg first, Frozen and Household last, each with a small heading in the
+  one card; "As added" switches back (remembered on the device). Things
+  linked to the pantry go where it keeps them; others are guessed from
+  English words ("coconut milk" is a tin, "frozen peas" frozen), and
+  anything else is under Other. Typing "milk" when Milk is waiting says
+  it's already on the list; when it's ticked, it comes back instead.
 
 Released in 1.11.0 (2026-11-02):
 

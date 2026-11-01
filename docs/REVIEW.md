@@ -119,7 +119,8 @@ code unless marked *(inferred)*.
   Done: 2026-11-02: "− 4 servings +" above the ingredients (web/src/scaling.ts, ScaleControl.tsx); recipes without a number step ×½ to ×4. The method's amounts stay as written, and only unit words change for plurals ("2 egg" can happen, as in Paprika).
 - [ ] Timers you tap in the method
 - [ ] Import from Paprika and other apps
-- [ ] Shopping list grouped by aisle, duplicates combined
+- [x] Shopping list grouped by aisle, duplicates combined
+  Done: 2026-11-02: "By aisle" (the default) or "As added" (web/src/aisles.ts): linked things go where the pantry keeps them, others are guessed from their name (English words only), unknowns under Other. Typing something already on the list says so instead of adding it twice; typing something ticked puts it back. Adding from recipes already skipped what's waiting, and "Shop for these" already merges.
 - [x] More than dinner in the plan
   Done: 2026-11-02: breakfast and lunch, turned on under Household → Meals on the plan (dinner only until then). New `meal` field on plan entries; one of each meal a day.
 - [ ] Print or share a recipe
