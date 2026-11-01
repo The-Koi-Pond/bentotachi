@@ -30,8 +30,9 @@ How to run: `README.md`.
     `??` or other recent syntax, because PocketBase's JS engine is older.
   - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
   - `test/`: `node --test "server/test/*.test.js"` from the project folder.
-    `test/pantry-rules.check.mjs` checks the server rules end to end against
-    a throwaway PocketBase on port 8091 (instructions at its top). Claude can
+    The `*.check.mjs` files (pantry rules, who added, meals) check the server
+    end to end against a throwaway PocketBase on port 8091 (instructions at
+    the top of `pantry-rules.check.mjs`). Claude can
     run the already-downloaded `pocketbase.exe` with `--dir` in scratch
     space for this; never test against `server/pb_data` (the real data).
 - `web/`: React + Vite + TypeScript, React Router 8 (a hash router, so no
@@ -41,6 +42,8 @@ How to run: `README.md`.
   as `<Routes>` inside). `npm run build` writes to
   `server/pb_public/`, which PocketBase serves. `npm run dev` proxies `/api`
   to port 8090.
+  - Tests: `node --test "test/*.test.ts"` from `web` (there's no `npm test`).
+    Run them, and the server's, before `npm run release`.
   - Don't give a logic file and a component the same name in different case
     (`softText.ts` / `SoftText.tsx`): Windows sees one file and the build
     fails. Name the logic one differently (`softMarks.ts`, `cookTiming.ts`).

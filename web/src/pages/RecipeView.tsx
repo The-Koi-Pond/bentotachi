@@ -745,7 +745,7 @@ function CookHistory({
         {last && next && " · "}
         {next && (
           <>
-            Next: <Link to="/plan">{next === today ? "tonight" : formatDay(next)}</Link>
+            Next: <Link to="/plan">{next === today ? "today" : formatDay(next)}</Link>
           </>
         )}
         {!last && !next && "Not cooked yet"}

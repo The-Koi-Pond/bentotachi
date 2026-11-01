@@ -18,8 +18,10 @@ const account = async (username) => {
   const { token } = await api("", "POST", "/collections/users/auth-with-password", { identity: username, password: "testpass123" });
   return { id: user.id, token };
 };
-const amy = await account("amy");
-const bo = await account("bo");
+// New names each run, so it can run again on the same test server.
+const run = Date.now();
+const amy = await account(`amy${run}`);
+const bo = await account(`bo${run}`);
 
 const recipe = await api(amy.token, "POST", "/collections/recipes/records", { title: "Soup", added_by: bo.id });
 check("a new recipe is added by whoever is logged in", recipe.added_by === amy.id);
@@ -30,7 +32,8 @@ check("editing keeps who added it", edited.added_by === amy.id && edited.title =
 
 const item = await api(bo.token, "POST", "/collections/shopping_items/records", { text: "Milk", added_by: amy.id });
 check("shopping items too", item.added_by === bo.id);
-const night = await api(bo.token, "POST", "/collections/meal_plan/records", { date: "2026-11-02 00:00:00.000Z", note: "Takeaway", added_by: amy.id });
+// A day no other check plans, taken off again at the end.
+const night = await api(bo.token, "POST", "/collections/meal_plan/records", { date: "2033-01-01 00:00:00.000Z", note: "Takeaway", added_by: amy.id });
 check("plan nights too", night.added_by === bo.id);
 const site = await api(bo.token, "POST", "/collections/saved_sites/records", { name: "Example", url: "https://example.com", added_by: amy.id });
 check("saved sites too", site.added_by === bo.id);
@@ -39,3 +42,4 @@ check("cooked by whoever is logged in", cooked.cooked_by === bo.id);
 
 const fixed = await api(admin, "PATCH", `/collections/recipes/records/${recipe.id}`, { added_by: bo.id });
 check("the admin page can still change it", fixed.added_by === bo.id);
+await api(admin, "DELETE", `/collections/meal_plan/records/${night.id}`);

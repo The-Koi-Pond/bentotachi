@@ -17,8 +17,9 @@ import { pantryCheck } from "./pantryLinks";
 import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon, HeartIcon, ZapIcon } from "./icons";
 import RecipePhoto from "./RecipePhoto";
+import { MEAL_NAMES, type Meal } from "./meals";
 
-// Slides up from the bottom to choose a dinner for one night: search names,
+// Slides up from the bottom to choose a meal for one day: search names,
 // tags and ingredients, narrow to favorites or quick recipes, and see what's
 // already planned. Or skip the recipes and write a short note instead, like
 // "Take-away night". Closes with ✕, Escape, tapping outside, or (in the
@@ -29,6 +30,7 @@ const NOTE_SUGGESTIONS = ["Take-away", "Leftovers", "Eating out"];
 
 export default function RecipeChooser({
   date,
+  meal,
   upcoming,
   lastHad,
   onPick,
@@ -36,7 +38,8 @@ export default function RecipeChooser({
   onClose,
 }: {
   date: string;
-  // Recipe id -> nights it's already planned for, from today on.
+  meal: Meal;
+  // Recipe id -> days it's already planned for, from today on.
   upcoming: Map<string, string[]>;
   // Recipe id -> the last night before today it was on the plan.
   lastHad: Map<string, string>;
@@ -181,7 +184,9 @@ export default function RecipeChooser({
     >
       <div className="sheet-panel">
         <div className="sheet-head">
-          <h2 id="chooser-title">Dinner for {formatDay(date)}</h2>
+          <h2 id="chooser-title">
+            {MEAL_NAMES[meal]} for {formatDay(date)}
+          </h2>
           <button className="icon-button small" onClick={onClose} aria-label="Close">
             <CloseIcon />
           </button>
@@ -200,7 +205,7 @@ export default function RecipeChooser({
             onChange={(e) => setNote(e.target.value)}
             maxLength={100}
             placeholder="Or write a note"
-            aria-label="Write a note for this night instead"
+            aria-label={`Write a note for this ${meal} instead`}
           />
           <button className="button primary small" disabled={!note.trim()}>
             Add

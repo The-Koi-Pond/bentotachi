@@ -6,20 +6,24 @@ import { gatherIngredients, startsTicked, type GatheredRow } from "./weekShoppin
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon } from "./icons";
+import { MEALS, mealOf } from "./meals";
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 const RANGES = [7, 14];
 
-// "Shop for these dinners": gathers the ingredients of the dinners planned
-// from today on into one list, merged and with what we have unticked, and
-// adds the ticked ones to the shopping list.
+// "Shop for these": gathers the ingredients of the meals planned from today
+// on into one list, merged and with what we have unticked, and adds the
+// ticked ones to the shopping list.
 export default function WeekShoppingSheet({
   entries,
   today,
+  word,
   onClose,
 }: {
   entries: MealPlanEntry[];
   today: string;
+  // "dinner", or "meal" when the plan has more than dinners (meals.ts).
+  word: string;
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -43,7 +47,7 @@ export default function WeekShoppingSheet({
       const date = datePart(entry.date);
       return date >= today && date <= last && entry.expand?.recipe;
     })
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date) || MEALS.indexOf(mealOf(a)) - MEALS.indexOf(mealOf(b)));
   const rows = gatherIngredients(
     dinners.map((entry) => entry.expand!.recipe as Recipe),
     pantry.items ?? []
@@ -93,13 +97,13 @@ export default function WeekShoppingSheet({
     >
       <div className="sheet-panel">
         <div className="sheet-head">
-          <h2 id="week-shop-title">Shop for the planned dinners</h2>
+          <h2 id="week-shop-title">Shop for the planned {word}s</h2>
           <button className="icon-button small" onClick={onClose} aria-label="Close">
             <CloseIcon />
           </button>
         </div>
 
-        <div className="filter-chips" role="group" aria-label="Which dinners">
+        <div className="filter-chips" role="group" aria-label={`Which ${word}s`}>
           {RANGES.map((count) => (
             <button key={count} aria-pressed={days === count} onClick={() => setDays(count)}>
               Next {count} days

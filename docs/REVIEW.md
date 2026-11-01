@@ -120,7 +120,8 @@ code unless marked *(inferred)*.
 - [ ] Timers you tap in the method
 - [ ] Import from Paprika and other apps
 - [ ] Shopping list grouped by aisle, duplicates combined
-- [ ] More than dinner in the plan
+- [x] More than dinner in the plan
+  Done: 2026-11-02: breakfast and lunch, turned on under Household → Meals on the plan (dinner only until then). New `meal` field on plan entries; one of each meal a day.
 - [ ] Print or share a recipe
 - [ ] Reset a forgotten password without the admin page
 

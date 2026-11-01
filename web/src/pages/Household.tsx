@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, type User } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import Avatar from "../Avatar";
-import { refreshHousehold, useCountry, useTablespoon } from "../household";
+import { refreshHousehold, useCountry, usePlanMeals, useTablespoon } from "../household";
+import { MEALS, MEAL_NAMES, type Meal } from "../meals";
 import { isPhoneMode } from "../phoneMode";
 import { COUNTRIES, OTHER_COUNTRY } from "../country";
 import { storesIn } from "../stores";
@@ -26,9 +27,10 @@ export default function Household() {
   if (isPhoneMode())
     return (
       <div className="stack narrow">
-        <h1>Country & spoons</h1>
+        <h1>Country, spoons & meals</h1>
         <CountrySetting />
         <TablespoonSetting />
+        <PlanMealsSetting />
       </div>
     );
   return <People />;
@@ -63,6 +65,7 @@ function People() {
       <AddPerson onAdded={people.upsert} />
       <CountrySetting />
       <TablespoonSetting />
+      <PlanMealsSetting />
       <p className="muted small-note">
         To reset someone's forgotten password or remove an account, use the server's admin page. The{" "}
         <a href="guide.html#admin" target="_blank" rel="noreferrer">
@@ -164,6 +167,49 @@ function TablespoonSetting() {
           <option value={20}>20 ml (the Australian standard)</option>
         </select>
       </label>
+      {status && (
+        <p className={status.isError ? "error" : "success"} role="status">
+          {status.text}
+        </p>
+      )}
+    </section>
+  );
+}
+
+// Which meals the plan has a place for. Dinner only until someone turns on
+// breakfast or lunch; at least one stays on. Saves as soon as it's changed.
+function PlanMealsSetting() {
+  const [meals, setMeals] = usePlanMeals();
+  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+
+  async function toggle(meal: Meal) {
+    const next = meals.includes(meal) ? meals.filter((m) => m !== meal) : [...meals, meal];
+    if (next.length === 0) return;
+    setStatus(null);
+    try {
+      await setMeals(MEALS.filter((m) => next.includes(m)));
+      setStatus({ text: "Saved.", isError: false });
+    } catch (err) {
+      setStatus({ text: errorMessage(err), isError: true });
+    }
+  }
+
+  return (
+    <section className="card stack">
+      <h2>Meals on the plan</h2>
+      <span className="hint">Each day on the plan gets a place for these.</span>
+      <div className="filter-chips" role="group" aria-label="Meals on the plan">
+        {MEALS.map((meal) => (
+          <button
+            key={meal}
+            aria-pressed={meals.includes(meal)}
+            disabled={meals.length === 1 && meals[0] === meal}
+            onClick={() => void toggle(meal)}
+          >
+            {MEAL_NAMES[meal]}
+          </button>
+        ))}
+      </div>
       {status && (
         <p className={status.isError ? "error" : "success"} role="status">
           {status.text}

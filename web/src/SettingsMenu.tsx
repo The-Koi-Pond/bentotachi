@@ -97,14 +97,16 @@ export default function SettingsMenu() {
           {user && !phone && (
             <Link to="/household" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
               {singleUser ? "Share Bentotachi" : "Household"}
-              <span className="menu-item-detail">{singleUser ? "Add someone to use it with you; country and spoons" : "Who has an account; country and spoons"}</span>
+              <span className="menu-item-detail">
+                {singleUser ? "Add someone to use it with you; country, spoons, meals" : "Who has an account; country, spoons, meals"}
+              </span>
             </Link>
           )}
           {/* Phone-only: the Household page is just its settings. */}
           {user && phone && (
             <Link to="/household" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
-              Country & spoons
-              <span className="menu-item-detail">For store search and recipe hints</span>
+              Country, spoons & meals
+              <span className="menu-item-detail">For store search, recipe hints and the plan</span>
             </Link>
           )}
           {user && (

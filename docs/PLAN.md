@@ -145,6 +145,17 @@ Changes already live in the browser version, not yet in a published APK
   It goes back to the recipe's own size when you leave. Sizes after a count
   ("1 (400 g) can") and amounts in the method aren't changed, and the page
   says so.
+- Breakfast and lunch on the plan (needs a server restart: new `meal` field
+  on meal_plan, unique per day and meal instead of per day, and
+  `plan_meals` on household_settings). Household → "Meals on the plan"
+  turns them on; until then the plan is the same dinner plan as before.
+  With more than dinner, each day lists its meals with small labels, the
+  page is "Meal plan", meals drag between days and meals (a lunch can
+  become tomorrow's dinner), the month grid shows the dinner's picture with
+  "+1", and the recipe page's Plan button asks which meal. Apps from before
+  this (1.11.0) still work: what they plan is a dinner (meal_plan.pb.js),
+  though they'd only show one meal a day. Checked by
+  server/test/meals.check.mjs and in Chromium and Firefox.
 
 Released in 1.11.0 (2026-11-02):
 

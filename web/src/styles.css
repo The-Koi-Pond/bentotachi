@@ -589,9 +589,10 @@ main {
   color: var(--accent);
 }
 
-/* The night a dragged dinner would land on. */
-.plan-day.drop-here {
+/* The place a dragged meal would land on. */
+.plan-meal.drop-here {
   background: var(--accent-soft);
+  border-radius: 10px;
 }
 
 .plan-date {
@@ -607,9 +608,35 @@ main {
   color: var(--muted);
 }
 
-.plan-slot {
+/* A day's meals, one under another (just dinner unless the household plans
+   breakfast or lunch too, when each gets a small label above it). */
+.plan-meals {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selected-day .plan-meal + .plan-meal {
+  margin-top: 8px;
+}
+
+.meal-label {
+  display: block;
+  margin: 2px 0 1px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* "+1" beside a month day's number: it has more meals than the one shown. */
+.month-more {
+  margin-left: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .plan-add {

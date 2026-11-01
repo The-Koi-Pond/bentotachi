@@ -124,10 +124,13 @@ export interface PantryItem extends RecordModel {
 
 export const pantryItems = () => pb.collection<PantryItem>("pantry_items");
 
-// One night's dinner on the plan: a recipe, or a short note like "Take-away
-// night" instead. date: "2026-11-02 00:00:00.000Z" (see dates.ts).
+// One meal on the plan: a recipe, or a short note like "Take-away night"
+// instead. date: "2026-11-02 00:00:00.000Z" (see dates.ts).
 export interface MealPlanEntry extends RecordModel {
   date: string;
+  // "breakfast", "lunch" or "dinner" (see meals.ts); empty before meals
+  // existed, which means dinner.
+  meal?: string;
   recipe: string;
   note: string;
   added_by: string;

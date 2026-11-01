@@ -3,15 +3,22 @@ import { Link } from "react-router";
 import { errorMessage, mealPlan, pb, type Recipe } from "./pb";
 import { formatDay, localToday, toStoredDate } from "./dates";
 import { CalendarIcon } from "./icons";
+import { usePlanMeals } from "./household";
+import { MEAL_NAMES, type Meal } from "./meals";
 
-// "📅 Plan" on a recipe page: pick a night and put this recipe on the
-// dinner plan. If that night already has a dinner, ask before replacing it.
+// "📅 Plan" on a recipe page: pick a day (and, when the plan has more than
+// dinner, which meal) and put this recipe on the plan. If that meal is
+// already planned, ask before replacing it.
 export default function PlanButton({ recipe }: { recipe: Recipe }) {
+  const [meals] = usePlanMeals();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(localToday);
+  // null: the plan's usual meal (dinner, or the last of the household's).
+  const [chosenMeal, setChosenMeal] = useState<Meal | null>(null);
+  const meal = chosenMeal && meals.includes(chosenMeal) ? chosenMeal : meals[meals.length - 1];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [planned, setPlanned] = useState("");
+  const [planned, setPlanned] = useState<{ date: string; meal: Meal } | null>(null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -20,23 +27,26 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
     setError("");
     try {
       const existing = await mealPlan()
-        .getFirstListItem(pb.filter("date = {:date}", { date: toStoredDate(date) }), { expand: "recipe" })
+        .getFirstListItem(pb.filter("date = {:date} && meal = {:meal}", { date: toStoredDate(date), meal }), {
+          expand: "recipe",
+        })
         .catch((err) => {
           if ((err as { status?: number }).status === 404) return null;
           throw err;
         });
       if (existing && existing.recipe !== recipe.id) {
-        const current = existing.expand?.recipe?.title || existing.note || "another dinner";
-        if (!window.confirm(`${formatDay(date)} already has “${current}”. Replace it with this?`)) {
+        const current = existing.expand?.recipe?.title || existing.note || `another ${meal}`;
+        const what = meals.length > 1 ? `${formatDay(date)}'s ${meal}` : formatDay(date);
+        if (!window.confirm(`${what} is already “${current}”. Replace it with this?`)) {
           setBusy(false);
           return;
         }
-        // A note night ("Take-away") becomes this recipe's night.
+        // A note ("Take-away") becomes this recipe's place.
         await mealPlan().update(existing.id, { recipe: recipe.id, note: "" });
       } else if (!existing) {
-        await mealPlan().create({ date: toStoredDate(date), recipe: recipe.id, added_by: pb.authStore.record?.id });
+        await mealPlan().create({ date: toStoredDate(date), meal, recipe: recipe.id, added_by: pb.authStore.record?.id });
       }
-      setPlanned(date);
+      setPlanned({ date, meal });
       setOpen(false);
     } catch (err) {
       setError(errorMessage(err));
@@ -59,9 +69,18 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                aria-label="Night to cook it"
+                aria-label="Day to cook it"
                 required
               />
+              {meals.length > 1 && (
+                <select value={meal} onChange={(e) => setChosenMeal(e.target.value as Meal)} aria-label="Which meal">
+                  {meals.map((m) => (
+                    <option key={m} value={m}>
+                      {MEAL_NAMES[m]}
+                    </option>
+                  ))}
+                </select>
+              )}
               <button className="button primary small" disabled={busy}>
                 {busy ? "Adding…" : "Add to plan"}
               </button>
@@ -69,7 +88,8 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
           )}
           {planned && !open && (
             <p className="success">
-              Planned for {formatDay(planned)}. <Link to="/plan">See the plan</Link>
+              Planned for {meals.length > 1 ? `${planned.meal} on ` : ""}
+              {formatDay(planned.date)}. <Link to="/plan">See the plan</Link>
             </p>
           )}
           {error && <p className="error">{error}</p>}

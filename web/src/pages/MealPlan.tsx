@@ -24,12 +24,20 @@ import { useLiveRecords } from "../useLiveRecords";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
+import { usePlanMeals } from "../household";
+import { MEALS, MEAL_NAMES, mealOf, mealWord, mealsForDay, parseSlot, planTitle, slotKey, type Meal } from "../meals";
 
 // How many days are shown at once: this week and next.
 const DAYS_SHOWN = 14;
 
-// A dinner lands on the night under your finger (or mouse). With the
-// keyboard there is no pointer, so it goes to the nearest night instead.
+// One meal on one day.
+interface Slot {
+  date: string;
+  meal: Meal;
+}
+
+// A meal lands on the place under your finger (or mouse). With the
+// keyboard there is no pointer, so it goes to the nearest one instead.
 const dropTarget: CollisionDetection = (args) => {
   const underPointer = pointerWithin(args);
   return underPointer.length > 0 ? underPointer : closestCenter(args);
@@ -46,19 +54,21 @@ function savedView(): View {
   }
 }
 
-// The dinner plan, as a two-week list (one row per night) or a month grid.
-// In both, dinners can be dragged to another night; if that night already
-// has one, they swap.
+// The meal plan, as a two-week list (one row per day) or a month grid. Each
+// day has a place for each of the household's meals (just dinner, unless
+// breakfast or lunch are turned on under Household). In both views, meals
+// can be dragged to another place; if that place already has one, they swap.
 export default function MealPlan() {
   const plan = useLiveRecords<MealPlanEntry>("meal_plan", "recipe");
   const cooked = useLiveRecords<CookedEntry>("cooked");
+  const [meals] = usePlanMeals();
   const today = localToday();
   const [view, setView] = useState<View>(savedView);
   const [start, setStart] = useState(() => weekStart(today));
   const [month, setMonth] = useState(() => monthStart(today));
   // Month view: the day whose details show under the grid.
   const [selected, setSelected] = useState(today);
-  const [picking, setPicking] = useState<string | null>(null);
+  const [picking, setPicking] = useState<Slot | null>(null);
   const [dragging, setDragging] = useState<MealPlanEntry | null>(null);
   const [shoppingOpen, setShoppingOpen] = useState(false);
   const [error, setError] = useState("");
@@ -84,31 +94,42 @@ export default function MealPlan() {
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
 
-  const byDate = new Map(
-    plan.items.filter((entry) => !undo.hidden.has(entry.id)).map((entry) => [datePart(entry.date), entry])
-  );
+  // Each planned meal by its place ("2026-11-02|lunch"), and each day's
+  // meals in plan order (for the month grid).
+  const shown = plan.items.filter((entry) => !undo.hidden.has(entry.id));
+  const bySlot = new Map(shown.map((entry) => [slotKey(datePart(entry.date), mealOf(entry)), entry]));
+  const byDate = new Map<string, MealPlanEntry[]>();
+  for (const entry of [...shown].sort((a, b) => MEALS.indexOf(mealOf(a)) - MEALS.indexOf(mealOf(b)))) {
+    const date = datePart(entry.date);
+    byDate.set(date, [...(byDate.get(date) ?? []), entry]);
+  }
+  const mealsOn = (date: string) => mealsForDay(meals, (meal) => bySlot.has(slotKey(date, meal)));
+  const entryAt = (date: string, meal: Meal) => bySlot.get(slotKey(date, meal));
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(start, i));
+  const word = mealWord(meals);
 
   // For the chooser: which recipes are already planned from today on, and when.
   const upcoming = new Map<string, string[]>();
-  for (const [date, entry] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    if (date >= today && entry.recipe) upcoming.set(entry.recipe, [...(upcoming.get(entry.recipe) ?? []), date]);
+  for (const [date, entries] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    for (const entry of entries)
+      if (date >= today && entry.recipe) upcoming.set(entry.recipe, [...(upcoming.get(entry.recipe) ?? []), date]);
   }
   // And when each recipe was last had: on the plan before today, or marked
   // "We cooked this" (see cookHistory.ts).
   const lastHad = lastHadByRecipe(plan.items, cooked.items ?? [], today);
 
-  // Plans a night: a recipe, or a note like "Take-away night" instead.
-  async function add(date: string, what: { recipe: Recipe } | { note: string }) {
+  // Plans a meal: a recipe, or a note like "Take-away night" instead.
+  async function add({ date, meal }: Slot, what: { recipe: Recipe } | { note: string }) {
     setPicking(null);
     setError("");
     try {
-      // A night holds one dinner: one just removed must be gone first.
+      // A place holds one meal: one just removed must be gone first.
       await undo.settle();
       plan.upsert(
         await mealPlan().create(
           {
             date: toStoredDate(date),
+            meal,
             recipe: "recipe" in what ? what.recipe.id : "",
             note: "note" in what ? what.note : "",
             added_by: pb.authStore.record?.id,
@@ -135,28 +156,29 @@ export default function MealPlan() {
     });
   }
 
-  // Moves a dinner to another night, swapping with whatever is there. A swap
-  // trades the two nights' contents (recipe and note), so each night keeps
-  // its own entry.
+  // Moves a meal to another place (another day, or another meal), swapping
+  // with whatever is there. A swap trades the two places' contents (recipe
+  // and note), so each place keeps its own entry.
   async function move(from: string, to: string) {
-    const moving = byDate.get(from);
+    const moving = bySlot.get(from);
     if (!moving || from === to) return;
-    const there = byDate.get(to);
+    const there = bySlot.get(to);
+    const target = parseSlot(to);
     setError("");
-    // Onto a night whose dinner was just removed: that one goes first.
+    // Onto a place whose meal was just removed: that one goes first.
     await undo.settle();
     if (there) {
       plan.upsert({ ...moving, recipe: there.recipe, note: there.note, expand: there.expand });
       plan.upsert({ ...there, recipe: moving.recipe, note: moving.note, expand: moving.expand });
     } else {
-      plan.upsert({ ...moving, date: toStoredDate(to) });
+      plan.upsert({ ...moving, date: toStoredDate(target.date), meal: target.meal });
     }
     try {
       if (there) {
         await mealPlan().update(moving.id, { recipe: there.recipe, note: there.note });
         await mealPlan().update(there.id, { recipe: moving.recipe, note: moving.note });
       } else {
-        await mealPlan().update(moving.id, { date: toStoredDate(to) });
+        await mealPlan().update(moving.id, { date: toStoredDate(target.date), meal: target.meal });
       }
     } catch (err) {
       setError(errorMessage(err));
@@ -165,12 +187,17 @@ export default function MealPlan() {
   }
 
   function onDragStart(event: DragStartEvent) {
-    setDragging(byDate.get(String(event.active.id)) ?? null);
+    setDragging(bySlot.get(String(event.active.id)) ?? null);
   }
 
+  // The list's places are meals ("2026-11-02|lunch"); the month grid's are
+  // days, where a meal stays the same meal ("2026-11-02").
   function onDragEnd(event: DragEndEvent) {
     setDragging(null);
-    if (event.over) void move(String(event.active.id), String(event.over.id));
+    if (!event.over) return;
+    const from = String(event.active.id);
+    const over = String(event.over.id);
+    void move(from, over.includes("|") ? over : slotKey(over, parseSlot(from).meal));
   }
 
   const isList = view === "list";
@@ -198,7 +225,7 @@ export default function MealPlan() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        <h1>Dinner plan</h1>
+        <h1>{planTitle(meals)}</h1>
         <div className="view-switch" role="group" aria-label="View">
           <button aria-pressed={isList} onClick={() => changeView("list")}>
             List
@@ -230,10 +257,10 @@ export default function MealPlan() {
       <p className="muted plan-hint">
         {isList ? (
           <>
-            Drag a dinner by its <GripIcon /> handle to move it; drop it on another dinner to swap.
+            Drag a {word} by its <GripIcon /> handle to move it; drop it on another {word} to swap.
           </>
         ) : (
-          "Tap a day to see or add its dinner. Drag a dinner's picture to another day to move it, or onto another dinner to swap."
+          `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a ${word}'s picture to another day to move it, or onto another ${word} to swap.`
         )}
       </p>
       <div className="plan-actions">
@@ -259,8 +286,10 @@ export default function MealPlan() {
                 date={date}
                 today={today}
                 weekBreak={i === 7}
-                entry={byDate.get(date)}
-                onAdd={() => setPicking(date)}
+                meals={mealsOn(date)}
+                labelled={meals.length > 1}
+                entryAt={(meal) => entryAt(date, meal)}
+                onAdd={(meal) => setPicking({ date, meal })}
                 onRemove={remove}
               />
             ))}
@@ -279,8 +308,10 @@ export default function MealPlan() {
             />
             <SelectedDay
               date={selected}
-              entry={byDate.get(selected)}
-              onAdd={() => setPicking(selected)}
+              meals={mealsOn(selected)}
+              labelled={meals.length > 1}
+              entryAt={(meal) => entryAt(selected, meal)}
+              onAdd={(meal) => setPicking({ date: selected, meal })}
               onRemove={remove}
             />
           </>
@@ -293,7 +324,8 @@ export default function MealPlan() {
 
       {picking && (
         <RecipeChooser
-          date={picking}
+          date={picking.date}
+          meal={picking.meal}
           upcoming={upcoming}
           lastHad={lastHad}
           onPick={(recipe) => void add(picking, { recipe })}
@@ -301,14 +333,17 @@ export default function MealPlan() {
           onClose={() => setPicking(null)}
         />
       )}
-      {shoppingOpen && <WeekShoppingSheet entries={plan.items} today={today} onClose={() => setShoppingOpen(false)} />}
+      {shoppingOpen && (
+        <WeekShoppingSheet entries={plan.items} today={today} word={word} onClose={() => setShoppingOpen(false)} />
+      )}
       {undo.toast}
     </div>
   );
 }
 
 // A month as a Monday-to-Sunday grid. Each day shows its number and, if a
-// dinner is planned, a small picture of it that can be dragged.
+// meal is planned, a small picture of it that can be dragged (its dinner,
+// or its first meal), with "+1" when it has more.
 function MonthGrid({
   month,
   today,
@@ -319,7 +354,8 @@ function MonthGrid({
   month: string;
   today: string;
   selected: string;
-  byDate: Map<string, MealPlanEntry>;
+  // Each day's meals, in plan order.
+  byDate: Map<string, MealPlanEntry[]>;
   onSelect: (date: string) => void;
 }) {
   const gridStart = weekStart(month);
@@ -340,7 +376,7 @@ function MonthGrid({
           inMonth={monthStart(date) === month}
           isToday={date === today}
           isSelected={date === selected}
-          entry={byDate.get(date)}
+          entries={byDate.get(date) ?? []}
           onSelect={onSelect}
         />
       ))}
@@ -353,18 +389,22 @@ function MonthCell({
   inMonth,
   isToday,
   isSelected,
-  entry,
+  entries,
   onSelect,
 }: {
   date: string;
   inMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
-  entry: MealPlanEntry | undefined;
+  entries: MealPlanEntry[];
   onSelect: (date: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: date });
-  const dinner = entry ? entryLabel(entry) : undefined;
+  const shown = entries.find((entry) => mealOf(entry) === "dinner") ?? entries[0];
+  // "Lunch: Soup, Dinner: Curry", or just "Curry" for a lone dinner.
+  const described = entries
+    .map((entry) => (entries.length > 1 || mealOf(entry) !== "dinner" ? `${MEAL_NAMES[mealOf(entry)]}: ` : "") + entryLabel(entry))
+    .join(", ");
   const classes = ["month-cell", inMonth ? "" : "other-month", isToday ? "today" : "", isSelected ? "selected" : "", isOver ? "drop-here" : ""];
 
   return (
@@ -373,19 +413,22 @@ function MonthCell({
         className="month-cell-button"
         onClick={() => onSelect(date)}
         aria-pressed={isSelected}
-        aria-label={`${formatDay(date, { weekday: "long", day: "numeric", month: "long" })}${dinner ? `: ${dinner}` : ""}`}
+        aria-label={`${formatDay(date, { weekday: "long", day: "numeric", month: "long" })}${described ? `: ${described}` : ""}`}
       >
-        <span className="month-day">{Number(date.slice(8))}</span>
-        {entry && <DraggableThumb entry={entry} />}
+        <span className="month-day">
+          {Number(date.slice(8))}
+          {entries.length > 1 && <span className="month-more">+{entries.length - 1}</span>}
+        </span>
+        {shown && <DraggableThumb entry={shown} />}
       </button>
     </div>
   );
 }
 
-// The dinner's picture in a month cell; dragging it moves the dinner. (A tap
+// A meal's picture in a month cell; dragging it moves the meal. (A tap
 // still selects the day, because a drag only starts after moving a little.)
 function DraggableThumb({ entry }: { entry: MealPlanEntry }) {
-  const { setNodeRef, listeners, isDragging } = useDraggable({ id: datePart(entry.date) });
+  const { setNodeRef, listeners, isDragging } = useDraggable({ id: slotKey(datePart(entry.date), mealOf(entry)) });
   return (
     <span ref={setNodeRef} className={`cell-thumb-wrap ${isDragging ? "dragging" : ""}`} {...listeners}>
       <CellThumb entry={entry} />
@@ -405,86 +448,97 @@ function CellThumb({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: b
   );
 }
 
-// Under the month grid: the chosen day's dinner, or a way to add one.
-function SelectedDay({
-  date,
-  entry,
-  onAdd,
-  onRemove,
-}: {
+// What one day's places show: the meals, whether each is labelled
+// ("Breakfast", only when the plan has more than dinner), what's planned,
+// and what tapping "+ Add" or ✕ does.
+interface DayProps {
   date: string;
-  entry: MealPlanEntry | undefined;
-  onAdd: () => void;
+  meals: Meal[];
+  labelled: boolean;
+  entryAt: (meal: Meal) => MealPlanEntry | undefined;
+  onAdd: (meal: Meal) => void;
   onRemove: (entry: MealPlanEntry) => void;
-}) {
+}
+
+// Under the month grid: the chosen day's meals, or a way to add each.
+function SelectedDay({ date, meals, labelled, entryAt, onAdd, onRemove }: DayProps) {
   return (
-    <section className="selected-day" aria-label={`Dinner on ${formatDay(date)}`}>
+    <section className="selected-day" aria-label={`${labelled ? "Meals" : MEAL_NAMES[meals[0]]} on ${formatDay(date)}`}>
       <h2>{formatDay(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
-      {entry ? (
-        <div className="dinner-slot">
-          <DinnerCard entry={entry} />
-          <button
-            className="icon-button small"
-            onClick={() => onRemove(entry)}
-            aria-label={`Take ${entryLabel(entry)} off the plan`}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-      ) : (
-        <button className="plan-add" onClick={onAdd}>
-          + Add dinner
-        </button>
-      )}
+      {meals.map((meal) => {
+        const entry = entryAt(meal);
+        return (
+          <div key={meal} className="plan-meal">
+            {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
+            {entry ? (
+              <div className="dinner-slot">
+                <DinnerCard entry={entry} />
+                <button
+                  className="icon-button small"
+                  onClick={() => onRemove(entry)}
+                  aria-label={`Take ${entryLabel(entry)} off the plan`}
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+            ) : (
+              <button className="plan-add" onClick={() => onAdd(meal)}>
+                + Add {meal}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </section>
   );
 }
 
-function DayRow({
-  date,
-  today,
-  weekBreak,
-  entry,
-  onAdd,
-  onRemove,
-}: {
-  date: string;
-  today: string;
-  weekBreak: boolean;
-  entry: MealPlanEntry | undefined;
-  onAdd: () => void;
-  onRemove: (entry: MealPlanEntry) => void;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: date });
+function DayRow({ today, weekBreak, ...day }: DayProps & { today: string; weekBreak: boolean }) {
+  const { date } = day;
   const when = date === today ? "today" : date < today ? "past" : "";
 
   return (
-    <li ref={setNodeRef} className={`plan-day ${when} ${isOver ? "drop-here" : ""} ${weekBreak ? "week-break" : ""}`}>
+    <li className={`plan-day ${when} ${weekBreak ? "week-break" : ""}`}>
       <div className="plan-date">
         <strong>{date === today ? "Today" : formatDay(date, { weekday: "short" })}</strong>
         <span>{formatDay(date, { day: "numeric", month: "short" })}</span>
       </div>
-      <div className="plan-slot">
-        {entry ? (
-          <DraggableDinner entry={entry} onRemove={onRemove} />
-        ) : (
-          <button className="plan-add" onClick={onAdd}>
-            + Add dinner
-          </button>
-        )}
+      <div className="plan-meals">
+        {day.meals.map((meal) => (
+          <MealPlace key={meal} meal={meal} {...day} />
+        ))}
       </div>
     </li>
   );
 }
 
+// One meal's place in a day row: a dinner (or breakfast, or lunch) that can
+// be dragged, or "+ Add". Meals dragged here land in it.
+function MealPlace({ date, meal, labelled, entryAt, onAdd, onRemove }: DayProps & { meal: Meal }) {
+  const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
+  const entry = entryAt(meal);
+  return (
+    <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
+      {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
+      {entry ? (
+        <DraggableDinner entry={entry} onRemove={onRemove} />
+      ) : (
+        <button className="plan-add" onClick={() => onAdd(meal)}>
+          + Add {meal}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: (entry: MealPlanEntry) => void }) {
-  const date = datePart(entry.date);
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: date });
+  const id = slotKey(datePart(entry.date), mealOf(entry));
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id });
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
       <button
         className="drag-handle"
-        aria-label={`Move ${entryLabel(entry)} to another night`}
+        aria-label={`Move ${entryLabel(entry)} to another day or meal`}
         {...attributes}
         {...listeners}
       >
@@ -502,9 +556,9 @@ function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: 
   );
 }
 
-// What a night holds, in words: the recipe's name, or the note.
+// What a meal holds, in words: the recipe's name, or the note.
 function entryLabel(entry: MealPlanEntry): string {
-  return entry.expand?.recipe?.title || entry.note || "this dinner";
+  return entry.expand?.recipe?.title || entry.note || `this ${mealOf(entry)}`;
 }
 
 function DinnerCard({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: boolean }) {
