@@ -184,6 +184,13 @@ Changes already live in the browser version, not yet in a published APK
   it on the phone); in a browser its own share sheet, or it's copied.
   Print (browsers, not on phone-width screens) prints just the recipe. On
   a very narrow phone, Plan, Edit and Share move under the title.
+- Import recipes from a Paprika file: ⋮ → "Import & export" (was "Export
+  recipes"). Reads .paprikarecipes from Paprika, Mealie, Tandoor or Bento
+  (web/src/paprikaImport.ts, test/paprikaImport.test.ts), with photos up
+  to 10 MB; "Sauce:" lines become headings, times become minutes,
+  categories tags; recipes already here (same name and link) are skipped.
+  Tried in Chromium and Firefox with a made-up file; try a real Paprika
+  export, and the phone's file picker.
 
 Released in 1.11.0 (2026-11-02):
 

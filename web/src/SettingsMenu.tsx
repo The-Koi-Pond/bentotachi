@@ -111,8 +111,8 @@ export default function SettingsMenu() {
           )}
           {user && (
             <Link to="/export" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
-              Export recipes
-              <span className="menu-item-detail">As a Paprika file, for other apps or a copy</span>
+              Import & export
+              <span className="menu-item-detail">Bring recipes from Paprika and other apps, or save a copy</span>
             </Link>
           )}
           {user && <QuickSetting userId={user.id} value={quickMinutes} />}

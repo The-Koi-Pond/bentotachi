@@ -121,7 +121,8 @@ code unless marked *(inferred)*.
   Done: 2026-11-02: "− 4 servings +" above the ingredients (web/src/scaling.ts, ScaleControl.tsx); recipes without a number step ×½ to ×4. The method's amounts stay as written, and only unit words change for plurals ("2 egg" can happen, as in Paprika).
 - [x] Timers you tap in the method
   Done: 2026-11-02: "⏱ 10 min" under each step that mentions a time (web/src/stepTimers.ts); the countdowns sit above the tab bar on every page (StepTimerTray.tsx) and beep and buzz at zero while Bentotachi is open. No alarm while the phone is locked (that needs Android notifications); Keep screen on covers it.
-- [ ] Import from Paprika and other apps
+- [x] Import from Paprika and other apps
+  Done: 2026-11-02: ⋮ → Import & export → Import recipes reads a Paprika file (web/src/paprikaImport.ts), which Paprika, Mealie, Tandoor and Bento make, with photos; recipes already here are skipped. Not tried with a file from Paprika itself, or in the Android app's file picker.
 - [x] Shopping list grouped by aisle, duplicates combined
   Done: 2026-11-02: "By aisle" (the default) or "As added" (web/src/aisles.ts): linked things go where the pantry keeps them, others are guessed from their name (English words only), unknowns under Other. Typing something already on the list says so instead of adding it twice; typing something ticked puts it back. Adding from recipes already skipped what's waiting, and "Shop for these" already merges.
 - [x] More than dinner in the plan
