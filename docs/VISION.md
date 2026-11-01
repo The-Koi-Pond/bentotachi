@@ -74,8 +74,9 @@ Cheeky and silly wherever it can afford to be, while staying clear.
 **Name and title.** "Bentotachi" (Bento for short; "-tachi" makes it a
 group: the bento gang). The title is Xel's drawn lettering, as SVGs:
 `branding/make_svg_title.py` makes a light version (brown letters) and a
-dark one (cream letters), with a sakura, a leaf on the "i", and an orange
-chopstick underline.
+dark one (cream letters), with a sakura, a jade leaf on the "i" with
+baran's ridges (the green divider in a bento box), and an orange chopstick
+underline.
 
 **Mascot.** A screaming onigiri skewered on orange chopsticks
 (`branding/make_svg_mascot.py`). The scream is the point. Every part is its
@@ -98,10 +99,22 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
 | Cards | #FFFFFF | #27221F |
 | Text | #2B2420 | #F1EBE5 |
 | Accent (buttons, links) | #B4532A terracotta | #E07A4F |
-| Soft accent (notes, icon background) | #F6E4DA peach | #3A2A22 |
+| Soft accent (icon background) | #F6E4DA peach | #3A2A22 |
 | Logo chopsticks | #C8643A (clear on both) | #C8643A |
+| Jade, the second accent (the leaf) | #5A9A8A | #5A9A8A |
+| Jade tags, website note | #E2EFEB soft jade | #243631 |
+| Jade selected tag | #3F7668, white text | #7FBFAE, dark text |
+| Jade text ("Saved.") | #3A7062 | #8FD3C1 |
 
-The pantry's Have / Low / Out colours are green, amber and red.
+**Orange and jade** (decided 2026-11-01: teal is Xel's favourite, and it's
+the colour opposite orange). Orange is for doing things: buttons, links,
+the chopsticks. Jade is for labels and good news: tags, success messages,
+the website's note, the title's leaf. Add jade where it can afford to, not
+on buttons. The plain jade (#5A9A8A) is only 3:1 on cream, so it's for
+shapes, never text; use the text shades above.
+
+The pantry's Have / Low / Out colours stay green, amber and red: they mean
+something at a glance.
 
 **Type.** The phone's own font (system-ui), so it reads like a normal app;
 the drawn title carries the personality.
@@ -133,4 +146,5 @@ the drawn title carries the personality.
   title; the mascot is the screaming onigiri on chopsticks; silly is
   welcome, not aiming at everyone; no subscriptions, ever; store logos stay
   inside the app (not in the Play listing); a desktop browser version via a
-  server is part of the plan.
+  server is part of the plan; the title's leaf gets baran ridges, in jade,
+  and jade becomes the second accent (tags, success messages).

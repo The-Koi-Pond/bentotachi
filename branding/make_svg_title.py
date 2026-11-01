@@ -70,7 +70,22 @@ stick = ("M 109.1,188.3 C 279,181.6 496,171.7 653.6,166.5 C 660.6,166.2 663.1,17
          "L 663.8,190.1 C 664,195.7 660.2,198.4 655.1,198.4 L 109.1,198.5 C 103.8,198.5 101.7,196.5 "
          "101.7,193.7 C 101.7,190.8 104.3,188.6 109.1,188.3 Z")
 shine = "M 113,192.2 C 276,185.6 491,175.8 652,171"
-vein = "M 650,89 C 657,79 664,69 673,60"
+
+# The leaf on the "i" has baran's ridges (the green divider in a bento box):
+# light and dark lines along its length, clipped to its shape.
+LEAF, LEAF_DARK, LEAF_LIGHT = "#5a9a8a", "#3f7668", "#96c6b8"  # jade, the second accent
+
+
+def ridges(colour, width, opacity, shift):
+    # Along the leaf: from (650, 89) to (673, 60); 3.2 apart across it.
+    ux, uy = 23 / 37.0, -29 / 37.0
+    lines = []
+    k = -16 + shift
+    while k <= 16:
+        x, y = 662 - uy * k, 74 + ux * k
+        lines.append(f"M {x - ux * 30:.2f},{y - uy * 30:.2f} L {x + ux * 30:.2f},{y + uy * 30:.2f}")
+        k += 3.2
+    return f'<path d="{" ".join(lines)}" fill="none" stroke="{colour}" stroke-width="{width}" opacity="{opacity}"/>'
 
 
 def title(letter_colour):
@@ -84,8 +99,12 @@ def title(letter_colour):
 <path d="{traced["letters"]}" fill="{letter_colour}"/>
 <circle cx="{36 * S}" cy="{150 * S}" r="{13 * S}" fill="#ffffff"/>
 <path d="{traced["flower"]}" fill="#f2837a" fill-rule="evenodd"/>
-<path d="{traced["leaf"]}" fill="#6b9468" fill-rule="evenodd"/>
-<path d="{vein}" transform="scale({S})" fill="none" stroke="#4f7a4d" stroke-width="2.2" stroke-linecap="round"/>
+<path d="{traced["leaf"]}" fill="{LEAF}" fill-rule="evenodd"/>
+<clipPath id="leaf-shape"><path d="{traced["leaf"]}" fill-rule="evenodd"/></clipPath>
+<g clip-path="url(#leaf-shape)"><g transform="scale({S})">
+  {ridges(LEAF_DARK, 1.2, 0.6, 0)}
+  {ridges(LEAF_LIGHT, 0.9, 0.55, 1.6)}
+</g></g>
 </svg>
 '''
 

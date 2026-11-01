@@ -38,6 +38,7 @@ Copy the three SVGs (`bentotachi-title.svg`, `bentotachi-title-dark.svg`,
   circle and square shapes.
 
 The colours: chopstick orange #C8643A (clear on both the light and dark
-backgrounds), letters #361F17 or, in dark mode, #F1EBE5. The icon background
+backgrounds), letters #361F17 or, in dark mode, #F1EBE5, and the leaf in
+jade #5A9A8A with baran ridges (#3F7668 and #96C6B8). The icon background
 colour is in `android/app/src/main/res/values/ic_launcher_background.xml`
 (soft peach, #F6E4DA).

@@ -7,6 +7,7 @@
   --border: #e6ddd3;
   --accent: #b4532a;
   --accent-soft: #f6e4da;
+  --jade-soft: #e2efeb;
   --radius: 12px;
   color-scheme: light;
 }
@@ -20,6 +21,7 @@
     --border: #3d3530;
     --accent: #e07a4f;
     --accent-soft: #3a2a22;
+    --jade-soft: #243631;
     color-scheme: dark;
   }
 }
@@ -136,7 +138,7 @@ h2 {
 }
 
 .note {
-  background: var(--accent-soft);
+  background: var(--jade-soft);
   border-radius: var(--radius);
   padding: 14px 16px;
 }

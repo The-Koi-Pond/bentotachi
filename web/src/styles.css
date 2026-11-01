@@ -7,8 +7,13 @@
   --accent: #b4532a;
   --accent-text: #ffffff;
   --accent-soft: #f6e4da;
+  /* Jade, the second accent (the title's leaf): tags and good news.
+     Orange stays for buttons and links. */
+  --jade-soft: #e2efeb;
+  --jade-strong: #3f7668;
+  --jade-strong-text: #ffffff;
   --danger: #b3261e;
-  --success: #2e7d32;
+  --success: #3a7062;
   /* Pantry statuses: background when selected, and its text colour. */
   --have: #2e7d32;
   --have-text: #ffffff;
@@ -33,8 +38,11 @@
     --accent: #e07a4f;
     --accent-text: #1c1917;
     --accent-soft: #3a2a22;
+    --jade-soft: #243631;
+    --jade-strong: #7fbfae;
+    --jade-strong-text: #1c1917;
     --danger: #f2827a;
-    --success: #81c784;
+    --success: #8fd3c1;
     --have: #66bb6a;
     --have-text: #1c1917;
     --low: #ffca28;
@@ -2071,7 +2079,7 @@ legend {
 
 .tags li a {
   display: inline-block;
-  background: var(--accent-soft);
+  background: var(--jade-soft);
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 0.9rem;
@@ -2117,15 +2125,15 @@ legend {
   font: inherit;
   font-size: 0.9rem;
   color: var(--text);
-  background: var(--accent-soft);
+  background: var(--jade-soft);
   border: 1px solid transparent;
   border-radius: 999px;
   cursor: pointer;
 }
 
 .tag-chip.selected {
-  background: var(--accent);
-  color: var(--accent-text);
+  background: var(--jade-strong);
+  color: var(--jade-strong-text);
   font-weight: 600;
 }
 
@@ -3098,7 +3106,7 @@ footer .person-name:focus-visible {
 
 /* Tags the recipe itself mentions: outlined, to stand out from the rest. */
 .tag-chip.suggested {
-  border-color: var(--accent);
+  border-color: var(--jade-strong);
   font-weight: 600;
 }
 
