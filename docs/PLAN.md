@@ -163,6 +163,15 @@ Changes already live in the browser version, not yet in a published APK
   English words ("coconut milk" is a tin, "frozen peas" frozen), and
   anything else is under Other. Typing "milk" when Milk is waiting says
   it's already on the list; when it's ticked, it comes back instead.
+- Timers in the method (web/src/stepTimers.ts, test/stepTimers.test.ts):
+  a step that says "cook for 5-8 minutes" or "1 hour 30 minutes" gets a
+  "⏱" button under it for each time (a range counts down from its shorter
+  end). Running timers sit in a tray above the tab bar on every page
+  (StepTimerTray.tsx), with pause and ✕, and carry on after leaving the
+  page or reloading; at zero they say Done!, beep and buzz (new VIBRATE
+  permission in the Android app, so the buzz needs the next APK). A locked
+  phone doesn't run the app, so the beep comes when it's opened again;
+  ⋮ → Keep screen on avoids that.
 
 Released in 1.11.0 (2026-11-02):
 

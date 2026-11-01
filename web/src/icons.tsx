@@ -80,6 +80,17 @@ export function CalendarIcon({ size = 24 }: { size?: number }) {
   );
 }
 
+// A stopwatch: a step's timer (Lucide "timer").
+export function TimerIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <line x1="10" x2="14" y1="2" y2="2" />
+      <line x1="12" x2="15" y1="14" y2="11" />
+      <circle cx="12" cy="14" r="8" />
+    </Icon>
+  );
+}
+
 // Chain link: "link to the pantry".
 export function LinkIcon() {
   return (

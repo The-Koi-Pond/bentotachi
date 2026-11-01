@@ -16,7 +16,7 @@ import {
 import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
-import { CartIcon, LinkIcon, PencilIcon } from "../icons";
+import { CartIcon, LinkIcon, PencilIcon, TimerIcon } from "../icons";
 import { linkFor, linkKey, type IngredientLink } from "../pantryLinks";
 import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
@@ -42,6 +42,8 @@ import PhotoFramer from "../PhotoFramer";
 import RecipeTimer from "../RecipeTimer";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import { scaleLine } from "../scaling";
+import { stepTimes } from "../stepTimers";
+import { startTimer, useStepTimers } from "../StepTimerTray";
 
 // An ingredient or method line with soft hints for the household: weights,
 // temperatures, lengths and liquids in its units ("1½ lbs (680 g)", "350°F
@@ -101,6 +103,8 @@ export default function RecipeView() {
   // How much bigger or smaller the ingredients are shown (1 = as written),
   // only while this recipe is open.
   const [scale, setScale] = useState(1);
+  // Countdowns started from steps (StepTimerTray.tsx), to show which run.
+  const timers = useStepTimers();
 
   useEffect(() => {
     setScale(1);
@@ -327,14 +331,38 @@ export default function RecipeView() {
               }
               const key = `s${i}`;
               stepNumber += 1;
+              const number = stepNumber;
+              const times = stepTimes(withoutSoftMarks(line));
               return (
                 <li key={i}>
                   <button className={`step ${done.has(key) ? "done" : ""}`} onClick={() => toggle(key)} aria-pressed={done.has(key)}>
-                    <span className="step-number">{stepNumber}</span>
+                    <span className="step-number">{number}</span>
                     <span>
                       <SoftText text={withHints(line, hints)} />
                     </span>
                   </button>
+                  {/* Beside the step, not inside it: the step itself is a button. */}
+                  {times.length > 0 && (
+                    <div className="step-timers">
+                      {times.map((time) => {
+                        const running = timers.some(
+                          (t) => t.recipeId === recipe.id && t.step === number && t.label === time.label && !t.rang
+                        );
+                        return (
+                          <button
+                            key={time.label}
+                            className="timer-chip"
+                            onClick={() => startTimer(recipe.id, recipe.title, number, time)}
+                            disabled={running}
+                            aria-label={running ? `Step ${number}'s ${time.label} timer is running` : `Start a ${time.label} timer for step ${number}`}
+                          >
+                            <TimerIcon size={14} />
+                            {running ? `${time.label}, running` : time.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </li>
               );
             })}

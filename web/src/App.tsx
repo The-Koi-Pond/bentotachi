@@ -18,6 +18,7 @@ import Export from "./pages/Export";
 import SettingsMenu from "./SettingsMenu";
 import { PlusIcon } from "./icons";
 import TabBar from "./TabBar";
+import StepTimerTray from "./StepTimerTray";
 import { BentoTitle } from "./Brand";
 import { ShareReceiver } from "./shareReceiver";
 import { forgetOfflineCopy } from "./offline";
@@ -96,6 +97,7 @@ function Screens() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <StepTimerTray />
       <TabBar />
     </>
   );
