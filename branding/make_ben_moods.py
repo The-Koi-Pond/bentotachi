@@ -119,9 +119,12 @@ moods["scream"] = svg(onigiri(scream_eyes, scream_blush) + grain, box=(vx, 700, 
                       label="Ben, screaming")
 
 # Bitten: three tooth marks along his top-right edge. His shape is drawn as
-# pixels, the bites cut out and their corners rounded, then traced back: the
-# traced shape clips him, and a new outline follows the bite. The chopsticks
-# stay whole (they're behind him, and show through the bite).
+# pixels, the bites cut out and their corners rounded, then traced back. One
+# new outline runs all the way round the bitten shape, on top: a patch along
+# the bite alone left a step where it met his own outline. Under it, he is
+# clipped to a shape a little inside that outline, so no cream shares its
+# outer edge (a shared edge shows as a pale hairline on dark pages). The
+# chopsticks stay whole (they're behind him, and show through the bite).
 K = 0.5  # pixels per unit
 silhouette_svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" width="{vw * K:.0f}" '
                   f'height="{vh * K:.0f}">{part("body")}{part("outline-and-nori")}</svg>')
@@ -138,15 +141,18 @@ bites = np.zeros_like(shape)
 for x, y, r in BITES:
     bites |= (cols - (x - vx) * K) ** 2 + (rows - (y - vy) * K) ** 2 <= (r * K) ** 2
 bitten_shape = ndimage.binary_opening(shape & ~bites, structure=disk(round(14 * K * 2)))
-outline_px = round(111 * K)
-rim = (bitten_shape & ~ndimage.binary_erosion(bitten_shape, structure=disk(outline_px))
-       & ndimage.binary_dilation(bites, structure=disk(outline_px * 2)))
+# His outline measures 95-102 units around the top and the bite (measured
+# from onigiri.svg), so the new one is 98: where his own is thicker (the
+# bottom), his shows through; elsewhere the two match.
+outline_px = round(98 * K)
+rim = bitten_shape & ~ndimage.binary_erosion(bitten_shape, structure=disk(outline_px))
+inside = ndimage.binary_erosion(bitten_shape, structure=disk(outline_px // 2))
 to_units = f"translate({vx} {vy}) scale({1 / K})"
-bitten = (f'<defs><clipPath id="bitten-shape"><path d="{trace("shape", bitten_shape)}" transform="{to_units}"/>'
+bitten = (f'<defs><clipPath id="bitten-shape"><path d="{trace("inside", inside)}" transform="{to_units}"/>'
           f'</clipPath></defs>\n'
           + part("chopsticks")
-          + '<g clip-path="url(#bitten-shape)">\n' + onigiri(chopsticks=False)
-          + f'<path d="{trace("rim", rim)}" transform="{to_units}" fill="{INK}"/>\n</g>\n')
+          + '<g clip-path="url(#bitten-shape)">\n' + onigiri(chopsticks=False) + '</g>\n'
+          + f'<path d="{trace("rim", rim)}" transform="{to_units}" fill="{INK}"/>\n')
 moods["bitten"] = svg(bitten, label="Ben, with a bite out of him")
 
 # Ready: holding his chopsticks in front of him, with little hands.
