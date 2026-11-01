@@ -37,6 +37,11 @@ These don't bend:
   Never in the Google Play app (Google pulls apps over donation links, and
   its own billing would show Xel's address publicly), never a nag, and it
   never unlocks anything.
+- **Honest about AI.** AI helps make Bentotachi (code with Claude, first
+  drafts of art with ChatGPT), and "How it's made" says so plainly. The
+  artwork is never called hand-drawn. The Koi Pond is a few friends (Xel,
+  Deci and Chai); Bentotachi is mostly Xel's, with the others' feedback, and
+  the wording keeps room for them.
 
 ## Where it runs
 

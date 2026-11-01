@@ -116,6 +116,15 @@ backups and signing key never go in.
   and from `web`, `node --test "test/*.test.ts"`
 - Type check: `cd web` then `npm run typecheck`
 
+## How it's made
+
+Bentotachi is built by Xel, of The Koi Pond, with AI assistance: most of the
+code was written with Claude, and the artwork (Ben, the title, the umeboshi,
+Deki) and the Pond Pebbles font started as ChatGPT images, then traced and
+refined into the files here. Feedback from the rest of The Koi Pond,
+[Deci](https://github.com/Decidetto) and [Chai](https://github.com/cha1latte);
+design, decisions and testing are human.
+
 ## Licence
 
 Bento is free, and meant to stay that way. It's under the
