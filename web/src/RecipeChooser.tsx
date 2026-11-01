@@ -240,7 +240,7 @@ export default function RecipeChooser({
         </div>
         <div className="chooser-tools">
           <button className="button small" onClick={surprise} disabled={shown.length === 0}>
-            <span aria-hidden="true">🎲</span> Surprise me
+            <span className="button-mark" aria-hidden="true">🎲</span> Surprise me
           </button>
           {all && <span className="muted chooser-count">{shown.length} recipes</span>}
         </div>

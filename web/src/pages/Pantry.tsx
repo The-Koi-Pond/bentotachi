@@ -358,7 +358,7 @@ export default function Pantry() {
         <span className="title-actions">
           {canScan ? (
             <button className="button small" onClick={() => void scan()}>
-              <span aria-hidden="true">📷</span> Scan
+              <span className="button-mark" aria-hidden="true">📷</span> Scan
             </button>
           ) : (
             <button
@@ -676,7 +676,7 @@ function ScanResult({
           </button>
           {canScan && (
             <button className="button primary small" onClick={onScanAgain}>
-              <span aria-hidden="true">📷</span> Scan again
+              <span className="button-mark" aria-hidden="true">📷</span> Scan again
             </button>
           )}
         </div>
@@ -1455,7 +1455,7 @@ function EditPantryItem({
           ))}
           {canScan && (
             <button type="button" className="button small" onClick={() => void scanAnother()}>
-              <span aria-hidden="true">📷</span> Add one
+              <span className="button-mark" aria-hidden="true">📷</span> Add one
             </button>
           )}
         </div>

@@ -383,6 +383,53 @@ main {
   gap: 6px;
 }
 
+/* "− 6 servings +" above the ingredients (ScaleControl.tsx), in a pill like
+   the pantry's status picker, then "Back to 4 servings" once it's changed. */
+.scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 4px 0 10px;
+}
+
+.scale-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.scale-control .icon-button {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--text);
+}
+
+.scale-control .icon-button:disabled {
+  color: var(--border);
+  cursor: default;
+}
+
+.scale-value {
+  min-width: 3.5em;
+  padding: 0 4px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scale-row .link-button {
+  align-self: center;
+}
+
+.scale-note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 /* Shopping list */
 
 .add-row {
@@ -1493,6 +1540,12 @@ legend {
   border-radius: 999px;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* A decorative mark before a button's words ("📷 Scan"), hidden from screen
+   readers. Buttons are flex boxes, which drop the space after it. */
+.button-mark {
+  margin-inline-end: 0.35em;
 }
 
 .button.primary {

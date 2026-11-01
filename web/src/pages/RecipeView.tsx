@@ -40,6 +40,8 @@ import { withoutSoftMarks } from "../softMarks";
 import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
 import RecipeTimer from "../RecipeTimer";
+import ScaleControl, { scaledServings } from "../ScaleControl";
+import { scaleLine } from "../scaling";
 
 // An ingredient or method line with soft hints for the household: weights,
 // temperatures, lengths and liquids in its units ("1½ lbs (680 g)", "350°F
@@ -96,8 +98,12 @@ export default function RecipeView() {
   const [editing, setEditing] = useState<Part | null>(null);
   // The photo framer, opened by double-tapping (or double-clicking) the photo.
   const [framing, setFraming] = useState(false);
+  // How much bigger or smaller the ingredients are shown (1 = as written),
+  // only while this recipe is open.
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
+    setScale(1);
     recipes()
       .getOne(id, { expand: "added_by" })
       .then((found) => {
@@ -226,7 +232,7 @@ export default function RecipeView() {
               {recipe.servings && (
                 <div>
                   <dt>Makes</dt>
-                  <dd>{recipe.servings}</dd>
+                  <dd>{scaledServings(recipe.servings, scale)}</dd>
                 </div>
               )}
               {times.map(([label, minutes], index) => (
@@ -283,6 +289,8 @@ export default function RecipeView() {
           onToggleDone={toggle}
           onRecipeChange={setRecipe}
           editButton={editButton("ingredients", "Change the ingredients")}
+          scale={scale}
+          onScale={setScale}
         />
       )}
 
@@ -431,6 +439,8 @@ function IngredientsSection({
   onToggleDone,
   onRecipeChange,
   editButton,
+  scale,
+  onScale,
 }: {
   recipe: Recipe;
   // Offline, the pantry and shopping list can't be reached: just the list.
@@ -440,6 +450,9 @@ function IngredientsSection({
   onRecipeChange: (recipe: Recipe) => void;
   // The ✎ that changes the ingredients right here.
   editButton: ReactNode;
+  // Amounts shown this many times as written (ScaleControl).
+  scale: number;
+  onScale: (scale: number) => void;
 }) {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
   const pantryList = pantry.items ?? [];
@@ -517,7 +530,11 @@ function IngredientsSection({
           const { item } = linkOf(lines[index]);
           // Linked lines go on the list as the pantry item ("Onion", not
           // "2 onions, diced"), linked so buying it marks it as Have again.
-          return { text: item ? item.name : withoutSoftMarks(lines[index]), pantryItem: item?.id ?? "", recipe: recipe.id };
+          return {
+            text: item ? item.name : withoutSoftMarks(scaleLine(lines[index], scale)),
+            pantryItem: item?.id ?? "",
+            recipe: recipe.id,
+          };
         });
       setStatus({ text: addedMessage(await addToShoppingList(things)), isError: false });
       setPicking(false);
@@ -536,7 +553,11 @@ function IngredientsSection({
         <h2>Ingredients</h2>
         {!picking && editButton}
       </div>
-      {picking && <p className="muted">Tick what you need to buy.</p>}
+      {picking ? (
+        <p className="muted">Tick what you need to buy.</p>
+      ) : (
+        pickable.length > 0 && <ScaleControl servings={recipe.servings ?? ""} factor={scale} onChange={onScale} />
+      )}
 
       <ul className={`checklist ${picking ? "picking" : ""}`}>
         {lines.map((line, i) => {
@@ -553,12 +574,12 @@ function IngredientsSection({
               {picking ? (
                 <label>
                   <input type="checkbox" checked={picked.has(i)} onChange={() => togglePicked(i)} />
-                  <SoftText text={withHints(line, hints)} />
+                  <SoftText text={withHints(scaleLine(line, scale), hints)} />
                 </label>
               ) : (
                 <label className={done.has(key) ? "done" : ""}>
                   <input type="checkbox" checked={done.has(key)} onChange={() => onToggleDone(key)} />
-                  <SoftText text={withHints(line, hints)} />
+                  <SoftText text={withHints(scaleLine(line, scale), hints)} />
                 </label>
               )}
               {pantry.items && <PantryChip line={line} link={linkOf(line)} onClick={() => setLinking(line)} />}
@@ -735,7 +756,7 @@ function CookHistory({
         </button>
       ) : (
         <button className="button small cooked-button" onClick={onCooked}>
-          <span aria-hidden="true">✓</span> We cooked this
+          <span className="button-mark" aria-hidden="true">✓</span> We cooked this
         </button>
       )}
     </div>

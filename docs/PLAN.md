@@ -137,6 +137,14 @@ Changes already live in the browser version, not yet in a published APK
   - Emoji at the start of buttons ("📷 Scan", "🎲 Surprise me", ✓, ♡) are
     hidden from screen readers, which read them out by name.
   - The friends' Start Bento.bat no longer says "send it to Claude".
+- Scaling a recipe: "− 4 servings +" above the ingredients changes every
+  amount (web/src/scaling.ts, tested in test/scaling.test.ts), with the
+  weight, spoon and cup hints worked out for the new amount; "Makes" and
+  "Add to shopping list" follow it. Big batches step by a quarter ("24
+  cookies" by 6); recipes that don't say how many they make step ×½ to ×4.
+  It goes back to the recipe's own size when you leave. Sizes after a count
+  ("1 (400 g) can") and amounts in the method aren't changed, and the page
+  says so.
 
 Released in 1.11.0 (2026-11-02):
 

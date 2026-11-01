@@ -115,7 +115,8 @@ code unless marked *(inferred)*.
 - [ ] **Low: the week always starts on Monday** (Americans expect Sunday).
 
 ### Missing features (compared with other apps)
-- [ ] Scaling servings
+- [x] Scaling servings
+  Done: 2026-11-02: "− 4 servings +" above the ingredients (web/src/scaling.ts, ScaleControl.tsx); recipes without a number step ×½ to ×4. The method's amounts stay as written, and only unit words change for plurals ("2 egg" can happen, as in Paprika).
 - [ ] Timers you tap in the method
 - [ ] Import from Paprika and other apps
 - [ ] Shopping list grouped by aisle, duplicates combined

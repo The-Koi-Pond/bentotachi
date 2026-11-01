@@ -150,7 +150,9 @@ export default function SettingsMenu() {
               className="menu-link"
               onClick={() => setOpen(false)}
             >
-              Support Bentotachi <span aria-hidden="true">♡</span>
+              <span>
+                Support Bentotachi <span aria-hidden="true">♡</span>
+              </span>
               <span className="menu-item-detail">Free forever, but I wouldn't say no to a coffee</span>
             </a>
           )}
