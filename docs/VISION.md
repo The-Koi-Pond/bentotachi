@@ -74,16 +74,18 @@ Cheeky and silly wherever it can afford to be, while staying clear.
 **Name and title.** "Bentotachi" (Bento for short; "-tachi" makes it a
 group: the bento gang). The title is Xel's drawn lettering, as SVGs:
 `branding/make_svg_title.py` makes a light version (brown letters) and a
-dark one (cream letters), with a sakura, a jade leaf on the "i" with
-baran's ridges (the green divider in a bento box), and an orange chopstick
-underline.
+dark one (cream letters), with an umeboshi by the "B" (the pickled plum
+inside an onigiri, with a little puddle of juice), a jade leaf on the "i"
+with baran's ridges (the green divider in a bento box), and an orange
+chopstick underline. Together with the mascot it's one bento: the filling,
+the divider, the chopsticks, the rice.
 
 **Mascot.** A screaming onigiri skewered on orange chopsticks
 (`branding/make_svg_mascot.py`). The scream is the point. Every part is its
 own shape, so moods can change the eyes, add sweat, take a bite out of it.
 
-- **One flower, in the title.** The mascot doesn't get one (friends found
-  two flowers next to each other too much).
+- **Each detail once.** The umeboshi is in the title, so the mascot doesn't
+  get one (friends found the old sakura on both too much).
 - **Moods for the mascot** on empty and error screens, one silly detail at
   a time: sweating at an empty pantry, screaming harder when an import
   fails, a bite missing on "Delete everything", relieved when a backup is
@@ -147,4 +149,5 @@ the drawn title carries the personality.
   welcome, not aiming at everyone; no subscriptions, ever; store logos stay
   inside the app (not in the Play listing); a desktop browser version via a
   server is part of the plan; the title's leaf gets baran ridges, in jade,
-  and jade becomes the second accent (tags, success messages).
+  and jade becomes the second accent (tags, success messages); an
+  umeboshi replaces the title's sakura.

@@ -5,15 +5,17 @@ Xel's originals (both made with ChatGPT, on a flat cream background):
 - `Onigiri.png`: the mascot, a screaming onigiri skewered on chopsticks.
   The screaming is on purpose: Bentotachi doesn't take itself seriously.
 - `BentotachiTitle.png`: the drawn "Bentotachi" title.
+- `Umeboshi.png`: the pickled plum by the title's "B" (it replaced the
+  title's sakura), on a glowing background the script cuts away.
 
-(The old onigiri with the leaves and sakura, and the old "Bento" title, are
-in the git history, before November 2026.)
+(The old onigiri with the leaves and sakura, the title's sakura, and the
+old "Bento" title are in the git history, before November 2026.)
 
 The scripts turn them into what the app uses. Run them from the `web`
 folder:
 
 ```
-python ../branding/make_svg_title.py ../branding/BentotachiTitle.png src/assets
+python ../branding/make_svg_title.py ../branding/BentotachiTitle.png ../branding/Umeboshi.png src/assets
 python ../branding/make_svg_mascot.py ../branding/Onigiri.png src/assets
 "C:\Program Files\Inkscape\bin\inkscape.com" src/assets/onigiri.svg --export-type=png --export-width=1024 --export-filename=<scratch folder>/onigiri.png
 python ../branding/make_icons.py <scratch folder>/onigiri.png android/app/src/main/res public <scratch folder>
@@ -24,7 +26,8 @@ Copy the three SVGs (`bentotachi-title.svg`, `bentotachi-title-dark.svg`,
 
 - `make_svg_title.py` traces the title into clean SVGs:
   `bentotachi-title.svg` (dark letters) and `bentotachi-title-dark.svg`
-  (cream letters, for dark mode).
+  (cream letters, for dark mode), with the umeboshi traced from its own
+  picture and placed by the "B".
 - `make_svg_mascot.py` traces the onigiri into `onigiri.svg`, with a
   see-through background. Each part has its own id (chopsticks, body,
   shade, highlight, blush, eyes, outline-and-nori), and the eyes and blush
