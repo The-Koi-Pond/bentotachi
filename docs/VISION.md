@@ -32,6 +32,11 @@ These don't bend:
 - **Always takeable.** Backups whenever you like, and a Paprika export to
   move to another app. Bentotachi never holds recipes hostage. (Yummly shut
   down in December 2024 and its users' libraries went with it.)
+- **Support is optional** (decided 2026-11-01): a tip link (like Ko-fi) on
+  the website and GitHub, and a quiet one in the sideloaded app's menu.
+  Never in the Google Play app (Google pulls apps over donation links, and
+  its own billing would show Xel's address publicly), never a nag, and it
+  never unlocks anything.
 
 ## Where it runs
 
