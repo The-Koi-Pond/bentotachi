@@ -28,27 +28,30 @@
   color-scheme: light;
 }
 
+/* Dark mode is "night water" (The Koi Pond's BRAND.md, chosen 2026-11-01):
+   the pond at night, a teal-tinted near-black, as bright as the warm stone
+   it replaced, so every contrast ratio stayed the same. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1917;
-    --surface: #27221f;
+    --bg: #141b1b;
+    --surface: #202928;
     --text: #f1ebe5;
     --muted: #a89a8f;
-    --border: #3d3530;
+    --border: #34403e;
     --accent: #e07a4f;
-    --accent-text: #1c1917;
-    --accent-soft: #3a2a22;
-    --jade-soft: #243631;
+    --accent-text: #141b1b;
+    --accent-soft: #302a25; /* orange text on it: 4.76 */
+    --jade-soft: #1d3330;
     --jade-strong: #7fbfae;
-    --jade-strong-text: #1c1917;
+    --jade-strong-text: #141b1b;
     --danger: #f2827a;
     --success: #8fd3c1;
     --have: #66bb6a;
-    --have-text: #1c1917;
+    --have-text: #141b1b;
     --low: #ffca28;
-    --low-text: #1c1917;
+    --low-text: #141b1b;
     --out: #ef5350;
-    --out-text: #1c1917;
+    --out-text: #141b1b;
     --gold: #ffca28;
     --heart: #f06595;
     color-scheme: dark;

@@ -13,17 +13,18 @@
   color-scheme: light;
 }
 
+/* Dark mode is "night water", like the app (The Koi Pond's BRAND.md). */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1917;
-    --surface: #27221f;
+    --bg: #141b1b;
+    --surface: #202928;
     --text: #f1ebe5;
     --muted: #a89a8f;
-    --border: #3d3530;
+    --border: #34403e;
     --accent: #e07a4f;
-    --accent-soft: #3a2a22;
-    --jade-soft: #243631;
-    --accent-text: #1c1917;
+    --accent-soft: #302a25;
+    --jade-soft: #1d3330;
+    --accent-text: #141b1b;
     color-scheme: dark;
   }
 }
