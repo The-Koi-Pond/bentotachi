@@ -128,6 +128,13 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+(Nothing yet.)
+
+Released in 1.12.0 (2026-11-02; the Pi's data was copied to
+`~/bento/pb_data-before-2026-11-01T17-02-36.tar.gz` on the Pi first, for the
+meals database change). Try on a phone: the share sheet, the timer buzz,
+picking a Paprika file to import.
+
 - From the review (docs/REVIEW.md), the small things:
   - "Added by" and "Cooked by" always name whoever is logged in
     (server/pb_hooks/who_added.pb.js; checked by test/who-added.check.mjs),
