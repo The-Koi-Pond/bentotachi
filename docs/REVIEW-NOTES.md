@@ -9,6 +9,26 @@ holds; say which.
 Real bugs waiting to be fixed are in `docs/PLAN.md` ("To fix later"), not
 here.
 
+## Checked and found fine (no need to check again)
+
+From a read-only bug hunt on 2026-11-01 (by reading the code, not running
+it). Reopen if the code named here changes in a way that matters.
+
+- **Dates** (web/src/dates.ts, expiry.ts): stored and compared as plain
+  `YYYY-MM-DD`, so time zones can't shift them by a day; the week start and
+  month maths are right.
+- **Unit conversions** (weights.ts, volumes.ts): tablespoons (15 vs 20 ml),
+  cups, US and UK pints and gallons, pounds and ounces are right, and tested.
+- **Import address safety** (server/pb_hooks/safe_url.js): private IPs,
+  localhost, number-only and bracketed addresses are refused. Its known gap
+  (a public name that points or redirects to a home address) is written
+  down in the file; PocketBase can't check where a name points.
+- **Access rules**: ratings can only be changed by their owner, adding
+  people needs a logged-in member, and first-time setup is guarded inside a
+  transaction.
+- **Undo** (web/src/undo.tsx): a pending delete is carried out when you
+  leave the page, or when another removal replaces it.
+
 ## Not bugs (checked, the claim doesn't hold)
 
 - **A queued shopping change that keeps failing with 500 or 403 blocks the

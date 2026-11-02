@@ -561,11 +561,42 @@ recipe pictures, and the ratings box layout.
 
 - Phone notifications when something is about to expire
 
-## To fix later (from the 1.12.0 review, 2026-11-02)
+## To fix later (from the 1.12.0 review and the 2026-11-01 bug hunt)
 
-Found by a verified review of 1.12.0; all low risk for one household, so
-they wait. Xel: "we'll deal with them eventually".
+Found by reviews of 1.12.0 (verified) and a read-only bug hunt on
+2026-11-01 (checked by reading the code, not run); low risk for one
+household, so they wait. Xel: "we'll deal with them eventually". Most
+serious first:
 
+- **Importing fails completely on one over-long field or a big photo**
+  (bug hunt). The parser never shortens anything, but the database caps
+  title 300 characters, description 5,000, servings 100, author notes
+  20,000, photos 10 MB (server/pb_migrations/1761696000_recipes.js,
+  1763251200_recipes_author_notes.js). One over the limit, or a photo whose
+  real type isn't what the site says, fails the final save in
+  server/pb_hooks/import.pb.js (`e.app.save(record)`), so the recipe isn't
+  added at all, though the photo is meant to be optional. Fix: cut text to
+  the limits before saving, check the photo's size and type first (or save
+  again without it), and test with an over-long description.
+- **Ticking a shopping item wipes a pantry expiry date that was still
+  right** (bug hunt). server/pb_hooks/pantry.pb.js clears `expires` whenever
+  a linked item is ticked and has a date, even when the pantry item is
+  already Have or Low (added from a recipe while the old milk is still in
+  date, or set back to Have by hand with a new date). The "use soon"
+  warning then disappears. Fix: only clear it when the status was Out.
+- **Swapping two meals on the plan can lose one** (bug hunt, and a test
+  reviewer reading 1.12.0). The swap is two separate saves (MealPlan.tsx
+  move); if the second fails (signal drops, server restarts), both days
+  hold the same meal and the other is gone. Fix: put the first back if the
+  second fails, or better, one server route that does both inside
+  runInTransaction.
+- **Editing an ingredient's wording drops its pantry link without a word**
+  (bug hunt). Links are kept under the line's exact text (pantryLinks.ts
+  linkKey), so "2 onions" -> "3 onions" in the editor (RecipeEdit.tsx) loses
+  the chosen link (or "not a pantry item"); it goes back to a guess, and the
+  old entry stays in `ingredient_links` forever. Fix: on save, carry links
+  over for lines whose position stayed the same, and drop keys for lines
+  that are gone.
 - Linking an ingredient to the pantry sends the recipe's whole
   `ingredient_links` map from the copy on screen (RecipeView.tsx,
   chooseLink), so if someone else linked another ingredient meanwhile, theirs
@@ -590,9 +621,6 @@ Possible, not double-checked yet (a test reviewer's reading, no proof):
 - Paprika round trip: "Other times:" ends up in the author's notes;
   numbered headings like "# Day 1" come back as ingredients; "##" comes back
   as "#".
-- Swapping two meals on the plan is two separate saves (MealPlan.tsx move),
-  so a dropped connection between them can leave one meal doubled and the
-  other gone.
 - An offline shopping item whose "added" reply was lost (no connection) is
   sent again later, making a duplicate row.
 - server/test/meals.check.mjs's "everything planned before is a dinner" can't
