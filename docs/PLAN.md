@@ -128,8 +128,13 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- Fixes from the 1.12.0 review (commits 542b648 and the one after, from
-  re-reviewing those fixes; not on the Pi yet):
+(Nothing yet.)
+
+Released in 1.12.1 (2026-11-02; deployed with its server changes the same
+day):
+
+- Fixes from the 1.12.0 review (commits 542b648 to 960b219, each re-checked
+  by a fresh reviewer):
   - Scaling: "½ cup + 2 tbsp", "1 cup plus 2 tablespoons (255 g)",
     "1 tbsp and 1 tsp" and ", plus 2 tbsp" scale every amount; "Juice of 1
     large lemon" / "zest of 2 limes" scale too, with the fruit's plural and
