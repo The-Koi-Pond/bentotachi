@@ -569,6 +569,14 @@ they wait. Xel: "we'll deal with them eventually".
   closed Bento in the background meanwhile: Capacitor sends the result as
   `appRestoredResult`, which web/ never listens for. The same goes for the
   backup/restore file pickers and BentoFilesPlugin (saving an export).
+- "Clear ticked" on something added offline can be undone by the signal
+  coming back within the 6-second Undo window: the add is sent meanwhile,
+  so the delayed clear finds nothing to remove, and the item comes back
+  under "Got it" (nothing lost). Fix: hold its send until the clear is
+  done, or delete what the add became. (Review of 960b219.)
+- Two browser tabs that were both offline each send the same shopping
+  changes, since each has its own copy of the queue (shoppingQueue.ts
+  doesn't listen for the other tab). PC only, rare. (Review of 960b219.)
 - Unproven: household.ts saveSettings could make a second settings record
   if loading them failed and the page stayed open.
 
