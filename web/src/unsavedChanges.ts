@@ -60,3 +60,10 @@ export function UnsavedChangesGuard() {
 export function confirmDiscard(dirty: boolean): boolean {
   return !dirty || window.confirm("Throw away the changes you've made here?");
 }
+
+// Whether anything on screen has unsaved changes: for changes that stay on
+// the same page but replace a form (the pantry's find box, scanning, or the
+// top bar's +), which the guard above doesn't see.
+export function hasUnsavedChanges(): boolean {
+  return unsaved.size > 0;
+}

@@ -106,6 +106,19 @@ await api("PATCH", `/collections/shopping_items/records/${typed.id}`, { checked:
 p = await api("GET", `/collections/pantry_items/records/${milk.id}`);
 check("ticking the linked hand-typed item updates the pantry", p.status === "have", p.status);
 
+// Newer apps ask "Put it on the shopping list?" themselves and say so
+// (ask_about_list), so the server doesn't add it; older apps don't say so
+// and still get it added (the "marking Out" check above).
+const saffron = await api("POST", "/collections/pantry_items/records", { name: "Saffron", status: "have", location: "Cupboard" });
+const asked = await api("PATCH", `/collections/pantry_items/records/${saffron.id}`, { status: "out", ask_about_list: true });
+check("an app that asks can mark Out", asked.status === "out", asked.status);
+check("then it isn't added to the shopping list by itself", !(await waiting()).some((i) => i.pantry_item === saffron.id));
+const sumacTyped = await api("POST", "/collections/shopping_items/records", { text: "sumac", checked: false });
+const sumac = await api("POST", "/collections/pantry_items/records", { name: "Sumac", status: "have", location: "Cupboard" });
+await api("PATCH", `/collections/pantry_items/records/${sumac.id}`, { status: "out", ask_about_list: true });
+const sumacs = (await waiting()).filter((i) => i.text.toLowerCase() === "sumac");
+check("but a hand-typed one already there still gets linked", sumacs.length === 1 && sumacs[0].id === sumacTyped.id && sumacs[0].pantry_item === sumac.id);
+
 // Deleting a pantry item leaves its shopping items in place, just unlinked.
 const flour = await api("POST", "/collections/pantry_items/records", { name: "Flour", status: "have", location: "Cupboard", subcategory: "Baking" });
 await api("PATCH", `/collections/pantry_items/records/${flour.id}`, { status: "out" });

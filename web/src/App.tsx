@@ -55,6 +55,15 @@ function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
   return <Page key={id} />;
 }
 
+// The top bar's orange +.
+function PlusButton({ to, label }: { to: string; label: string }) {
+  return (
+    <Link to={to} className="icon-button primary" aria-label={label} title={label}>
+      <PlusIcon />
+    </Link>
+  );
+}
+
 function Screens() {
   return (
     <>
@@ -70,9 +79,13 @@ function Screens() {
             <Route path="/" element={<ManageButton />} />
             <Route path="*" element={null} />
           </Routes>
-          <Link to="/add" className="icon-button primary" aria-label="Add recipe" title="Add recipe">
-            <PlusIcon />
-          </Link>
+          {/* The + adds to the page you're on (Xel, 2026-11-02): a pantry
+              item on the pantry, the shopping list's box there, else a recipe. */}
+          <Routes>
+            <Route path="/pantry" element={<PlusButton to="/pantry?new=1" label="Add a pantry item" />} />
+            <Route path="/shopping" element={<PlusButton to="/shopping?new=1" label="Add to the shopping list" />} />
+            <Route path="*" element={<PlusButton to="/add" label="Add recipe" />} />
+          </Routes>
           <SettingsMenu />
         </nav>
       </header>

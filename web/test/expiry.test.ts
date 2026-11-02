@@ -2,7 +2,7 @@
 // (Node runs TypeScript directly; this folder is outside the app's build.)
 import test from "node:test";
 import assert from "node:assert/strict";
-import { daysUntil, describeExpiry, expiryDate, expiryState, toStoredDate } from "../src/expiry.ts";
+import { daysUntil, describeExpiry, expiryDate, expiryState, shortExpiry, toStoredDate } from "../src/expiry.ts";
 
 // 30 Oct 2026, 11 pm local time: late enough that a time-zone mix-up would
 // show up as an off-by-one day.
@@ -40,4 +40,17 @@ test("describes expiry in plain words", () => {
   assert.match(on("2026-12-12"), /^Expires 12 Dec/);
   assert.match(on("2027-01-20"), /2027/);
   assert.equal(describeExpiry("", now), "");
+});
+
+test("short expiry wording for a badge", () => {
+  const on = (date: string) => shortExpiry(toStoredDate(date), now);
+  assert.equal(on("2026-10-27"), "Expired");
+  assert.equal(on("2026-10-30"), "Today");
+  assert.equal(on("2026-10-31"), "Tomorrow");
+  assert.equal(on("2026-11-05"), "6 days");
+  // Further off: just the date, in this computer's own date format ("12 Dec"
+  // or "Dec 12"), without "Expires".
+  assert.match(on("2026-12-12"), /12/);
+  assert.doesNotMatch(on("2026-12-12"), /Expires|days/);
+  assert.equal(shortExpiry("", now), "");
 });

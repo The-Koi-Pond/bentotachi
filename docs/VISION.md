@@ -112,14 +112,14 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
 
 | | Light | Dark |
 |---|---|---|
-| Background | #FAF6F1 cream | #1C1917 |
-| Cards | #FFFFFF | #27221F |
+| Background | #FAF6F1 cream | #141B1B "pond at night" |
+| Cards | #FFFFFF | #202928 |
 | Text | #2B2420 | #F1EBE5 |
 | Accent (buttons, links) | #B4532A terracotta | #E07A4F |
-| Soft accent (icon background) | #F6E4DA peach | #3A2A22 |
+| Soft accent (icon background) | #F6E4DA peach | #302A25 |
 | Logo chopsticks | #C8643A (clear on both) | #C8643A |
 | Jade, the second accent (the leaf) | #5A9A8A | #5A9A8A |
-| Jade tags, website note | #E2EFEB soft jade | #243631 |
+| Jade tags, website note | #E2EFEB soft jade | #1D3330 |
 | Jade selected tag | #3F7668, white text | #7FBFAE, dark text |
 | Jade text ("Saved.") | #3A7062 | #8FD3C1 |
 
@@ -166,3 +166,6 @@ the drawn title carries the personality.
   server is part of the plan; the title's leaf gets baran ridges, in jade,
   and jade becomes the second accent (tags, success messages); an
   umeboshi replaces the title's sakura.
+- 2026-11-02: the pantry never pushes stock-taking, but makes room for
+  people who want it: Have / Low / Out by hand always works, and counting
+  packets is there for whoever wants it, out of the way of everyone else.

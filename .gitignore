@@ -40,3 +40,7 @@ CLAUDE.local.md
 
 # The phone server library (made by "npm run server-lib" from mobile/).
 web/android/app/libs/bentoserver*
+
+# Screenshots and page notes from browser testing (Playwright saves them
+# inside the project folder).
+.playwright-mcp/

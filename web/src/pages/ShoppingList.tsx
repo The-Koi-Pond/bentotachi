@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router";
 import { errorMessage, pb, shoppingItems, type PantryItem, type ShoppingItem } from "../pb";
 import { CloseIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
+import { storeLinksOf } from "../pantryItem";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, isOffline } from "../offline";
 import OfflineNote from "../OfflineNote";
@@ -41,6 +42,18 @@ export default function ShoppingList() {
   const [notice, setNotice] = useState("");
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
+  // The top bar's + on this page ("#/shopping?new=1"): straight into the box.
+  const addBox = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const plusTapped = searchParams.get("new");
+  const loaded = !!items;
+  useEffect(() => {
+    // The box only exists once the list has loaded; until then this waits.
+    if (!plusTapped || !addBox.current) return;
+    addBox.current.focus();
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plusTapped, loaded]);
   // Something typed into "Add to the list" but not added yet.
   useUnsavedChanges(text.trim() !== "");
   // Ticks and additions made offline, kept on the phone until they're sent
@@ -227,6 +240,7 @@ export default function ShoppingList() {
 
       <form className="add-row" onSubmit={add}>
         <input
+          ref={addBox}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Add something, like “milk”"
@@ -306,7 +320,9 @@ function ShoppingRow({
           )}
         </span>
       </label>
-      {pantryItem?.store_url && !item.checked && <StoreLink url={pantryItem.store_url} itemName={item.text} />}
+      {pantryItem &&
+        !item.checked &&
+        storeLinksOf(pantryItem).map((link) => <StoreLink key={link} url={link} itemName={item.text} />)}
       <button className="icon-button small" onClick={() => onRemove(item)} aria-label={`Remove ${item.text}`}>
         <CloseIcon />
       </button>

@@ -28,4 +28,20 @@ function productFromOpenFoodFacts(answer) {
   return { name, brand, quantity: clean(p.quantity) };
 }
 
-module.exports = { USER_AGENT, isBarcode, lookupUrl, productFromOpenFoodFacts };
+// For a pantry item's photo (pantry_photo.pb.js): only the front photo's
+// addresses.
+function photoLookupUrl(code) {
+  return `https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=image_front_url,image_front_small_url`;
+}
+
+// Open Food Facts' answer -> the address of the product's front photo, or ""
+// if it has none. The 400-pixel one (about 30 KB; the app keeps photos at up
+// to 600), else the 200-pixel one.
+function photoFromOpenFoodFacts(answer) {
+  if (!answer || answer.status !== 1 || !answer.product) return "";
+  const p = answer.product;
+  const address = String(p.image_front_url || p.image_front_small_url || "").trim();
+  return /^https?:\/\/\S+$/i.test(address) ? address : "";
+}
+
+module.exports = { USER_AGENT, isBarcode, lookupUrl, productFromOpenFoodFacts, photoLookupUrl, photoFromOpenFoodFacts };

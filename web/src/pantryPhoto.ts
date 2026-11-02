@@ -1,9 +1,10 @@
-// Pantry items' photos: shrinking them before they're sent, fetching a
-// product's photo from its store link, and filling in photos for items
-// whose store link hasn't been tried yet (see wantsLinkPhoto).
+// Pantry items' photos: shrinking them before they're sent, finding a
+// product's photo online (Open Food Facts, then its store link), and
+// filling in photos for items not looked up yet (see wantsOnlinePhoto).
 import { useEffect, useRef, useState } from "react";
 import { pantryItems, pb, type PantryItem } from "./pb";
-import { wantsLinkPhoto } from "./pantryItem";
+import { barcodesOf } from "./barcodes";
+import { photoSources, storeLinksOf, wantsOnlinePhoto } from "./pantryItem";
 
 // The longest side photos are kept at. The pantry list shows a 160-pixel
 // copy and the edit form a bigger one, so this is plenty; a phone camera's
@@ -36,18 +37,19 @@ export async function shrinkPhoto(photo: Blob): Promise<File> {
   }
 }
 
-// The product photo on a store's page, fetched by the server (browsers
-// can't read other sites' pages; see server/pb_hooks/pantry_photo.pb.js).
-// Fails like PocketBase's own calls do ({ status, response: { message } }),
-// so errorMessage() explains it: status 400 means the store or page said
-// no, status 0 that the server couldn't be reached.
-export async function photoFromPage(url: string): Promise<Blob> {
+// A product's photo, found online by the server (browsers can't read other
+// sites' pages; see server/pb_hooks/pantry_photo.pb.js): Open Food Facts'
+// photo for one of its barcodes, else one of its store pages'. Fails like
+// PocketBase's own calls do ({ status, response: { message } }), so
+// errorMessage() explains it: status 400 means no photo was found, 503
+// that Open Food Facts couldn't be reached, 0 that the server couldn't be.
+export async function findPhoto(barcodes: string[], urls: string[]): Promise<Blob> {
   let response: Response;
   try {
-    response = await fetch(pb.buildURL("/api/cookbook/photo-from-page"), {
+    response = await fetch(pb.buildURL("/api/cookbook/pantry-photo"), {
       method: "POST",
       headers: { "content-type": "application/json", authorization: pb.authStore.token },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ barcodes, urls }),
     });
   } catch {
     throw { status: 0 };
@@ -56,35 +58,48 @@ export async function photoFromPage(url: string): Promise<Blob> {
   return response.blob();
 }
 
-// While the pantry is open, fetches the store link's photo for each item
-// that wants one (wantsLinkPhoto), one at a time: new items added with a
-// link, items whose link changed, and items linked before photos existed.
-// Each link is tried once (photo_link_tried); if the store had no photo,
-// someone can still take or choose one. If the server couldn't be reached,
+// While the pantry is open, looks up the photo for each item that wants one
+// (wantsOnlinePhoto), one at a time: new items added with a barcode or link,
+// items whose barcodes or link changed, and items added before photos (or
+// Open Food Facts' photos) existed. Each set of them is tried once
+// (photo_link_tried); if nothing turned up, someone can still take or choose
+// a photo. If the server, a store or Open Food Facts couldn't be reached,
 // it's tried again next time the pantry opens.
-export function useLinkPhotos(items: PantryItem[]) {
+export function useOnlinePhotos(items: PantryItem[]) {
   const busy = useRef(false);
-  // Items (with their link) already tried while the page is open, so a
-  // list that hasn't caught up yet doesn't start the same one twice.
+  // Items (with what they're looked up by) already tried while the page is
+  // open, so a list that hasn't caught up yet doesn't start one twice.
   const tried = useRef(new Set<string>());
   const [finished, setFinished] = useState(0);
 
   useEffect(() => {
     if (busy.current) return;
-    const key = (item: PantryItem) => `${item.id} ${item.store_url.trim()}`;
-    const next = items.find((item) => wantsLinkPhoto(item) && !tried.current.has(key(item)));
-    if (!next) return;
+    const key = (item: PantryItem) => `${item.id} ${photoSources(item)}`;
+    const waiting = items.filter((item) => wantsOnlinePhoto(item) && !tried.current.has(key(item)));
+    if (!waiting.length) return;
+    // A random one, so phones and browsers open at the same time don't all
+    // look up the same item at once.
+    const next = waiting[Math.floor(Math.random() * waiting.length)];
     busy.current = true;
     tried.current.add(key(next));
-    const link = next.store_url.trim();
+    const sources = photoSources(next);
+    // Checked against the saved item just before looking it up and before
+    // saving: meanwhile someone may have chosen or removed a photo, changed
+    // its barcodes or links, or another device may have found it.
+    const stillWanted = async () => {
+      const now = await pantryItems().getOne(next.id);
+      return wantsOnlinePhoto(now) && photoSources(now) === sources;
+    };
     void (async () => {
       try {
-        const photo = await shrinkPhoto(await photoFromPage(link));
-        await pantryItems().update(next.id, { photo, photo_link_tried: link });
+        if (!(await stillWanted())) return;
+        const photo = await shrinkPhoto(await findPhoto(barcodesOf(next), storeLinksOf(next)));
+        if (!(await stillWanted())) return;
+        await pantryItems().update(next.id, { photo, photo_link_tried: sources });
       } catch (err) {
-        // The store said no (or had no photo): don't ask it again.
-        if ((err as { status?: number }).status === 400) {
-          await pantryItems().update(next.id, { photo_link_tried: link }).catch(() => {});
+        // Nothing found: don't ask again.
+        if ((err as { status?: number }).status === 400 && (await stillWanted().catch(() => false))) {
+          await pantryItems().update(next.id, { photo_link_tried: sources }).catch(() => {});
         }
       } finally {
         busy.current = false;

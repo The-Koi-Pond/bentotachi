@@ -8,7 +8,8 @@
 //
 // photo_link_tried: the store link whose photo the app last fetched (or
 // tried to), so it doesn't fetch it again, and a removed photo stays
-// removed (wantsLinkPhoto in web/src/pantryItem.ts).
+// removed. Since barcodes are asked too (Open Food Facts), it holds them
+// along with the link (photoSources in web/src/pantryItem.ts).
 
 migrate((app) => {
   const pantry = app.findCollectionByNameOrId("pantry_items");

@@ -1,8 +1,8 @@
 // Pantry items' photos, against a throwaway PocketBase on :8091 (set it up
 // as pantry-rules.check.mjs says). Checks the photo field and its small
-// copy, and that the store-link photo route refuses what it should. It
-// doesn't fetch a real store page: these checks run on every deploy, and a
-// store's website being slow or changed mustn't stop one.
+// copy, and that the route finding photos online refuses what it should. It
+// doesn't fetch a real store page or ask Open Food Facts: these checks run
+// on every deploy, and a website being slow or changed mustn't stop one.
 //   node test/pantry-photo.check.mjs
 // Every line should say PASS.
 import { deflateSync, crc32 } from "node:zlib";
@@ -69,15 +69,37 @@ notPhoto.append("photo", new Blob(["not a photo"], { type: "text/plain" }), "pho
 const refused = await fetch(`${B}/collections/pantry_items/records/${item.id}`, { method: "PATCH", headers: { authorization: token }, body: notPhoto });
 check("a file that isn't a photo is refused", refused.status === 400, `(${refused.status})`);
 
-// The store-link photo route.
-const route = "/cookbook/photo-from-page";
-const guest = await call("", "POST", route, { url: "https://www.coles.com.au/product/x-1" });
-check("photo from a link needs a login", guest.status === 401, `(${guest.status})`);
-const home = await call(token, "POST", route, { url: "http://192.168.1.20/admin" });
+// The route that finds a photo online (Open Food Facts, then the store links).
+const route = "/cookbook/pantry-photo";
+const guest = await call("", "POST", route, { urls: ["https://www.coles.com.au/product/x-1"] });
+check("finding a photo online needs a login", guest.status === 401, `(${guest.status})`);
+const nothing = await call(token, "POST", route, { barcodes: ["not a barcode", "123"], urls: [" "] });
+check("it needs a real barcode or a link", nothing.status === 400 && /barcode or a store link/.test(nothing.data?.message ?? ""), `(${nothing.status} ${nothing.data?.message ?? ""})`);
+// Every link is checked before any is read, so a public first link doesn't
+// get a private second one through.
+const home = await call(token, "POST", route, { urls: ["https://www.coles.com.au/product/x-1", "http://192.168.1.20/admin"] });
 check("it won't read the home network", home.status === 400 && /own network/.test(home.data?.message ?? ""), `(${home.status} ${home.data?.message ?? ""})`);
-const local = await call(token, "POST", route, { url: "http://localhost:8090/" });
+const local = await call(token, "POST", route, { urls: ["http://localhost:8090/"] });
 check("or this computer", local.status === 400, `(${local.status})`);
-const typo = await call(token, "POST", route, { url: "coles jam" });
+const typo = await call(token, "POST", route, { urls: ["coles jam"] });
 check("a link that isn't a web address is refused", typo.status === 400 && /https/.test(typo.data?.message ?? ""), `(${typo.status} ${typo.data?.message ?? ""})`);
+// A store that can't be reached is worth trying again later (503), not "no
+// photo" (400, never asked again). ".invalid" names never exist, so this
+// fails the same with or without an internet connection.
+const away = await call(token, "POST", route, { urls: ["https://shop.bentotachi-check.invalid/product/1"] });
+check("a store that can't be reached means try again later", away.status === 503, `(${away.status} ${away.data?.message ?? ""})`);
+
+// Several store links: the first in store_url, the rest in more_store_urls.
+const links = (await call(token, "POST", "/collections/pantry_items/records", {
+  name: `Two-store sauce ${Date.now()}`,
+  status: "have",
+  store_url: "https://www.coles.com.au/product/x-1",
+  more_store_urls: ["https://www.woolworths.com.au/shop/productdetails/1"],
+})).data;
+check("an item keeps more store links", links.store_url?.includes("coles") && links.more_store_urls?.[0]?.includes("woolworths"), `(${JSON.stringify(links.more_store_urls ?? links.message)})`);
+// What an app from before more links (1.12.1) sends when saving an edit.
+const older = (await call(token, "PATCH", `/collections/pantry_items/records/${links.id}`, { name: links.name, store_url: "https://www.coles.com.au/product/x-2" })).data;
+check("an older app's edit leaves the other links alone", older.more_store_urls?.length === 1, `(${JSON.stringify(older.more_store_urls)})`);
+await call(token, "DELETE", `/collections/pantry_items/records/${links.id}`);
 
 await call(token, "DELETE", `/collections/pantry_items/records/${item.id}`);

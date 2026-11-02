@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 import { errorMessage, isAndroidApp } from "./pb";
-import { photoFromPage, shrinkPhoto, usePreviewUrl } from "./pantryPhoto";
+import { findPhoto, shrinkPhoto, usePreviewUrl } from "./pantryPhoto";
 
 // What the form will do with the item's photo when saved: undefined keeps
 // it as it is, null removes it, a File replaces it.
@@ -11,20 +11,22 @@ export type PhotoChoice = File | null | undefined;
 const canTakePhoto = isAndroidApp || (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
 
 // A pantry item's photo in its Add or Edit form: take one, choose one, or
-// use the photo from its store link. Shown before it's saved; saved with
-// the form.
+// find one online (Open Food Facts for its barcodes, else its store links).
+// Shown before it's saved; saved with the form.
 export default function PantryPhotoField({
   savedUrl,
-  storeUrl,
+  barcodes,
+  storeUrls,
   choice,
   onChoose,
   hint,
 }: {
   // The photo already saved (its address), or "".
   savedUrl: string;
-  // The form's store link, made into a full address, or "" / null. Offers
-  // "Use the store's photo" if there is one.
-  storeUrl: string | null;
+  // The form's barcodes and store links (full addresses). Offers "Find its
+  // photo online" if there are any.
+  barcodes: string[];
+  storeUrls: string[];
   hint?: string;
   choice: PhotoChoice;
   onChoose: (choice: PhotoChoice) => void;
@@ -43,12 +45,13 @@ export default function PantryPhotoField({
     onChoose(await shrinkPhoto(file));
   }
 
-  async function fromLink() {
-    if (!storeUrl) return;
+  const canFind = barcodes.length > 0 || storeUrls.length > 0;
+  async function findOnline() {
+    if (!canFind) return;
     setBusy(true);
     setError("");
     try {
-      onChoose(await shrinkPhoto(await photoFromPage(storeUrl)));
+      onChoose(await shrinkPhoto(await findPhoto(barcodes, storeUrls)));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -75,9 +78,9 @@ export default function PantryPhotoField({
             Choose a photo
             <input type="file" accept="image/*" onChange={(e) => void picked(e)} />
           </label>
-          {storeUrl && (
-            <button type="button" className="button small" disabled={busy} onClick={() => void fromLink()}>
-              {busy ? "Getting it…" : "Use the store's photo"}
+          {canFind && (
+            <button type="button" className="button small" disabled={busy} onClick={() => void findOnline()}>
+              {busy ? "Looking…" : "Find its photo online"}
             </button>
           )}
           {shown && (

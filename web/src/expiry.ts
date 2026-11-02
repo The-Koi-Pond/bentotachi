@@ -43,3 +43,15 @@ export function describeExpiry(stored: string, now = new Date()): string {
   });
   return `Expires ${label}`;
 }
+
+// The same, short enough for a badge beside the name (the full wording goes
+// in its label): "Expired", "Today", "Tomorrow", "3 days", "12 Dec".
+export function shortExpiry(stored: string, now = new Date()): string {
+  const days = daysUntil(stored, now);
+  if (days === null) return "";
+  if (days < 0) return "Expired";
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days <= 14) return `${days} days`;
+  return describeExpiry(stored, now).replace(/^Expires /, "");
+}

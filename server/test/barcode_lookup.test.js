@@ -1,7 +1,7 @@
 // Run from the project folder with: node --test "server/test/*.test.js"
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { isBarcode, productFromOpenFoodFacts } = require("../pb_hooks/barcode_lookup.js");
+const { isBarcode, productFromOpenFoodFacts, photoFromOpenFoodFacts } = require("../pb_hooks/barcode_lookup.js");
 
 test("barcodes are 8 to 14 digits", () => {
   assert.equal(isBarcode("9300633603161"), true);
@@ -28,4 +28,18 @@ test("unknown or nameless products are not found", () => {
   assert.equal(productFromOpenFoodFacts({ status: 0, status_verbose: "product not found" }), null);
   assert.equal(productFromOpenFoodFacts({ status: 1, product: { brands: "Coles" } }), null);
   assert.equal(productFromOpenFoodFacts(null), null);
+});
+
+test("finds a product's front photo, the bigger one first", () => {
+  const small = "https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.200.jpg";
+  const big = "https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.400.jpg";
+  assert.equal(photoFromOpenFoodFacts({ status: 1, product: { image_front_small_url: small, image_front_url: big } }), big);
+  assert.equal(photoFromOpenFoodFacts({ status: 1, product: { image_front_small_url: small } }), small);
+});
+
+test("no photo when it has none, or doesn't know the product", () => {
+  assert.equal(photoFromOpenFoodFacts({ status: 1, product: {} }), "");
+  assert.equal(photoFromOpenFoodFacts({ status: 1, product: { image_front_url: "javascript:alert(1)" } }), "");
+  assert.equal(photoFromOpenFoodFacts({ status: 0, status_verbose: "product not found" }), "");
+  assert.equal(photoFromOpenFoodFacts(null), "");
 });

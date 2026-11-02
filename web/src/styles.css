@@ -1183,12 +1183,7 @@ main {
   font-weight: 600;
 }
 
-/* Collapsible drawers for places and subcategories */
-
-.pantry-group h2,
-.pantry-subgroup h3 {
-  margin: 0;
-}
+/* Collapsible drawers (Pantry places, Recipes shelves) */
 
 .drawer-toggle {
   display: flex;
@@ -1218,14 +1213,6 @@ main {
   font-weight: 700;
 }
 
-.sub-toggle {
-  min-height: 40px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
 
 .chevron {
   display: grid;
@@ -1266,48 +1253,27 @@ main {
   font-weight: 700;
 }
 
-.badge-low {
-  background: var(--low);
-  color: var(--low-text);
+/* "Tomorrow", "Expired": an item's expiry beside its name. Outlined, so it
+   doesn't read as Low or Out. */
+.expiry-badge {
+  flex: none;
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
-.badge-out {
-  background: var(--out);
-  color: var(--out-text);
+.expiry-badge-later {
+  border: 1.5px solid var(--border);
+  color: var(--muted);
 }
 
-/* Expiry badges are outlined, so they don't read as Low/Out. */
-.badge-expired {
-  border: 1.5px solid var(--out);
-  color: var(--out);
-}
-
-.badge-soon {
+.expiry-badge-soon {
   border: 1.5px solid var(--low);
   color: var(--text);
 }
 
-.expiry {
-  font-size: 0.85rem;
-}
-
-.expiry-later {
-  color: var(--muted);
-}
-
-.expiry-soon {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.expiry-soon::before {
-  content: "● ";
-  color: var(--low);
-}
-
-.expiry-expired {
+.expiry-badge-expired {
+  border: 1.5px solid var(--out);
   color: var(--out);
-  font-weight: 700;
 }
 
 .date-row {
@@ -1321,28 +1287,120 @@ main {
   min-width: 0;
 }
 
-.pantry-group {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
+/* The pantry's find-or-add box: looks like one text box, with Clear and
+   Scan inside it. */
+.find-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
-.drawer-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 0 12px 26px;
+.find-box:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
 }
 
-.pantry-subgroup {
-  display: flex;
-  flex-direction: column;
+.find-box input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+}
+
+.find-box input:focus-visible {
+  outline: none;
+}
+
+.find-clear,
+.find-scan {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.find-scan {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* All · Low · Out · Use soon, then Open all / Close all as an arrow. */
+.pantry-filters {
+  align-items: center;
   gap: 6px;
+}
+
+.pantry-filters button {
+  padding: 4px 11px;
+  font-size: 0.88rem;
+}
+
+.filter-count {
+  color: var(--muted);
+}
+
+.pantry-filters button.has-some .filter-count {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pantry-filters button[aria-pressed="true"] .filter-count {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.pantry-filters .open-all {
+  justify-content: center;
+  width: 36px;
+  margin-left: auto;
+  padding: 0;
+  color: var(--accent);
+}
+
+.open-all svg {
+  transform: rotate(90deg);
+}
+
+.open-all.all-open svg {
+  transform: rotate(-90deg);
+}
+
+/* A place: its heading (opens and closes it, with "3 to check") and one
+   card of its items, with the subcategories as small headings inside. */
+.pantry-place h2 {
+  margin: 0;
+}
+
+.place-count {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.to-check {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text);
+  background: var(--accent-soft);
 }
 
 .pantry-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 2px 0 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1352,80 +1410,233 @@ main {
   border-top: 1px solid var(--border);
 }
 
+.pantry-list > .pantry-sublabel {
+  padding: 10px 14px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pantry-list > .pantry-sublabel + li {
+  border-top: none;
+}
+
+/* One item. Simple: name and level on one line. Detailed: the photo (or
+   letter tile) beside the name block, with Opened and the store links
+   under it. */
 .pantry-row {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
   padding: 8px 10px 8px 14px;
 }
 
-.pantry-main {
+.pantry-row.detailed {
+  align-items: flex-start;
+}
+
+.pantry-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pantry-top {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
+}
+
+.pantry-thumb.pantry-tile {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.pantry-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.pantry-on-list {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  color: var(--muted);
+}
+
+.pantry-add-to-list {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 36px;
+  height: 32px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--accent);
+  background: none;
+  border: 1.5px dashed var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pantry-add-to-list:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pantry-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
 }
 
 .pantry-name {
   flex: 1;
   min-width: 0;
-  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 0;
   font: inherit;
   text-align: left;
   color: var(--text);
   background: none;
   border: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
 }
 
+.pantry-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.pantry-name-text,
+.pantry-sub {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Detailed: "Brand · note", muted, under the name. */
+.pantry-sub {
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
 .pantry-name:focus-visible,
-.status-picker button:focus-visible,
 .link-button:focus-visible,
-.filter-chips button:focus-visible {
+.filter-chips button:focus-visible,
+.status-meter:has(select:focus-visible) {
   outline: 3px solid var(--accent);
   outline-offset: 1px;
 }
 
-.status-picker {
+/* How much we have: a level (three bars) and the word, with a see-through
+   dropdown laid over it (StatusMeter in PantryRow.tsx). */
+.status-meter {
+  position: relative;
   flex: none;
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.status-picker button {
-  min-width: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* The same width whatever the word, so the levels line up down the list. */
+  width: 96px;
   min-height: 36px;
-  padding: 4px 8px;
-  font: inherit;
+  padding: 4px 10px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--muted);
-  background: transparent;
-  border: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.status-meter select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  /* 16px stops phones zooming in when it's tapped. */
+  font-size: 16px;
+  opacity: 0;
   cursor: pointer;
 }
 
-.status-picker button + button {
-  border-left: 1px solid var(--border);
+/* Have is quiet (no outline, muted word), so Low and Out stand out. */
+.status-meter-have {
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
 }
 
-.status-picker .status-have[aria-pressed="true"] {
+.meter-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.meter-bars i {
+  display: block;
+  width: 5px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.meter-bars i:nth-child(1) {
+  height: 8px;
+}
+
+.meter-bars i:nth-child(2) {
+  height: 12px;
+}
+
+.meter-bars i:nth-child(3) {
+  height: 16px;
+}
+
+.status-meter-have .meter-bars i {
   background: var(--have);
-  color: var(--have-text);
 }
 
-.status-picker .status-low[aria-pressed="true"] {
+.status-meter-low .meter-bars i:nth-child(1) {
   background: var(--low);
-  color: var(--low-text);
 }
 
-.status-picker .status-out[aria-pressed="true"] {
-  background: var(--out);
-  color: var(--out-text);
+.status-meter-out {
+  color: var(--out);
+}
+
+.status-meter-out .meter-bars i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--out);
+}
+
+.meter-caret {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--muted);
 }
 
 .on-list {
@@ -2806,6 +3017,18 @@ legend {
   gap: 8px;
 }
 
+/* One store link's box, with its ✕. */
+.store-link-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.store-link-box input {
+  flex: 1;
+  min-width: 0;
+}
+
 .button.disabled {
   opacity: 0.5;
   pointer-events: none;
@@ -2833,29 +3056,11 @@ legend {
   gap: 6px;
 }
 
-.store-result {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* A pantry item's brand and store link, under its name. */
-.pantry-extra {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-}
-
-.pantry-brand,
-.item-brand {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
 /* On the shopping list, the brand sits on its own line under the item. */
 .item-brand {
   display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 /* A field's name with "(optional)" beside it, on one line. */
@@ -3867,9 +4072,12 @@ em.soft {
   border-radius: 8px;
 }
 
+/* Detailed rows: the photo, or a letter tile the same size. */
 .pantry-thumb {
-  width: 40px;
-  height: 40px;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
 }
 
 .pantry-photo-field {
@@ -3951,24 +4159,6 @@ em.soft {
   color: var(--text);
 }
 
-/* A page title whose buttons go onto a second line when there are too many
-   for a phone (the Pantry's Scan, Search stores and + Add item). */
-.section-head.wraps {
-  flex-wrap: wrap;
-}
-
-.section-head.wraps .title-actions {
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* A pantry item's note ("3 cans"), under its name. */
-.pantry-note {
-  font-size: 0.9rem;
-  white-space: pre-wrap;
-}
-
 /* "Opened → Fridge" on things kept somewhere else once opened. Pressed:
    it's open (and shown in that place); tap again to undo. */
 .opened-toggle {
@@ -4025,6 +4215,13 @@ em.soft {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+/* Two answers side by side ("Add it", "Not now"). */
+.toast-actions {
+  flex: none;
+  display: flex;
+  gap: 14px;
 }
 
 .undo-toast .link-button {

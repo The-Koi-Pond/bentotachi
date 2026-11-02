@@ -129,16 +129,66 @@ Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
 - Pantry photos (2026-11-02; the phones need the new APK for the
-  buttons): an item with a store link gets the product's photo from the
-  store's page by itself (Coles and Woolworths both checked), including
-  items linked before photos existed. In an item's form: Take a photo (on
-  phones; Android's camera through Capacitor's file chooser, no new
-  permission), Choose a photo, Use the store's photo, No photo. Photos are
-  shrunk to 600 pixels before sending; the list shows a 40-pixel copy.
-  Each link is tried once (`photo_link_tried`), so a removed photo stays
-  removed on every phone. Server: pantry_photo.pb.js and the pantry_photo
-  migration; checked in pantry-photo.check.mjs and page_image.test.js, and
-  in Chromium and Firefox. Not tried on a real phone yet (the camera).
+  buttons): an item with a barcode or a store link gets the product's photo
+  by itself: Open Food Facts' front photo for its barcode first, else the
+  store page's photo (Coles and Woolworths both checked), including items
+  added before photos existed. In an item's form: Take a photo (on phones;
+  Android's camera through Capacitor's file chooser, no new permission),
+  Choose a photo, Find its photo online, No photo. Photos are shrunk to
+  600 pixels before sending; the list shows a 40-pixel copy. Each set of
+  barcodes and links is tried once (`photo_link_tried`); adding a barcode
+  or changing a link tries again. A photo someone removed stays removed
+  for good, on every phone, whatever barcodes or links come later (Xel,
+  2026-11-02; only "Find its photo online" brings one back). If Open Food
+  Facts or a store can't be reached, it's tried again next time. Server: pantry_photo.pb.js (route `/api/cookbook/pantry-photo`)
+  and the pantry_photo migration; checked in pantry-photo.check.mjs,
+  page_image.test.js and barcode_lookup.test.js, and in Chromium and
+  Firefox. Not tried on a real phone yet (the camera).
+- Several store links per item (2026-11-02), say a Coles one and a
+  Woolworths one, up to 5: "+ Another store" in the item's form, a ✕ on
+  each, and "Find on Coles" replaces the item's Coles link if it has one.
+  Pantry rows and the shopping list show each store's logo. Stored as
+  `store_url` (the first) plus `more_store_urls` (the rest; migration
+  pantry_more_store_links), so 1.12.1 and older still show and edit the
+  first link and leave the others alone (checked in
+  pantry-photo.check.mjs). Photos are looked for on each link in turn.
+  Checked in pantryItem.test.ts and in Chromium (wide and phone width).
+- Pantry rows redesigned (2026-11-02, Xel's picks in the pantry card
+  playground): every row keeps a 36-pixel photo spot so names line up; the
+  brand sits small under the name; expiry is a badge beside the name
+  ("Tomorrow", "Expired"; the full wording in its label); Opened and the
+  store logos share one line, lined up with the name. Have / Low / Out is
+  now a level (three bars) with the word, which opens a dropdown (a real
+  one, see-through over the level). Running out no longer puts things on
+  the shopping list by itself: the app asks "Put it on the shopping list?"
+  (Add it / Not now). The server still adds it for older apps, which
+  don't ask; newer ones send `ask_about_list` (pantry.pb.js; checked in
+  pantry-rules.check.mjs). PantryRow.tsx; checked in Chromium at phone
+  width, light and dark.
+- Pantry.tsx split up (no change to what it does): PantryRow, PantryForms
+  and PantryScan are their own files; the sorting rules are in
+  pantryGroups.ts and the form fields' in pantryFields.ts, both tested.
+- The whole pantry page redesigned (2026-11-02, Xel's picks in the pantry
+  page playground, after a designer's pass):
+  - Simple / Detailed switch beside the title (like the shopping list's),
+    remembered per person on each device; everyone starts in Simple.
+    Simple: one line, name + level, expiry only when soon or past.
+    Detailed: 44-pixel photo (or a letter tile), "brand · note", then
+    Opened and the store logos.
+  - A find-or-add box replaces Barcode / Search stores / + Add item: typing
+    filters by name or brand; Add opens the form with that name; a barcode
+    number (typed, or a USB scanner's) is looked up like a scan; Scan sits
+    in the box on phones. Store search is the add form's store link
+    buttons now.
+  - One card per place, subcategories as small headings inside; one soft
+    "3 to check" per place instead of separate badges; Open / Close all as
+    an arrow after the filters.
+  - The shopping list as an icon beside the level (a dashed "+ cart"
+    button when low or out and not on it); Have is quiet.
+  - The top bar's + adds to the page you're on: a pantry item on the
+    pantry, the shopping list's box there, a recipe elsewhere.
+  Checked in Chromium at phone width, light and dark; matchesSearch and
+  needsChecking in pantryGroups.test.ts.
 - From the 2026-11-01 bug hunt (server only, so live once deployed; no
   APK needed):
   - Importing no longer fails on an over-long field: title, description,
@@ -583,20 +633,71 @@ recipe pictures, and the ratings box layout.
 Xel wants to keep working on how pantry items look and what they hold.
 More may come; these are the ones so far:
 
-- [ ] The row's layout and card composition as a whole (photo, name,
-      status buttons, extras), now that items can have photos. Open
-      question: names don't line up between rows with and without a photo.
-- [ ] Several store links per item (say a Coles one and a Woolworths one),
-      instead of one `store_url`.
-- [ ] The brand kept next to the product name, instead of in the extras
-      line underneath.
-- [ ] A better place for expiry warnings like "Expired 3 days ago".
-- [ ] Open Food Facts as the first place a photo comes from: an item with
-      a barcode gets the product's photo from Open Food Facts (it has one
-      for most products, as `image_front_small_url`), and the store link's
-      photo is the fallback. Matters more once items can have several
-      store links. Do this, then a `review-for-xel` of the photo code
-      (2026-11-02's pantry photos haven't been reviewed yet).
+- [x] The row's layout and card composition as a whole (2026-11-02; see
+      "Waiting for the next app release").
+- [x] Several store links per item (2026-11-02; see "Waiting for the next
+      app release").
+- [x] The brand kept next to the product name (2026-11-02: small, under
+      it). Becomes the favourite brand with "Packets in stock" below.
+- [x] A better place for expiry warnings (2026-11-02: a badge beside the
+      name).
+- [ ] Packets in stock (designed 2026-11-02; see below). On the row as
+      chips, "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕"; tapping one
+      finishes it (Xel's pick in the playground).
+- [x] A more compact Have / Low / Out (2026-11-02: a level that opens a
+      dropdown).
+
+### Packets in stock (to build; Xel, 2026-11-02)
+
+What it's for: knowing what's actually in the cupboard, for households who
+want that. It never pushes stock-taking (VISION.md, 2026-11-02): an item
+with no packets works exactly as today, and nothing asks anyone to add
+any.
+
+- The item is the thing ("Plain flour"): name, place, photo, Have / Low /
+  Out, store links (where to buy it), and a **favourite brand** (one brand
+  to look for when shopping), replacing "Brands we buy". A replacement
+  brand bought when the favourite was gone isn't a brand setting: it's
+  just a packet.
+- **Packets:** one entry per bag, jar or can actually there, with its brand
+  and size ("Coles, 2 kg"), and the barcode it was scanned from, if any.
+  Each is its own record (a new collection linked to the item), so two
+  phones finishing different packets at once don't undo each other.
+- Out of the way: the row shows "In stock: White Mill 1 kg, Coles 2 kg"
+  only when an item has packets; "+ Add a packet" lives in the opened card
+  or the form; scanning something already in the pantry *offers* "Add this
+  packet" beside the usual Low / Out / Edit, rather than adding one by
+  itself. Brand and size come from Open Food Facts the first time (it
+  already sends the size, which is thrown away today), and the item
+  remembers them for that barcode.
+- **Finished** on a packet removes it. Low stays a judgement ("half a bag
+  left"), never a count. Tapping Out on an item with packets clears them,
+  with Undo, so a count that's drifted is quick to fix.
+- Later, as its own step: opened and expiry dates per packet (the opened
+  bag in the fridge, the spare in the cupboard), moving today's per-item
+  expiry and Opened button.
+
+Decided (Xel, 2026-11-02):
+
+1. Finishing the last packet turns the item Out by itself. Whether it then
+   goes on the shopping list should be the person's choice: they may not
+   want to buy it again for a while, but knowing it's out while at the
+   store is handy. Xel picked asking first ("Put it on the shopping
+   list?"), for tapping Out too; built 2026-11-02. Idea still open: the
+   shopping list shows "Out at home, not on the list" in a small closed
+   section, so it's still seen at the store.
+2. The favourite brand is picked by the person, never guessed. (Items with
+   one brand today: probably keep it as the favourite, since someone typed
+   it; to confirm. Items with several: none chosen until someone picks.)
+
+### A more compact Have / Low / Out (Xel, 2026-11-02)
+
+Done 2026-11-02: the three buttons took a lot of the row, so it's now a
+level meter (three bars and the word) that opens a dropdown. Picked in a
+pantry card playground along with the rest of the row's layout.
+- [x] Open Food Facts as the first place a photo comes from (2026-11-02;
+      see "Waiting for the next app release"). Next: a `review-for-xel`
+      of the photo code (the pantry photos haven't been reviewed yet).
 
 ## To design: simpler accounts (Xel, 2026-11-02)
 

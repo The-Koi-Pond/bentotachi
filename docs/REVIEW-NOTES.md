@@ -40,9 +40,13 @@ fix it here so the next review gets it right.
   or `sed '...' original > copy` into the scratch folder works. A copy of the code that needs `web/node_modules`
   can link to it; remove the link with `cmd /c rmdir <link>`, never
   `rm -rf`, which can delete the real folder through the link.
-- **Tests:** `node --test "server/test/*.test.js"` from the project folder,
-  `node --test "test/*.test.ts"` from `web`; the end-to-end checks
-  (`server/test/*.check.mjs`) need a test server.
+- **Tests:** `npm test` from `web` runs everything, including the
+  end-to-end checks on its own throwaway server (port 8099 unless
+  `BENTO_CHECK_PORT` says otherwise: set it to your own port, e.g.
+  `BENTO_CHECK_PORT=8133 npm test` in bash, `$env:BENTO_CHECK_PORT=8133;
+  npm test` in PowerShell). Or one suite at a time:
+  `node --test "server/test/*.test.js"` from the project folder,
+  `node --test "test/*.test.ts"` from `web`.
 - **Branches:** only `main`. The old pre-public history is a separate folder
   (`C:\Projects\TheKoiPond\bento-history`), not a branch.
 
@@ -101,8 +105,22 @@ the date tests again in two far-off time zones, and the
   `useCurrentUser` checks the login's expiry on start, so the login screen
   shows first. (Review of d2efa52.) The case that was real (the login
   expiring while the app stays open) is handled by `web/src/session.ts`.
+- **The pantry edit form lost its "the server didn't keep everything, it
+  needs restarting" check, so a not-restarted server silently drops new
+  fields like more_store_urls.** Removed on purpose in 6f66654 (a324a75
+  removed the same check elsewhere as wrong advice on the Pi and in phone
+  mode); it never covered more_store_urls; and a not-restarted server
+  doesn't happen in normal use: deploy restarts the service (deploy.mjs
+  `systemctl restart bento`), the friends' zip and phone-only mode start
+  fresh. (Review of the pantry redesign work, 2026-11-02.) Reopen if: a way
+  to update the server's files without restarting it becomes normal.
 
 ## Not worth changing (real, but too small or too unlikely)
+
+- **The short expiry badge's boundaries aren't tested** (the 14-day cut-off
+  between "6 days" and "12 Dec", and yesterday's wording): mutating either
+  passed the tests, but it's wording only. (Review of the pantry redesign
+  work, 2026-11-02.)
 
 - **`npm run release` then `npm run deploy` runs both test suites twice.**
   It costs under half a second next to the builds. (Review of d2efa52.)

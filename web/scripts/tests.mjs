@@ -19,8 +19,9 @@ import { fileURLToPath } from "node:url";
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const root = join(web, "..");
 const server = join(root, "server");
-// Out of the way of a test server someone may have open on 8091.
-const CHECK_PORT = 8099;
+// Out of the way of a test server someone may have open on 8091. A reviewer
+// given its own port runs `npm test` with BENTO_CHECK_PORT set to it.
+const CHECK_PORT = Number(process.env.BENTO_CHECK_PORT) || 8099;
 
 class TestsFailed extends Error {}
 

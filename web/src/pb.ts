@@ -105,8 +105,11 @@ export interface PantryItem extends RecordModel {
   subcategory: string;
   // "2026-11-02 00:00:00.000Z", or "" for no date. See expiry.ts.
   expires: string;
-  // Its product page in an online store (see stores.ts), or "".
+  // Its product page in an online store (see stores.ts), or "": the first
+  // of its store links. More of them (another store's page) are in
+  // more_store_urls; read both with storeLinksOf in pantryItem.ts.
   store_url: string;
+  more_store_urls?: string[] | null;
   // The brands we buy, like "Lea & Perrins" or "Coles, White Mill", or ""
   // (see pantryItem.ts).
   brand: string;
@@ -120,8 +123,10 @@ export interface PantryItem extends RecordModel {
   opened?: boolean;
   // Its photo's file name, or "" (see pantryPhoto.ts and pantryPhotoUrl).
   photo?: string;
-  // The store link whose photo was last fetched or tried, so it isn't tried
-  // again (see wantsLinkPhoto in pantryItem.ts), or "".
+  // The barcodes and store links last looked up online for its photo, so
+  // they aren't tried again (see photoSources in pantryItem.ts); "removed"
+  // once someone removed its photo (never looked up by itself again); or "".
+  // Named from when only store links were.
   photo_link_tried?: string;
   created: string;
   updated: string;
