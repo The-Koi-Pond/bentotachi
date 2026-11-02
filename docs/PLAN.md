@@ -128,6 +128,11 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- (Nothing yet.)
+
+Released in 1.13.0 (2026-11-02; deployed with its server changes the same
+day, commit 993a485):
+
 - Pantry photos (2026-11-02; the phones need the new APK for the
   buttons): an item with a barcode or a store link gets the product's photo
   by itself: Open Food Facts' front photo for its barcode first, else the
