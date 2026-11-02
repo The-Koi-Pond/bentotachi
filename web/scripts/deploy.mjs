@@ -45,7 +45,7 @@ if (uncommitted) {
   process.exit(1);
 }
 
-runTests();
+await runTests();
 
 console.log("> npm run build");
 execSync("npm run build", { cwd: web, stdio: "inherit" });

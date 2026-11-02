@@ -33,9 +33,13 @@ How to run: `README.md`.
   - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
   - `test/`: `node --test "server/test/*.test.js"` from the project folder.
     The `*.check.mjs` files (pantry rules, who added, meals, expired login,
-    import limits)
-    check the server end to end against a throwaway PocketBase on port 8091
-    (instructions at the top of `pantry-rules.check.mjs`). Claude can
+    import limits) check the server end to end against a throwaway
+    PocketBase on port 8091, or `BENTO_TEST_PORT` (instructions at the top
+    of `pantry-rules.check.mjs`). `npm run release` and `npm run deploy` run
+    them all on their own throwaway server (web/scripts/tests.mjs, port
+    8099, deleted afterwards); a new check file is picked up by itself, but
+    must print a PASS line per check, FAIL on failure, and pick unique
+    names (they share one server; pantry-rules runs first). Claude can
     run the already-downloaded `pocketbase.exe` with `--dir` in scratch
     space for this; never test against `server/pb_data` (the real data).
     Always add `--automigrate=false`: without it, changing a collection's
@@ -54,8 +58,10 @@ How to run: `README.md`.
   `server/pb_public/`, which PocketBase serves. `npm run dev` proxies `/api`
   to port 8090.
   - Tests: `node --test "test/*.test.ts"` from `web` (there's no `npm test`).
-    `npm run release` and `npm run deploy` run both suites first
-    (web/scripts/tests.mjs) and stop if any test fails or none are found.
+    `npm run release` and `npm run deploy` run both suites first, the date
+    tests again in two far-off time zones, and the server's end-to-end
+    checks (web/scripts/tests.mjs, about 10 seconds), and stop if any test
+    fails or none are found.
   - Don't give a logic file and a component the same name in different case
     (`softText.ts` / `SoftText.tsx`): Windows sees one file and the build
     fails. Name the logic one differently (`softMarks.ts`, `cookTiming.ts`).

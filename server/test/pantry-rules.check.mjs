@@ -12,7 +12,7 @@
 //   ./pocketbase.exe serve --http 127.0.0.1:8091 --automigrate=false --dir <tmp>/pb_data --migrationsDir ./pb_migrations --hooksDir ./pb_hooks --publicDir ./pb_public
 // then, in another window:  node test/pantry-rules.check.mjs
 // Every line should say PASS. Delete <tmp> afterwards.
-const B = "http://127.0.0.1:8091/api";
+const B = `http://127.0.0.1:${process.env.BENTO_TEST_PORT || 8091}/api`;
 let token = "";
 async function api(method, path, body) {
   const res = await fetch(B + path, { method, headers: { "content-type": "application/json", ...(token && { authorization: token }) }, body: body && JSON.stringify(body) });

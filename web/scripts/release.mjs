@@ -39,7 +39,7 @@ if (!signed && !testKey) {
   );
   process.exit(1);
 }
-runTests();
+await runTests();
 
 // Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,
 // which is too old for Android's build tools.

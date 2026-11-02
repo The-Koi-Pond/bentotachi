@@ -39,6 +39,14 @@ test("outside the US, US liquid measures get millilitres (and cups, except in Au
   assert.equal(withVolumeHint("2 large eggs", "NL", us, 15), "2 large eggs");
 });
 
+test("gallons: US ones from US sites, imperial ones from UK sites", () => {
+  // A US gallon is 3.785 litres, an imperial one 4.546.
+  assert.equal(withVolumeHint("1 gallon milk", "AU", us, 15), "1 gallon *(3.8 l)* milk");
+  assert.equal(withVolumeHint("1 gallon milk", "AU", recipeMeasures("https://www.example.co.uk/x"), 15), "1 gallon *(4.5 l)* milk");
+  assert.equal(withVolumeHint("½ gal water", "AU", us, 15), "½ gal *(1.9 l)* water");
+  assert.equal(withVolumeHint("2 gallons stock", "AU", us, 15), "2 gallons *(7.6 l)* stock");
+});
+
 test("in the US, millilitres and litres get cups or spoons", () => {
   assert.equal(withVolumeHint("250 ml milk", "US", au, 15), "250 ml *(1 cup)* milk");
   assert.equal(withVolumeHint("375ml coconut milk", "US", au, 15), "375ml *(1½ cups)* coconut milk");

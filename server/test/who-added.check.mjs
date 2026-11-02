@@ -3,7 +3,7 @@
 // this at the real server: it creates test accounts and records.
 //   node test/who-added.check.mjs
 // Every line should say PASS.
-const B = "http://127.0.0.1:8091/api";
+const B = `http://127.0.0.1:${process.env.BENTO_TEST_PORT || 8091}/api`;
 async function api(token, method, path, body) {
   const res = await fetch(B + path, { method, headers: { "content-type": "application/json", ...(token && { authorization: token }) }, body: body && JSON.stringify(body) });
   const text = await res.text();

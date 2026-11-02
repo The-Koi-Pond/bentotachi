@@ -13,21 +13,20 @@ here.
 
 From a read-only bug hunt on 2026-11-01 (by reading the code, not running
 it), with what guards each one, checked 2026-11-02. Reopen if the code
-named here changes in a way that matters. Note: the unit tests run on
-every release and deploy, but the `server/test/*.check.mjs` end-to-end
-checks only run when someone runs them against a test server.
+named here changes in a way that matters. Everything marked *Guarded*
+runs on every release and deploy (web/scripts/tests.mjs): the unit tests,
+the date tests again in two far-off time zones, and the
+`server/test/*.check.mjs` end-to-end checks on a throwaway server.
 
 - **Dates** (web/src/dates.ts, expiry.ts): stored and compared as plain
   `YYYY-MM-DD`, so time zones can't shift them by a day; the week start and
   month maths are right. *Guarded:* web/test/dates.test.ts and
   expiry.test.ts (month and year ends, week starts, local "today", days
-  until expiry). They also pass under other time zones (Los Angeles,
-  Kiritimati UTC+14, Amsterdam, Pago Pago UTC-11, run with `TZ=...`), but
-  normally only run in this PC's own time zone.
+  until expiry), run in this PC's time zone and again in Kiritimati
+  (UTC+14) and Pago Pago (UTC-11).
 - **Unit conversions** (weights.ts, volumes.ts): tablespoons (15 vs 20 ml),
-  cups, US and UK pints, quarts, pounds and ounces are right. *Guarded:*
-  web/test/weights.test.ts, volumes.test.ts, dutch.test.ts. Gallons are
-  converted by the same code but have no test of their own.
+  cups, US and UK pints, quarts, gallons, pounds and ounces are right.
+  *Guarded:* web/test/weights.test.ts, volumes.test.ts, dutch.test.ts.
 - **Import address safety** (server/pb_hooks/safe_url.js): private IPs,
   localhost, number-only and bracketed addresses are refused. Its known gap
   (a public name that points or redirects to a home address) is written
@@ -36,15 +35,19 @@ checks only run when someone runs them against a test server.
   2130706433, 0x7f000001, [::1], .local, .lan and Tailscale names).
 - **Access rules**: ratings can only be changed by their owner, adding
   people needs a logged-in member, and first-time setup is guarded inside a
-  transaction. *Guarded (end-to-end check only):* pantry-rules.check.mjs
-  tests ratings (others can't change, delete, hand over or create yours),
-  sign-up closed to the public, a member adding someone, and a set-up
-  server not offering setup again. *Not tested:* two people setting up the
-  same brand-new server at the same moment (the transaction); that's by
-  reading the code only.
-- **Undo** (web/src/undo.tsx): a pending delete is carried out when you
-  leave the page, or when another removal replaces it. *Not tested*: by
-  reading the code only. A change here wouldn't be caught.
+  transaction. *Guarded:* pantry-rules.check.mjs tests ratings (others
+  can't change, delete, hand over or create yours), sign-up closed to the
+  public, a member adding someone, and a set-up server not offering setup
+  again. *Not tested, on purpose (Xel, 2026-11-02: not a realistic case):*
+  two people setting up the same brand-new server at the same moment (the
+  transaction); by reading the code only.
+- **Undo** (web/src/pendingDelete.ts, shown by undo.tsx): a pending delete
+  is carried out when its time is up, when you leave the page, or when
+  another removal replaces it; Undo cancels it. *Guarded:*
+  web/test/pendingDelete.test.ts, with a clock the test moves by hand. Four
+  deliberate breaks of a copy (Undo deleting anyway, deletes never
+  happening, a new removal not carrying out the old one, leaving cancelling)
+  were each caught. Also tried in Chromium and Firefox on the shopping list.
 
 ## Not bugs (checked, the claim doesn't hold)
 
