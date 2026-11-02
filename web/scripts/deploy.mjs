@@ -65,6 +65,9 @@ if (missing.length) {
 // program, and the rest of its folder after it) but still makes a valid
 // archive, and only says so by its exit code.
 const archive = join(tmpdir(), `bentotachi-deploy-${process.pid}.tar`);
+// However this script ends (an error, or the Pi failing mid-send), the
+// archive doesn't stay behind in the temp folder.
+process.on("exit", () => rmSync(archive, { force: true }));
 try {
   execFileSync(tar, ["-cf", archive, ...FOLDERS], { cwd: server, stdio: ["ignore", "ignore", "inherit"] });
 } catch {
@@ -74,8 +77,11 @@ try {
 }
 
 // Unpack it on the Pi into a fresh "incoming" folder, and only once all of
-// the folders have arrived, swap each one in.
-const arrived = FOLDERS.map((folder) => `[ -d incoming/${folder} ] && ls -A incoming/${folder} | grep -q .`).join(" && ");
+// the folders have arrived (and releases has latest.json, which phones'
+// update check reads), swap each one in.
+const arrived =
+  FOLDERS.map((folder) => `[ -d incoming/${folder} ] && ls -A incoming/${folder} | grep -q .`).join(" && ") +
+  " && [ -f incoming/releases/latest.json ]";
 const swap = FOLDERS.map((folder) => `rm -rf ${folder} && mv incoming/${folder} ${folder}`).join(" && ");
 const remote =
   `cd ~/bento/server && rm -rf incoming && mkdir incoming && tar -xf - -C incoming && ` +
@@ -84,6 +90,9 @@ console.log(`\nSending ${FOLDERS.join(", ")} to the Pi…`);
 try {
   await new Promise((resolve, reject) => {
     const send = spawn(ssh, [...sshArgs, remote], { stdio: ["pipe", "inherit", "inherit"] });
+    // If ssh ends early (the Pi can't be reached), writing to it fails; the
+    // exit code below says what happened, so this mustn't crash the script.
+    send.stdin.on("error", () => {});
     createReadStream(archive).on("error", reject).pipe(send.stdin);
     send.on("error", reject);
     send.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Copying to the Pi failed (exit ${code}).`))));

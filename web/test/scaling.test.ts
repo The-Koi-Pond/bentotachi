@@ -88,6 +88,11 @@ test("amounts around a fruit's juice scale too", () => {
   assert.equal(scaleLine("Juice of 1 lemon (about 3 tbsp)", 2), "Juice of 2 lemons (about 6 tbsp)");
 });
 
+test("zest of one and juice of another count both scale", () => {
+  assert.equal(scaleLine("Zest of 1 and juice of 2 lemons", 2), "Zest of 2 and juice of 4 lemons");
+  assert.equal(scaleLine("Finely grated zest of 1 and the juice of 2 limes", 0.5), "Finely grated zest of ½ and the juice of 1 lime");
+});
+
 test("other fruit and words stay as they are", () => {
   assert.equal(scaleLine("Juice of 1 apple", 2), "Juice of 1 apple");
 });

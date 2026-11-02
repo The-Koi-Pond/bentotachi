@@ -45,7 +45,10 @@ here.
   "2 egg". Paprika does the same; guessing English plurals goes wrong more
   often than it helps. Juice and zest of citrus are the exception ("juice
   of 2 lemons"), since those lines are common and the fruit list is short.
-  Other fruit ("juice of 1 apple") isn't scaled.
+  Other fruit ("juice of 1 apple") isn't scaled. Known, rare mismatches
+  left as they are (review of 34d60db): "juice of 1 can of mandarin
+  oranges" x2 gives "2 can of mandarins oranges", and "juice of 2 lemon
+  wedges" x2 gives "4 lemons wedges".
 - **A dot before three digits is Dutch thousands only for g, ml and cl**
   ("1.000 g" is a thousand grams); for kilos, litres or no unit it's a
   decimal ("1.250 kg" is one and a quarter). An English "1.250 g" would be

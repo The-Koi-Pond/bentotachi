@@ -158,9 +158,23 @@ export function scaleLine(line: string, factor: number): string {
     const start = fruit.index ?? 0;
     const rest = line.slice(start + fruit[0].length);
     const after = scaleMeasured(rest, factor, MEASURED);
-    return `${scaleAmounts(line.slice(0, start), factor)}${scaledFruit(fruit, factor)}${after ? after[0] + after[1] : rest}`;
+    return `${scaleBeforeFruit(line.slice(0, start), factor)}${scaledFruit(fruit, factor)}${after ? after[0] + after[1] : rest}`;
   }
   return scaleAmounts(line, factor);
+}
+
+// "Zest of 1 and juice of 2 lemons": the first count belongs to the same
+// fruit, so it's right before the fruit part.
+const OTHER_PART = new RegExp(String.raw`\b((?:juice|zest|rind)\s+of\s+)${RANGE}(\s+and\s+(?:the\s+)?)$`, "i");
+
+// What comes before the fruit part: another count of the same fruit, and
+// any amounts before that ("3 tbsp olive oil and ...").
+function scaleBeforeFruit(text: string, factor: number): string {
+  const other = text.match(OTHER_PART);
+  if (!other) return scaleAmounts(text, factor);
+  const [, of, low, separator, high, and] = other;
+  const at = other.index ?? 0;
+  return `${scaleAmounts(text.slice(0, at), factor)}${of}${scaledRange(low, separator, high, factor, "").text}${and}`;
 }
 
 // The fruit part of a line, scaled: "juice of 1 large lemon" x2 -> "juice
