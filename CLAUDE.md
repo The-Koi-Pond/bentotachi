@@ -32,7 +32,8 @@ How to run: `README.md`.
     `??` or other recent syntax, because PocketBase's JS engine is older.
   - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
   - `test/`: `node --test "server/test/*.test.js"` from the project folder.
-    The `*.check.mjs` files (pantry rules, who added, meals, expired login)
+    The `*.check.mjs` files (pantry rules, who added, meals, expired login,
+    import limits)
     check the server end to end against a throwaway PocketBase on port 8091
     (instructions at the top of `pantry-rules.check.mjs`). Claude can
     run the already-downloaded `pocketbase.exe` with `--dir` in scratch

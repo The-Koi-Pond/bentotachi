@@ -128,7 +128,17 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-(Nothing yet.)
+- From the 2026-11-01 bug hunt (server only, so live once deployed; no
+  APK needed):
+  - Importing no longer fails on an over-long field: title, description,
+    servings, author notes and the lists are cut to what the database keeps
+    (recipe_parse.js fitRecipe; server/test/import-limits.check.mjs, which
+    failed on the old code). A photo over 10 MB is skipped, its type comes
+    from the file itself rather than the site's label, and if the save
+    still fails with the photo, the recipe is saved without it.
+  - Ticking off more of something you still have (Have or Low) keeps its
+    expiry date; only an item that had run out gets its old date cleared
+    (pantry.pb.js; checked in pantry-rules.check.mjs).
 
 Released in 1.12.1 (2026-11-02; deployed with its server changes the same
 day):
@@ -568,22 +578,6 @@ Found by reviews of 1.12.0 (verified) and a read-only bug hunt on
 household, so they wait. Xel: "we'll deal with them eventually". Most
 serious first:
 
-- **Importing fails completely on one over-long field or a big photo**
-  (bug hunt). The parser never shortens anything, but the database caps
-  title 300 characters, description 5,000, servings 100, author notes
-  20,000, photos 10 MB (server/pb_migrations/1761696000_recipes.js,
-  1763251200_recipes_author_notes.js). One over the limit, or a photo whose
-  real type isn't what the site says, fails the final save in
-  server/pb_hooks/import.pb.js (`e.app.save(record)`), so the recipe isn't
-  added at all, though the photo is meant to be optional. Fix: cut text to
-  the limits before saving, check the photo's size and type first (or save
-  again without it), and test with an over-long description.
-- **Ticking a shopping item wipes a pantry expiry date that was still
-  right** (bug hunt). server/pb_hooks/pantry.pb.js clears `expires` whenever
-  a linked item is ticked and has a date, even when the pantry item is
-  already Have or Low (added from a recipe while the old milk is still in
-  date, or set back to Have by hand with a new date). The "use soon"
-  warning then disappears. Fix: only clear it when the status was Out.
 - **Swapping two meals on the plan can lose one** (bug hunt, and a test
   reviewer reading 1.12.0). The swap is two separate saves (MealPlan.tsx
   move); if the second fails (signal drops, server restarts), both days

@@ -50,10 +50,13 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
     html = toString(page.body);
   }
 
-  const recipe = parser.parseRecipe(html, url);
-  if (!recipe) {
+  const parsed = parser.parseRecipe(html, url);
+  if (!parsed) {
     throw new BadRequestError("Couldn't find a recipe on that page. You can still add it by hand.");
   }
+  // Cut to what the database keeps (a 6,000-character introduction would
+  // otherwise make the save, and the whole import, fail).
+  const recipe = parser.fitRecipe(parsed);
 
   const record = new Record(e.app.findCollectionByNameOrId("recipes"));
   record.set("title", recipe.title || "Untitled recipe");
@@ -74,6 +77,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   // Save a copy of the photo so it works offline and survives the site
   // changing. A missing photo is fine, so failures here are only logged.
   // The page chooses this address, so it gets the same check.
+  let withPhoto = false;
   if (recipe.imageUrl && !safeUrl.isPublicUrl(recipe.imageUrl)) {
     e.app.logger().warn("Skipped a recipe photo on a private address", "url", recipe.imageUrl);
   } else if (recipe.imageUrl) {
@@ -86,14 +90,26 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
       });
       const type = String((image.headers["Content-Type"] || [""])[0]);
       const extension = parser.imageExtension(type, image.body);
-      if (image.statusCode === 200 && extension) {
+      if (image.body.length > parser.LIMITS.image) {
+        e.app.logger().warn("Skipped a recipe photo over 10 MB", "url", recipe.imageUrl, "bytes", image.body.length);
+      } else if (image.statusCode === 200 && extension) {
         record.set("image", $filesystem.fileFromBytes(image.body, `photo.${extension}`));
+        withPhoto = true;
       }
     } catch (err) {
       e.app.logger().warn("Recipe photo download failed", "url", recipe.imageUrl, "error", String(err));
     }
   }
 
-  e.app.save(record);
+  try {
+    e.app.save(record);
+  } catch (err) {
+    // Still refused with a photo: the photo is the optional part, so save
+    // the recipe without it rather than lose the import.
+    if (!withPhoto) throw err;
+    e.app.logger().warn("Saving the recipe failed with its photo; saving it without", "url", url, "error", String(err));
+    record.set("image", null);
+    e.app.save(record);
+  }
   return e.json(200, { id: record.id });
 }, $apis.requireAuth());

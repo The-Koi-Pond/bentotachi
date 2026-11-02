@@ -78,6 +78,23 @@ await api("PATCH", `/collections/shopping_items/records/${auto[0].id}`, { checke
 p = await api("GET", `/collections/pantry_items/records/${eggs.id}`);
 check("unticking it sets the pantry to Low", p.status === "low", p.status);
 
+// More of something we still have (added from a recipe while the current one
+// is in date, or set back to Have by hand with a new date): ticking it off
+// leaves that date alone, since the older stock is still there.
+for (const status of ["have", "low"]) {
+  const butter = await api("POST", "/collections/pantry_items/records", {
+    name: `Butter ${status}`,
+    status,
+    location: "Fridge",
+    expires: "2026-11-09 00:00:00.000Z",
+  });
+  const more = await api("POST", "/collections/shopping_items/records", { text: `Butter ${status}`, checked: false, pantry_item: butter.id });
+  await api("PATCH", `/collections/shopping_items/records/${more.id}`, { checked: true });
+  const after = await api("GET", `/collections/pantry_items/records/${butter.id}`);
+  check(`ticking off more of something ${status === "have" ? "we have" : "running low"} keeps its expiry date`, after.expires.startsWith("2026-11-09"), JSON.stringify(after.expires));
+  check(`...and it's Have`, after.status === "have", after.status);
+}
+
 // Hand-typed "milk" already on the list, then pantry Milk marked Out.
 const typed = await api("POST", "/collections/shopping_items/records", { text: "milk", checked: false });
 const milk = await api("POST", "/collections/pantry_items/records", { name: "Milk", status: "have", location: "Fridge" });

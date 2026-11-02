@@ -38,8 +38,10 @@ onRecordAfterUpdateSuccess((e) => {
   e.next();
 }, "pantry_items");
 
-// Ticked off on the shopping list -> it's in the pantry again ("have"), with
-// the old expiry date cleared.
+// Ticked off on the shopping list -> it's in the pantry again ("have"). If
+// it had run out, the old expiry date belonged to what ran out, so it's
+// cleared; if it was Have or Low (more bought while some is left), the date
+// stays: that older stock is still there and goes off first.
 // Unticked again -> it's still needed, so "low" (we can't know if it was
 // low or out before).
 onRecordAfterUpdateSuccess((e) => {
@@ -49,10 +51,9 @@ onRecordAfterUpdateSuccess((e) => {
     try {
       const pantryItem = e.app.findRecordById("pantry_items", pantryId);
       const status = pantryItem.get("status");
-      if (checked && (status !== "have" || pantryItem.getString("expires") !== "")) {
-        // Fresh stock: the old expiry date belonged to what ran out.
+      if (checked && status !== "have") {
+        if (status === "out") pantryItem.set("expires", "");
         pantryItem.set("status", "have");
-        pantryItem.set("expires", "");
         e.app.save(pantryItem);
       } else if (!checked && status === "have") {
         pantryItem.set("status", "low");

@@ -564,14 +564,13 @@ function parseRecipe(html, pageUrl) {
   };
 }
 
-// A downloaded photo's file extension, from its Content-Type, or (when the
-// server labels it vaguely, like PureWow's "binary/octet-stream") from the
-// signature every image format starts with. "" if it isn't an image.
-var IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" };
-
+// A downloaded photo's file extension, from the signature every image format
+// starts with. "" if it isn't one PocketBase takes. Not from the site's
+// Content-Type: sites label vaguely (PureWow's "binary/octet-stream") or
+// wrongly (a "jpeg" that's really an error page), and PocketBase checks
+// what the file really is, so a wrong label would fail the whole import.
+// contentType is only kept so callers needn't change.
 function imageExtension(contentType, bytes) {
-  var named = IMAGE_TYPES[String(contentType || "").split(";")[0].trim().toLowerCase()];
-  if (named) return named;
   var b = function (i) {
     return bytes && bytes.length > i ? bytes[i] & 0xff : -1;
   };
@@ -587,8 +586,97 @@ function imageExtension(contentType, bytes) {
   return "";
 }
 
+// What the recipes collection keeps (server/pb_migrations: recipes,
+// recipes_author_notes): text lengths in characters, lists in bytes of JSON.
+// Anything longer makes the save fail, which would lose the whole import.
+var LIMITS = {
+  title: 300,
+  description: 5000,
+  servings: 100,
+  authorNotes: 20000,
+  listBytes: 200000,
+  tagBytes: 20000,
+  // Photos, in bytes.
+  image: 10 * 1024 * 1024,
+};
+
+// Characters as PocketBase counts them (an emoji is one, though JavaScript
+// strings count it as two).
+function characters(text) {
+  var count = 0;
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charCodeAt(i);
+    if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) i++;
+    count++;
+  }
+  return count;
+}
+
+// The first `count` characters, never splitting an emoji.
+function firstCharacters(text, count) {
+  var end = 0;
+  for (var n = 0; n < count && end < text.length; n++) {
+    var c = text.charCodeAt(end);
+    end += c >= 0xd800 && c <= 0xdbff && end + 1 < text.length ? 2 : 1;
+  }
+  return text.slice(0, end);
+}
+
+// Text cut to `max` characters, ending in "…" when something was cut.
+function fitText(text, max) {
+  text = String(text || "");
+  if (characters(text) <= max) return text;
+  return firstCharacters(text, max - 1).replace(/\s+$/, "") + "…";
+}
+
+function utf8Bytes(text) {
+  var bytes = 0;
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charCodeAt(i);
+    if (c < 0x80) bytes += 1;
+    else if (c < 0x800) bytes += 2;
+    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes;
+}
+
+// As many lines from the start as fit in `maxBytes` of JSON.
+function fitLines(lines, maxBytes) {
+  lines = lines || [];
+  if (utf8Bytes(JSON.stringify(lines)) <= maxBytes) return lines;
+  var kept = [];
+  var size = 2;
+  for (var i = 0; i < lines.length; i++) {
+    var add = utf8Bytes(JSON.stringify(lines[i])) + 1;
+    if (size + add > maxBytes) break;
+    kept.push(lines[i]);
+    size += add;
+  }
+  return kept;
+}
+
+// A parsed recipe cut to fit what the database keeps (see LIMITS), so a
+// site with a 6,000-character introduction still imports.
+function fitRecipe(recipe) {
+  var fitted = {};
+  for (var key in recipe) fitted[key] = recipe[key];
+  fitted.title = fitText(recipe.title, LIMITS.title);
+  fitted.description = fitText(recipe.description, LIMITS.description);
+  fitted.servings = fitText(recipe.servings, LIMITS.servings);
+  fitted.authorNotes = fitText(recipe.authorNotes, LIMITS.authorNotes);
+  fitted.ingredients = fitLines(recipe.ingredients, LIMITS.listBytes);
+  fitted.steps = fitLines(recipe.steps, LIMITS.listBytes);
+  fitted.tags = fitLines(recipe.tags, LIMITS.tagBytes);
+  return fitted;
+}
+
 module.exports = {
   BROWSER_USER_AGENT: BROWSER_USER_AGENT,
+  LIMITS: LIMITS,
+  fitRecipe: fitRecipe,
   imageExtension: imageExtension,
   parseRecipe: parseRecipe,
   durationToMinutes: durationToMinutes,

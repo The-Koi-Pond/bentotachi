@@ -205,10 +205,14 @@ test("splits numbered steps that run together, and drops their numbers", () => {
   );
 });
 
-test("recognises photos by their label, or by their first bytes when the label is vague", () => {
+test("recognises photos by their first bytes, whatever the website calls them", () => {
   const { imageExtension } = require("../pb_hooks/recipe_parse.js");
   const bytes = (...values) => values.flatMap((v) => (typeof v === "string" ? [...v].map((c) => c.charCodeAt(0)) : [v]));
-  assert.equal(imageExtension("image/png; charset=binary", []), "png");
+  // PocketBase checks what a file really is, so a site's label alone isn't
+  // enough: a "photo" that's really a web page would fail the whole import.
+  assert.equal(imageExtension("image/jpeg", bytes("<!doctype html>")), "");
+  assert.equal(imageExtension("image/png; charset=binary", []), "");
+  assert.equal(imageExtension("image/jpeg", bytes(0x89, "PNG", 0x0d, 0x0a)), "png");
   assert.equal(imageExtension("binary/octet-stream", bytes(0xff, 0xd8, 0xff, 0xe0)), "jpg");
   assert.equal(imageExtension("application/octet-stream", bytes(0x89, "PNG", 0x0d, 0x0a)), "png");
   assert.equal(imageExtension("", bytes("GIF89a")), "gif");
@@ -216,6 +220,37 @@ test("recognises photos by their label, or by their first bytes when the label i
   assert.equal(imageExtension("", bytes(0, 0, 0, 0x1c, "ftypavif")), "avif");
   assert.equal(imageExtension("text/html", bytes("<!doctype html>")), "");
   assert.equal(imageExtension("binary/octet-stream", []), "");
+});
+
+test("an imported recipe is cut to fit what the database keeps", () => {
+  const { fitRecipe, LIMITS } = require("../pb_hooks/recipe_parse.js");
+  const recipe = {
+    title: "T".repeat(400),
+    description: "Once upon a time. ".repeat(400),
+    servings: "Serves ".repeat(30),
+    authorNotes: "n".repeat(25000),
+    ingredients: ["1 egg"],
+    steps: Array.from({ length: 5000 }, (_, i) => `Step ${i}: stir the pot for a while and taste it again.`),
+    tags: ["dinner"],
+  };
+  const fitted = fitRecipe(recipe);
+  assert.equal([...fitted.title].length, LIMITS.title);
+  assert.ok(fitted.title.endsWith("…"));
+  assert.ok([...fitted.description].length <= LIMITS.description);
+  assert.ok([...fitted.servings].length <= LIMITS.servings);
+  assert.ok([...fitted.authorNotes].length <= LIMITS.authorNotes);
+  assert.ok(Buffer.byteLength(JSON.stringify(fitted.steps)) <= LIMITS.listBytes);
+  assert.ok(fitted.steps.length > 1000, "keeps as many steps as fit");
+  assert.equal(fitted.steps[0], recipe.steps[0]);
+  // Ones that fit are left exactly as they were.
+  assert.deepEqual(fitted.ingredients, ["1 egg"]);
+  assert.deepEqual(fitted.tags, ["dinner"]);
+  const small = { title: "Soup", description: "Hot.", servings: "4", authorNotes: "", ingredients: [], steps: [], tags: [] };
+  assert.deepEqual(fitRecipe(small), small);
+  // Emoji count as one character each, and are never cut in half.
+  const emoji = fitRecipe({ ...small, title: "🍲".repeat(400) }).title;
+  assert.equal([...emoji].length, LIMITS.title);
+  assert.ok(!/[\ud800-\udbff]…$/.test(emoji));
 });
 
 test("reads a recipe written as ordinary text in a blog post", () => {
