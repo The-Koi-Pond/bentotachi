@@ -8,8 +8,10 @@ import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, SHOPPING_QUEUE_KEY, isOffline, read, write } from "../offline";
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
+import { renewLogin } from "../session";
 import {
   isUnsent,
+  mustWait,
   queueAdd,
   queueCheck,
   sendQueued,
@@ -68,14 +70,19 @@ export default function ShoppingList() {
     if (offline || !items || !queue.length || sending.current) return;
     sending.current = true;
     void sendQueued(queue, {
+      // An expired login would make every change look refused, so renew it
+      // first. If it's no longer good, the login screen shows and the
+      // changes wait for the next login (session.ts).
+      loggedIn: async () => (await renewLogin()) === "ok",
       add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
       check: (id, checked) => shoppingItems().update(id, { checked }),
     }).then((handled) => {
       // Only what was handled goes; changes made while sending stay waiting.
       setQueue((current) => withoutHandled(current, handled));
       sending.current = false;
-      // Some couldn't go (offline again, or the server can't take them
-      // now): keep trying. Otherwise load the list as everyone now sees it.
+      // Some couldn't go (offline again, the login couldn't be checked, or
+      // the server can't take them now): keep trying. Otherwise load the
+      // list as everyone now sees it.
       if (handled.length < queue.length) setOffline(true);
       if (handled.length) reload();
     });
@@ -131,11 +138,11 @@ export default function ShoppingList() {
     }
   }
 
-  // Something added offline is being sent right now: changing it would race
-  // the send (it could be added twice, or not removed), so wait a moment.
+  // A change to this item made offline is being sent right now: changing it
+  // again would race the send (see mustWait), so wait a moment.
   function busySending(item: ShoppingItem): boolean {
-    if (!sending.current || !isUnsent(item.id)) return false;
-    setNotice(`Still sending what you added offline. Try “${item.text}” again in a moment.`);
+    if (!mustWait(sending.current, queue, item.id)) return false;
+    setNotice(`Still sending what you changed offline. Try “${item.text}” again in a moment.`);
     return true;
   }
 

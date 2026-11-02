@@ -1,7 +1,16 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isUnsent, queueAdd, queueCheck, sendQueued, withQueued, withoutHandled, type QueuedChange } from "../src/offlineShopping.ts";
+import {
+  isUnsent,
+  mustWait,
+  queueAdd,
+  queueCheck,
+  sendQueued,
+  withQueued,
+  withoutHandled,
+  type QueuedChange,
+} from "../src/offlineShopping.ts";
 import type { ShoppingItem } from "../src/pb.ts";
 
 const now = new Date("2026-11-01T10:00:00Z");
@@ -41,6 +50,7 @@ test("sending stops when offline again, and drops what the server turns down", a
   queue = queueCheck(queue, "milk1", true, now);
   queue = queueAdd(queue, "Jam", now);
   const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
     add: async (text) => {
       if (text === "Jam") throw { status: 0 };
       sent.push(`add ${text}`);
@@ -54,11 +64,12 @@ test("sending stops when offline again, and drops what the server turns down", a
   assert.deepEqual(describe(withoutHandled(queue, handled)), ["add Jam"]);
 });
 
-test("a logged-out or failing server keeps the changes waiting", async () => {
-  for (const status of [401, 403, 500, 503]) {
+test("a server having trouble keeps the changes waiting", async () => {
+  for (const status of [429, 500, 503]) {
     let queue = queueAdd([], "Bread", now);
     queue = queueCheck(queue, "milk1", true, now);
     const handled = await sendQueued(queue, {
+      loggedIn: async () => true,
       add: async () => {},
       check: async () => {
         throw { status };
@@ -68,11 +79,79 @@ test("a logged-out or failing server keeps the changes waiting", async () => {
   }
 });
 
+test("nothing is sent, and nothing lost, when the login is no longer good", async () => {
+  // PocketBase answers an expired login as if logged out: 400 for an add,
+  // 404 for a tick (server/test/expired-login.check.mjs). Those would look
+  // like "turned down for good", so the login is checked first.
+  let queue = queueAdd([], "Bread", now);
+  queue = queueCheck(queue, "milk1", true, now);
+  const sent: string[] = [];
+  const handled = await sendQueued(queue, {
+    loggedIn: async () => false,
+    add: async (text) => {
+      sent.push(text);
+      throw { status: 400 };
+    },
+    check: async (id) => {
+      sent.push(id);
+      throw { status: 404 };
+    },
+  });
+  assert.deepEqual(sent, []);
+  assert.deepEqual(describe(withoutHandled(queue, handled)), ["add Bread", "check milk1 true"]);
+});
+
+test("a change the server turns down is dropped, and the rest still go", async () => {
+  let queue = queueCheck([], "gone", true, now);
+  queue = queueAdd(queue, "Bread", now);
+  const sent: string[] = [];
+  const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
+    add: async (text) => {
+      sent.push(text);
+    },
+    check: async () => {
+      throw { status: 400 };
+    },
+  });
+  assert.deepEqual(sent, ["Bread"]);
+  assert.deepEqual(withoutHandled(queue, handled), []);
+});
+
+test("one that can't go yet holds back the ones after it, in order", async () => {
+  let queue = queueAdd([], "Bread", now);
+  queue = queueAdd(queue, "Jam", now);
+  queue = queueAdd(queue, "Tea", now);
+  const sent: string[] = [];
+  const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
+    add: async (text) => {
+      if (text === "Jam") throw { status: 503 };
+      sent.push(text);
+    },
+    check: async () => {},
+  });
+  assert.deepEqual(sent, ["Bread"]);
+  assert.deepEqual(describe(withoutHandled(queue, handled)), ["add Jam", "add Tea"]);
+});
+
+test("while sending, taps wait for items with changes on their way", () => {
+  let queue = queueAdd([], "Bread", now);
+  const bread = queue[0].id;
+  queue = queueCheck(queue, "milk1", true, now);
+  assert.equal(mustWait(true, queue, bread), true);
+  assert.equal(mustWait(true, queue, "milk1"), true);
+  assert.equal(mustWait(true, queue, "eggs1"), false);
+  assert.equal(mustWait(false, queue, "milk1"), false);
+  assert.equal(mustWait(false, queue, bread), false);
+});
+
 test("changes made while sending aren't lost", async () => {
   let queue = queueAdd([], "Bread", now);
   queue = queueCheck(queue, "milk1", true, now);
   let current = queue;
   const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
     add: async () => {
       // While Bread is being sent: milk ticked back off, eggs ticked, jam added.
       current = queueCheck(current, "milk1", false, now);

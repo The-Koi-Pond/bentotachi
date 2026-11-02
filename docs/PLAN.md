@@ -128,18 +128,27 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- Fixes from the 1.12.0 review (commit 542b648; not on the Pi yet):
-  - Scaling: "½ cup + 2 tbsp", "1 cup plus 2 tablespoons (255 g)" and
-    "1 tbsp and 1 tsp" scale every amount; "Juice of 1 lemon" / "zest of 2
-    limes" scale too, with the fruit's plural.
-  - Dutch thousands with a dot ("1.000 g bloem") are a thousand, not 1.
-  - Offline shopping list: changes made while it was sending aren't lost
-    any more (taps on unsent items wait a moment while they're sent), and
-    an expired login or a server error keeps waiting changes instead of
-    dropping them.
+- Fixes from the 1.12.0 review (commits 542b648 and the one after, from
+  re-reviewing those fixes; not on the Pi yet):
+  - Scaling: "½ cup + 2 tbsp", "1 cup plus 2 tablespoons (255 g)",
+    "1 tbsp and 1 tsp" and ", plus 2 tbsp" scale every amount; "Juice of 1
+    large lemon" / "zest of 2 limes" scale too, with the fruit's plural and
+    the amounts around them ("3 tbsp oil and juice of 1 lemon").
+  - Dutch thousands with a dot ("1.000 g bloem") are a thousand for grams
+    and millilitres; "1.250 kg" stays one and a quarter.
+  - Offline shopping list: changes made while it was sending aren't lost;
+    taps on items with a change on its way wait a moment; the login is
+    renewed before sending, so an expired one keeps the changes (you log
+    in again and they go) instead of losing them (server/test/
+    expired-login.check.mjs shows why: PocketBase answers an expired login
+    with 400/404, as if the change were refused).
   - Release and deploy run both test suites first; release stops without
     the signing key's file (unless --test-key); deploy won't wipe a Pi
-    folder that's missing here.
+    folder that's missing here, packs everything before sending anything
+    (a locked file stops it), and only sends committed server code.
+  - Test servers run with --automigrate=false, after a review's test
+    server left a migration file that would have made logins last 10
+    seconds (removed; it was never committed).
 
 Released in 1.12.0 (2026-11-02; the Pi's data was copied to
 `~/bento/pb_data-before-2026-11-01T17-02-36.tar.gz` on the Pi first, for the
@@ -555,8 +564,6 @@ they wait. Xel: "we'll deal with them eventually".
   closed Bento in the background meanwhile: Capacitor sends the result as
   `appRestoredResult`, which web/ never listens for. The same goes for the
   backup/restore file pickers and BentoFilesPlugin (saving an export).
-- Not worth fixing now: useLiveRecords.ts's reload has no ordering guard, so
-  an older list can briefly replace a newer one; the next update corrects it.
 - Unproven: household.ts saveSettings could make a second settings record
   if loading them failed and the page stayed open.
 
@@ -576,9 +583,8 @@ Possible, not double-checked yet (a test reviewer's reading, no proof):
   the phone's backups folder. Also, server_test.go isn't mentioned in
   CLAUDE.md.
 
-Checked and rejected (don't fix): the phone server's hooks being recopied
-while it runs (they're cached in memory), and the APK download's memory use
-(about 16 MB, fine).
+Findings checked and dismissed (not bugs, not worth it, or chosen on
+purpose) are in docs/REVIEW-NOTES.md, so reviews don't raise them again.
 
 ## Known limits
 

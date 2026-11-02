@@ -3,9 +3,13 @@
 //
 // From the server folder, with a fresh empty folder for the test data. The
 // two Dir flags matter: without them PocketBase looks for the schema and
-// rules next to <tmp> instead of in this project.
+// rules next to <tmp> instead of in this project. --automigrate=false
+// matters too: otherwise changing a collection's settings on the test
+// server (like the login lifetime) writes a new migration file into
+// pb_migrations, which would then change the real database (it happened
+// on 2026-11-02: a file setting logins to expire after 10 seconds).
 //   ./pocketbase.exe superuser upsert test@example.com testpassword123 --dir <tmp>/pb_data --migrationsDir ./pb_migrations --hooksDir ./pb_hooks
-//   ./pocketbase.exe serve --http 127.0.0.1:8091 --dir <tmp>/pb_data --migrationsDir ./pb_migrations --hooksDir ./pb_hooks --publicDir ./pb_public
+//   ./pocketbase.exe serve --http 127.0.0.1:8091 --automigrate=false --dir <tmp>/pb_data --migrationsDir ./pb_migrations --hooksDir ./pb_hooks --publicDir ./pb_public
 // then, in another window:  node test/pantry-rules.check.mjs
 // Every line should say PASS. Delete <tmp> afterwards.
 const B = "http://127.0.0.1:8091/api";

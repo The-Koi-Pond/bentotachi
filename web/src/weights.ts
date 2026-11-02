@@ -11,10 +11,9 @@ const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, "
 // temperatures.ts read numbers the same way). A comma is a thousands
 // separator before three digits ("1,000 g") and a decimal comma before one
 // or two, as Dutch and most of Europe write it ("1,5 kg", "2,25 l"). Dutch
-// also writes thousands with a dot ("1.000 g", "1.500,5"): a dot before
-// exactly three digits, after a number that doesn't start with 0, is one.
-// ("1.5" and "0.125" stay decimals; an English "1.250 kg" would be read as
-// 1250, but recipes give kilos to one or two decimals.)
+// also writes thousands with a dot ("1.000 g"), which reads the same as an
+// English three-decimal amount ("1.250 kg"), so parseNumber decides by the
+// unit (see dotMeansThousands).
 const THOUSANDS_DOT = String.raw`[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?(?![\d.])`;
 export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|${THOUSANDS_DOT}|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
 // An amount (groups 1 and 2: "1-2", "1–2", "1 to 2"), then its unit (group 3),
@@ -28,7 +27,20 @@ const GRAMS = new RegExp(String.raw`${AMOUNT}(kgs?|kilos?|kilograms?|grams?|gr|g
 
 const isFluidOunces = (unit: string) => /^fl/i.test(unit);
 
-export function parseNumber(text: string): number {
+// Whether "1.000" means a thousand: for grams, millilitres and centilitres,
+// where one gram or one millilitre written to three decimals makes no
+// sense; not for kilos and litres ("1.250 kg" is one and a quarter), or with
+// no unit. "1.250,5" (a dot, then a decimal comma) and "1.000.000" can only
+// be thousands, whatever the unit.
+const SMALL_METRIC = /^(?:g|gr|grams?|ml|millilit(?:re|er)s?|cl|centilit(?:re|er)s?)$/i;
+export function dotMeansThousands(text: string, unit: string): boolean {
+  if (!/^[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/.test(text)) return false;
+  return /,/.test(text) || (text.match(/\./g) ?? []).length > 1 || SMALL_METRIC.test(unit.trim());
+}
+
+// unit: what the amount is in ("g", "kg", ...), if known; it decides what a
+// dot means (see dotMeansThousands).
+export function parseNumber(text: string, unit = ""): number {
   const t = text.trim();
   const mixed = t.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
@@ -37,7 +49,7 @@ export function parseNumber(text: string): number {
   const unicode = t.match(/^(\d*)\s?([½¼¾⅓⅔⅛⅜⅝⅞])$/);
   if (unicode) return Number(unicode[1] || 0) + FRACTIONS[unicode[2]];
   if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(t)) return Number(t.replace(/,/g, ""));
-  if (/^[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/.test(t)) return Number(t.replace(/\./g, "").replace(",", "."));
+  if (dotMeansThousands(t, unit)) return Number(t.replace(/\./g, "").replace(",", "."));
   if (/^\d+,\d{1,2}$/.test(t)) return Number(t.replace(",", "."));
   return Number(t);
 }
@@ -45,9 +57,10 @@ export function parseNumber(text: string): number {
 // An amount from a match's groups 1 and 2: [low, high] for a range, or
 // [amount, null]. "1-1/2" is one and a half, not 1 to ½ (ranges go up).
 export function amountRange(match: RegExpMatchArray): [number, number | null] {
-  const low = parseNumber(match[1]);
+  const unit = match[3] ?? "";
+  const low = parseNumber(match[1], unit);
   if (!match[2]) return [low, null];
-  const high = parseNumber(match[2]);
+  const high = parseNumber(match[2], unit);
   return high < low && high < 1 ? [low + high, null] : [low, high];
 }
 

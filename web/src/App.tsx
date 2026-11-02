@@ -21,31 +21,19 @@ import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
 import { BentoTitle } from "./Brand";
 import { ShareReceiver } from "./shareReceiver";
-import { forgetOfflineCopy } from "./offline";
 import UpdateBanner from "./UpdateBanner";
 import { UnsavedChangesGuard } from "./unsavedChanges";
-import { isPhoneMode, logInOnPhone } from "./phoneMode";
+import { renewLogin } from "./session";
 
 export default function App() {
   const user = useCurrentUser();
 
   // Each time the app opens, renew the login so nobody gets signed out while
   // they use it regularly. Only a definite "not allowed" signs them out; a
-  // network error (e.g. offline) keeps them logged in.
+  // network error (e.g. offline) keeps them logged in (see session.ts).
   useEffect(() => {
     if (!pb.authStore.isValid) return;
-    pb.collection("users")
-      .authRefresh()
-      .catch(async (err) => {
-        if (err.status === 401 || err.status === 403) {
-          // On a phone-only Bento, just log back in with the phone's account.
-          if (isPhoneMode() && (await logInOnPhone())) return;
-          // The login expired: keep shopping changes made offline that
-          // haven't gone yet, so they're sent after logging back in.
-          forgetOfflineCopy({ keepWaiting: true });
-          pb.authStore.clear();
-        }
-      });
+    void renewLogin();
   }, []);
 
   if (!user) return <Login />;

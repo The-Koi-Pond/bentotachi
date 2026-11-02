@@ -21,13 +21,25 @@ test("a comma before three digits separates thousands", () => {
   assert.equal(withWeightHint("1,000 g flour", "US"), "1,000 g *(2.2 lb)* flour");
 });
 
-test("a dot before three digits separates thousands too, as Dutch writes it", () => {
-  assert.equal(parseNumber("1.000"), 1000);
-  assert.equal(parseNumber("1.500"), 1500);
+test("a dot before three digits separates thousands for grams and millilitres, as Dutch writes it", () => {
+  assert.equal(parseNumber("1.000", "g"), 1000);
+  assert.equal(parseNumber("1.500", "ml"), 1500);
+  assert.equal(parseNumber("2.000", "gram"), 2000);
+  // A dot then a comma can only be Dutch thousands, whatever the unit.
   assert.equal(parseNumber("1.250,5"), 1250.5);
   assert.equal(scaleLine("1.000 g bloem", 2), "2000 g bloem");
   assert.equal(scaleLine("1.500 ml melk", 2), "3000 ml melk");
   assert.equal(withWeightHint("1.000 g bloem", "US"), "1.000 g *(2.2 lb)* bloem");
+});
+
+test("kilos and litres with three decimals stay decimals", () => {
+  assert.equal(parseNumber("1.250", "kg"), 1.25);
+  assert.equal(parseNumber("1.250"), 1.25);
+  assert.equal(scaleLine("1.250 kg potatoes", 2), "2.5 kg potatoes");
+  assert.equal(scaleLine("Potatoes, 1.250 kg", 0.5), "Potatoes, 0.63 kg");
+  assert.equal(withWeightHint("1.250 kg potatoes", "US"), "1.250 kg *(2.8 lb)* potatoes");
+  assert.equal(withVolumeHint("1.500 l stock", "US", recipeMeasures("https://example.com/x"), 15), "1.500 l *(6¼ cups)* stock");
+  assert.equal(scaleLine("1.2345 cups milk", 2), "2.47 cups milk");
 });
 
 test("ordinary decimals stay decimals", () => {

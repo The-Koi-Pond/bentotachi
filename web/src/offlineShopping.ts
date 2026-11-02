@@ -52,21 +52,25 @@ export function withQueued(items: ShoppingItem[], queue: QueuedChange[]): Shoppi
 
 // Whether the server turned a change down for good (400: not allowed, 404:
 // that item was removed meanwhile), so sending it again can't help. Anything
-// else (no connection, logged out, the server having trouble) is worth
-// keeping for later.
+// else (no connection, the server having trouble) is worth keeping for
+// later. This only holds while logged in: PocketBase answers an expired
+// login with the same 400/404, which is why sendQueued checks it first.
 const turnedDown = (err: unknown) => [400, 404].includes((err as { status?: number })?.status ?? -1);
 
 // Sends the changes in order, stopping at the first that can't go now.
 // Returns the ones handled: sent, or turned down for good. The rest stay
-// waiting (see withoutHandled).
+// waiting (see withoutHandled). loggedIn renews the login first (see
+// session.ts); if that isn't sure, nothing is sent.
 export async function sendQueued(
   queue: QueuedChange[],
   send: {
+    loggedIn: () => Promise<boolean>;
     add: (text: string, checked: boolean) => Promise<unknown>;
     check: (id: string, checked: boolean) => Promise<unknown>;
   }
 ): Promise<QueuedChange[]> {
   const handled: QueuedChange[] = [];
+  if (!(await send.loggedIn())) return handled;
   for (const change of queue) {
     try {
       if (change.kind === "add") await send.add(change.text, change.checked);
@@ -81,10 +85,17 @@ export async function sendQueued(
 
 // The queue now, without the changes just handled. By identity, not
 // position: changes made while sending (a newer tick for the same item
-// replaces the old one with a new entry) stay waiting. Ticking or removing
-// something added offline is held off while sending (ShoppingList.tsx), so a
-// sent add is never changed under it.
+// replaces the old one with a new entry) stay waiting. Taps on items with a
+// change on its way are held off while sending (mustWait), so a change is
+// never altered under the send.
 export function withoutHandled(current: QueuedChange[], handled: QueuedChange[]): QueuedChange[] {
   const done = new Set(handled);
   return current.filter((change) => !done.has(change));
+}
+
+// While sending: whether a tap on this item has to wait. An item added
+// offline could be added twice or not removed; one with a tick waiting
+// would have a newer tick undone by that older one arriving after it.
+export function mustWait(sending: boolean, queue: QueuedChange[], id: string): boolean {
+  return sending && (isUnsent(id) || queue.some((change) => change.id === id));
 }

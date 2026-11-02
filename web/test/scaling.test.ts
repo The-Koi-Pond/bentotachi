@@ -58,6 +58,11 @@ test("amounts added together are all scaled", () => {
   assert.equal(scaleLine("75 g (1/2 cup + 1/2 tablespoon) cake flour", 2), "150 g (1 cup + 1 tablespoon) cake flour");
   assert.equal(scaleLine("1 cup plus 2 tablespoons (255 g) flour", 2), "2 cups plus 4 tablespoons (510 g) flour");
   assert.equal(scaleLine("1 cup and 2 tbsp milk", 0.5), "½ cup and 1 tbsp milk");
+  // With a comma before "plus" or "and".
+  assert.equal(scaleLine("½ cup, plus 2 tbsp sugar", 2), "1 cup, plus 4 tbsp sugar");
+  assert.equal(scaleLine("1 cup, and 1 tsp sugar", 2), "2 cups, and 2 tsp sugar");
+  // A comma before something else still stops it.
+  assert.equal(scaleLine("250 g butter, 2 eggs", 2), "500 g butter, 2 eggs");
 });
 
 test("juice and zest of a fruit scale, with the fruit's plural", () => {
@@ -66,6 +71,25 @@ test("juice and zest of a fruit scale, with the fruit's plural", () => {
   assert.equal(scaleLine("Finely grated zest and juice of 2 oranges", 0.5), "Finely grated zest and juice of 1 orange");
   assert.equal(scaleLine("juice of ½ lemon", 2), "juice of 1 lemon");
   assert.equal(scaleLine("Juice of 1 lemon", 1), "Juice of 1 lemon");
+});
+
+test("words between the count and the fruit stay as they are", () => {
+  assert.equal(scaleLine("Juice of 1 large lemon", 2), "Juice of 2 large lemons");
+  assert.equal(scaleLine("Zest of 1 unwaxed orange", 2), "Zest of 2 unwaxed oranges");
+  assert.equal(scaleLine("Juice of 2 large lemons", 0.5), "Juice of 1 large lemon");
+  assert.equal(scaleLine("juice of ½ a lemon", 4), "juice of 2 lemons");
+  assert.equal(scaleLine("juice of ½ a lemon", 1), "juice of ½ a lemon");
+});
+
+test("amounts around a fruit's juice scale too", () => {
+  assert.equal(scaleLine("Dressing: 3 tbsp olive oil and juice of 1 lemon", 2), "Dressing: 6 tbsp olive oil and juice of 2 lemons");
+  assert.equal(scaleLine("Butter, 250 g, plus the zest of 1 lemon", 2), "Butter, 500 g, plus the zest of 2 lemons");
+  assert.equal(scaleLine("2 tbsp oil and the juice of 1 lime", 2), "4 tbsp oil and the juice of 2 limes");
+  assert.equal(scaleLine("Juice of 1 lemon (about 3 tbsp)", 2), "Juice of 2 lemons (about 6 tbsp)");
+});
+
+test("other fruit and words stay as they are", () => {
+  assert.equal(scaleLine("Juice of 1 apple", 2), "Juice of 1 apple");
 });
 
 test("words that start like units aren't units", () => {

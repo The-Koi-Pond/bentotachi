@@ -32,11 +32,19 @@ How to run: `README.md`.
     `??` or other recent syntax, because PocketBase's JS engine is older.
   - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
   - `test/`: `node --test "server/test/*.test.js"` from the project folder.
-    The `*.check.mjs` files (pantry rules, who added, meals) check the server
-    end to end against a throwaway PocketBase on port 8091 (instructions at
-    the top of `pantry-rules.check.mjs`). Claude can
+    The `*.check.mjs` files (pantry rules, who added, meals, expired login)
+    check the server end to end against a throwaway PocketBase on port 8091
+    (instructions at the top of `pantry-rules.check.mjs`). Claude can
     run the already-downloaded `pocketbase.exe` with `--dir` in scratch
     space for this; never test against `server/pb_data` (the real data).
+    Always add `--automigrate=false`: without it, changing a collection's
+    settings on a test server writes a migration file into `pb_migrations`
+    that would change the real database (deploy now refuses uncommitted
+    files there, but don't rely on it). Tell any reviewer agent the same.
+- Code reviews: `docs/REVIEW-NOTES.md` lists findings already checked and
+  dismissed (with why, and when to reopen). Give it to reviewers and check
+  findings against it before reporting; add to it whenever Xel or a
+  verification dismisses one. Real bugs waiting go in PLAN.md "To fix later".
 - `web/`: React + Vite + TypeScript, React Router 8 (a hash router, so no
   server routing setup is needed; it's a data router from
   `createHashRouter` in `App.tsx` so `useBlocker` works for the

@@ -13,7 +13,7 @@
 // millilitres as round numbers. Unit words follow the amount ("1 cup",
 // "2 cups"); other words don't ("2 egg" stays possible, as in Paprika).
 
-import { NUMBER, parseNumber } from "./weights.ts";
+import { NUMBER, dotMeansThousands, parseNumber } from "./weights.ts";
 
 const RANGE = String.raw`(${NUMBER})(?:(\s*(?:-|–|to)\s*)(${NUMBER}))?`;
 // Dutch recipes too: dl and cl, el (eetlepel, tablespoon), tl (theelepel,
@@ -23,10 +23,21 @@ const UNIT_AFTER = new RegExp(String.raw`^(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 // Soft marks or bullet-ish characters may come before the amount.
 const LEADING = new RegExp(String.raw`^([\s*_•·-]*)${RANGE}`);
 // The same amount another way, or more added on: "/8 oz", " (250 ml",
-// " or 1 cup", " + 2 tbsp", " plus 2 tablespoons", " and 1 tsp".
-const ALTERNATIVE = new RegExp(String.raw`^(\s*(?:\/|\(|\+|or\s|plus\s|and\s|,)?\s*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
-// "Juice of 1 lemon", "Finely grated zest and juice of 2 oranges".
-const FRUIT_PART = new RegExp(String.raw`\b((?:juice|zest|rind)(?:\s+and\s+(?:juice|zest|rind))?\s+of\s+)${RANGE}(\s+)([a-z]+)`, "i");
+// " or 1 cup", " + 2 tbsp", " plus 2 tablespoons", " and 1 tsp",
+// ", plus 2 tbsp".
+const ALTERNATIVE = new RegExp(
+  String.raw`^(\s*(?:,\s*(?:plus|and)\s|\/|\(|\+|or\s|plus\s|and\s|,)?\s*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`,
+  "i"
+);
+// "Juice of 1 lemon", "zest of 1 large unwaxed orange", "Finely grated zest
+// and juice of 2 oranges": a citrus fruit, maybe with words like "large"
+// before it (which stay as they are). Groups: "juice of ", the count (and
+// a range), the space, the words before the fruit, the fruit.
+const FRUIT = String.raw`(lemon|lime|orange|grapefruit|mandarin|clementine|tangerine|yuzu)s?(?![a-z])`;
+const FRUIT_PART = new RegExp(
+  String.raw`\b((?:juice|zest|rind)(?:\s+and\s+(?:juice|zest|rind))?\s+of\s+)${RANGE}(\s+)((?:[a-z-]+\s+){0,3}?)${FRUIT}`,
+  "i"
+);
 // (The empty group stands where LEADING's prefix is, so both read alike.)
 const MEASURED = new RegExp(String.raw`(?<!\d)(?<!\d[.,])()${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 
@@ -83,31 +94,31 @@ function metricAmount(n: number, unit: string): string {
 }
 
 function scaledAmount(text: string, factor: number, unit: string): string {
-  const n = parseNumber(text) * factor;
-  // Written with a decimal comma ("1,5 kg"): the answer gets one too.
-  const comma = /^\d+,\d{1,2}$/.test(text.trim());
+  const n = parseNumber(text, unit) * factor;
+  // Written with a decimal comma ("1,5 kg", "1.250,5 g"): the answer gets
+  // one too.
+  const comma = /^\d+,\d{1,2}$/.test(text.trim()) || /\.\d{3},\d/.test(text);
   const decimals = (s: string) => (comma ? s.replace(".", ",") : s);
   if (unit && METRIC.test(unit.trim())) return decimals(metricAmount(n, unit.trim()));
   // Written with decimals: keep them ("1.5 cups" -> "2.25 cups"). (Not a
-  // Dutch thousands dot, "1.000".)
-  const thousands = /^[1-9]\d{0,2}(?:\.\d{3})+/.test(text.trim());
-  if (comma || (/\.\d/.test(text) && !thousands)) return decimals(String(Math.round(n * 100) / 100));
+  // Dutch thousands dot, "1.000 g".)
+  if (comma || (/\.\d/.test(text) && !dotMeansThousands(text.trim(), unit))) return decimals(String(Math.round(n * 100) / 100));
   return kitchenFraction(n);
 }
 
 // "1-1/2" is one and a half, not 1 to ½ (as weights.ts reads it).
-function isMixedNumber(low: string, high: string | undefined): boolean {
-  return high !== undefined && parseNumber(high) < parseNumber(low) && parseNumber(high) < 1;
+function isMixedNumber(low: string, high: string | undefined, unit: string): boolean {
+  return high !== undefined && parseNumber(high, unit) < parseNumber(low, unit) && parseNumber(high, unit) < 1;
 }
 
 function scaledRange(low: string, separator: string | undefined, high: string | undefined, factor: number, unit: string) {
-  if (high === undefined || isMixedNumber(low, high)) {
-    const amount = high === undefined ? low : String(parseNumber(low) + parseNumber(high));
-    return { text: scaledAmount(amount, factor, unit), last: parseNumber(amount) * factor };
+  if (high === undefined || isMixedNumber(low, high, unit)) {
+    const amount = high === undefined ? low : String(parseNumber(low, unit) + parseNumber(high, unit));
+    return { text: scaledAmount(amount, factor, unit), last: parseNumber(amount, unit) * factor };
   }
   return {
     text: `${scaledAmount(low, factor, unit)}${separator}${scaledAmount(high, factor, unit)}`,
-    last: parseNumber(high) * factor,
+    last: parseNumber(high, unit) * factor,
   };
 }
 
@@ -140,6 +151,30 @@ function scaleMeasured(text: string, factor: number, pattern: RegExp): [string, 
 
 export function scaleLine(line: string, factor: number): string {
   if (factor === 1) return line;
+  // "Juice of 1 lemon" -> "Juice of 2 lemons", with the amounts before it
+  // ("3 tbsp olive oil and ...") and after it ("(about 2 tbsp)") scaled too.
+  const fruit = line.match(FRUIT_PART);
+  if (fruit) {
+    const start = fruit.index ?? 0;
+    const rest = line.slice(start + fruit[0].length);
+    const after = scaleMeasured(rest, factor, MEASURED);
+    return `${scaleAmounts(line.slice(0, start), factor)}${scaledFruit(fruit, factor)}${after ? after[0] + after[1] : rest}`;
+  }
+  return scaleAmounts(line, factor);
+}
+
+// The fruit part of a line, scaled: "juice of 1 large lemon" x2 -> "juice
+// of 2 large lemons"; "juice of ½ a lemon" x4 -> "juice of 2 lemons".
+function scaledFruit(fruit: RegExpMatchArray, factor: number): string {
+  const [, of, low, separator, high, space, words, name] = fruit;
+  const { text: count, last } = scaledRange(low, separator, high, factor, "");
+  // "½ a lemon" is "2 a lemons" no more once it's a whole one or more.
+  const between = last >= 1 ? words.replace(/^an?\s+/i, "") : words;
+  return `${of}${count}${space}${between}${name}${last > 1 ? "s" : ""}`;
+}
+
+// A line's amounts, without the fruit part.
+function scaleAmounts(line: string, factor: number): string {
   const lead = line.match(LEADING);
   if (lead) {
     const [whole, before, low, separator, high] = lead;
@@ -154,26 +189,8 @@ export function scaleLine(line: string, factor: number): string {
     // A count ("2 eggs", "1 (400 g) can"): only the count changes.
     return `${before}${scaledRange(low, separator, high, factor, "").text}${rest}`;
   }
-  // "Juice of 1 lemon" -> "Juice of 2 lemons", then any amount after it
-  // ("(about 2 tbsp)").
-  const fruit = line.match(FRUIT_PART);
-  if (fruit) {
-    const [whole, of, low, separator, high, space, name] = fruit;
-    const { text: count, last } = scaledRange(low, separator, high, factor, "");
-    const end = (fruit.index ?? 0) + whole.length;
-    const rest = line.slice(end);
-    const measured = scaleMeasured(rest, factor, MEASURED);
-    return `${line.slice(0, fruit.index)}${of}${count}${space}${fruitWord(name, last)}${measured ? measured[0] + measured[1] : rest}`;
-  }
   const measured = scaleMeasured(line, factor, MEASURED);
   return measured ? measured[0] + measured[1] : line;
-}
-
-// "lemon" for one (or less), "lemons" for more; "peach" -> "peaches".
-function fruitWord(name: string, amount: number): string {
-  const singular = /[^s]s$/i.test(name) ? name.replace(/(?<=(?:ch|sh|x))es$/i, "").replace(/s$/i, "") : name;
-  if (amount <= 1) return singular;
-  return /(?:ch|sh|x)$/i.test(singular) ? `${singular}es` : `${singular}s`;
 }
 
 // How many a recipe makes, from its servings text: "4", "Serves 4-6" (4),

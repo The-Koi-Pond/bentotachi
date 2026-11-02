@@ -13,7 +13,8 @@
 // from anywhere.
 
 import { execFileSync, execSync, spawn } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { createReadStream, existsSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { piConfig } from "./piConfig.mjs";
@@ -32,6 +33,18 @@ function onPi(command) {
   return execFileSync(ssh, [...sshArgs, command], { encoding: "utf8" });
 }
 
+// Only committed server code goes to the Pi: a stray file in pb_migrations
+// (PocketBase writes one when a test server's settings are changed with
+// automigrate on) would change the real database on restart.
+const uncommitted = execFileSync("git", ["status", "--porcelain", "--", "server/pb_hooks", "server/pb_migrations"], {
+  cwd: join(web, ".."),
+  encoding: "utf8",
+}).trim();
+if (uncommitted) {
+  console.error(`\nNothing was sent: these server files aren't committed:\n${uncommitted}\nCommit them, or remove them if they're strays.`);
+  process.exit(1);
+}
+
 runTests();
 
 console.log("> npm run build");
@@ -47,30 +60,37 @@ if (missing.length) {
   process.exit(1);
 }
 
-// Pack the folders here, unpack them on the Pi into a fresh "incoming"
-// folder, and only once all of them have arrived, swap each one in.
+// Pack the folders into a file here first, and only send it if packing
+// worked: Windows' tar skips files it can't read (one locked by another
+// program, and the rest of its folder after it) but still makes a valid
+// archive, and only says so by its exit code.
+const archive = join(tmpdir(), `bentotachi-deploy-${process.pid}.tar`);
+try {
+  execFileSync(tar, ["-cf", archive, ...FOLDERS], { cwd: server, stdio: ["ignore", "ignore", "inherit"] });
+} catch {
+  rmSync(archive, { force: true });
+  console.error("\nNothing was sent: packing the folders failed (a file may be open in another program). Close it and try again.");
+  process.exit(1);
+}
+
+// Unpack it on the Pi into a fresh "incoming" folder, and only once all of
+// the folders have arrived, swap each one in.
 const arrived = FOLDERS.map((folder) => `[ -d incoming/${folder} ] && ls -A incoming/${folder} | grep -q .`).join(" && ");
 const swap = FOLDERS.map((folder) => `rm -rf ${folder} && mv incoming/${folder} ${folder}`).join(" && ");
 const remote =
   `cd ~/bento/server && rm -rf incoming && mkdir incoming && tar -xf - -C incoming && ` +
   `{ ${arrived} || { echo Not everything arrived, so the Pi kept what it had. >&2; rm -rf incoming; exit 3; }; } && ${swap} && rmdir incoming`;
 console.log(`\nSending ${FOLDERS.join(", ")} to the Pi…`);
-await new Promise((resolve, reject) => {
-  const pack = spawn(tar, ["-cf", "-", ...FOLDERS], { cwd: server });
-  const send = spawn(ssh, [...sshArgs, remote], { stdio: ["pipe", "inherit", "inherit"] });
-  let packed = null;
-  pack.stdout.pipe(send.stdin);
-  pack.stderr.pipe(process.stderr);
-  pack.on("error", reject);
-  pack.on("close", (code) => (packed = code));
-  send.on("error", reject);
-  send.on("close", (code) => {
-    if (code !== 0) return reject(new Error(`Copying to the Pi failed (exit ${code}).`));
-    // The Pi checked everything arrived, but say so if packing complained.
-    if (packed) return reject(new Error(`Packing the folders here failed (tar exit ${packed}); check the Pi.`));
-    resolve();
+try {
+  await new Promise((resolve, reject) => {
+    const send = spawn(ssh, [...sshArgs, remote], { stdio: ["pipe", "inherit", "inherit"] });
+    createReadStream(archive).on("error", reject).pipe(send.stdin);
+    send.on("error", reject);
+    send.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Copying to the Pi failed (exit ${code}).`))));
   });
-});
+} finally {
+  rmSync(archive, { force: true });
+}
 
 console.log("Restarting Bentotachi on the Pi…");
 onPi("sudo -n /usr/bin/systemctl restart bento");
