@@ -71,9 +71,13 @@ export function isOffline(err: unknown): boolean {
 
 // Logging out forgets the copy (and unsent list changes), so the next person
 // on this phone doesn't see them.
-export function forgetOfflineCopy() {
+// keepWaiting: leave shopping list changes made offline that haven't been
+// sent yet, for when the login merely expired; they go once someone logs
+// in again (the list is the household's).
+export function forgetOfflineCopy({ keepWaiting = false } = {}) {
   try {
-    for (const key of [RECIPES_KEY, RATINGS_KEY, SHOPPING_KEY, PANTRY_KEY, SHOPPING_QUEUE_KEY]) localStorage.removeItem(key);
+    const keys = [RECIPES_KEY, RATINGS_KEY, SHOPPING_KEY, PANTRY_KEY, ...(keepWaiting ? [] : [SHOPPING_QUEUE_KEY])];
+    for (const key of keys) localStorage.removeItem(key);
   } catch {
     // Nothing to forget.
   }

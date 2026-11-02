@@ -5,23 +5,41 @@
 //   npm run release -- minor "A new feature"                    1.2.1 -> 1.3.0
 //   npm run release -- major "Something big"                    1.3.0 -> 2.0.0
 //
-// Steps: bump the version in android/app/build.gradle, build the web app,
-// build the APK (signed with Bento's key if android/keystore.properties
-// exists, otherwise with Android Studio's test key), then copy it into
+// Steps: run both test suites (stopping if any fails), bump the version in
+// android/app/build.gradle, build the web app, build the APK signed with
+// Bento's key (android/keystore.properties), then copy it into
 // server/releases/ with latest.json describing it.
+//
+// Without keystore.properties it stops: phones with Bento's own build can't
+// install one signed with Android Studio's test key, and would keep being
+// offered it. Only for a server whose phones all have test-key builds:
+//   npm run release -- --test-key "What changed"
 
 import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { runTests } from "./tests.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
 const releases = join(web, "..", "server", "releases");
 const gradleFile = join(android, "app", "build.gradle");
-const args = process.argv.slice(2);
+const args = process.argv.slice(2).filter((arg) => arg !== "--test-key");
+const testKey = process.argv.includes("--test-key");
 const step = ["major", "minor", "patch"].includes(args[0]) ? args.shift() : "patch";
 const notes = args.join(" ").trim();
+
+const signed = existsSync(join(android, "keystore.properties"));
+if (!signed && !testKey) {
+  console.error(
+    "No android/keystore.properties, so this can't be signed with Bento's key, and installed phones couldn't install it.\n" +
+      "Nothing was built. Put keystore.properties back (see the top of android/app/build.gradle), or use --test-key\n" +
+      "only if every phone on this server has a test-key build."
+  );
+  process.exit(1);
+}
+runTests();
 
 // Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,
 // which is too old for Android's build tools.
@@ -56,10 +74,9 @@ console.log(`Building Bentotachi ${versionName} (version ${versionCode})`);
 
 // 2. Web app into the Android project, then 3. the APK. If either fails,
 //    put the old version number back so the next try reuses this one.
-const signed = existsSync(join(android, "keystore.properties"));
 try {
   run("npm run android", web);
-  if (!signed) console.warn("\nNo android/keystore.properties: signing with Android Studio's test key.");
+  if (!signed) console.warn("\n--test-key: signing with Android Studio's test key.");
   run(`"${join(android, "gradlew.bat")}" ${signed ? "assembleRelease" : "assembleDebug"} --console=plain`, android);
 } catch (err) {
   writeFileSync(gradleFile, gradle);

@@ -10,8 +10,13 @@ const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, "
 // "1 1/2", "1/2", "3 ½", "1½", "½", "1.5", "2" (lengths.ts and
 // temperatures.ts read numbers the same way). A comma is a thousands
 // separator before three digits ("1,000 g") and a decimal comma before one
-// or two, as Dutch and most of Europe write it ("1,5 kg", "2,25 l").
-export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
+// or two, as Dutch and most of Europe write it ("1,5 kg", "2,25 l"). Dutch
+// also writes thousands with a dot ("1.000 g", "1.500,5"): a dot before
+// exactly three digits, after a number that doesn't start with 0, is one.
+// ("1.5" and "0.125" stay decimals; an English "1.250 kg" would be read as
+// 1250, but recipes give kilos to one or two decimals.)
+const THOUSANDS_DOT = String.raw`[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?(?![\d.])`;
+export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|${THOUSANDS_DOT}|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
 // An amount (groups 1 and 2: "1-2", "1–2", "1 to 2"), then its unit (group 3),
 // maybe joined by a hyphen ("14.5-ounce can"). ("1/2" and "1.5" are read
 // whole from their start, so only a digit, or a digit and point, is kept
@@ -32,6 +37,7 @@ export function parseNumber(text: string): number {
   const unicode = t.match(/^(\d*)\s?([½¼¾⅓⅔⅛⅜⅝⅞])$/);
   if (unicode) return Number(unicode[1] || 0) + FRACTIONS[unicode[2]];
   if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(t)) return Number(t.replace(/,/g, ""));
+  if (/^[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?$/.test(t)) return Number(t.replace(/\./g, "").replace(",", "."));
   if (/^\d+,\d{1,2}$/.test(t)) return Number(t.replace(",", "."));
   return Number(t);
 }

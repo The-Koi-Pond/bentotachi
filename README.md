@@ -107,7 +107,10 @@ anywhere with Tailscale on, is the Pi's Tailscale address plus `:8090`
 - **Send changes to the Pi**: in `web`, `npm run deploy` builds the app and
   replaces the Pi's `pb_hooks`, `pb_migrations`, `pb_public` and
   `releases`, then restarts it. It never touches the Pi's data. Run it
-  after `npm run release` too, or phones won't see the new app.
+  after `npm run release` too, or phones won't see the new app. It runs the
+  tests first, and won't send anything if a folder is missing here (from a
+  fresh clone, `server/releases` is: run a release first, or copy it from
+  the Pi).
 - **Backups**: the Pi saves one every night at 3:30 am into
   `pb_data/backups` and keeps 7. In `web`, `npm run backup` copies new ones
   to `backups/pi/` here; copy that to a USB stick now and then.
@@ -125,6 +128,8 @@ anywhere with Tailscale on, is the Pi's Tailscale address plus `:8090`
   `npm run release -- minor "What changed"` for a new feature (→ 1.3.0), or
   `npm run release -- major "What changed"` for something big (→ 2.0.0).
   Installed apps show an **Update** banner the next time they're opened.
+  It runs the tests first, and needs `web/android/keystore.properties` (the
+  signing key's details) so phones can install the update.
 
 ## Sharing it with friends (their own server)
 

@@ -21,6 +21,23 @@ test("a comma before three digits separates thousands", () => {
   assert.equal(withWeightHint("1,000 g flour", "US"), "1,000 g *(2.2 lb)* flour");
 });
 
+test("a dot before three digits separates thousands too, as Dutch writes it", () => {
+  assert.equal(parseNumber("1.000"), 1000);
+  assert.equal(parseNumber("1.500"), 1500);
+  assert.equal(parseNumber("1.250,5"), 1250.5);
+  assert.equal(scaleLine("1.000 g bloem", 2), "2000 g bloem");
+  assert.equal(scaleLine("1.500 ml melk", 2), "3000 ml melk");
+  assert.equal(withWeightHint("1.000 g bloem", "US"), "1.000 g *(2.2 lb)* bloem");
+});
+
+test("ordinary decimals stay decimals", () => {
+  assert.equal(parseNumber("1.5"), 1.5);
+  assert.equal(parseNumber("2.25"), 2.25);
+  assert.equal(parseNumber("0.125"), 0.125);
+  assert.equal(scaleLine("1.5 kg chicken", 2), "3 kg chicken");
+  assert.equal(scaleLine("0.125 l cream", 2), "0.25 l cream");
+});
+
 test("decimal commas get weight hints", () => {
   assert.equal(withWeightHint("1,5 kg aardappelen", "US"), "1,5 kg *(3.3 lb)* aardappelen");
 });

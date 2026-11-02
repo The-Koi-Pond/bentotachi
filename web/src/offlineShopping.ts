@@ -50,25 +50,41 @@ export function withQueued(items: ShoppingItem[], queue: QueuedChange[]): Shoppi
   return [...shown, ...added];
 }
 
-// Sends the changes in order. Returns the ones still waiting: all from the
-// first that couldn't reach the server (offline again). Ones the server
-// turns down (like a tick for something removed meanwhile) are dropped.
+// Whether the server turned a change down for good (400: not allowed, 404:
+// that item was removed meanwhile), so sending it again can't help. Anything
+// else (no connection, logged out, the server having trouble) is worth
+// keeping for later.
+const turnedDown = (err: unknown) => [400, 404].includes((err as { status?: number })?.status ?? -1);
+
+// Sends the changes in order, stopping at the first that can't go now.
+// Returns the ones handled: sent, or turned down for good. The rest stay
+// waiting (see withoutHandled).
 export async function sendQueued(
   queue: QueuedChange[],
   send: {
     add: (text: string, checked: boolean) => Promise<unknown>;
     check: (id: string, checked: boolean) => Promise<unknown>;
-  },
-  isOffline: (err: unknown) => boolean
+  }
 ): Promise<QueuedChange[]> {
-  for (let i = 0; i < queue.length; i++) {
-    const change = queue[i];
+  const handled: QueuedChange[] = [];
+  for (const change of queue) {
     try {
       if (change.kind === "add") await send.add(change.text, change.checked);
       else await send.check(change.id, change.checked);
     } catch (err) {
-      if (isOffline(err)) return queue.slice(i);
+      if (!turnedDown(err)) break;
     }
+    handled.push(change);
   }
-  return [];
+  return handled;
+}
+
+// The queue now, without the changes just handled. By identity, not
+// position: changes made while sending (a newer tick for the same item
+// replaces the old one with a new entry) stay waiting. Ticking or removing
+// something added offline is held off while sending (ShoppingList.tsx), so a
+// sent add is never changed under it.
+export function withoutHandled(current: QueuedChange[], handled: QueuedChange[]): QueuedChange[] {
+  const done = new Set(handled);
+  return current.filter((change) => !done.has(change));
 }

@@ -51,7 +51,21 @@ test("unit words follow the amount", () => {
 test("a measured amount later in the line, when none starts it", () => {
   assert.equal(scaleLine("Butter, 250 g, softened", 2), "Butter, 500 g, softened");
   assert.equal(scaleLine("Salt, to taste", 2), "Salt, to taste");
-  assert.equal(scaleLine("Juice of 1 lemon", 2), "Juice of 1 lemon");
+});
+
+test("amounts added together are all scaled", () => {
+  assert.equal(scaleLine("1/2 cup + 2 tbsp flour", 2), "1 cup + 4 tbsp flour");
+  assert.equal(scaleLine("75 g (1/2 cup + 1/2 tablespoon) cake flour", 2), "150 g (1 cup + 1 tablespoon) cake flour");
+  assert.equal(scaleLine("1 cup plus 2 tablespoons (255 g) flour", 2), "2 cups plus 4 tablespoons (510 g) flour");
+  assert.equal(scaleLine("1 cup and 2 tbsp milk", 0.5), "½ cup and 1 tbsp milk");
+});
+
+test("juice and zest of a fruit scale, with the fruit's plural", () => {
+  assert.equal(scaleLine("Juice of 1 lemon", 2), "Juice of 2 lemons");
+  assert.equal(scaleLine("Zest of 2 limes", 1.5), "Zest of 3 limes");
+  assert.equal(scaleLine("Finely grated zest and juice of 2 oranges", 0.5), "Finely grated zest and juice of 1 orange");
+  assert.equal(scaleLine("juice of ½ lemon", 2), "juice of 1 lemon");
+  assert.equal(scaleLine("Juice of 1 lemon", 1), "Juice of 1 lemon");
 });
 
 test("words that start like units aren't units", () => {

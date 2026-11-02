@@ -13,9 +13,11 @@
 // from anywhere.
 
 import { execFileSync, execSync, spawn } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { piConfig } from "./piConfig.mjs";
+import { runTests } from "./tests.mjs";
 
 const { ssh: PI, url: PI_URL, key: KEY } = piConfig();
 const FOLDERS = ["pb_hooks", "pb_migrations", "pb_public", "releases"];
@@ -30,22 +32,44 @@ function onPi(command) {
   return execFileSync(ssh, [...sshArgs, command], { encoding: "utf8" });
 }
 
+runTests();
+
 console.log("> npm run build");
 execSync("npm run build", { cwd: web, stdio: "inherit" });
 
+// Every folder must be here, or the Pi would lose its copy: from a fresh
+// clone there's no server/releases, and Windows' tar just skips a missing
+// folder. releases must hold the app the Pi offers (latest.json).
+const missing = FOLDERS.filter((folder) => !existsSync(join(server, folder)) || !readdirSync(join(server, folder)).length);
+if (!existsSync(join(server, "releases", "latest.json")) && !missing.includes("releases")) missing.push("releases (no latest.json)");
+if (missing.length) {
+  console.error(`\nNothing was sent: server/${missing.join(", server/")} is missing or empty here. (For releases: run npm run release first, or copy server/releases from the Pi.)`);
+  process.exit(1);
+}
+
 // Pack the folders here, unpack them on the Pi into a fresh "incoming"
-// folder, then swap each one in.
+// folder, and only once all of them have arrived, swap each one in.
+const arrived = FOLDERS.map((folder) => `[ -d incoming/${folder} ] && ls -A incoming/${folder} | grep -q .`).join(" && ");
 const swap = FOLDERS.map((folder) => `rm -rf ${folder} && mv incoming/${folder} ${folder}`).join(" && ");
-const remote = `cd ~/bento/server && rm -rf incoming && mkdir incoming && tar -xf - -C incoming && ${swap} && rmdir incoming`;
+const remote =
+  `cd ~/bento/server && rm -rf incoming && mkdir incoming && tar -xf - -C incoming && ` +
+  `{ ${arrived} || { echo Not everything arrived, so the Pi kept what it had. >&2; rm -rf incoming; exit 3; }; } && ${swap} && rmdir incoming`;
 console.log(`\nSending ${FOLDERS.join(", ")} to the Pi…`);
 await new Promise((resolve, reject) => {
   const pack = spawn(tar, ["-cf", "-", ...FOLDERS], { cwd: server });
   const send = spawn(ssh, [...sshArgs, remote], { stdio: ["pipe", "inherit", "inherit"] });
+  let packed = null;
   pack.stdout.pipe(send.stdin);
   pack.stderr.pipe(process.stderr);
   pack.on("error", reject);
+  pack.on("close", (code) => (packed = code));
   send.on("error", reject);
-  send.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Copying to the Pi failed (exit ${code}).`))));
+  send.on("close", (code) => {
+    if (code !== 0) return reject(new Error(`Copying to the Pi failed (exit ${code}).`));
+    // The Pi checked everything arrived, but say so if packing complained.
+    if (packed) return reject(new Error(`Packing the folders here failed (tar exit ${packed}); check the Pi.`));
+    resolve();
+  });
 });
 
 console.log("Restarting Bentotachi on the Pi…");

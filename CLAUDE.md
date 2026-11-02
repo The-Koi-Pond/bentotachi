@@ -45,7 +45,8 @@ How to run: `README.md`.
   `server/pb_public/`, which PocketBase serves. `npm run dev` proxies `/api`
   to port 8090.
   - Tests: `node --test "test/*.test.ts"` from `web` (there's no `npm test`).
-    Run them, and the server's, before `npm run release`.
+    `npm run release` and `npm run deploy` run both suites first
+    (web/scripts/tests.mjs) and stop if any test fails or none are found.
   - Don't give a logic file and a component the same name in different case
     (`softText.ts` / `SoftText.tsx`): Windows sees one file and the build
     fails. Name the logic one differently (`softMarks.ts`, `cookTiming.ts`).
@@ -68,7 +69,10 @@ How to run: `README.md`.
   resumed; BentoUpdaterPlugin.java downloads `/api/cookbook/app/download` and
   opens Android's installer. Updates only install if signed with the same
   key as the installed app: `android/keystore.properties` (gitignored)
-  switches release builds to Bento's own key.
+  switches release builds to Bento's own key. Without it, release stops
+  (unless `--test-key`, for a server whose phones all have test-key builds).
+  Deploy refuses to send if a folder (like `server/releases`) is missing
+  here, and the Pi only swaps folders in once all of them have arrived.
 - The website (github.com/The-Koi-Pond/bentotachi → thekoipond.dev/bentotachi,
   since 2026-11-02; it was /bento before the repository was renamed, and
   the home page repository's `bento/` folder redirects old links) is the

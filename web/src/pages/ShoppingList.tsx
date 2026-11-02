@@ -8,7 +8,16 @@ import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, SHOPPING_QUEUE_KEY, isOffline, read, write } from "../offline";
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
-import { isUnsent, queueAdd, queueCheck, sendQueued, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
+import {
+  isUnsent,
+  queueAdd,
+  queueCheck,
+  sendQueued,
+  serverDate,
+  withQueued,
+  withoutHandled,
+  type QueuedChange,
+} from "../offlineShopping";
 import { aisleOf, byAisle } from "../aisles";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
@@ -58,21 +67,17 @@ export default function ShoppingList() {
   useEffect(() => {
     if (offline || !items || !queue.length || sending.current) return;
     sending.current = true;
-    void sendQueued(
-      queue,
-      {
-        add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
-        check: (id, checked) => shoppingItems().update(id, { checked }),
-      },
-      isOffline
-    ).then((left) => {
-      // Changes made while sending stay waiting too.
-      setQueue((current) => [...left, ...current.slice(queue.length)]);
+    void sendQueued(queue, {
+      add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
+      check: (id, checked) => shoppingItems().update(id, { checked }),
+    }).then((handled) => {
+      // Only what was handled goes; changes made while sending stay waiting.
+      setQueue((current) => withoutHandled(current, handled));
       sending.current = false;
-      // Still offline: wait for the connection to come back. Otherwise load
-      // the list as everyone now sees it.
-      if (left.length) setOffline(true);
-      if (left.length < queue.length) reload();
+      // Some couldn't go (offline again, or the server can't take them
+      // now): keep trying. Otherwise load the list as everyone now sees it.
+      if (handled.length < queue.length) setOffline(true);
+      if (handled.length) reload();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offline, items, queue]);
@@ -126,8 +131,17 @@ export default function ShoppingList() {
     }
   }
 
+  // Something added offline is being sent right now: changing it would race
+  // the send (it could be added twice, or not removed), so wait a moment.
+  function busySending(item: ShoppingItem): boolean {
+    if (!sending.current || !isUnsent(item.id)) return false;
+    setNotice(`Still sending what you added offline. Try “${item.text}” again in a moment.`);
+    return true;
+  }
+
   async function toggle(item: ShoppingItem) {
     setError("");
+    if (busySending(item)) return;
     const checked = !item.checked;
     if (offline || isUnsent(item.id)) return keepForLater((queue) => queueCheck(queue, item.id, checked, new Date()));
     upsert({ ...item, checked, updated: serverDate(new Date()) });
@@ -142,6 +156,7 @@ export default function ShoppingList() {
 
   async function remove(item: ShoppingItem) {
     setError("");
+    if (busySending(item)) return;
     // Added offline and not sent yet: just forget it.
     if (isUnsent(item.id)) return setQueue((queue) => queue.filter((change) => change.id !== item.id));
     if (offline) return setError("Removing things needs a connection. Tick it off instead, and remove it later.");

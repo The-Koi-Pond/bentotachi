@@ -40,7 +40,9 @@ export default function App() {
         if (err.status === 401 || err.status === 403) {
           // On a phone-only Bento, just log back in with the phone's account.
           if (isPhoneMode() && (await logInOnPhone())) return;
-          forgetOfflineCopy();
+          // The login expired: keep shopping changes made offline that
+          // haven't gone yet, so they're sent after logging back in.
+          forgetOfflineCopy({ keepWaiting: true });
           pb.authStore.clear();
         }
       });

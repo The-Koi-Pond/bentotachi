@@ -2,9 +2,11 @@
 // amount by 1.5. Only amounts are changed, never sizes or the method:
 //  - The amount a line starts with: "2 cups flour" -> "3 cups flour",
 //    "1-2 cloves garlic" -> "1½-3 cloves garlic".
-//  - The same amount given another way right after it: "250 g/8 oz butter",
-//    "1 cup (250 ml) milk".
+//  - The same amount given another way right after it, or more of it added
+//    on: "250 g/8 oz butter", "1 cup (250 ml) milk", "½ cup + 2 tbsp",
+//    "1 cup plus 2 tablespoons (255 g)".
 //  - Not a size after a count: "1 (400 g) can tomatoes", "2 x 400 g cans".
+//  - "Juice of 1 lemon", "zest of 2 limes": the fruit, with its plural.
 //  - A line with no amount at the start gets its first measured amount
 //    scaled: "Butter, 250 g".
 // Cups, spoons and counts come out as kitchen fractions (1½, ⅓), grams and
@@ -20,8 +22,11 @@ const UNITS = String.raw`kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)
 const UNIT_AFTER = new RegExp(String.raw`^(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 // Soft marks or bullet-ish characters may come before the amount.
 const LEADING = new RegExp(String.raw`^([\s*_•·-]*)${RANGE}`);
-// The same amount another way: "/8 oz", " (250 ml", " or 1 cup".
-const ALTERNATIVE = new RegExp(String.raw`^(\s*(?:\/|\(|or\s|,)?\s*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
+// The same amount another way, or more added on: "/8 oz", " (250 ml",
+// " or 1 cup", " + 2 tbsp", " plus 2 tablespoons", " and 1 tsp".
+const ALTERNATIVE = new RegExp(String.raw`^(\s*(?:\/|\(|\+|or\s|plus\s|and\s|,)?\s*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
+// "Juice of 1 lemon", "Finely grated zest and juice of 2 oranges".
+const FRUIT_PART = new RegExp(String.raw`\b((?:juice|zest|rind)(?:\s+and\s+(?:juice|zest|rind))?\s+of\s+)${RANGE}(\s+)([a-z]+)`, "i");
 // (The empty group stands where LEADING's prefix is, so both read alike.)
 const MEASURED = new RegExp(String.raw`(?<!\d)(?<!\d[.,])()${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 
@@ -83,8 +88,10 @@ function scaledAmount(text: string, factor: number, unit: string): string {
   const comma = /^\d+,\d{1,2}$/.test(text.trim());
   const decimals = (s: string) => (comma ? s.replace(".", ",") : s);
   if (unit && METRIC.test(unit.trim())) return decimals(metricAmount(n, unit.trim()));
-  // Written with decimals: keep them ("1.5 cups" -> "2.25 cups").
-  if (comma || /\.\d/.test(text)) return decimals(String(Math.round(n * 100) / 100));
+  // Written with decimals: keep them ("1.5 cups" -> "2.25 cups"). (Not a
+  // Dutch thousands dot, "1.000".)
+  const thousands = /^[1-9]\d{0,2}(?:\.\d{3})+/.test(text.trim());
+  if (comma || (/\.\d/.test(text) && !thousands)) return decimals(String(Math.round(n * 100) / 100));
   return kitchenFraction(n);
 }
 
@@ -147,8 +154,26 @@ export function scaleLine(line: string, factor: number): string {
     // A count ("2 eggs", "1 (400 g) can"): only the count changes.
     return `${before}${scaledRange(low, separator, high, factor, "").text}${rest}`;
   }
+  // "Juice of 1 lemon" -> "Juice of 2 lemons", then any amount after it
+  // ("(about 2 tbsp)").
+  const fruit = line.match(FRUIT_PART);
+  if (fruit) {
+    const [whole, of, low, separator, high, space, name] = fruit;
+    const { text: count, last } = scaledRange(low, separator, high, factor, "");
+    const end = (fruit.index ?? 0) + whole.length;
+    const rest = line.slice(end);
+    const measured = scaleMeasured(rest, factor, MEASURED);
+    return `${line.slice(0, fruit.index)}${of}${count}${space}${fruitWord(name, last)}${measured ? measured[0] + measured[1] : rest}`;
+  }
   const measured = scaleMeasured(line, factor, MEASURED);
   return measured ? measured[0] + measured[1] : line;
+}
+
+// "lemon" for one (or less), "lemons" for more; "peach" -> "peaches".
+function fruitWord(name: string, amount: number): string {
+  const singular = /[^s]s$/i.test(name) ? name.replace(/(?<=(?:ch|sh|x))es$/i, "").replace(/s$/i, "") : name;
+  if (amount <= 1) return singular;
+  return /(?:ch|sh|x)$/i.test(singular) ? `${singular}es` : `${singular}s`;
 }
 
 // How many a recipe makes, from its servings text: "4", "Serves 4-6" (4),
