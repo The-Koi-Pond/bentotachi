@@ -3855,6 +3855,61 @@ em.soft {
   padding: 0;
 }
 
+/* Pantry items' photos (PantryPhotoField.tsx). Product photos are on white,
+   so the frame is white too, in dark mode as well; "contain" keeps the
+   whole packet in view. */
+.pantry-thumb,
+.pantry-photo-preview {
+  flex: none;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pantry-thumb {
+  width: 40px;
+  height: 40px;
+}
+
+.pantry-photo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pantry-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pantry-photo-preview {
+  width: 96px;
+  height: 96px;
+}
+
+/* A file picker that looks like the buttons beside it: the real input is
+   kept (for keyboards and screen readers) but out of sight. */
+.file-button {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.file-button:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* "Barcodes: 9300633603161 ✕  📷 Add one" in a pantry item's edit form. */
 .barcode-list {
   display: flex;

@@ -26,6 +26,16 @@ export function brandsOf(text: string | undefined): string[] {
     .filter(Boolean);
 }
 
+// Whether the app should fetch an item's photo from its store link by
+// itself (pantryPhoto.ts): it has a link and no photo, and that link hasn't
+// been tried yet. A tried link stays tried whether its photo came, the
+// store had none, or someone removed it afterwards (then it stays removed,
+// on every phone). A new link gets tried.
+export function wantsLinkPhoto(item: { store_url?: string; photo?: string; photo_link_tried?: string }): boolean {
+  const link = (item.store_url ?? "").trim();
+  return !!link && !item.photo && (item.photo_link_tried ?? "") !== link;
+}
+
 // The brands with one more (no repeats, ignoring capitals), as text again.
 export function withBrand(text: string | undefined, brand: string): string {
   const brands = brandsOf(text);

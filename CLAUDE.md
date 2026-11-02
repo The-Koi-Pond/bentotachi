@@ -28,12 +28,15 @@ How to run: `README.md`.
   - `pb_hooks/*.pb.js`: server routes. Each handler runs in its own scope and
     can't see outer variables, so `require(`${__hooks}/file.js`)` inside it.
   - `pb_hooks/recipe_parse.js`: not a hook (no `.pb.js`), a helper shared by
-    the import route and the Node tests. Keep it plain CommonJS without `?.`,
-    `??` or other recent syntax, because PocketBase's JS engine is older.
+    the import route and the Node tests. Helpers like it are plain CommonJS
+    (`module.exports`, `require`), since PocketBase's JS engine has no
+    `import`. `?.` and `??` do work there (both checked on 0.40.6;
+    household.pb.js uses `??`); older files avoid them only because an older note said so.
   - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
   - `test/`: `node --test "server/test/*.test.js"` from the project folder.
     The `*.check.mjs` files (pantry rules, who added, meals, expired login,
-    import limits) check the server end to end against a throwaway
+    import limits, pantry photos, setup usernames) check the server end to
+    end against a throwaway
     PocketBase on port 8091, or `BENTO_TEST_PORT` (instructions at the top
     of `pantry-rules.check.mjs`). `npm run release` and `npm run deploy` run
     them all on their own throwaway server (web/scripts/tests.mjs, port
@@ -44,12 +47,17 @@ How to run: `README.md`.
     space for this; never test against `server/pb_data` (the real data).
     Always add `--automigrate=false`: without it, changing a collection's
     settings on a test server writes a migration file into `pb_migrations`
-    that would change the real database (deploy now refuses uncommitted
-    files there, but don't rely on it). Tell any reviewer agent the same.
+    that would change the real database (deploy, release and package refuse
+    uncommitted files there, web/scripts/committed.mjs, but don't rely on
+    it). Tell any reviewer agent the same.
 - Code reviews: `docs/REVIEW-NOTES.md` lists findings already checked and
-  dismissed (with why, and when to reopen). Give it to reviewers and check
-  findings against it before reporting; add to it whenever Xel or a
-  verification dismisses one. Real bugs waiting go in PLAN.md "To fix later".
+  dismissed (with why, and when to reopen), and starts with what reviewers
+  need to know about this project. Give it to reviewers and check findings
+  against it before reporting; add to it whenever Xel or a verification
+  dismisses one. Real bugs and review findings waiting to be fixed go in
+  `TODO.md` at the repository root: kept on this PC only (listed in
+  `.git/info/exclude`, never committed), so findings that aren't ready to
+  share stay off GitHub. Planned features stay in `docs/PLAN.md`.
 - `web/`: React + Vite + TypeScript, React Router 8 (a hash router, so no
   server routing setup is needed; it's a data router from
   `createHashRouter` in `App.tsx` so `useBlocker` works for the
@@ -57,11 +65,18 @@ How to run: `README.md`.
   as `<Routes>` inside). `npm run build` writes to
   `server/pb_public/`, which PocketBase serves. `npm run dev` proxies `/api`
   to port 8090.
-  - Tests: `node --test "test/*.test.ts"` from `web` (there's no `npm test`).
+  - Tests: `node --test "test/*.test.ts"` from `web`. **`npm test`** (from
+    `web`) runs everything below on its own (web/scripts/run-tests.mjs),
+    without building or sending anything: use it before saying it works.
     `npm run release` and `npm run deploy` run both suites first, the date
     tests again in two far-off time zones, and the server's end-to-end
     checks (web/scripts/tests.mjs, about 10 seconds), and stop if any test
     fails or none are found.
+  - What makes logic testable: `node --test` loads the real `.ts` files with
+    no Vite in between, so a tested module imports other modules with their
+    `.ts` ending (`from "./stepTimers.ts"`) and takes only types from `pb.ts`
+    (`import type`), since loading `pb.ts` loads Capacitor. Keep rules in
+    such modules, not inside pages (`.tsx` can't be imported by the tests).
   - Don't give a logic file and a component the same name in different case
     (`softText.ts` / `SoftText.tsx`): Windows sees one file and the build
     fails. Name the logic one differently (`softMarks.ts`, `cookTiming.ts`).
@@ -86,6 +101,8 @@ How to run: `README.md`.
   key as the installed app: `android/keystore.properties` (gitignored)
   switches release builds to Bento's own key. Without it, release stops
   (unless `--test-key`, for a server whose phones all have test-key builds).
+  Commit app/build.gradle after a release (it says so): otherwise the next
+  release can reuse a version number phones already have.
   Deploy refuses to send if a folder (like `server/releases`) is missing
   here, and the Pi only swaps folders in once all of them have arrived.
 - The website (github.com/The-Koi-Pond/bentotachi → thekoipond.dev/bentotachi,
@@ -110,11 +127,25 @@ How to run: `README.md`.
   `server/pb_data` is a stale pre-move copy; test on throwaway servers.
   The friends' zip uses web/scripts/package-files/Start Bentotachi.bat;
   `server/Start Bentotachi here.bat` is the PC's fallback (asks for YES).
-- Native code: BrowserActivity + BentoBrowserPlugin (built-in browser, Save
-  to Bento), BentoUpdaterPlugin; registered in MainActivity.
+- Native code, registered in MainActivity: BrowserActivity +
+  BentoBrowserPlugin (built-in browser, Save to Bento), BentoUpdaterPlugin
+  (app updates), BentoSharePlugin (links shared to Bento), BentoScannerPlugin
+  (barcodes, Google's scanner: no camera permission), BentoFilesPlugin
+  (saving exports), BentoLocalServerPlugin (phone-only mode).
+- Phone-only mode ("Just me, on this phone"): the Pi's same server runs
+  inside the app on 127.0.0.1 (mobile/bentoserver, Go; see
+  mobile/README.md). **Every APK carries `server/pb_hooks` and
+  `server/pb_migrations`** (Gradle task copyBentoServerCode in
+  android/app/build.gradle), so a hook or migration change also runs on
+  phones, on data with no admin page to fix it. `npm run android` needs Go,
+  the Android NDK and gomobile (web/scripts/server-lib.mjs builds
+  `app/libs/bentoserver.aar`, without which the APK doesn't build). The Go
+  tests: `go test ./...` in `mobile`. web/src/phoneMode.ts is the app's
+  side (the saved account, backups). Not yet tried on a real phone.
 - `androidScheme: "http"` must never change (it would wipe phones' saved
-  login). `cleartext: true` is only for the PC-on-Wi-Fi phase; turn it off
-  once the Pi has its Tailscale HTTPS address.
+  login). Keep `cleartext: true` while any server is plain http: the Pi on
+  its Tailscale address, friends' servers on home Wi-Fi, and phone-only
+  mode (always http://127.0.0.1). Turning it off would break all of them.
 
 ## Conventions
 
@@ -122,12 +153,14 @@ How to run: `README.md`.
   starting with `#` is a heading.
 - All collections allow any logged-in household member to read and write.
 - Pages that show shared lists use `useLiveRecords` (load + live updates +
-  reload when the app returns to the front).
+  reload when the app returns to the front). The recipe list and categories
+  don't yet: they load when opened (TODO.md has it).
 - User-facing error text should say what happened and what to do next.
 
 ## Environment notes
 
-- Claude's auto mode blocked downloading and running the PocketBase program,
-  so Xel runs PocketBase themself (README steps).
+- Claude can run the already-downloaded `server/pocketbase.exe` on a
+  throwaway folder (see `test/` above); downloading a new PocketBase was
+  blocked by auto mode once, so Xel does that.
 - Verify before claiming it works. The server side (migration, import route)
   only gets truly checked by running PocketBase.

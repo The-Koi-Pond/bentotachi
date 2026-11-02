@@ -1,7 +1,30 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { brandsOf, placeOf, withBrand } from "../src/pantryItem.ts";
+import { brandsOf, placeOf, wantsLinkPhoto, withBrand } from "../src/pantryItem.ts";
+
+const LINK = "https://www.coles.com.au/product/heinz-ketchup-tomato-sauce-500ml-5328995";
+
+test("an item with a store link and no photo gets the link's photo", () => {
+  assert.equal(wantsLinkPhoto({ store_url: LINK, photo: "" }), true);
+  // From before photos existed: no photo_link_tried at all.
+  assert.equal(wantsLinkPhoto({ store_url: LINK }), true);
+});
+
+test("an item without a store link, or with a photo, doesn't", () => {
+  assert.equal(wantsLinkPhoto({ store_url: "", photo: "" }), false);
+  assert.equal(wantsLinkPhoto({ store_url: "  ", photo: "" }), false);
+  assert.equal(wantsLinkPhoto({ store_url: LINK, photo: "photo_abc.jpg" }), false);
+});
+
+test("a link already tried isn't tried again, so a removed photo stays removed", () => {
+  assert.equal(wantsLinkPhoto({ store_url: LINK, photo: "", photo_link_tried: LINK }), false);
+});
+
+test("a new link is tried, even after an old one was", () => {
+  const other = "https://www.woolworths.com.au/shop/productdetails/36059";
+  assert.equal(wantsLinkPhoto({ store_url: other, photo: "", photo_link_tried: LINK }), true);
+});
 
 test("an opened item shows in its once-opened place", () => {
   const sauce = { location: "Cupboard", subcategory: "Tins & jars", opened_location: "Fridge", opened: false };

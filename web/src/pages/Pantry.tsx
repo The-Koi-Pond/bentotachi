@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type Ref } from "react";
 import { useSearchParams } from "react-router";
-import { errorMessage, pantryItems, pb, shoppingItems, type PantryItem, type PantryStatus, type ShoppingItem } from "../pb";
+import {
+  errorMessage,
+  pantryItems,
+  pantryPhotoUrl,
+  pb,
+  shoppingItems,
+  type PantryItem,
+  type PantryStatus,
+  type ShoppingItem,
+} from "../pb";
 import { CartIcon } from "../icons";
 import DrawerToggle from "../DrawerToggle";
 import { forEveryone, useSingleUser, useStores } from "../household";
@@ -17,6 +26,12 @@ import { barcodesOf, itemWithBarcode, normaliseBarcode, withBarcode } from "../b
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
 import { guessPantryItem } from "../pantryLinks";
 import { brandsOf, placeOf, withBrand } from "../pantryItem";
+import { useLinkPhotos } from "../pantryPhoto";
+import PantryPhotoField, { type PhotoChoice } from "../PantryPhotoField";
+
+// The same empty list each time, so the photo filler doesn't re-run while
+// the pantry is loading.
+const NO_ITEMS: PantryItem[] = [];
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
 // looked up (null if it doesn't know), for ones not in the pantry yet.
@@ -209,6 +224,8 @@ export default function Pantry() {
 
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
   const items = pantry.items;
+  // Photos from store links, for items that don't have one yet.
+  useLinkPhotos(items ?? NO_ITEMS);
 
   const loadError = pantry.loadError || shopping.loadError;
   if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Loading the pantry…</p>;
@@ -761,9 +778,21 @@ function PantryRow({
   // Only for things kept somewhere else once opened, while we have some.
   const openedPlace = (item.opened_location ?? "").trim();
   const canOpen = !!openedPlace && norm(openedPlace) !== norm(item.location) && item.status !== "out";
+  const photo = pantryPhotoUrl(item);
   return (
     <div className="pantry-row">
       <div className="pantry-main">
+        {/* Without a connection the photo can't load: no broken-image icon. */}
+        {photo && (
+          <img
+            key={photo}
+            className="pantry-thumb"
+            src={photo}
+            alt=""
+            loading="lazy"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        )}
         <button className="pantry-name" onClick={onEdit} aria-label={`Edit ${item.name}`}>
           {item.name}
         </button>
@@ -1208,6 +1237,7 @@ function AddPantryItem({
   const [duplicate, setDuplicate] = useState<PantryItem | null>(null);
   // The scanned barcode goes on the first item added (not ones after it).
   const [barcode, setBarcode] = useState(fromBarcode?.code ?? "");
+  const [photo, setPhoto] = useState<PhotoChoice>(undefined);
   // Putting a store link into a new item suggests a name from it, and keeps
   // updating that suggestion (while the link is typed) until someone types
   // their own name.
@@ -1230,7 +1260,7 @@ function AddPantryItem({
   // An item half filled in (the place chosen is kept between items, so that
   // alone doesn't count).
   useUnsavedChanges(
-    !!(fields.name.trim() || fields.brand.trim() || fields.note.trim() || fields.expires || fields.storeUrl.trim())
+    !!(fields.name.trim() || fields.brand.trim() || fields.note.trim() || fields.expires || fields.storeUrl.trim() || photo)
   );
 
   async function submit(event: FormEvent) {
@@ -1267,13 +1297,17 @@ function AddPantryItem({
           barcodes: barcode ? [barcode] : [],
           note: fields.note.trim(),
           opened_location: fields.openedLocation.trim(),
+          // Without one, the store link's photo is fetched afterwards
+          // (useLinkPhotos).
+          ...(photo && { photo, photo_link_tried: storeUrl }),
         })
       );
       setBarcode("");
       // Keep the places and subcategory chosen, so adding a whole shelf is
-      // quick. Each item has its own expiry, store link, brand and note, so
-      // those are cleared.
+      // quick. Each item has its own expiry, store link, brand, note and
+      // photo, so those are cleared.
       setFields((previous) => ({ ...previous, name: "", expires: "", storeUrl: "", brand: "", note: "" }));
+      setPhoto(undefined);
       setResetKey((key) => key + 1);
       nameRef.current?.focus();
     } catch (err) {
@@ -1317,6 +1351,13 @@ function AddPantryItem({
         </p>
       )}
       <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} />
+      <PantryPhotoField
+        savedUrl=""
+        storeUrl={null}
+        choice={photo}
+        onChoose={setPhoto}
+        hint={fields.storeUrl.trim() && !photo ? "Leave it empty and the store's photo gets added by itself." : undefined}
+      />
       {error && <p className="error">{error}</p>}
       {error && duplicate && barcode && onUseExisting && (
         <div className="actions">
@@ -1363,10 +1404,11 @@ function EditPantryItem({
     openedLocation: item.opened_location ?? "",
   });
   const [barcodes, setBarcodes] = useState(() => barcodesOf(item));
+  const [photo, setPhoto] = useState<PhotoChoice>(undefined);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [opened] = useState(() => JSON.stringify([fields, barcodes]));
-  useUnsavedChanges(JSON.stringify([fields, barcodes]) !== opened);
+  useUnsavedChanges(JSON.stringify([fields, barcodes]) !== opened || photo !== undefined);
 
   async function scanAnother() {
     setError("");
@@ -1411,18 +1453,11 @@ function EditPantryItem({
         opened_location: openedLocation,
         // Nowhere else to keep it once opened: it's just in its place.
         opened: openedLocation ? !!item.opened : false,
+        // A photo chosen here, or none: either way, this link's photo isn't
+        // fetched by itself afterwards (wantsLinkPhoto), so a removed photo
+        // stays removed.
+        ...(photo !== undefined && { photo, photo_link_tried: storeUrl }),
       });
-      // A server not restarted since newer fields were added says "saved"
-      // but quietly drops them.
-      if (
-        (storeUrl && saved.store_url !== storeUrl) ||
-        (fields.brand.trim() && saved.brand !== fields.brand.trim()) ||
-        (note && saved.note !== note)
-      ) {
-        setError("The server didn't keep everything. It needs restarting: close the Bentotachi server window and open Start Bentotachi.bat again.");
-        setBusy(false);
-        return;
-      }
       onSaved(saved);
     } catch (err) {
       setError(errorMessage(err));
@@ -1436,6 +1471,12 @@ function EditPantryItem({
         existing={existing}
         fields={fields}
         onChange={(patch) => setFields((previous) => ({ ...previous, ...patch }))}
+      />
+      <PantryPhotoField
+        savedUrl={pantryPhotoUrl(item)}
+        storeUrl={cleanStoreUrl(fields.storeUrl)}
+        choice={photo}
+        onChoose={setPhoto}
       />
       {(barcodes.length > 0 || canScan) && (
         <div className="barcode-list">

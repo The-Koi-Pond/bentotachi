@@ -6,8 +6,10 @@
 // plugins (like EasyRecipe) instead label the visible recipe itself with
 // itemprop="..." attributes ("microdata"); that's read when there's no JSON-LD.
 //
-// Kept as plain CommonJS without newer syntax (no ?. or ??) so the same file
-// runs inside PocketBase's JavaScript engine and in Node for the tests.
+// Plain CommonJS (module.exports), so the same file runs inside
+// PocketBase's JavaScript engine and in Node for the tests. It's written in
+// older-style JS (var, no ?. or ??) from an old belief the engine needed
+// it; it doesn't (see CLAUDE.md), but there's no need to rewrite it.
 
 var BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -124,6 +126,15 @@ function findMetaImage(html) {
     html.match(/<meta[^>]*property\s*=\s*["']og:image["'][^>]*content\s*=\s*["']([^"']+)["']/i) ||
     html.match(/<meta[^>]*content\s*=\s*["']([^"']+)["'][^>]*property\s*=\s*["']og:image["']/i);
   return match ? decodeEntities(match[1]) : "";
+}
+
+// A shop product page's photo, as a full address, or "": the picture the
+// page shows when its link is shared (og:image). Used for pantry items'
+// photos (pantry_photo.pb.js). Woolworths' is 120 pixels across, blurry in
+// the edit form, so its 260-pixel copy (same address, "medium") is used.
+function productPhotoUrl(html, pageUrl) {
+  var url = resolveUrl(findMetaImage(html || ""), pageUrl);
+  return url.replace(/^(https:\/\/cdn\d*\.woolworths\.media\/content\/wowproductimages\/)small\//i, "$1medium/");
 }
 
 // "PT1H30M" (the standard duration format) -> 90. Returns 0 if unreadable.
@@ -678,6 +689,7 @@ module.exports = {
   LIMITS: LIMITS,
   fitRecipe: fitRecipe,
   imageExtension: imageExtension,
+  productPhotoUrl: productPhotoUrl,
   parseRecipe: parseRecipe,
   durationToMinutes: durationToMinutes,
   cleanText: cleanText,

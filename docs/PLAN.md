@@ -128,6 +128,17 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- Pantry photos (2026-11-02; the phones need the new APK for the
+  buttons): an item with a store link gets the product's photo from the
+  store's page by itself (Coles and Woolworths both checked), including
+  items linked before photos existed. In an item's form: Take a photo (on
+  phones; Android's camera through Capacitor's file chooser, no new
+  permission), Choose a photo, Use the store's photo, No photo. Photos are
+  shrunk to 600 pixels before sending; the list shows a 40-pixel copy.
+  Each link is tried once (`photo_link_tried`), so a removed photo stays
+  removed on every phone. Server: pantry_photo.pb.js and the pantry_photo
+  migration; checked in pantry-photo.check.mjs and page_image.test.js, and
+  in Chromium and Firefox. Not tried on a real phone yet (the camera).
 - From the 2026-11-01 bug hunt (server only, so live once deployed; no
   APK needed):
   - Importing no longer fails on an over-long field: title, description,
@@ -567,64 +578,71 @@ Released in 1.5.0 (2026-10-30): dinner plan with list and month views,
 quick recipes, personal colors, thumbs up and rating pills, hearts on
 recipe pictures, and the ratings box layout.
 
+## Next up: the pantry listings (Xel, 2026-11-02)
+
+Xel wants to keep working on how pantry items look and what they hold.
+More may come; these are the ones so far:
+
+- [ ] The row's layout and card composition as a whole (photo, name,
+      status buttons, extras), now that items can have photos. Open
+      question: names don't line up between rows with and without a photo.
+- [ ] Several store links per item (say a Coles one and a Woolworths one),
+      instead of one `store_url`.
+- [ ] The brand kept next to the product name, instead of in the extras
+      line underneath.
+- [ ] A better place for expiry warnings like "Expired 3 days ago".
+- [ ] Open Food Facts as the first place a photo comes from: an item with
+      a barcode gets the product's photo from Open Food Facts (it has one
+      for most products, as `image_front_small_url`), and the store link's
+      photo is the fallback. Matters more once items can have several
+      store links. Do this, then a `review-for-xel` of the photo code
+      (2026-11-02's pantry photos haven't been reviewed yet).
+
+## To design: simpler accounts (Xel, 2026-11-02)
+
+Xel's idea: someone using Bentotachi alone shouldn't need an account, and
+definitely not a password; accounts should belong to the server setup, with
+clear steps for making one per household member. Needs careful thought
+before any code: Xel wants it explained step by step first (plain words,
+with what each choice means for them), then decides.
+
+Where things stand, as a starting point:
+
+- Every list is locked to logged-in people (each collection's rules), and
+  ratings, "added by", "cooked by" and colours belong to a person. So the
+  database needs a person behind every change, even for one user.
+- Phone-only mode already makes the account by itself (a username from the
+  name, a random password) and logs in by itself (web/src/phoneMode.ts).
+  What's left to see: Profile's username and password boxes, the password
+  on the Backups page, and the login screen if something goes wrong.
+- A server (the Pi, a friend's PC) is reachable by anyone on the Wi-Fi or
+  Tailscale, so it needs a password even for one person.
+- The hidden account is also what lets a phone's backup move onto a
+  household server later, keeping everyone's ratings and names.
+
+Suggestion so far (Claude, not decided): in phone-only mode, hide account
+details entirely, except a "Moving to a server? Here's your login" note on
+Backups; on servers, keep accounts and improve the setup guide's steps for
+adding each person (Settings > Household > Add someone). Questions to settle
+with Xel: what single-user mode on a server should look like; whether the
+first-run screen should ask "just me" vs "a household" before anything
+about accounts; and how this fits the still-open forgotten-password choice.
+
+Still open from 2026-11-01: **resetting a forgotten password.** Today only
+the server's admin page (/_/) can, which nobody in the household uses.
+Claude suggested letting any household member set a new password for
+another (from Household); Xel hasn't decided. Decide it together with the
+above.
+
 ## Ideas for later
 
 - Phone notifications when something is about to expire
 
-## To fix later (from the 1.12.0 review and the 2026-11-01 bug hunt)
+## To fix later
 
-Found by reviews of 1.12.0 (verified) and a read-only bug hunt on
-2026-11-01 (checked by reading the code, not run); low risk for one
-household, so they wait. Xel: "we'll deal with them eventually". Most
-serious first:
-
-- **Swapping two meals on the plan can lose one** (bug hunt, and a test
-  reviewer reading 1.12.0). The swap is two separate saves (MealPlan.tsx
-  move); if the second fails (signal drops, server restarts), both days
-  hold the same meal and the other is gone. Fix: put the first back if the
-  second fails, or better, one server route that does both inside
-  runInTransaction.
-- **Editing an ingredient's wording drops its pantry link without a word**
-  (bug hunt). Links are kept under the line's exact text (pantryLinks.ts
-  linkKey), so "2 onions" -> "3 onions" in the editor (RecipeEdit.tsx) loses
-  the chosen link (or "not a pantry item"); it goes back to a guess, and the
-  old entry stays in `ingredient_links` forever. Fix: on save, carry links
-  over for lines whose position stayed the same, and drop keys for lines
-  that are gone.
-- Linking an ingredient to the pantry sends the recipe's whole
-  `ingredient_links` map from the copy on screen (RecipeView.tsx,
-  chooseLink), so if someone else linked another ingredient meanwhile, theirs
-  is undone. Fetch the recipe again before adding the new link.
-- "Save to Bentotachi" from the app's built-in browser is lost if Android
-  closed Bento in the background meanwhile: Capacitor sends the result as
-  `appRestoredResult`, which web/ never listens for. The same goes for the
-  backup/restore file pickers and BentoFilesPlugin (saving an export).
-- "Clear ticked" on something added offline can be undone by the signal
-  coming back within the 6-second Undo window: the add is sent meanwhile,
-  so the delayed clear finds nothing to remove, and the item comes back
-  under "Got it" (nothing lost). Fix: hold its send until the clear is
-  done, or delete what the add became. (Review of afe3f42.)
-- Two browser tabs that were both offline each send the same shopping
-  changes, since each has its own copy of the queue (shoppingQueue.ts
-  doesn't listen for the other tab). PC only, rare. (Review of afe3f42.)
-- Unproven: household.ts saveSettings could make a second settings record
-  if loading them failed and the page stayed open.
-
-Possible, not double-checked yet (a test reviewer's reading, no proof):
-
-- Paprika round trip: "Other times:" ends up in the author's notes;
-  numbered headings like "# Day 1" come back as ingredients; "##" comes back
-  as "#".
-- An offline shopping item whose "added" reply was lost (no connection) is
-  sent again later, making a duplicate row.
-- server/test/meals.check.mjs's "everything planned before is a dinner" can't
-  fail on a fresh, empty test server.
-- mobile/bentoserver/server.go (restore): a backup that won't start deletes
-  the phone's backups folder. Also, server_test.go isn't mentioned in
-  CLAUDE.md.
-
-Findings checked and dismissed (not bugs, not worth it, or chosen on
-purpose) are in docs/REVIEW-NOTES.md, so reviews don't raise them again.
+Known bugs and review findings waiting to be fixed are in `TODO.md` at the
+repository root, kept on the PC only (not on GitHub; see CLAUDE.md).
+Findings checked and dismissed are in docs/REVIEW-NOTES.md.
 
 ## Known limits
 

@@ -118,6 +118,11 @@ export interface PantryItem extends RecordModel {
   // there (see placeOf in pantryItem.ts).
   opened_location?: string;
   opened?: boolean;
+  // Its photo's file name, or "" (see pantryPhoto.ts and pantryPhotoUrl).
+  photo?: string;
+  // The store link whose photo was last fetched or tried, so it isn't tried
+  // again (see wantsLinkPhoto in pantryItem.ts), or "".
+  photo_link_tried?: string;
   created: string;
   updated: string;
 }
@@ -224,6 +229,12 @@ export function averageStars(ratings: RecipeRating[]): number | null {
 export function recipeImageUrl(recipe: Recipe, thumb?: string): string {
   if (!recipe.image) return "";
   return pb.files.getURL(recipe, recipe.image, thumb ? { thumb } : undefined);
+}
+
+// A pantry item's photo, as the small copy that keeps the whole packet in
+// view (see the pantry_photo migration), or "" if it has none.
+export function pantryPhotoUrl(item: PantryItem): string {
+  return item.photo ? pb.files.getURL(item, item.photo, { thumb: "160x160f" }) : "";
 }
 
 function subscribeToAuth(onChange: () => void) {
