@@ -12,22 +12,39 @@ here.
 ## Checked and found fine (no need to check again)
 
 From a read-only bug hunt on 2026-11-01 (by reading the code, not running
-it). Reopen if the code named here changes in a way that matters.
+it), with what guards each one, checked 2026-11-02. Reopen if the code
+named here changes in a way that matters. Note: the unit tests run on
+every release and deploy, but the `server/test/*.check.mjs` end-to-end
+checks only run when someone runs them against a test server.
 
 - **Dates** (web/src/dates.ts, expiry.ts): stored and compared as plain
   `YYYY-MM-DD`, so time zones can't shift them by a day; the week start and
-  month maths are right.
+  month maths are right. *Guarded:* web/test/dates.test.ts and
+  expiry.test.ts (month and year ends, week starts, local "today", days
+  until expiry). They also pass under other time zones (Los Angeles,
+  Kiritimati UTC+14, Amsterdam, Pago Pago UTC-11, run with `TZ=...`), but
+  normally only run in this PC's own time zone.
 - **Unit conversions** (weights.ts, volumes.ts): tablespoons (15 vs 20 ml),
-  cups, US and UK pints and gallons, pounds and ounces are right, and tested.
+  cups, US and UK pints, quarts, pounds and ounces are right. *Guarded:*
+  web/test/weights.test.ts, volumes.test.ts, dutch.test.ts. Gallons are
+  converted by the same code but have no test of their own.
 - **Import address safety** (server/pb_hooks/safe_url.js): private IPs,
   localhost, number-only and bracketed addresses are refused. Its known gap
   (a public name that points or redirects to a home address) is written
-  down in the file; PocketBase can't check where a name points.
+  down in the file; PocketBase can't check where a name points. *Guarded:*
+  server/test/safe_url.test.js (20 refused addresses, including
+  2130706433, 0x7f000001, [::1], .local, .lan and Tailscale names).
 - **Access rules**: ratings can only be changed by their owner, adding
   people needs a logged-in member, and first-time setup is guarded inside a
-  transaction.
+  transaction. *Guarded (end-to-end check only):* pantry-rules.check.mjs
+  tests ratings (others can't change, delete, hand over or create yours),
+  sign-up closed to the public, a member adding someone, and a set-up
+  server not offering setup again. *Not tested:* two people setting up the
+  same brand-new server at the same moment (the transaction); that's by
+  reading the code only.
 - **Undo** (web/src/undo.tsx): a pending delete is carried out when you
-  leave the page, or when another removal replaces it.
+  leave the page, or when another removal replaces it. *Not tested*: by
+  reading the code only. A change here wouldn't be caught.
 
 ## Not bugs (checked, the claim doesn't hold)
 
