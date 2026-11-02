@@ -16,6 +16,10 @@ import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { refuseUncommittedServerCode } from "./committed.mjs";
+
+// Friends' servers get the server code as it's committed (see committed.mjs).
+refuseUncommittedServerCode("packaged");
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const root = join(web, "..");

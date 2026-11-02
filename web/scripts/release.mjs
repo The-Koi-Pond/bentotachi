@@ -19,6 +19,7 @@ import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { refuseUncommittedServerCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -39,6 +40,8 @@ if (!signed && !testKey) {
   );
   process.exit(1);
 }
+// The APK carries the server code for phone-only mode (see committed.mjs).
+refuseUncommittedServerCode("built");
 await runTests();
 
 // Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,
@@ -102,3 +105,10 @@ for (const old of readdirSync(releases)) {
 }
 
 console.log(`\nPublished Bentotachi ${versionName}. Installed apps will offer the update next time they're opened.`);
+// The new version number only lives in build.gradle until it's committed:
+// lost (a fresh clone, or the change undone), the next release would reuse
+// a number phones already have, and they'd never be offered it.
+console.log(
+  `\nCommit web/android/app/build.gradle now (version ${versionCode}), so the next release doesn't reuse this number.` +
+    "\nThen npm run deploy sends the app to the Pi."
+);

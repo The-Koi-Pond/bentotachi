@@ -536,16 +536,6 @@ function IngredientsSection({
     onRecipeChange({ ...recipe, ingredient_links: links });
     try {
       const saved = await recipes().update(recipe.id, { ingredient_links: links }, { expand: "added_by" });
-      // A server that hasn't been restarted since links were added to Bento
-      // says "saved" but quietly drops them.
-      if (saved.ingredient_links?.[key] !== pantryItemId) {
-        onRecipeChange(before);
-        setStatus({
-          text: "The server didn't keep that link. It needs restarting: close the Bentotachi server window and open Start Bentotachi.bat again.",
-          isError: true,
-        });
-        return;
-      }
       onRecipeChange(saved);
     } catch (err) {
       onRecipeChange(before);

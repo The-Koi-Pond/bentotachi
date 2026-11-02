@@ -1,6 +1,6 @@
 import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, pb } from "./pb";
-import { forgetOfflineCopy } from "./offline";
+import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
 // the Android app (BentoLocalServerPlugin.java, mobile/bentoserver), so
@@ -115,9 +115,21 @@ export async function setUpPhone(name: string) {
   if (!(await logInOnPhone())) throw new Error("Bentotachi is already set up on this phone with another account. Log in with it below.");
 }
 
-// Back to choosing on the login screen. What's on the phone stays there, in
-// case they come back to it.
+// Back to choosing on the login screen. The phone's server and its data
+// stay, in case they come back to it. The offline copies of its lists go,
+// or the next server's pages could show them as theirs when they can't load.
+// Shopping changes not sent yet (rare: the phone's own server was down) are
+// asked about: right to send to a server that has this phone's backup
+// restored (same records), wrong for anyone else's.
 export function leavePhoneMode() {
+  const waiting = (readList(SHOPPING_QUEUE_KEY) ?? []).length;
+  const keepWaiting =
+    waiting > 0 &&
+    window.confirm(
+      `This phone has ${waiting} shopping list ${waiting === 1 ? "change" : "changes"} that ${waiting === 1 ? "wasn't" : "weren't"} sent. ` +
+        "Send them to the server you're switching to? Choose OK only if that server has this phone's data (its backup restored there). Cancel throws them away."
+    );
+  forgetOfflineCopy({ keepWaiting });
   write(MODE_KEY, null);
   pb.authStore.clear();
 }
@@ -169,6 +181,9 @@ export async function restorePhone(): Promise<boolean> {
     await startPhoneServer();
     throw err;
   }
+  // Everything was replaced: the offline copies, and changes waiting to be
+  // sent, belonged to what was here before.
+  forgetOfflineCopy();
   pb.authStore.clear();
   await logInOnPhone();
   return true;
@@ -180,10 +195,26 @@ export function rememberPhoneAccount(account: PhoneAccount) {
   write(ACCOUNT_KEY, JSON.stringify(account));
 }
 
+// After the logged-in person changes their username or password (Profile):
+// in phone mode, the saved account follows, or the next automatic login
+// would use the old details and fail, locking them out (they never saw the
+// random password). Only for the saved account's own person.
+export function phoneAccountChanged(oldUsername: string, change: Partial<PhoneAccount>) {
+  const account = phoneAccount();
+  if (!isPhoneMode() || !account || account.username !== oldUsername) return;
+  write(ACCOUNT_KEY, JSON.stringify({ ...account, ...change }));
+}
+
 // "Sam Smith" -> "samsmith"; something usable even for names like "李".
+// Dots only between letters ("Sam Jr." -> "samjr", not "samjr."), like the
+// server's setup needs (household.pb.js).
 function usernameFor(name: string): string {
-  const clean = name.toLowerCase().replace(/[^a-z0-9._-]/g, "");
-  return clean.length >= 2 ? clean.slice(0, 30) : "me";
+  const clean = name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/\.{2,}/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+  return clean.length >= 2 ? clean.slice(0, 30).replace(/\.+$/, "") : "me";
 }
 
 function randomPassword(): string {

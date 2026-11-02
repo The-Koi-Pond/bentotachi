@@ -150,11 +150,20 @@ private, so your `pb_data`, backups and signing key never go in.
 
 ## Day-to-day development
 
-- Test server (never on this PC's old data while the Pi is live): `cd server`
-  then `.\pocketbase.exe serve --http 127.0.0.1:8091 --dir <a scratch folder>`
+- Test server (never on this PC's old data while the Pi is live): `cd server`,
+  then, with an empty folder outside the project for its data:
+  ```
+  .\pocketbase.exe superuser upsert test@example.com testpassword123 --dir <scratch>\pb_data --migrationsDir .\pb_migrations --hooksDir .\pb_hooks
+  .\pocketbase.exe serve --http 127.0.0.1:8091 --automigrate=false --dir <scratch>\pb_data --migrationsDir .\pb_migrations --hooksDir .\pb_hooks --publicDir .\pb_public
+  ```
+  The two Dir flags make it use Bentotachi's database setup and hooks (without
+  them it starts empty). `--automigrate=false` stops it writing migration
+  files into `pb_migrations` when a setting is changed on it, which would
+  then change the real database.
 - App with instant reloading: in a second window, `cd web` then `npm run dev`,
   and open <http://localhost:5173>
-- Tests: from the project folder, `node --test "server/test/*.test.js"`,
+- Tests: `npm test` in `web` runs them all (what release and deploy run
+  first). One suite at a time: from the project folder, `node --test "server/test/*.test.js"`,
   and from `web`, `node --test "test/*.test.ts"`. The `server/test/*.check.mjs`
   files check the server end to end against a test server (see the top of
   `pantry-rules.check.mjs`).

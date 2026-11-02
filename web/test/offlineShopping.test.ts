@@ -203,3 +203,28 @@ test("changes made while sending aren't lost", async () => {
   });
   assert.deepEqual(describe(withoutHandled(current, handled)), ["check milk1 false", "check eggs1 true", "add Jam"]);
 });
+
+// The sender itself, not just its helpers: the signal drops again partway,
+// and something is added offline meanwhile. Only what was sent may leave
+// the queue (a slip like keeping the queue from before the send, or
+// emptying it, would lose Jam or Tea; found by the 2026-11-02 audit).
+test("a send cut off partway keeps the rest, and changes made meanwhile", async () => {
+  let store = queueAdd(queueAdd([], "Bread", now), "Jam", now);
+  const sender = createQueueSender(
+    () => store,
+    (update) => (store = update(store))
+  );
+  const result = await sender.send({
+    loggedIn: async () => true,
+    add: async (text: string) => {
+      if (text === "Bread") return;
+      // While Jam is on its way: the phone notices it's offline, Tea is
+      // added offline, and Jam's send fails for want of a connection.
+      store = queueAdd(store, "Tea", now);
+      throw { status: 0 };
+    },
+    check: async () => {},
+  });
+  assert.deepEqual(result, { handled: 1, total: 2 });
+  assert.deepEqual(describe(store), ["add Jam", "add Tea"]);
+});

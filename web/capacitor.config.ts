@@ -14,9 +14,10 @@ const config: CapacitorConfig = {
     // (localhost still counts as a secure page, so features like keeping the
     // screen on still work.)
     androidScheme: "http",
-    // Lets the app reach a server over plain HTTP, needed while the server
-    // is the PC on home Wi-Fi (http://192.168.x.x:8090). Turn this off once
-    // the Pi has its HTTPS address from Tailscale.
+    // Lets the app reach a server over plain HTTP. Keep it while any server
+    // is: the Pi on its Tailscale address, friends' servers on home Wi-Fi
+    // (http://192.168.x.x:8090), and phone-only mode, which is always
+    // http://127.0.0.1. Turning it off would break all of them.
     cleartext: true,
   },
 };

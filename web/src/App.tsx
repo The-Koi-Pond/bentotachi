@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createHashRouter, Link, Navigate, Route, RouterProvider, Routes } from "react-router";
+import { createHashRouter, Link, Navigate, Route, RouterProvider, Routes, useParams } from "react-router";
 import { pb, useCurrentUser } from "./pb";
 import Login from "./pages/Login";
 import RecipeList, { ManageButton } from "./pages/RecipeList";
@@ -46,6 +46,15 @@ export default function App() {
 // changes are lost (see unsavedChanges.ts).
 const router = createHashRouter([{ path: "*", element: <Screens /> }]);
 
+// A recipe's page, fresh for each recipe: going from one recipe straight to
+// another (like a step timer in the tray) would otherwise keep the first
+// one's ticks, open editor and errors, and the editor's Save would then
+// write the first recipe's text into the second.
+function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
+  const { id } = useParams();
+  return <Page key={id} />;
+}
+
 function Screens() {
   return (
     <>
@@ -73,8 +82,8 @@ function Screens() {
           <Route path="/" element={<RecipeList />} />
           <Route path="/add" element={<AddRecipe />} />
           <Route path="/new" element={<RecipeEdit />} />
-          <Route path="/recipes/:id" element={<RecipeView />} />
-          <Route path="/recipes/:id/edit" element={<RecipeEdit />} />
+          <Route path="/recipes/:id" element={<OneRecipe page={RecipeView} />} />
+          <Route path="/recipes/:id/edit" element={<OneRecipe page={RecipeEdit} />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/plan" element={<MealPlan />} />
           <Route path="/shopping" element={<ShoppingList />} />

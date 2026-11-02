@@ -6,8 +6,45 @@ before reporting.** A finding listed here is only worth raising again if the
 "reopen if" condition has happened, or you can show the reason no longer
 holds; say which.
 
-Real bugs waiting to be fixed are in `docs/PLAN.md` ("To fix later"), not
-here.
+Real bugs waiting to be fixed are in `TODO.md` at the repository root (on
+the PC only, not on GitHub), not here: don't report those as new either.
+
+## For reviewers: this project
+
+Standing facts every reviewer of Bentotachi needs. Whoever starts a review
+hands this section on rather than retyping it; if something here is wrong,
+fix it here so the next review gets it right.
+
+- **What it is:** a recipe, meal plan, shopping list and pantry app for one
+  household of three (Android app and PC browsers), on a Raspberry Pi at
+  home reached over Tailscale. Friends can run their own copy from a zip on
+  a Windows PC, and "phone-only mode" runs the same server inside the app.
+  CLAUDE.md is the full guide.
+- **Severity:** realistic likelihood x impact for a household on a home
+  server, not an enterprise or hostile-attacker setting. Data loss,
+  corruption, leaked private details and anything reachable from the
+  internet still count.
+- **Scope:** the quality of what exists. Missing or unfinished features
+  aren't findings unless they break or endanger something in use.
+- **Never:** run anything against `server/pb_data` or the Pi; run release,
+  package, deploy or backup; read or print `web/android/keystore.properties`,
+  `CLAUDE.local.md` or `web/scripts/pi.json` (checking they're gitignored is
+  fine). Reviews are read-only: no edits to the project.
+- **A test server:** `server/pocketbase.exe` with `--dir` in your own scratch
+  folder, always `--automigrate=false` (commands at the top of
+  `server/test/pantry-rules.check.mjs`), on a port nobody else uses (not
+  8091, 8099).
+- **Scratch work:** each reviewer works in its own subfolder of the scratch
+  space. Write scratch scripts with the Write tool (heredocs, `node -e` and
+  `sed -i` are blocked by a hook); without Write, `printf '%s\n' ... > file`
+  or `sed '...' original > copy` into the scratch folder works. A copy of the code that needs `web/node_modules`
+  can link to it; remove the link with `cmd /c rmdir <link>`, never
+  `rm -rf`, which can delete the real folder through the link.
+- **Tests:** `node --test "server/test/*.test.js"` from the project folder,
+  `node --test "test/*.test.ts"` from `web`; the end-to-end checks
+  (`server/test/*.check.mjs`) need a test server.
+- **Branches:** only `main`. The old pre-public history is a separate folder
+  (`C:\Projects\TheKoiPond\bento-history`), not a branch.
 
 ## Checked and found fine (no need to check again)
 
@@ -74,6 +111,17 @@ the date tests again in two far-off time zones, and the
 - **useLiveRecords' reload has no ordering guard**, so an older list can
   briefly replace a newer one; the next live update corrects it. (Review of
   1.12.0.)
+- **Importing a link reads the page or photo whole into memory, with no
+  size limit** (PocketBase's `$http.send` reads everything; the 10 MB photo
+  check runs after the download). Only a logged-in member pasting a link to
+  a huge file could trigger it, the 20-second timeout bounds it, and the
+  service restarts itself. (Audit 2026-11-02, verified.) Reopen if: the
+  server becomes reachable from the internet, or runs on a Pi with under
+  1 GB of memory.
+- **Nothing checks that the Pi's PocketBase version matches the PC's.** It
+  only matters when someone upgrades one side by hand. (Audit 2026-11-02.)
+  Reopen if: PocketBase is being upgraded (then compare `pocketbase
+  --version` on both, or add that check to deploy).
 - **Deploy would accept a local `server/releases` whose latest.json names an
   APK that isn't there.** Nothing in the scripts leaves it in that state
   (release copies the APK before writing latest.json; backup never touches

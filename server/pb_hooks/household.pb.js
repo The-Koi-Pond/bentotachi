@@ -19,6 +19,13 @@ routerAdd("POST", "/api/cookbook/setup", (e) => {
   const name = String(body.name ?? "").trim();
   const password = String(body.password ?? "");
   const adminEmail = `${username}@bento.local`;
+  // The users rule allows any dots, but an email can't start or end with a
+  // dot or have two together, so "sam." would fail below as a puzzling
+  // "email" error. Said plainly instead (phone mode tidies the dots itself:
+  // usernameFor in web/src/phoneMode.ts).
+  if (/^\.|\.$|\.\./.test(username)) {
+    throw new BadRequestError("Usernames can't start or end with a dot, or have two dots together. Try one without.");
+  }
 
   e.app.runInTransaction((txApp) => {
     // Checked inside the transaction, so two people setting up at the same

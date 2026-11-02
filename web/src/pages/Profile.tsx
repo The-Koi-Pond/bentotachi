@@ -3,7 +3,7 @@ import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, type User
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { erasePhone, isPhoneMode } from "../phoneMode";
+import { erasePhone, isPhoneMode, phoneAccountChanged } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
 
@@ -179,6 +179,8 @@ function NameSection({ user }: { user: User }) {
     setStatus(null);
     try {
       await users().update(user.id, { name: name.trim(), username });
+      // Phone-only mode logs in by itself with the saved username.
+      phoneAccountChanged(user.username, { username });
       setStatus({ text: "Saved.", isError: false });
     } catch (err) {
       const message = errorMessage(err);
@@ -286,6 +288,8 @@ function PasswordSection({ user }: { user: User }) {
       setBusy(false);
       return;
     }
+    // Phone-only mode logs in by itself with the saved password.
+    phoneAccountChanged(user.username, { password: next });
     try {
       // A new password logs out every device, this one included, so log
       // straight back in with it.

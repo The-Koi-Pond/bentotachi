@@ -18,6 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { piConfig } from "./piConfig.mjs";
+import { refuseUncommittedServerCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
 const { ssh: PI, url: PI_URL, key: KEY } = piConfig();
@@ -33,17 +34,8 @@ function onPi(command) {
   return execFileSync(ssh, [...sshArgs, command], { encoding: "utf8" });
 }
 
-// Only committed server code goes to the Pi: a stray file in pb_migrations
-// (PocketBase writes one when a test server's settings are changed with
-// automigrate on) would change the real database on restart.
-const uncommitted = execFileSync("git", ["status", "--porcelain", "--", "server/pb_hooks", "server/pb_migrations"], {
-  cwd: join(web, ".."),
-  encoding: "utf8",
-}).trim();
-if (uncommitted) {
-  console.error(`\nNothing was sent: these server files aren't committed:\n${uncommitted}\nCommit them, or remove them if they're strays.`);
-  process.exit(1);
-}
+// Only committed server code goes to the Pi (see committed.mjs).
+refuseUncommittedServerCode("sent");
 
 await runTests();
 
