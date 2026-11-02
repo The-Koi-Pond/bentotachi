@@ -128,7 +128,18 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-(Nothing yet.)
+- Fixes from the 1.12.0 review (commit 542b648; not on the Pi yet):
+  - Scaling: "½ cup + 2 tbsp", "1 cup plus 2 tablespoons (255 g)" and
+    "1 tbsp and 1 tsp" scale every amount; "Juice of 1 lemon" / "zest of 2
+    limes" scale too, with the fruit's plural.
+  - Dutch thousands with a dot ("1.000 g bloem") are a thousand, not 1.
+  - Offline shopping list: changes made while it was sending aren't lost
+    any more (taps on unsent items wait a moment while they're sent), and
+    an expired login or a server error keeps waiting changes instead of
+    dropping them.
+  - Release and deploy run both test suites first; release stops without
+    the signing key's file (unless --test-key); deploy won't wipe a Pi
+    folder that's missing here.
 
 Released in 1.12.0 (2026-11-02; the Pi's data was copied to
 `~/bento/pb_data-before-2026-11-01T17-02-36.tar.gz` on the Pi first, for the
@@ -529,12 +540,50 @@ recipe pictures, and the ratings box layout.
 
 ## Ideas for later
 
-- Scaling servings (needs ingredient amounts parsed out of the text)
 - Phone notifications when something is about to expire
+
+## To fix later (from the 1.12.0 review, 2026-11-02)
+
+Found by a verified review of 1.12.0; all low risk for one household, so
+they wait. Xel: "we'll deal with them eventually".
+
+- Linking an ingredient to the pantry sends the recipe's whole
+  `ingredient_links` map from the copy on screen (RecipeView.tsx,
+  chooseLink), so if someone else linked another ingredient meanwhile, theirs
+  is undone. Fetch the recipe again before adding the new link.
+- "Save to Bentotachi" from the app's built-in browser is lost if Android
+  closed Bento in the background meanwhile: Capacitor sends the result as
+  `appRestoredResult`, which web/ never listens for. The same goes for the
+  backup/restore file pickers and BentoFilesPlugin (saving an export).
+- Not worth fixing now: useLiveRecords.ts's reload has no ordering guard, so
+  an older list can briefly replace a newer one; the next update corrects it.
+- Unproven: household.ts saveSettings could make a second settings record
+  if loading them failed and the page stayed open.
+
+Possible, not double-checked yet (a test reviewer's reading, no proof):
+
+- Paprika round trip: "Other times:" ends up in the author's notes;
+  numbered headings like "# Day 1" come back as ingredients; "##" comes back
+  as "#".
+- Swapping two meals on the plan is two separate saves (MealPlan.tsx move),
+  so a dropped connection between them can leave one meal doubled and the
+  other gone.
+- An offline shopping item whose "added" reply was lost (no connection) is
+  sent again later, making a duplicate row.
+- server/test/meals.check.mjs's "everything planned before is a dinner" can't
+  fail on a fresh, empty test server.
+- mobile/bentoserver/server.go (restore): a backup that won't start deletes
+  the phone's backups folder. Also, server_test.go isn't mentioned in
+  CLAUDE.md.
+
+Checked and rejected (don't fix): the phone server's hooks being recopied
+while it runs (they're cached in memory), and the APK download's memory use
+(about 16 MB, fine).
 
 ## Known limits
 
 - Some big recipe sites (seen: AllRecipes, Serious Eats, Budget Bytes) block
   Bento's server with 402/403 errors, so importing their links fails and the
   app offers "add by hand". The Android app's built-in browser fixes this.
-- Imported ingredient lines are plain text. Nothing understands "2 cups" yet.
+- Scaling reads the amount a line starts with and amounts written right
+  after it (web/src/scaling.ts); amounts inside the method aren't changed.
