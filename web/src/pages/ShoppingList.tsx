@@ -1,25 +1,16 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { errorMessage, pb, shoppingItems, type PantryItem, type ShoppingItem } from "../pb";
 import { CloseIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { PANTRY_KEY, SHOPPING_KEY, SHOPPING_QUEUE_KEY, isOffline, read, write } from "../offline";
+import { PANTRY_KEY, SHOPPING_KEY, isOffline } from "../offline";
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
-import { renewLogin } from "../session";
-import {
-  isUnsent,
-  mustWait,
-  queueAdd,
-  queueCheck,
-  sendQueued,
-  serverDate,
-  withQueued,
-  withoutHandled,
-  type QueuedChange,
-} from "../offlineShopping";
+import { ensureLoginNow } from "../session";
+import { queueSender, setShoppingQueue, useShoppingQueue } from "../shoppingQueue";
+import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
 import { aisleOf, byAisle } from "../aisles";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
@@ -53,39 +44,34 @@ export default function ShoppingList() {
   // Something typed into "Add to the list" but not added yet.
   useUnsavedChanges(text.trim() !== "");
   // Ticks and additions made offline, kept on the phone until they're sent
-  // (see offlineShopping.ts).
-  const [queue, setQueueState] = useState<QueuedChange[]>(() => read<QueuedChange>(SHOPPING_QUEUE_KEY) ?? []);
-  const setQueue = (update: (queue: QueuedChange[]) => QueuedChange[]) =>
-    setQueueState((previous) => {
-      const next = update(previous);
-      write(SHOPPING_QUEUE_KEY, next);
-      return next;
-    });
-  const sending = useRef(false);
+  // (offlineShopping.ts), shared by the whole app (shoppingQueue.ts).
+  const queue = useShoppingQueue();
+  const setQueue = setShoppingQueue;
   // Removing shows "Undo" for a moment before it really happens.
   const undo = useUndo();
 
   // Back online with changes waiting: send them, then load the list fresh.
+  // One send at a time for the whole app, so coming back to this page while
+  // one runs doesn't start another.
   useEffect(() => {
-    if (offline || !items || !queue.length || sending.current) return;
-    sending.current = true;
-    void sendQueued(queue, {
-      // An expired login would make every change look refused, so renew it
-      // first. If it's no longer good, the login screen shows and the
-      // changes wait for the next login (session.ts).
-      loggedIn: async () => (await renewLogin()) === "ok",
-      add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
-      check: (id, checked) => shoppingItems().update(id, { checked }),
-    }).then((handled) => {
-      // Only what was handled goes; changes made while sending stay waiting.
-      setQueue((current) => withoutHandled(current, handled));
-      sending.current = false;
-      // Some couldn't go (offline again, the login couldn't be checked, or
-      // the server can't take them now): keep trying. Otherwise load the
-      // list as everyone now sees it.
-      if (handled.length < queue.length) setOffline(true);
-      if (handled.length) reload();
-    });
+    if (offline || !items || !queue.length || queueSender.isSending()) return;
+    void queueSender
+      .send({
+        // An expired login would make every change look refused, so make
+        // sure of it first. If it's no longer good, the login screen shows
+        // and the changes wait for the next login (session.ts).
+        loggedIn: async () => (await ensureLoginNow()) === "ok",
+        add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
+        check: (id, checked) => shoppingItems().update(id, { checked }),
+      })
+      .then((result) => {
+        if (!result) return;
+        // Some couldn't go (offline again, the login couldn't be checked, or
+        // the server can't take them now): keep trying. Otherwise load the
+        // list as everyone now sees it.
+        if (result.handled < result.total) setOffline(true);
+        if (result.handled) reload();
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offline, items, queue]);
 
@@ -141,7 +127,7 @@ export default function ShoppingList() {
   // A change to this item made offline is being sent right now: changing it
   // again would race the send (see mustWait), so wait a moment.
   function busySending(item: ShoppingItem): boolean {
-    if (!mustWait(sending.current, queue, item.id)) return false;
+    if (!mustWait(queueSender.isSending(), queue, item.id)) return false;
     setNotice(`Still sending what you changed offline. Try “${item.text}” again in a moment.`);
     return true;
   }
@@ -180,14 +166,23 @@ export default function ShoppingList() {
 
   function clearTicked(ticked: ShoppingItem[]) {
     setError("");
-    if (offline) return setError("Clearing needs a connection. The ticked things can wait until you're back online.");
+    setNotice("");
+    const plan = clearPlan(queueSender.isSending(), queue, ticked);
+    if (plan.wait) return setNotice("Still sending what you changed offline. Try Clear again in a moment.");
+    // Only things added offline and not sent yet: no connection needed, they
+    // just leave the phone's queue.
+    if (offline && plan.sent.length)
+      return setError("Clearing needs a connection. The ticked things can wait until you're back online.");
     const count = ticked.length;
     undo.offer(
       ticked.map((item) => item.id),
       `Cleared ${count} ticked ${count === 1 ? "thing" : "things"}.`,
       async () => {
-        ticked.forEach((item) => removeLocally(item.id));
-        const results = await Promise.allSettled(ticked.map((item) => shoppingItems().delete(item.id)));
+        // Added offline and not sent: the server doesn't have them yet.
+        if (plan.unsent.length) setQueue((queue) => queue.filter((change) => !plan.unsent.includes(change.id)));
+        const sent = ticked.filter((item) => plan.sent.includes(item.id));
+        sent.forEach((item) => removeLocally(item.id));
+        const results = await Promise.allSettled(sent.map((item) => shoppingItems().delete(item.id)));
         const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
         if (failed) {
           setError(`Couldn't clear everything: ${errorMessage(failed.reason)}`);

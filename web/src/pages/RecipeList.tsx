@@ -47,6 +47,7 @@ import { saveCategoryOrder } from "../categoryOrder";
 import { alsoDeleted } from "../deleteWarning";
 import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
+import { ensureLogin } from "../session";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -168,9 +169,12 @@ export default function RecipeList() {
   }
 
   useEffect(() => {
-    recipes()
-      .getFullList({ sort: "title", expand: "added_by" })
+    // The login first: with an expired one the server answers with no
+    // recipes, which would replace the copy kept on this phone (session.ts).
+    void ensureLogin()
+      .then((state) => (state === "signedOut" ? null : recipes().getFullList({ sort: "title", expand: "added_by" })))
       .then((list) => {
+        if (!list) return;
         setAll(list);
         saveRecipes(list);
       })
@@ -184,9 +188,13 @@ export default function RecipeList() {
         } else setError(errorMessage(err));
       });
     // Ratings are extras on the cards; the list still works without them.
-    recipeRatings()
-      .getFullList({ fields: "id,recipe,user,stars,favorite,approved,disliked" })
+    // (After the same login check: ensureLogin asks the server only once.)
+    void ensureLogin()
+      .then((state) =>
+        state === "signedOut" ? null : recipeRatings().getFullList({ fields: "id,recipe,user,stars,favorite,approved,disliked" })
+      )
       .then((list) => {
+        if (!list) return;
         setRatings(list);
         saveRatings(list);
       })

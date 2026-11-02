@@ -55,6 +55,12 @@ here.
   read as 1250 g; three decimals of a gram doesn't happen in recipes.
 - **Amounts inside the method aren't scaled**, only ingredients; the page
   says so.
+- **Lists load on a login confirmed in the last minute without asking the
+  server again** (web/src/loginGuard.ts). A login revoked within that
+  minute (a password changed on another phone) could load one empty list;
+  the next check signs out and clears the phone's copies anyway, and sending
+  changes always checks fresh, so nothing is lost. Asking on every load
+  would double the requests.
 - **While offline changes are being sent, tapping an item with a change on
   its way shows "one moment"** instead of acting. Sending takes about a
   second, and acting could add an item twice or undo a newer tick.

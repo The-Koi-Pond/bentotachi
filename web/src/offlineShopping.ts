@@ -93,6 +93,41 @@ export function withoutHandled(current: QueuedChange[], handled: QueuedChange[])
   return current.filter((change) => !done.has(change));
 }
 
+// One send at a time for the whole app, not each copy of the Shopping page:
+// leaving the page and coming back mid-send would otherwise send the same
+// changes again (adding things twice). get/set reach the one shared queue
+// (shoppingQueue.ts); the result says how many of how many were handled, or
+// null when there was nothing to do or a send was already running.
+export function createQueueSender(get: () => QueuedChange[], set: (update: (queue: QueuedChange[]) => QueuedChange[]) => void) {
+  let sending = false;
+  return {
+    isSending: () => sending,
+    async send(how: Parameters<typeof sendQueued>[1]): Promise<{ handled: number; total: number } | null> {
+      const queue = get();
+      if (sending || !queue.length) return null;
+      sending = true;
+      try {
+        const handled = await sendQueued(queue, how);
+        set((current) => withoutHandled(current, handled));
+        return { handled: handled.length, total: queue.length };
+      } finally {
+        sending = false;
+      }
+    },
+  };
+}
+
+// "Clear ticked": things added offline and not sent yet just leave the
+// queue (the server doesn't have them); the rest are deleted on the server.
+// While a send is running, wait if any of them has a change on its way.
+export function clearPlan(sending: boolean, queue: QueuedChange[], ticked: { id: string }[]) {
+  return {
+    wait: ticked.some((item) => mustWait(sending, queue, item.id)),
+    unsent: ticked.filter((item) => isUnsent(item.id)).map((item) => item.id),
+    sent: ticked.filter((item) => !isUnsent(item.id)).map((item) => item.id),
+  };
+}
+
 // While sending: whether a tap on this item has to wait. An item added
 // offline could be added twice or not removed; one with a tick waiting
 // would have a newer tick undone by that older one arriving after it.

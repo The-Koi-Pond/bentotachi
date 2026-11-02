@@ -2,6 +2,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  clearPlan,
+  createQueueSender,
   isUnsent,
   mustWait,
   queueAdd,
@@ -144,6 +146,45 @@ test("while sending, taps wait for items with changes on their way", () => {
   assert.equal(mustWait(true, queue, "eggs1"), false);
   assert.equal(mustWait(false, queue, "milk1"), false);
   assert.equal(mustWait(false, queue, bread), false);
+});
+
+test("only one send at a time, however many copies of the page ask", async () => {
+  let store = queueAdd(queueAdd([], "Bread", now), "Jam", now);
+  const sender = createQueueSender(
+    () => store,
+    (update) => (store = update(store))
+  );
+  const sent: string[] = [];
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const send = {
+    loggedIn: async () => true,
+    add: async (text: string) => {
+      await gate;
+      sent.push(text);
+    },
+    check: async () => {},
+  };
+  // The page is left and opened again while the first send runs.
+  const first = sender.send(send);
+  assert.equal(sender.isSending(), true);
+  const second = await sender.send(send);
+  assert.equal(second, null);
+  release();
+  assert.deepEqual(await first, { handled: 2, total: 2 });
+  assert.deepEqual(sent, ["Bread", "Jam"]);
+  assert.deepEqual(store, []);
+  assert.equal(sender.isSending(), false);
+});
+
+test("clearing ticked things: ones added offline just leave the queue, and it waits while sending", () => {
+  let queue = queueAdd([], "Bread", now);
+  const bread = queue[0].id;
+  queue = queueCheck(queue, bread, true, now);
+  const ticked = [{ id: bread }, { id: "milk1" }];
+  assert.deepEqual(clearPlan(false, queue, ticked), { wait: false, unsent: [bread], sent: ["milk1"] });
+  assert.equal(clearPlan(true, queue, ticked).wait, true);
+  assert.equal(clearPlan(true, queue, [{ id: "milk1" }]).wait, false);
 });
 
 test("changes made while sending aren't lost", async () => {

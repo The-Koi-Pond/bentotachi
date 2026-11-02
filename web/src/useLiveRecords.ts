@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RecordModel } from "pocketbase";
 import { errorMessage, pb } from "./pb";
 import { isOffline, read, write } from "./offline";
+import { ensureLogin } from "./session";
 
 // Loads a whole collection and keeps it up to date while anyone changes it.
 // Also hands back helpers to update what's on screen straight away, before
@@ -15,10 +16,20 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
   const [offline, setOffline] = useState(false);
 
   const reload = useCallback(() => {
-    pb.collection<T>(collection)
-      // Never an old answer the browser kept: offline should look offline.
-      .getFullList({ expand, cache: "no-store" })
+    // First make sure the login is still good: with an expired one the
+    // server answers with an empty list, which would replace what's on
+    // screen and the phone's copy (session.ts). Signed out, the login screen
+    // shows instead; offline, the load below finds that out itself.
+    void ensureLogin()
+      .then((state) => {
+        if (state === "signedOut") return;
+        return pb
+          .collection<T>(collection)
+          // Never an old answer the browser kept: offline should look offline.
+          .getFullList({ expand, cache: "no-store" });
+      })
       .then((list) => {
+        if (!list) return;
         setItems(list);
         setLoadError("");
         setOffline(false);

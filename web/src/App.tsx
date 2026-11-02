@@ -23,7 +23,7 @@ import { BentoTitle } from "./Brand";
 import { ShareReceiver } from "./shareReceiver";
 import UpdateBanner from "./UpdateBanner";
 import { UnsavedChangesGuard } from "./unsavedChanges";
-import { renewLogin } from "./session";
+import { ensureLogin } from "./session";
 
 export default function App() {
   const user = useCurrentUser();
@@ -33,7 +33,7 @@ export default function App() {
   // network error (e.g. offline) keeps them logged in (see session.ts).
   useEffect(() => {
     if (!pb.authStore.isValid) return;
-    void renewLogin();
+    void ensureLogin();
   }, []);
 
   if (!user) return <Login />;

@@ -138,10 +138,15 @@ Changes already live in the browser version, not yet in a published APK
     and millilitres; "1.250 kg" stays one and a quarter.
   - Offline shopping list: changes made while it was sending aren't lost;
     taps on items with a change on its way wait a moment; the login is
-    renewed before sending, so an expired one keeps the changes (you log
-    in again and they go) instead of losing them (server/test/
+    checked fresh before sending, so an expired one keeps the changes (you
+    log in again and they go) instead of losing them (server/test/
     expired-login.check.mjs shows why: PocketBase answers an expired login
-    with 400/404, as if the change were refused).
+    with 400/404, as if the change were refused). One send at a time for
+    the whole app (leaving and reopening the page mid-send no longer adds
+    things twice), and "Clear ticked" handles things added offline.
+  - Every list (and the recipe list) checks the login before loading, so
+    an expired login shows the login screen instead of empty lists that
+    would replace the phone's saved copies.
   - Release and deploy run both test suites first; release stops without
     the signing key's file (unless --test-key); deploy won't wipe a Pi
     folder that's missing here, packs everything before sending anything
