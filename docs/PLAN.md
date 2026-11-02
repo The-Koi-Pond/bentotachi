@@ -143,7 +143,7 @@ Changes already live in the browser version, not yet in a published APK
 Released in 1.12.1 (2026-11-02; deployed with its server changes the same
 day):
 
-- Fixes from the 1.12.0 review (commits 542b648 to 960b219, each re-checked
+- Fixes from the 1.12.0 review (commits d2efa52 to afe3f42, each re-checked
   by a fresh reviewer):
   - Scaling: "½ cup + 2 tbsp", "1 cup plus 2 tablespoons (255 g)",
     "1 tbsp and 1 tsp" and ", plus 2 tbsp" scale every amount; "Juice of 1
@@ -603,10 +603,10 @@ serious first:
   coming back within the 6-second Undo window: the add is sent meanwhile,
   so the delayed clear finds nothing to remove, and the item comes back
   under "Got it" (nothing lost). Fix: hold its send until the clear is
-  done, or delete what the add became. (Review of 960b219.)
+  done, or delete what the add became. (Review of afe3f42.)
 - Two browser tabs that were both offline each send the same shopping
   changes, since each has its own copy of the queue (shoppingQueue.ts
-  doesn't listen for the other tab). PC only, rare. (Review of 960b219.)
+  doesn't listen for the other tab). PC only, rare. (Review of afe3f42.)
 - Unproven: household.ts saveSettings could make a second settings record
   if loading them failed and the page stayed open.
 

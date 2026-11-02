@@ -55,20 +55,20 @@ the date tests again in two far-off time zones, and the
   rest of the queue forever.** PocketBase answers failed rules with 400/404,
   not 403, and turns ordinary errors into 400; there's no proxy in front of
   it; a restart is a refused connection (offline). A lasting 500 isn't a
-  realistic state. (Review of 542b648, 2026-11-02.) Reopen if: a reverse
+  realistic state. (Review of d2efa52, 2026-11-02.) Reopen if: a reverse
   proxy or an outside service gets put in front of the server.
 - **The phone server's hooks being copied again while it runs breaks it.**
   PocketBase holds the hooks in memory once started. (Review of 1.12.0,
   2026-11-02.)
 - **An expired login at app start sends the offline queue as a guest.**
   `useCurrentUser` checks the login's expiry on start, so the login screen
-  shows first. (Review of 542b648.) The case that was real (the login
+  shows first. (Review of d2efa52.) The case that was real (the login
   expiring while the app stays open) is handled by `web/src/session.ts`.
 
 ## Not worth changing (real, but too small or too unlikely)
 
 - **`npm run release` then `npm run deploy` runs both test suites twice.**
-  It costs under half a second next to the builds. (Review of 542b648.)
+  It costs under half a second next to the builds. (Review of d2efa52.)
 - **The APK download holds the whole APK in memory.** About 16 MB, fine on
   the Pi. (Review of 1.12.0.) Reopen if: the APK grows past ~100 MB.
 - **useLiveRecords' reload has no ordering guard**, so an older list can
@@ -77,7 +77,7 @@ the date tests again in two far-off time zones, and the
 - **Deploy would accept a local `server/releases` whose latest.json names an
   APK that isn't there.** Nothing in the scripts leaves it in that state
   (release copies the APK before writing latest.json; backup never touches
-  releases); only deleting the APK by hand would. (Review of 542b648.)
+  releases); only deleting the APK by hand would. (Review of d2efa52.)
 
 ## Chosen behaviour (looks odd, decided on purpose)
 
@@ -86,7 +86,7 @@ the date tests again in two far-off time zones, and the
   often than it helps. Juice and zest of citrus are the exception ("juice
   of 2 lemons"), since those lines are common and the fruit list is short.
   Other fruit ("juice of 1 apple") isn't scaled. Known, rare mismatches
-  left as they are (review of 34d60db): "juice of 1 can of mandarin
+  left as they are (review of edfce47): "juice of 1 can of mandarin
   oranges" x2 gives "2 can of mandarins oranges", and "juice of 2 lemon
   wedges" x2 gives "4 lemons wedges".
 - **A dot before three digits is Dutch thousands only for g, ml and cl**
