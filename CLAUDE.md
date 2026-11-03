@@ -105,17 +105,18 @@ How to run: `README.md`.
   release can reuse a version number phones already have.
   Deploy refuses to send if a folder (like `server/releases`) is missing
   here, and the Pi only swaps folders in once all of them have arrived.
-- The website (github.com/The-Koi-Pond/bentotachi → thekoipond.dev/bentotachi,
-  since 2026-11-02; it was /bento before the repository was renamed, and
-  the home page repository's `bento/` folder redirects old links) is the
-  `site/` folder, published by `.github/workflows/pages.yml` on push.
-  The domain's home page is its own repository,
-  github.com/The-Koi-Pond/the-koi-pond.github.io (C:\Projects\TheKoiPond\the-koi-pond.github.io);
-  the domain is Xel's, at Cloudflare.
-  `site/privacy.html` is the Google Play privacy policy. Never delete
-  `site/google11869a0aeef0ff1c.html` (or its copy in the home page's
-  `bento/` folder): it's the Search Console ownership check, and Google
-  re-checks it.
+- The website (thekoipond.dev/bentotachi; it was /bento before the
+  repository was renamed on 2026-11-02) is **not in this repository**: it's
+  the `bentotachi/` folder of The Koi Pond's website repository,
+  github.com/The-Koi-Pond/the-koi-pond.github.io
+  (C:\Projects\TheKoiPond\the-koi-pond.github.io; its CLAUDE.md says how
+  it's published). It moved there from this repository's `site/` folder on
+  2026-11-03. Never turn GitHub Pages on for this repository: it would
+  take over thekoipond.dev/bentotachi and hide that folder.
+  `bentotachi/privacy.html` there is the Google Play privacy policy: when
+  the app starts doing something new with people's data, update it there
+  (its own commit and push, in that repository). Never delete its
+  `google11869a0aeef0ff1c.html`: it's the Search Console ownership check.
 - The live server is the Raspberry Pi (`~/bento/server`, systemd service
   `bento`); see README "Where it runs". Its address and login are in
   `web/scripts/pi.json` and `CLAUDE.local.md`, both private (gitignored):

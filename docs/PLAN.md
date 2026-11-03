@@ -81,8 +81,9 @@ keep recipes readable without internet, and avoid subscriptions.
 6. **Public on GitHub** (github.com/The-Koi-Pond/bentotachi):
    - [x] Household details moved to private files (`web/scripts/pi.json`,
          `CLAUDE.local.md`); made-up examples in the code and docs.
-   - [x] Website in `site/` (landing page and privacy policy), published by
-         `.github/workflows/pages.yml`.
+   - [x] Website (landing page and privacy policy): since 2026-11-03 the
+         `bentotachi/` folder of The Koi Pond's website repository (it was
+         this repository's `site/` folder).
    - [x] Created the repository, pushed a fresh history (the old one is
          kept privately), turned on Pages (2026-10-31).
    - [x] Licence: PolyForm Noncommercial 1.0.0 (2026-10-31; briefly MIT
@@ -135,7 +136,7 @@ keep recipes readable without internet, and avoid subscriptions.
          and taking a photo of an item with the camera.
    - [ ] Google's account-deletion rule also asks for a web page or link
          where people can ask for deletion without the app: check Play
-         Console's wording; a paragraph in site/privacy.html may do.
+         Console's wording; a paragraph in the privacy policy may do.
    - [ ] Phone-only mode hides account details (usernames, passwords) from
          Profile and Backups (decided 2026-11-03: "To design: simpler
          accounts").

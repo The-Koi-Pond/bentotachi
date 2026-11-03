@@ -22,7 +22,9 @@ python ../branding/make_icons.py <scratch folder>/onigiri.png android/app/src/ma
 ```
 
 Copy the three SVGs (`bentotachi-title.svg`, `bentotachi-title-dark.svg`,
-`onigiri.svg`) to `../site/` too, for the website.
+`onigiri.svg`) to the website too: the `bentotachi/` folder of The Koi
+Pond's website repository (github.com/The-Koi-Pond/the-koi-pond.github.io).
+Its home page also has its own copy of `onigiri.svg`.
 
 - `make_svg_title.py` traces the title into clean SVGs:
   `bentotachi-title.svg` (dark letters) and `bentotachi-title-dark.svg`

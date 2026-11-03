@@ -45,7 +45,8 @@ stays so installed phones keep getting updates.)
 - `web/` is the app people use (React), built into `server/pb_public/`, and
   `web/android/` wraps it into the Android app.
 - `mobile/` is the small server the app runs on the phone in phone-only mode.
-- `site/` is the website, published to thekoipond.dev/bentotachi on push.
+- The website, thekoipond.dev/bentotachi, lives in The Koi Pond's website
+  repository (github.com/The-Koi-Pond/the-koi-pond.github.io, `bentotachi/`).
 - `docs/PLAN.md` is the roadmap, `docs/REVIEW.md` the list of gaps.
 
 ## First-time setup on Windows
