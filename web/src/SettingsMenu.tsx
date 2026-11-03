@@ -80,7 +80,7 @@ export default function SettingsMenu() {
                 <span className="person-name" style={personStyle(user)}>
                   {displayName(user)}
                 </span>
-                <span className="menu-item-detail">Profile, color and password</span>
+                <span className="menu-item-detail">{phone ? "Name, picture and color" : "Profile, color and password"}</span>
               </span>
               <ChevronIcon />
             </Link>

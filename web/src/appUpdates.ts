@@ -44,10 +44,13 @@ export function useUpdateState(): UpdateState {
   return useSyncExternalStore(subscribe, () => state);
 }
 
-export const canSelfUpdate = isAndroidApp;
+// The Google Play app never updates itself (Play's rules: Play does it), so
+// it never checks, and has no update banner, "Check for updates" or tip
+// link. "npm run play" builds it with VITE_BENTO_PLAY=1 (scripts/play.mjs).
+export const canSelfUpdate = isAndroidApp && import.meta.env.VITE_BENTO_PLAY !== "1";
 
 export async function checkForUpdate() {
-  if (!isAndroidApp || state.status === "checking" || state.status === "installing") return;
+  if (!canSelfUpdate || state.status === "checking" || state.status === "installing") return;
   setState({ status: "checking" });
   let installed = "";
   try {
@@ -82,7 +85,7 @@ export async function installUpdate() {
 // Check once logged in, and whenever the app comes back to the front.
 let started = false;
 export function startUpdateChecks() {
-  if (!isAndroidApp || started) return;
+  if (!canSelfUpdate || started) return;
   started = true;
   void checkForUpdate();
   void App.addListener("resume", () => void checkForUpdate());

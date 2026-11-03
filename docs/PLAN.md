@@ -156,11 +156,13 @@ keep recipes readable without internet, and avoid subscriptions.
 
    Not needed before testing: new features (Packets in stock), iPhone.
 
-   - [ ] A Play build without the self-updater: no "new version" banner or
-         APK downloads, and no `REQUEST_INSTALL_PACKAGES` (Play only allows
-         it for app stores). With `canSelfUpdate` off, the ⋮ menu's "Support
-         Bentotachi ♡" (Ko-fi) link disappears too: Google pulls apps over
-         donation links (docs/VISION.md). Check it's gone in the Play build.
+   - [x] A Play build without the self-updater (built 2026-11-03: `npm run
+         play`, see CLAUDE.md): no "new version" banner or APK downloads,
+         no `REQUEST_INSTALL_PACKAGES` (Play only allows it for app
+         stores), and no "Support Bentotachi ♡" (Ko-fi) link: Google pulls
+         apps over donation links (docs/VISION.md). Checked: the bundle
+         has no such permission and is signed with Bento's key; a test
+         copy on the Pixel had no updater plugin, banner or Ko-fi link.
    - [ ] Store logos stay in the app (decided 2026-11-01): small icons that
          label a link to that store are normal, and the Household page says
          they belong to their owners and Bentotachi isn't connected with any
@@ -168,8 +170,10 @@ keep recipes readable without internet, and avoid subscriptions.
          (Play's impersonation rules are about implying a connection). If a
          store or Google ever objects, swap them for coloured letter badges
          in StoreLogo.tsx.
-   - [ ] App bundle (.aab), Play App Signing, store listing, data safety
-         form, privacy policy link (the website's privacy.html).
+   - [x] App bundle (.aab): `npm run play` makes it (2026-11-03).
+   - [ ] In Play Console (Xel): Play App Signing with Bento's key as the
+         upload key, store listing, data safety form, privacy policy link
+         (thekoipond.dev/bentotachi/privacy.html).
    - [ ] Play-signed builds can't update self-installed ones: everyone
          reinstalls once (recipes are safe on the server).
 

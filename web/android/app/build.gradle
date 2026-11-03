@@ -34,6 +34,15 @@ android {
         } else {
             manifestPlaceholders = [appLabel: "@string/app_name"]
         }
+        // The Google Play build ("npm run play", scripts/play.mjs):
+        //   gradlew bundleRelease -PbentoPlay
+        // Play updates apps itself and refuses ones that do, so this build
+        // leaves out the updater plugin (MainActivity) and its
+        // REQUEST_INSTALL_PACKAGES permission (src/play/AndroidManifest.xml).
+        // To try it on a phone beside the real app, a test copy (after
+        // building the web part with VITE_BENTO_PLAY=1, as play.mjs does):
+        //   gradlew assembleDebug -PbentoTest -PbentoPlay
+        buildConfigField "boolean", "BENTO_PLAY", project.hasProperty("bentoPlay") ? "true" : "false"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -66,7 +75,13 @@ android {
     // server built into it (BentoLocalServerPlugin copies them out).
     sourceSets {
         main { assets.srcDirs += layout.buildDirectory.dir("generated/bentoServerCode") }
+        // Merged over the main manifest: removes the install permission.
+        if (project.hasProperty("bentoPlay")) {
+            release { manifest.srcFile "src/play/AndroidManifest.xml" }
+            debug { manifest.srcFile "src/play/AndroidManifest.xml" }
+        }
     }
+    buildFeatures { buildConfig = true }
 }
 
 // Copies server/pb_hooks and server/pb_migrations into the app on every

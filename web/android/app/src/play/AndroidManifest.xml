@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Google Play build only (-PbentoPlay, see app/build.gradle): merged
+     over src/main's manifest. Play updates the app itself and only lets app
+     stores ask to install packages, so the self-updater's permission goes. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+</manifest>
