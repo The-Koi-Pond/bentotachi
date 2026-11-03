@@ -14,6 +14,10 @@ is `C:\Projects\TheKoiPond\bentotachi` (it was `C:\Projects\Cookbook`, then
 `C:\Projects\TheKoiPond\README.md`.
 Xel has minimal hands-on coding experience: write the code, explain choices
 plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
+What's already done or still open before offering Bentotachi to people
+outside the household (Google Play, phone-only mode, privacy, account
+deletion): `docs/REVIEW.md`, the 2026-10-31 check-up, ticked off as things
+get done. Check it before saying something for Play is missing.
 What Bentotachi is, its promises, voice (cheeky, but the joke never
 replaces the information) and look: `docs/VISION.md`. Check new screens,
 wording and features against it.
@@ -50,14 +54,10 @@ How to run: `README.md`.
     that would change the real database (deploy, release and package refuse
     uncommitted files there, web/scripts/committed.mjs, but don't rely on
     it). Tell any reviewer agent the same.
-- Code reviews: `docs/REVIEW-NOTES.md` lists findings already checked and
-  dismissed (with why, and when to reopen), and starts with what reviewers
-  need to know about this project. Give it to reviewers and check findings
-  against it before reporting; add to it whenever Xel or a verification
-  dismisses one. Real bugs and review findings waiting to be fixed go in
-  `TODO.md` at the repository root: kept on this PC only (listed in
-  `.git/info/exclude`, never committed), so findings that aren't ready to
-  share stay off GitHub. Planned features stay in `docs/PLAN.md`.
+- Real bugs and review findings waiting to be fixed go in `TODO.md` at the
+  repository root: kept on this PC only (listed in `.git/info/exclude`,
+  never committed), so findings that aren't ready to share stay off GitHub.
+  Planned features stay in `docs/PLAN.md`.
 - `web/`: React + Vite + TypeScript, React Router 8 (a hash router, so no
   server routing setup is needed; it's a data router from
   `createHashRouter` in `App.tsx` so `useBlocker` works for the
@@ -141,7 +141,8 @@ How to run: `README.md`.
   the Android NDK and gomobile (web/scripts/server-lib.mjs builds
   `app/libs/bentoserver.aar`, without which the APK doesn't build). The Go
   tests: `go test ./...` in `mobile`. web/src/phoneMode.ts is the app's
-  side (the saved account, backups). Not yet tried on a real phone.
+  side (the saved account, backups). Tried on a real phone (Pixel 7 Pro,
+  2026-11-01 and 11-03, including updating with data in it).
 - `androidScheme: "http"` must never change (it would wipe phones' saved
   login). Keep `cleartext: true` while any server is plain http: the Pi on
   its Tailscale address, friends' servers on home Wi-Fi, and phone-only
