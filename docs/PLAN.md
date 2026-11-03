@@ -137,7 +137,8 @@ keep recipes readable without internet, and avoid subscriptions.
          where people can ask for deletion without the app: check Play
          Console's wording; a paragraph in site/privacy.html may do.
    - [ ] Phone-only mode hides account details (usernames, passwords) from
-         Profile and Backups: "To design: simpler accounts".
+         Profile and Backups (decided 2026-11-03: "To design: simpler
+         accounts").
    - [ ] Privacy policy: add pantry item photos (looked up at Open Food
          Facts by barcode, or from a store page you linked). Then the data
          safety form to match.
@@ -781,11 +782,19 @@ with Xel: what single-user mode on a server should look like; whether the
 first-run screen should ask "just me" vs "a household" before anything
 about accounts; and how this fits the still-open forgotten-password choice.
 
-Still open from 2026-11-01: **resetting a forgotten password.** Today only
-the server's admin page (/_/) can, which nobody in the household uses.
-Claude suggested letting any household member set a new password for
-another (from Household); Xel hasn't decided. Decide it together with the
-above.
+**Decided (Xel, 2026-11-03):**
+
+- **Phone-only mode hides account details completely:** no username or
+  password on Profile, Backups or anywhere else, except a "Moving to a
+  server? Here's your login" note on Backups. (On the Google Play
+  checklist above: testers would meet this.)
+- **Forgotten passwords:** anyone in the household can set a new password
+  for anyone else, from Household. Today only the server's admin page
+  (/_/) can, which nobody in the household uses.
+
+Still to settle with Xel: what single-user mode on a server should look
+like, and whether the first-run screen should ask "just me" vs "a
+household" before anything about accounts.
 
 ## To consider: online shopping from the list (Xel, 2026-11-03)
 
@@ -839,13 +848,19 @@ Worth knowing before deciding:
   that opens that store's search for it in a new tab. Cheap, and could
   come first.
 
-Questions for Xel:
+**Decided (Xel, 2026-11-03):** the full shopping run inside the app's
+browser, with Next and Skip (the rough shape above), rather than the small
+store-icon version first. Not scheduled yet; the Google Play work comes
+first.
 
-1. How often does the household shop online, and at which stores? (Decides
-   how soon this is worth building.)
-2. One store per run (suggested: mixing stores means two carts), or each
-   item at whichever store it has a link for?
-3. The small store-icon version on PCs too, or just the app?
+Answered (Xel, 2026-11-03):
+
+1. How often the household shops online: not often, usually at Coles. Xel
+   can test with a dummy run that stops before checking out. So: Coles
+   first, and no hurry.
+2. One store per run, picked at the start.
+
+Still open: the small store-icon version on PCs too, or just the app?
 
 ## To consider: an optional AI helper (Xel, 2026-11-03)
 
@@ -924,10 +939,13 @@ Worth knowing before deciding:
   or preserving. Keep a plain short note on answers, and never treat an
   AI swap as safe for an allergy.
 
+**Decided (Xel, 2026-11-03): not now.** The Google Play work comes first;
+the questions below wait until this comes back.
+
 Questions for Xel:
 
-1. Which Pixel do you have? (A Pixel 10 can try the phone's own model;
-   older ones can't, or only partly.)
+1. (Answered: Xel's phone is a Pixel 7 Pro, which can't run the phone's
+   own model, so that kind can't be tried here without another phone.)
 2. Which kind first: your own key, a home computer, or the phone's model?
 3. Answers only to start, or suggestions that change things from the
    start?
