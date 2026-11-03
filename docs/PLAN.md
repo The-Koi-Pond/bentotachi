@@ -96,16 +96,63 @@ keep recipes readable without internet, and avoid subscriptions.
          (`go test`); the emulator can't run it.
    - [x] ⋮ → Backups (phone-only): save a backup file, restore one, and the
          login to use once it's restored on a real server.
-   - [ ] Try it on a real phone ("Bento (test)", `-PbentoTest`): first
-         start, adding and importing recipes, photos, closing and reopening,
-         backup and restore.
-   - [ ] Privacy policy: Android's own backup (`allowBackup`) can copy a
-         phone-only Bento to the person's Google account; say so.
+   - [x] Try it on a real phone ("Bento (test)", `-PbentoTest`): first
+         start, adding and importing recipes, closing and reopening, backup
+         and restore (Pixel 7 Pro, 2026-11-01 and 11-03; docs/REVIEW.md).
+         Taking photos with the camera is still untried.
+   - [x] Privacy policy: Android's own backup. Turned off instead
+         (`allowBackup="false"`), and the policy says so.
    - [ ] When `cleartext` is turned off, still allow 127.0.0.1 (the phone
          server) in a network security config.
 8. **Google Play** (Android only for now):
-   - [ ] Developer account (US$25 once, ID check). New personal accounts
-         need a closed test with 12+ testers for 14 days before going public.
+   - [x] Developer account (US$25 once, ID check; approved 2026-11-03).
+         New personal accounts need a closed test with 12+ testers who stay
+         opted in for 14 days in a row before going public; when applying,
+         Google asks how the test went, so testers should really use it and
+         have an easy way to send feedback.
+
+   Before inviting testers (the checklist from 2026-11-03, in order; check
+   Play Console's own list, which wins over this one):
+
+   Already done (docs/REVIEW.md, 2026-10-31 and 11-01): Delete my account
+   (Profile; phone-only erases everything), Android's own backup turned
+   off, the privacy policy's phone-only, scanner and deletion parts, a
+   first phone-only run on the Pixel. The 16 KB page-size rule passes
+   (checked 2026-11-03: libgojni.so's sections are 16 KB-aligned, and
+   zipalign -P 16 accepts the 1.13.0 APK).
+
+   - [x] Phone-only mode on a real phone again (Pixel 7 Pro, 2026-11-03):
+         set up in a build from 11-01, added a recipe from a link, shopping
+         items and pantry items, then installed today's build over it:
+         everything kept, the new migrations ran. Then 1.13.0's pantry
+         (Simple/Detailed, the level dropdown, "Put it on the shopping
+         list?", a typed barcode found at Open Food Facts with its photo,
+         Google's scanner opening and closing), saving a backup, and
+         restoring it. Fixed on the way: Woolworths' "Image coming soon"
+         picture saved as a product photo; closing the scanner with Back
+         showing "The scanner isn't ready yet"; Open Food Facts' "400 g e".
+   - [ ] Still needs Xel's hands: scanning a real product with the camera,
+         and taking a photo of an item with the camera.
+   - [ ] Google's account-deletion rule also asks for a web page or link
+         where people can ask for deletion without the app: check Play
+         Console's wording; a paragraph in site/privacy.html may do.
+   - [ ] Phone-only mode hides account details (usernames, passwords) from
+         Profile and Backups: "To design: simpler accounts".
+   - [ ] Privacy policy: add pantry item photos (looked up at Open Food
+         Facts by barcode, or from a store page you linked). Then the data
+         safety form to match.
+   - [ ] Fix the known bugs a lone phone user would meet (TODO.md): Save to
+         Bentotachi lost when Android closes the app in the background,
+         swapping two meals losing one.
+   - [ ] A first-time look through recipes, the plan and settings, the way
+         the pantry got one: first start, empty screens, wording.
+   - [ ] Store listing: 512 px icon, 1024 × 500 banner, 2 to 8 phone
+         screenshots without store logos, short and long description,
+         content rating questionnaire, target audience.
+   - [ ] 12+ testers lined up, and a way for them to send feedback.
+
+   Not needed before testing: new features (Packets in stock), iPhone.
+
    - [ ] A Play build without the self-updater: no "new version" banner or
          APK downloads, and no `REQUEST_INSTALL_PACKAGES` (Play only allows
          it for app stores). With `canSelfUpdate` off, the ⋮ menu's "Support
@@ -740,6 +787,204 @@ Claude suggested letting any household member set a new password for
 another (from Household); Xel hasn't decided. Decide it together with the
 above.
 
+## To consider: online shopping from the list (Xel, 2026-11-03)
+
+Seen on Reddit: ListRunner (iOS) takes a Paprika shopping list, opens a
+store's website inside the app, and each time something goes in the cart
+it fills the store's search box with the next item. The person still picks
+the brand, size and how many; it only saves typing 20 to 30 searches. Its
+limits: a separate app, iOS only, Paprika only. Bentotachi already has
+most of the pieces, for anyone using it.
+
+Pieces we already have:
+
+- The built-in browser (BrowserActivity), whose bottom button changes per
+  job (Save to Bentotachi, Link this item, Add to pantry). A shopping run
+  would be one more job.
+- Each country's stores and their search addresses (web/src/stores.ts).
+- Store links on pantry items: a linked item can open its exact product
+  page instead of a search.
+- Brands on pantry items (one favourite brand, once Packets in stock is
+  built), to add to the search ("Lea & Perrins worcestershire sauce").
+
+Rough shape (Claude's suggestion, not decided):
+
+- Shopping list → "Shop online" with the store's logo (Android app only).
+- Bento's browser opens on the first unticked item: its saved product page
+  at that store if there is one, otherwise the store's search for its name
+  and brand. A bar at the bottom: "3 of 24 · Garlic", Back, Skip, Next.
+- Next goes to the next item by opening the store's search page for it,
+  rather than typing into the store's search box: works the same on every
+  store and doesn't break when a store redesigns its site.
+- "In the cart" isn't "bought" (ticking off sets the pantry back to Have,
+  and delivery can be days away). So the run only remembers what you got
+  to; at the end it asks "22 in the cart. Tick them off now, or later?"
+  Skipped items stay unticked.
+- A "Link this item" button in the bar: the product you picked becomes the
+  item's store link, so the next run goes straight to it.
+
+Worth knowing before deciding:
+
+- Moving on by itself when something goes in the cart (like ListRunner)
+  means recognising each store's "Add to cart" separately, and it breaks
+  whenever a store changes its site. Suggest the Next button first, and
+  auto-advance later (Coles and Woolworths only) if Next feels slow.
+- Logging into the store happens inside Bento's browser, which remembers
+  it like any browser. During a run Bentotachi only changes the page's
+  address and never reads the store's pages; the privacy policy should say
+  so. Store carts usually belong to the account, so checking out in the
+  store's own app should work too (to check per store).
+- The browser version on a PC can't steer another site's tab. A small
+  version works everywhere, though: a store icon on each shopping item
+  that opens that store's search for it in a new tab. Cheap, and could
+  come first.
+
+Questions for Xel:
+
+1. How often does the household shop online, and at which stores? (Decides
+   how soon this is worth building.)
+2. One store per run (suggested: mixing stores means two carts), or each
+   item at whichever store it has a link for?
+3. The small store-icon version on PCs too, or just the app?
+
+## To consider: an optional AI helper (Xel, 2026-11-03)
+
+The idea: an AI assistant inside the app, off unless someone switches it
+on, using a model the person chooses (or the phone's own). Obvious uses:
+changing a recipe, ingredient swaps, planning the week's dinners; more to
+find. And the reverse: talking to the phone's own assistant (Gemini) from
+outside the app and having it change things in Bentotachi (opt in).
+
+How it fits the promises (VISION.md): Bentotachi never pays for or charges
+for AI; a cloud model is the person's own account and bill. On-device and
+home-computer models keep everything private. A cloud model means that
+company sees what's sent, so the settings must say plainly what goes where
+("When you ask, your recipes and pantry are sent to OpenAI"), and VISION.md
+would need a line about it. Xel still never sees anything.
+
+Where the AI could run (one setting, three kinds):
+
+1. **The phone's own model** (Gemini Nano, through Google's ML Kit Prompt
+   API): free, private, works offline. Only some phones: in 2026 the Pixel
+   10s, Galaxy S26s and a few others. The Pixel 9 seemed listed only for
+   Google's fixed summarise/rewrite tools, not open questions (check
+   Google's live list before relying on it). A small model: fine for
+   "what can replace buttermilk?", weak at planning a week from 100 recipes.
+2. **A model on the household's own computer** (Ollama, LM Studio):
+   private and free, but needs a decent PC left on. The Pi is too slow.
+3. **A cloud service with the person's own key**: most speak the same
+   "OpenAI-compatible" language, so one setting (address, key, model name)
+   covers OpenAI, OpenRouter (which reaches Claude, Gemini and many more)
+   and the home-computer ones above. The strongest for planning.
+
+Rough shape (Claude's suggestion, not decided):
+
+- Started from where you are, so it already knows what you mean: "Ask
+  about this recipe" on a recipe, "Help me plan" in the dinner chooser,
+  and a general chat from the ⋮ menu.
+- The AI gets tools to look things up (search recipes, read one, the
+  pantry, the plan) and to *suggest* changes. It never changes anything by
+  itself: a suggestion shows as a card ("Plan: Tue Curry, Wed Tacos", or
+  the recipe with its changes marked) with Apply / Not this. Apply uses the
+  same code as doing it by hand, so pantry rules, "added by" and Undo all
+  still work.
+- Keys stay on each person's phone (nobody spends someone else's money).
+  The phone's own model needs a new native plugin, like the scanner's.
+- Start small: one kind first (suggested: the OpenAI-compatible setting,
+  since it covers the most), answers only (swaps, recipe questions), then
+  suggestions that change things.
+
+The reverse (the phone's assistant using Bentotachi):
+
+- Android's **AppFunctions** (Android 16 and newer): an app lists actions
+  ("add milk to the shopping list", "what's for dinner tonight?", "plan
+  tacos on Friday") and Gemini can call them on the phone. In 2026 it's an
+  experimental preview, and Gemini only calls apps in Google's test
+  programme so far; whether it would call a sideloaded app is unclear. The
+  actions would be a small native layer over the server routes we already
+  have, with a switch in Settings. Worth waiting until it's open to all.
+- Already works today, with no AI work: Android's share menu brings links
+  into Bentotachi. Shared plain text could go onto the shopping list.
+- Desktop assistants (Claude, ChatGPT) can use apps through "MCP". But
+  their apps call from the company's servers, which can't reach a Pi
+  that's only on Tailscale; only assistants running on a home computer
+  could. Not worth it for now.
+
+Worth knowing before deciding:
+
+- VISION.md's "What it won't become" has "An AI recipe writer or meal
+  'suggester'" (marked as a guess). An opt-in helper that only suggests is
+  different, but Xel should settle that line either way.
+- It's a big feature: three kinds of model to test, and chat screens.
+- Google Play requires apps that generate AI content to have an in-app way
+  to report an offensive answer to the developer. It would need a "Report
+  this answer" that reaches Xel without a company server (an email or a
+  GitHub issue, to check). Not needed for the sideloaded app.
+- Food safety: AI answers can be wrong about allergies, undercooked meat
+  or preserving. Keep a plain short note on answers, and never treat an
+  AI swap as safe for an allergy.
+
+Questions for Xel:
+
+1. Which Pixel do you have? (A Pixel 10 can try the phone's own model;
+   older ones can't, or only partly.)
+2. Which kind first: your own key, a home computer, or the phone's model?
+3. Answers only to start, or suggestions that change things from the
+   start?
+4. Is talking to Gemini from outside a must, or a bonus for once Google
+   opens it up?
+
+## To consider: more personality in the app (Xel, 2026-11-03)
+
+Xel wants Bentotachi to feel less generic, with personal touches, while
+staying clear where it matters. The example: an export screen where you
+tick what to save, shaped like a bento box, Recipes as the big
+compartment. Needs mockups (a playground) before deciding anything.
+
+The rule that keeps it clear (from VISION.md's voice, applied to shapes):
+**the shape can be playful, the words and the control stay plain.** A
+bento compartment is still obviously a checkbox (a tick, a filled or empty
+state, its plain label "Recipes"), a screen reader hears "Recipes,
+checkbox, ticked", and it works in light and dark. Buttons and warnings
+keep saying what they do. Animations stay short and stop when the phone's
+"remove animations" setting is on. One playful thing per screen at most,
+so it stays special.
+
+Ideas, roughly cheapest first (Claude's, for Xel to pick from):
+
+- **A voice pass.** VISION.md says the app's text is plain so far and asks
+  how cheeky it should get. List every empty screen, hint and success
+  message with a plain-plus-cheeky version beside it, and Xel picks. No
+  design work, and probably the biggest change in feel.
+- **More of Ben's moods** where he'd help: the offline note, a fully
+  ticked shopping list, a finished timer. Built from his SVG like the
+  others; one or two details each.
+- **A hanko stamp for "We cooked this"**: a little round seal with the date
+  on the recipe page instead of a plain line, and the history as a row of
+  stamps. Ties into "Last had".
+- **Chopsticks as the loading sign**, picking up a grain of rice, instead
+  of a plain spinner.
+- **The bento picker** (Xel's idea) for the export screen. Worth knowing:
+  today, ⋮ → Import & export saves recipes only (a Paprika file), and
+  phone-only Backups save everything in one file. Picking parts suits
+  *export* (taking things elsewhere: recipes, plan, shopping list, pantry
+  as separate files) better than *backups*, where leaving something out
+  could lose it on restore. So: the bento for export, backups stay
+  "everything", plain. Needs export formats for the plan, list and pantry
+  first (they don't exist yet).
+- **A baran divider** (the zigzag green leaf from bento boxes) between big
+  sections, in jade, instead of plain lines. Check it against VISION's
+  "each detail once" (the title's leaf has baran ridges).
+- **The week as a bento** on the plan: a box with one compartment per
+  night, as a summary at the top. Riskier for clarity than the others;
+  try it in a mockup before believing in it.
+- Small, seasonal, rare: Ben in a scarf in winter and the like. Easy to
+  overdo; only if the moods system makes it cheap.
+
+Next step when Xel wants it: a playground with two or three versions of
+the bento export picker (and maybe the hanko stamp), light and dark, at
+phone width; and the voice-pass list as its own short document.
+
 ## Ideas for later
 
 - Phone notifications when something is about to expire
@@ -748,7 +993,6 @@ above.
 
 Known bugs and review findings waiting to be fixed are in `TODO.md` at the
 repository root, kept on the PC only (not on GitHub; see CLAUDE.md).
-Findings checked and dismissed are in docs/REVIEW-NOTES.md.
 
 ## Known limits
 

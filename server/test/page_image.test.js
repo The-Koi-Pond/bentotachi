@@ -34,6 +34,20 @@ test("undoes &amp; in the address, and leaves other shops' 'small' alone", () =>
   );
 });
 
+test("a shop's stand-in picture for a product without a photo gives nothing", () => {
+  // What Woolworths gave on a real phone for a product it doesn't have (2026-11-03).
+  const woolworths = `<meta property="og:image" content="https://cdn0.woolworths.media/content/wowproductimages/small/default.png">`;
+  assert.equal(productPhotoUrl(woolworths, "https://www.woolworths.com.au/shop/productdetails/12345"), "");
+  for (const name of ["placeholder.jpg", "no-image.png", "noimage.gif", "image_coming_soon.png", "Coming-Soon.webp?v=2"]) {
+    assert.equal(productPhotoUrl(`<meta property="og:image" content="https://cdn.example.com/img/${name}">`, "https://shop.example.com/p"), "", name);
+  }
+  // Only the file's own name counts: a folder called "default" is fine.
+  assert.equal(
+    productPhotoUrl(`<meta property="og:image" content="https://cdn.example.com/default/jam-450g.jpg">`, "https://shop.example.com/p"),
+    "https://cdn.example.com/default/jam-450g.jpg"
+  );
+});
+
 test("a page without one gives nothing", () => {
   assert.equal(productPhotoUrl("<html><head><title>Coles</title></head></html>", "https://www.coles.com.au/"), "");
   assert.equal(productPhotoUrl("", "https://www.coles.com.au/"), "");

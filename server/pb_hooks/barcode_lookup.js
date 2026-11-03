@@ -25,7 +25,10 @@ function productFromOpenFoodFacts(answer) {
   if (!name) return null;
   // "Coles, Coles Australia" -> "Coles"
   const brand = clean(String(p.brands ?? "").split(",")[0]);
-  return { name, brand, quantity: clean(p.quantity) };
+  // "400 g e": the "e" stands for ℮, Europe's "estimated amount" mark
+  // printed beside the size, which means nothing to people here.
+  // A lone "e" at the end, after a space: "1 litre" keeps its e.
+  return { name, brand, quantity: clean(p.quantity).replace(/\s*℮$|\s+e$/i, "") };
 }
 
 // For a pantry item's photo (pantry_photo.pb.js): only the front photo's

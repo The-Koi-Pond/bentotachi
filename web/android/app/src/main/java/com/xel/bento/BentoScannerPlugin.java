@@ -5,6 +5,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.mlkit.common.MlKitException;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
@@ -31,9 +32,23 @@ public class BentoScannerPlugin extends Plugin {
             .startScan()
             .addOnSuccessListener(barcode -> call.resolve(new JSObject().put("code", barcode.getRawValue())))
             .addOnCanceledListener(() -> call.resolve(new JSObject().put("code", null)))
-            .addOnFailureListener(error ->
-                // The first time, Google Play may still be fetching the scanner.
-                call.reject("The scanner isn't ready yet (Google Play may still be setting it up). Try again in a minute. (" + error.getMessage() + ")")
-            );
+            .addOnFailureListener(error -> {
+                int code = error instanceof MlKitException ? ((MlKitException) error).getErrorCode() : -1;
+                // Closing the scanner with the phone's Back arrives here as
+                // INTERNAL ("Failed to scan code."), not as cancelled; its own
+                // ✕ is reported as cancelled (Pixel 7 Pro, Android 17,
+                // 2026-11-03). A real internal failure is rare, and quietly
+                // back on the page beats a wrong alarm after every Back.
+                if (code == MlKitException.CODE_SCANNER_CANCELLED || code == MlKitException.INTERNAL) {
+                    call.resolve(new JSObject().put("code", null));
+                } else if (code == MlKitException.CODE_SCANNER_GOOGLE_PLAY_SERVICES_VERSION_TOO_OLD) {
+                    call.reject("Scanning needs a newer Google Play services. Update it from the Play Store, then try again.");
+                } else if (code == MlKitException.UNAVAILABLE || code == MlKitException.CODE_SCANNER_UNAVAILABLE) {
+                    // The first time, Google Play may still be fetching the scanner.
+                    call.reject("The scanner isn't ready yet (Google Play may still be setting it up). Try again in a minute.");
+                } else {
+                    call.reject("The scanner stopped with a problem. Try again, or type the barcode's numbers instead. (" + code + ": " + error.getMessage() + ")");
+                }
+            });
     }
 }

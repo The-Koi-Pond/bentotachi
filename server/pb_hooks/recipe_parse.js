@@ -134,6 +134,11 @@ function findMetaImage(html) {
 // the edit form, so its 260-pixel copy (same address, "medium") is used.
 function productPhotoUrl(html, pageUrl) {
   var url = resolveUrl(findMetaImage(html || ""), pageUrl);
+  // A shop's stand-in for a product without a photo (Woolworths gives
+  // ".../wowproductimages/small/default.png", an "Image coming soon"
+  // picture) isn't a photo of it.
+  var file = (url.split(/[?#]/)[0].split("/").pop() || "").replace(/\.\w+$/, "");
+  if (/^(default|placeholder|no[-_]?image|no[-_]?photo|(image[-_]?)?coming[-_]?soon)$/i.test(file)) return "";
   return url.replace(/^(https:\/\/cdn\d*\.woolworths\.media\/content\/wowproductimages\/)small\//i, "$1medium/");
 }
 

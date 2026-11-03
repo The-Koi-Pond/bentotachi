@@ -24,6 +24,15 @@ test("reads a product's name, brand and size, preferring English", () => {
   });
 });
 
+test("drops Europe's ℮ mark from the size, but not a word's last e", () => {
+  const size = (quantity) => productFromOpenFoodFacts({ status: 1, product: { product_name: "X", quantity } }).quantity;
+  assert.equal(size("400 g e"), "400 g"); // Nutella, as Open Food Facts has it (2026-11-03)
+  assert.equal(size("750 ml ℮"), "750 ml");
+  assert.equal(size("500g℮"), "500g");
+  assert.equal(size("1 litre"), "1 litre");
+  assert.equal(size("1 Litre"), "1 Litre");
+});
+
 test("unknown or nameless products are not found", () => {
   assert.equal(productFromOpenFoodFacts({ status: 0, status_verbose: "product not found" }), null);
   assert.equal(productFromOpenFoodFacts({ status: 1, product: { brands: "Coles" } }), null);
