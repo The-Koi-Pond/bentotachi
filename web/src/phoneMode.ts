@@ -195,15 +195,10 @@ export function rememberPhoneAccount(account: PhoneAccount) {
   write(ACCOUNT_KEY, JSON.stringify(account));
 }
 
-// After the logged-in person changes their username or password (Profile):
-// in phone mode, the saved account follows, or the next automatic login
-// would use the old details and fail, locking them out (they never saw the
-// random password). Only for the saved account's own person.
-export function phoneAccountChanged(oldUsername: string, change: Partial<PhoneAccount>) {
-  const account = phoneAccount();
-  if (!isPhoneMode() || !account || account.username !== oldUsername) return;
-  write(ACCOUNT_KEY, JSON.stringify({ ...account, ...change }));
-}
+// (Profile hides the username and password in phone mode, so the saved
+// account can't drift from the real one: the next automatic login would
+// fail and lock them out, as they never saw the random password. Show those
+// boxes in phone mode again and the saved account must follow changes.)
 
 // "Sam Smith" -> "samsmith"; something usable even for names like "李".
 // Dots only between letters ("Sam Jr." -> "samjr", not "samjr."), like the

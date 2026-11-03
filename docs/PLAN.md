@@ -137,9 +137,10 @@ keep recipes readable without internet, and avoid subscriptions.
    - [ ] Google's account-deletion rule also asks for a web page or link
          where people can ask for deletion without the app: check Play
          Console's wording; a paragraph in the privacy policy may do.
-   - [ ] Phone-only mode hides account details (usernames, passwords) from
-         Profile and Backups (decided 2026-11-03: "To design: simpler
-         accounts").
+   - [x] Phone-only mode hides account details (decided and built
+         2026-11-03, tried on the Pixel; "To design: simpler accounts"):
+         Profile shows no username or password, and Backups keeps the
+         login behind "Here's your login" for moving to a server.
    - [ ] Privacy policy: add pantry item photos (looked up at Open Food
          Facts by barcode, or from a store page you linked). Then the data
          safety form to match.
@@ -177,7 +178,13 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- (Nothing yet.)
+- Closing the barcode scanner with Back no longer says "The scanner isn't
+  ready yet" (BentoScannerPlugin.java: Android app only).
+- Phone-only mode: no username or password on Profile; Backups keeps the
+  login behind "Here's your login".
+- Phone-only mode's own server gets the two fixes already live on the Pi:
+  shops' "Image coming soon" pictures aren't saved as pantry photos, and
+  "400 g e" reads "400 g".
 
 Released in 1.13.0 (2026-11-02; deployed with its server changes the same
 day, commit 993a485):
@@ -787,8 +794,9 @@ about accounts; and how this fits the still-open forgotten-password choice.
 
 - **Phone-only mode hides account details completely:** no username or
   password on Profile, Backups or anywhere else, except a "Moving to a
-  server? Here's your login" note on Backups. (On the Google Play
-  checklist above: testers would meet this.)
+  server? Here's your login" note on Backups. Built the same day: Profile
+  hides the Username box and the Password section in phone-only mode,
+  and Backups folds the login away until "Here's your login" is tapped.
 - **Forgotten passwords:** anyone in the household can set a new password
   for anyone else, from Household. Today only the server's admin page
   (/_/) can, which nobody in the household uses.

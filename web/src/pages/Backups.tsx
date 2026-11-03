@@ -11,6 +11,9 @@ import { BenMood } from "../Brand";
 export default function Backups() {
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  // The login is only for moving to a server, so it stays out of sight
+  // until asked for (phone-only users never need an account otherwise).
+  const [showLogin, setShowLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const account = phoneAccount();
   const [last, setLast] = useState(lastBackup);
@@ -93,9 +96,14 @@ export default function Backups() {
         <p className="muted">
           To share Bentotachi with your household, it needs a server (like a Raspberry Pi at home). A backup from here works
           on a new one: whoever runs it restores your backup from its admin page (Settings → Backups). Then tap “Switch to
-          a server” below, type its address, and log in with:
+          a server” below, type its address, and log in with the login Bentotachi made for you here.
         </p>
         {account && (
+          <button className="link-button" aria-expanded={showLogin} onClick={() => setShowLogin((value) => !value)}>
+            {showLogin ? "Hide my login" : "Here's your login"}
+          </button>
+        )}
+        {account && showLogin && (
           <dl className="login-details">
             <div>
               <dt>Username</dt>

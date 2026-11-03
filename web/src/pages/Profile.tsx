@@ -3,7 +3,7 @@ import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, type User
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { erasePhone, isPhoneMode, phoneAccountChanged } from "../phoneMode";
+import { erasePhone, isPhoneMode } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
 
@@ -12,16 +12,20 @@ const users = () => pb.collection<User>("users");
 // Your own account: picture, name, username, color
 // and password. Each part saves on its own. Saving your own account
 // also updates the logged-in copy, so the rest of the app changes at once.
+// Phone-only mode has no username or password to show (decided 2026-11-03):
+// Bentotachi made them and logs in by itself, and the only time they're
+// needed, moving to a server, Backups shows them.
 export default function Profile() {
   const user = useCurrentUser();
   if (!user) return null;
+  const phone = isPhoneMode();
   return (
     <div className="stack narrow profile">
       <h1>Profile</h1>
       <PictureSection user={user} />
-      <NameSection user={user} />
+      <NameSection user={user} showUsername={!phone} />
       <ColorSection user={user} />
-      <PasswordSection user={user} />
+      {!phone && <PasswordSection user={user} />}
       <DeleteSection user={user} />
     </div>
   );
@@ -161,7 +165,7 @@ function PictureSection({ user }: { user: User }) {
 // Usernames: lowercase letters, numbers, dots, dashes and underscores.
 const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]/g, "");
 
-function NameSection({ user }: { user: User }) {
+function NameSection({ user, showUsername }: { user: User; showUsername: boolean }) {
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username);
   const [busy, setBusy] = useState(false);
@@ -179,8 +183,6 @@ function NameSection({ user }: { user: User }) {
     setStatus(null);
     try {
       await users().update(user.id, { name: name.trim(), username });
-      // Phone-only mode logs in by itself with the saved username.
-      phoneAccountChanged(user.username, { username });
       setStatus({ text: "Saved.", isError: false });
     } catch (err) {
       const message = errorMessage(err);
@@ -199,21 +201,23 @@ function NameSection({ user }: { user: User }) {
         <label>
           Display name
           <span className="hint">Your name around Bentotachi, like on ratings and the dinner plan.</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={user.username} />
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={showUsername ? user.username : "Your name"} />
         </label>
-        <label>
-          Username
-          <span className="hint">What you log in with. Lowercase letters, numbers, dots, dashes and underscores.</span>
-          <input
-            value={username}
-            onChange={(e) => setUsername(cleanUsername(e.target.value))}
-            maxLength={30}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            required
-          />
-        </label>
+        {showUsername && (
+          <label>
+            Username
+            <span className="hint">What you log in with. Lowercase letters, numbers, dots, dashes and underscores.</span>
+            <input
+              value={username}
+              onChange={(e) => setUsername(cleanUsername(e.target.value))}
+              maxLength={30}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              required
+            />
+          </label>
+        )}
         <div className="actions">
           <button className="button primary" disabled={busy || !changed}>
             {busy ? "Saving…" : "Save"}
@@ -288,8 +292,6 @@ function PasswordSection({ user }: { user: User }) {
       setBusy(false);
       return;
     }
-    // Phone-only mode logs in by itself with the saved password.
-    phoneAccountChanged(user.username, { password: next });
     try {
       // A new password logs out every device, this one included, so log
       // straight back in with it.
