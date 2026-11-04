@@ -86,12 +86,14 @@ group: the bento gang). The title is Xel's drawn lettering, as SVGs:
 `branding/make_svg_title.py` makes a light version (brown letters) and a
 dark one (cream letters), with an umeboshi by the "B" (the pickled plum
 inside an onigiri, with a little puddle of juice), a jade leaf on the "i"
-with baran's ridges (the green divider in a bento box), and an orange
+with baran's ridges (the green divider in a bento box), and a wooden
 chopstick underline. Together with the mascot it's one bento: the filling,
 the divider, the chopsticks, the rice.
 
 **Mascot.** Ben (to us; the app needn't name him), a screaming onigiri
-skewered on orange chopsticks (`branding/make_svg_mascot.py`). The scream is
+skewered on plain wooden chopsticks, like the waribashi that come with a
+takeaway bento (`branding/make_svg_mascot.py`; orange until 2026-11-04,
+when the app's colours moved to plum and jade). The scream is
 the point. Every part is its
 own shape, so moods can change the eyes, add sweat, take a bite out of it.
 
@@ -102,7 +104,7 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
   a grain of rice flying off) by an import error, bitten beside "Delete
   everything", holding his chopsticks on "No recipes yet", and a halo by
   "Backup saved." One or two details each: ChatGPT's mockups had more, and
-  less is clearer. He keeps his orange chopsticks in every mood. Big (120
+  less is clearer. He keeps his wooden chopsticks in every mood. Big (120
   px) on empty screens, small (72 px) beside a message. The words beside
   him still carry the information.
 - Detailed versions where there's room, simple ones where it's small (the
@@ -112,23 +114,35 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
 
 | | Light | Dark |
 |---|---|---|
-| Background | #FAF6F1 cream | #141B1B "pond at night" |
+| Background | #F3F6F4 "tea-rice" | #141B1B "pond at night" |
 | Cards | #FFFFFF | #202928 |
 | Text | #2B2420 | #F1EBE5 |
-| Accent (buttons, links) | #B4532A terracotta | #E07A4F |
-| Soft accent (icon background) | #F6E4DA peach | #302A25 |
-| Logo chopsticks | #C8643A (clear on both) | #C8643A |
+| Quiet text | #5F6B67 | #A9B3AE |
+| Accent (buttons, links) | #A82D4A umeboshi | #EE7D92 |
+| Soft accent (icon background) | #F4E4E7 | #33282C |
+| Danger (errors, delete) | #B3261E | #FF8A65 (kept apart from the pink accent) |
+| Logo chopsticks (waribashi wood) | #A87A43 (clear on both) | #A87A43 |
 | Jade, the second accent (the leaf) | #5A9A8A | #5A9A8A |
 | Jade tags, website note | #E2EFEB soft jade | #1D3330 |
 | Jade selected tag | #3F7668, white text | #7FBFAE, dark text |
 | Jade text ("Saved.") | #3A7062 | #8FD3C1 |
 
-**Orange and jade** (decided 2026-11-01: teal is Xel's favourite, and it's
-the colour opposite orange). Orange is for doing things: buttons, links,
-the chopsticks. Jade is for labels and good news: tags, success messages,
-the website's note, the title's leaf. Add jade where it can afford to, not
-on buttons. The plain jade (#5A9A8A) is only 3:1 on cream, so it's for
-shapes, never text; use the text shades above.
+**Umeboshi and jade** (jade decided 2026-11-01: teal is Xel's favourite;
+umeboshi replaced orange on 2026-11-04). Cream with a terracotta orange
+had become the look people recognise as AI-made ("the Claude look", see
+`C:\Projects\TheKoiPond\AI-DESIGN-TELLS.md`), so the background became a
+near-white "tea-rice" and the accent the pickled plum by the title's "B"
+(chosen side by side in `C:\Projects\TheKoiPond\AI-DESIGN-TELLS-colours.html`).
+Umeboshi is for doing things: buttons, links, the selected thing. Ben's
+chopsticks became plain wood the same day (compared in
+`C:\Projects\TheKoiPond\AI-DESIGN-TELLS-ben-chopsticks.html`), so plum and
+jade are the only bold colours. Jade is for labels and good
+news: tags, success messages, the website's note, the title's leaf. Add
+jade where it can afford to, not on buttons. The plain jade (#5A9A8A) is
+only 3:1 on the background, so it's for shapes, never text; use the text
+shades above. The favourite heart (#D6336C / #F06595) is also pink, and
+close to the accent in dark mode; it's always the heart shape, so it still
+reads as "favourite".
 
 The pantry's Have / Low / Out colours stay green, amber and red: they mean
 something at a glance.

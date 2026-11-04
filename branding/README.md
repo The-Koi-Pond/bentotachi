@@ -46,8 +46,16 @@ Its home page also has its own copy of `onigiri.svg`.
   `public/`. It needs Pillow. The fourth folder gets a preview of the icon in
   circle and square shapes.
 
-The colours: chopstick orange #C8643A (clear on both the light and dark
-backgrounds), letters #361F17 or, in dark mode, #F1EBE5, and the leaf in
-jade #5A9A8A with baran ridges (#3F7668 and #96C6B8). The icon background
-colour is in `android/app/src/main/res/values/ic_launcher_background.xml`
-(soft peach, #F6E4DA).
+The colours: chopstick wood #A87A43, with a #D4B07C shine on the title's
+chopstick (clear on both the light and dark backgrounds; orange #C8643A
+until 2026-11-04), letters #361F17 or, in dark mode, #F1EBE5, and the leaf
+in jade #5A9A8A with baran ridges (#3F7668 and #96C6B8). The icon
+background colour is in
+`android/app/src/main/res/values/ic_launcher_background.xml` (soft peach,
+#F6E4DA, also `ICON_BG` in make_icons.py); the launch screens use the
+app's background, tea-rice #F3F6F4 (`SPLASH_BG`).
+
+The website's Bentotachi link-preview card and phone icon
+(`bentotachi/og-card.png`, `bentotachi/apple-touch-icon.png` in the website
+repository) are drawn from these SVGs too: after copying the SVGs over, run
+`python branding/make_bentotachi_page.py` in the website repository.

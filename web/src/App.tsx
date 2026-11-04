@@ -56,7 +56,7 @@ function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
   return <Page key={id} />;
 }
 
-// The top bar's orange +.
+// The top bar's plum +.
 function PlusButton({ to, label }: { to: string; label: string }) {
   return (
     <Link to={to} className="icon-button primary" aria-label={label} title={label}>

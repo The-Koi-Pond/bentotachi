@@ -1,19 +1,24 @@
+/* Light is "tea-rice": a near-white with a hint of jade, and an umeboshi
+   (pickled plum) accent, chosen 2026-11-04 to stop looking like the
+   cream-and-clay "Claude look" (C:\Projects\TheKoiPond\AI-DESIGN-TELLS.md).
+   Plum on white: 6.7; plum on the background: 6.1. */
 :root {
-  --bg: #faf6f1;
+  --bg: #f3f6f4;
   --surface: #ffffff;
   --text: #2b2420;
-  --muted: #7a6d64;
-  --border: #e6ddd3;
-  --accent: #b4532a;
+  --muted: #5f6b67;
+  --border: #d8dddb;
+  --accent: #a82d4a;
   --accent-text: #ffffff;
-  --accent-soft: #f6e4da;
+  --accent-soft: #f4e4e7; /* plum text on it: 5.45 */
   /* Jade, the second accent (the title's leaf): "done, have, on" (tags,
-     ticks, switches that are on, good news, pantry "have"). Orange stays
+     ticks, switches that are on, good news, pantry "have"). Plum stays
      for "do this, selected, now": buttons, links, the selected thing. */
   --jade-soft: #e2efeb;
   --jade-strong: #3f7668;
   --jade-strong-text: #ffffff;
   --danger: #b3261e;
+  --danger-text: #ffffff; /* on a danger background: 6.5 */
   --success: #3f7668;
   /* Pantry statuses: background when selected, and its text colour. */
   --have: #3f7668;
@@ -37,15 +42,18 @@
     --bg: #141b1b;
     --surface: #202928;
     --text: #f1ebe5;
-    --muted: #a89a8f;
+    --muted: #a9b3ae;
     --border: #34403e;
-    --accent: #e07a4f;
+    --accent: #ee7d92; /* on the background: 6.6, dark text on it: 6.6 */
     --accent-text: #141b1b;
-    --accent-soft: #302a25; /* orange text on it: 4.76 */
+    --accent-soft: #33282c; /* plum text on it: 5.39 */
     --jade-soft: #1d3330;
     --jade-strong: #7fbfae;
     --jade-strong-text: #141b1b;
-    --danger: #f2827a;
+    /* More orange than the pink-plum accent, so errors don't look like links.
+       On the background: 7.6; on cards: 6.4. */
+    --danger: #ff8a65;
+    --danger-text: #141b1b; /* white on it would be 2.3 */
     --success: #7fbfae;
     --have: #7fbfae;
     --have-text: #141b1b;
@@ -1975,7 +1983,7 @@ legend {
   width: 32px;
   height: 32px;
   padding: 0;
-  color: #fff;
+  color: var(--danger-text);
   background: var(--danger);
   border: 2px solid #fff;
   border-radius: 50%;

@@ -230,7 +230,7 @@ function NameSection({ user, showUsername }: { user: User; showUsername: boolean
 }
 
 // My color: marks your name and thumbs up around the app. Tap the chosen one
-// again for Bento's usual orange.
+// again for Bentotachi's usual plum (the accent).
 function ColorSection({ user }: { user: User }) {
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const current = PERSON_COLORS.find((color) => color.value === user.color);
@@ -248,7 +248,7 @@ function ColorSection({ user }: { user: User }) {
     <Section title="My color">
       <div className="stack profile-color">
         <span className="muted">
-          {current?.name ?? "None (orange)"}. It marks your name and thumbs up around the app.
+          {current?.name ?? "None (the app's plum)"}. It marks your name and thumbs up around the app.
         </span>
         <div className="swatches" role="group" aria-label="Choose my color">
           {PERSON_COLORS.map((color) => (

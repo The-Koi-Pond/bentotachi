@@ -132,8 +132,8 @@ def title(letter_colour):
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{view_box}" role="img" aria-label="Bentotachi">
 <title>Bentotachi</title>
 <g transform="scale({S})">
-  <path d="{stick}" fill="#c8643a"/>
-  <path d="{shine}" fill="none" stroke="#e69a76" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+  <path d="{stick}" fill="#a87a43"/>
+  <path d="{shine}" fill="none" stroke="#d4b07c" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
 </g>
 <path d="{traced["letters"]}" fill="{letter_colour}"/>
 <g transform="{ume_place}">

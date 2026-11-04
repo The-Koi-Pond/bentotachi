@@ -71,7 +71,7 @@ public class BrowserActivity extends AppCompatActivity {
         savedPage = page;
     }
 
-    private static final int ACCENT = Color.parseColor("#B4532A");
+    private static final int ACCENT = Color.parseColor("#A82D4A"); // the app's light accent (umeboshi)
 
     // Runs inside the page. Collects the page's recipe data blocks (and its
     // preview image) into a tiny HTML document for the server's recipe

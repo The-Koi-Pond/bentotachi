@@ -10,8 +10,8 @@ logo_path, res, public, preview = sys.argv[1:5]
 logo = Image.open(logo_path).convert("RGBA")
 logo = logo.crop(logo.getbbox())
 
-ICON_BG = (0xF6, 0xE4, 0xDA, 255)  # --accent-soft
-SPLASH_BG = (0xFA, 0xF6, 0xF1, 255)  # --bg
+ICON_BG = (0xF6, 0xE4, 0xDA, 255)  # peach, the soft accent before the 2026-11-04 colours
+SPLASH_BG = (0xF3, 0xF6, 0xF4, 255)  # --bg (tea-rice)
 
 # Android density buckets: launcher icon size (48dp) and adaptive foreground (108dp).
 DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}

@@ -94,7 +94,7 @@ blush_shapes = "\n".join(f'  <ellipse cx="{x:.0f}" cy="{y:.0f}" rx="{rx:.0f}" ry
 
 svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0} {y0} {x1 - x0} {y1 - y0}" role="img" aria-label="Bentotachi's onigiri">
 <title>Bentotachi's onigiri</title>
-<path id="chopsticks" d="{traced["chopsticks"]}" fill="#c8643a"/>
+<path id="chopsticks" d="{traced["chopsticks"]}" fill="#a87a43"/>
 <path id="body" d="{traced["body"]}" fill="#fef7ed"/>
 <path id="shade" d="{traced["shade"]}" fill="#feeddb"/>
 <path id="highlight" d="{traced["highlight"]}" fill="#ffffff"/>

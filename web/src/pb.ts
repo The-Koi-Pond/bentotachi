@@ -46,7 +46,7 @@ export interface User extends RecordModel {
   name: string;
   // Their "quick recipe" limit in minutes; 0 means the default (30).
   quick_minutes: number;
-  // Their color, like "#7048e8"; "" means Bento's usual orange.
+  // Their color, like "#7048e8"; "" means Bentotachi's usual plum (the accent).
   color: string;
   // Their profile picture's file name, or "" for none (see Avatar.tsx).
   avatar: string;
@@ -219,7 +219,7 @@ export const PERSON_COLORS = [
 ];
 
 // Style that gives an element (and what's inside it) a person's color, used
-// by CSS as var(--person). Without a color, CSS falls back to the orange.
+// by CSS as var(--person). Without a color, CSS falls back to the accent (plum).
 export function personStyle(user: Pick<User, "color"> | undefined): CSSProperties | undefined {
   return user?.color ? ({ "--person": user.color } as CSSProperties) : undefined;
 }

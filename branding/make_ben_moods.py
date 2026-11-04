@@ -1,6 +1,6 @@
 # Ben's moods: the onigiri (onigiri.svg) with different eyes and one or two
 # extras each, for empty and error screens. Built from Ben's own parts, so
-# every mood has his exact outline, colours and orange chopsticks.
+# every mood has his exact outline, colours and wooden chopsticks.
 #
 #   python make_ben_moods.py <folder with onigiri.svg> <output folder>
 #
@@ -39,7 +39,8 @@ def part(name):
     return found.group(0)
 
 
-INK, RICE, ORANGE, EYE = "#2e201b", "#fef7ed", "#c8643a", "#d66750"
+# WOOD is his chopsticks: plain waribashi wood since 2026-11-04 (orange before).
+INK, RICE, WOOD, EYE = "#2e201b", "#fef7ed", "#a87a43", "#d66750"
 GOLD = "#e0a100"
 DROP, DROP_EDGE, DROP_SHINE = "#a9dccf", "#3f7668", "#ffffff"  # jade
 BLUSH, BLUSH_LINE = "#f4a3a0", "#e47b78"
@@ -157,7 +158,7 @@ moods["bitten"] = svg(bitten, label="Ben, with a bite out of him")
 
 # Ready: holding his chopsticks in front of him, with little hands.
 ready = (onigiri(chopsticks=False)
-         + f'<path d="M 1150,2330 L 2620,2170 M 1175,2445 L 2645,2285" {line(ORANGE, 78)}/>\n'
+         + f'<path d="M 1150,2330 L 2620,2170 M 1175,2445 L 2645,2285" {line(WOOD, 78)}/>\n'
          + f'<g fill="{RICE}" stroke="{INK}" stroke-width="44"><circle cx="1290" cy="2380" r="118"/>'
            f'<circle cx="2480" cy="2235" r="118"/></g>\n')
 moods["ready"] = svg(ready, label="Ben, holding his chopsticks")
