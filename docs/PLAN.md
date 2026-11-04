@@ -185,6 +185,10 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- (nothing yet)
+
+Released in 1.16.0 (2026-11-05, deployed the same day):
+
 - Packets in stock (2026-11-05; new `pantry_packets` collection and
   `barcode_details` on pantry items, migration pantry_packets): Detailed
   rows show "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕", and tapping one
@@ -203,6 +207,17 @@ Changes already live in the browser version, not yet in a published APK
   pantryPackets.test.ts, packets.check.mjs, and in Chromium on a copy of
   the Pi's backup (finish with Undo, last one, Out and Undo, the form,
   a typed barcode).
+- From its review (review-for-xel, 2026-11-05): picking Have or Low while
+  Out's Undo is showing counts as that Undo (the packets come back); Undo
+  waits for the Out to reach the server; the Undo-only message goes by
+  itself once the item is on the list; a packet on an item already Out can
+  be finished; Enter can't add a packet twice; Open Food Facts brands are
+  cut to 120 characters.
+- The household's pantry tidied the same day (one-off, not in the app):
+  plain names, brand spellings, one "Sauces & condiments" shelf, and 12
+  duplicates merged into items with a packet per brand (144 items to 131).
+  A backup from just before is on the Pi and this PC
+  (before_pantry_tidy_20261105.zip).
 
 Released in 1.15.0 (2026-11-04, deployed the same day):
 
