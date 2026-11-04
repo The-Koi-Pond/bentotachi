@@ -150,8 +150,10 @@ keep recipes readable without internet, and avoid subscriptions.
          after Android closed the app in the background is imported when
          it starts again (bentoBrowser.ts RestoredSaveReceiver). The backup
          pickers' version of that is smaller and left in TODO.md.
-   - [ ] A first-time look through recipes, the plan and settings, the way
-         the pantry got one: first start, empty screens, wording.
+   - [x] A first-time look through recipes, the plan and settings, the way
+         the pantry got one: first start, empty screens, wording (2026-11-05,
+         a new household on a throwaway server at phone width; see
+         "Waiting for the next app release").
    - [ ] Store listing: 512 px icon, 1024 × 500 banner, 2 to 8 phone
          screenshots without store logos, short and long description,
          content rating questionnaire, target audience.
@@ -185,7 +187,26 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- (nothing yet)
+- A first-time look (2026-11-05), as a new household would see it:
+  - Recipes: empty shelves fold into one line after the filled ones
+    ("Empty shelves: Sides · Desserts… To put a recipe on one, edit it and
+    tap the shelf under Tags"; Xel's pick), so a new household's first
+    recipes come first instead of under seven empty drawers. No bin in the
+    top bar while there are no recipes to delete.
+  - A recipe page's title gets its own line on a phone, with Plan, Edit
+    and Share under it (it was squeezed beside them).
+  - A recipe's photo in its form: "Take a photo" (phones) and "Choose a
+    photo" buttons with a preview, like the pantry's, instead of the
+    browser's bare file box; "Our notes" and Photo marked optional.
+  - The plan: the drag hint and "Shop for these" wait until something is
+    planned (from today on, for the latter). The dinner chooser with no
+    recipes yet hides its search and filters and says a note will do for
+    now; the note box says "Write a note".
+  - Shopping list: Ben with his halo on the empty list ("Nothing to buy,
+    for once…"). Browse: a line under the empty "Our sites". Add recipe:
+    the saved-page import says it's for a computer (⌘S on a Mac).
+  - The tab bar lights no tab on the ⋮ menu's pages (Household, Profile,
+    Backups, Import & export); Recipes was lit there.
 
 Released in 1.16.0 (2026-11-05, deployed the same day):
 

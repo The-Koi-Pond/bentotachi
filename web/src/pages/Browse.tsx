@@ -151,6 +151,7 @@ export default function Browse() {
       <section className="stack">
         <h2>Our sites</h2>
         {ours.loadError && <p className="error">{ours.loadError}</p>}
+        {ours.items?.length === 0 && <p className="muted">The recipe sites you keep going back to, one tap away.</p>}
         {ourSites.length > 0 && (
           <ul className="site-list">
             {ourSites.map((site) => (

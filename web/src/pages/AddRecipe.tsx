@@ -193,8 +193,8 @@ export default function AddRecipe() {
         <div className="card stack">
           <h2>Import a saved page</h2>
           <p className="muted">
-            For sites that block importing: open the recipe in your browser, press Ctrl+S to save the page, then
-            pick the saved file here.
+            For sites that block importing, on a computer: open the recipe in your browser, press Ctrl+S (⌘S on a
+            Mac) to save the page, then pick the saved file here.
           </p>
           {pageError && <ImportError error={pageError} handLink={handLink} />}
           <button type="button" className="button" onClick={() => pagePicker.current?.click()} disabled={busy}>

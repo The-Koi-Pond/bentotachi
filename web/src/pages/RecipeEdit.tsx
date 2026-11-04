@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
@@ -9,6 +9,8 @@ import type { Framing } from "../photoFraming";
 import ExtraTimesEditor, { fromRows, toRows, type ExtraTimeRow } from "../ExtraTimesEditor";
 import FormatTextarea from "../FormatTextarea";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { usePreviewUrl } from "../pantryPhoto";
+import { canTakePhoto } from "../PantryPhotoField";
 
 interface Draft {
   title: string;
@@ -69,6 +71,14 @@ export default function RecipeEdit() {
   const [existing, setExisting] = useState<Recipe | null>(null);
   const [draft, setDraft] = useState<Draft | null>(id ? null : { ...blankDraft, source_url: searchParams.get("source") ?? "" });
   const [photo, setPhoto] = useState<File | null>(null);
+  // The chosen photo, shown before it's saved.
+  const photoPreview = usePreviewUrl(photo);
+  const pickPhoto = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    // So picking the same file again still counts as a change.
+    event.target.value = "";
+    if (file) setPhoto(file);
+  };
   const [removePhoto, setRemovePhoto] = useState(false);
   // A new framing for the current photo, saved with the form.
   const [framing, setFraming] = useState<Framing | null>(null);
@@ -212,7 +222,9 @@ export default function RecipeEdit() {
         <FormatTextarea rows={4} {...field("author_notes")} />
       </label>
       <label>
-        Our notes
+        <span className="label-text">
+          Our notes <span className="optional">(optional)</span>
+        </span>
         <span className="hint">Changes you made, what worked, what to try next time.</span>
         <FormatTextarea rows={4} {...field("notes")} />
       </label>
@@ -224,7 +236,9 @@ export default function RecipeEdit() {
       </label>
 
       <fieldset className="stack">
-        <legend>Photo</legend>
+        <legend>
+          Photo <span className="optional">(optional)</span>
+        </legend>
         {existing?.image && !removePhoto && !photo && (
           <>
             <span className="photo-preview-box">
@@ -243,7 +257,26 @@ export default function RecipeEdit() {
             onClose={() => setFramerOpen(false)}
           />
         )}
-        <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+        {photo && <img className="photo-preview" src={photoPreview} alt="The new photo" />}
+        {/* Buttons like the pantry's photo (PantryPhotoField), not the
+            browser's bare "Choose File". */}
+        <div className="store-buttons">
+          {canTakePhoto && (
+            <label className="button small file-button">
+              <span className="button-mark" aria-hidden="true">📷</span> Take a photo
+              <input type="file" accept="image/*" capture="environment" onChange={pickPhoto} />
+            </label>
+          )}
+          <label className="button small file-button">
+            {photo || (existing?.image && !removePhoto) ? "Choose another photo" : "Choose a photo"}
+            <input type="file" accept="image/*" onChange={pickPhoto} />
+          </label>
+          {photo && (
+            <button type="button" className="button ghost small" onClick={() => setPhoto(null)}>
+              Don't use this one
+            </button>
+          )}
+        </div>
         {existing?.image && !photo && (
           <label className="inline">
             <input type="checkbox" checked={removePhoto} onChange={(e) => setRemovePhoto(e.target.checked)} />

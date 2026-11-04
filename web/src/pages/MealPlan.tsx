@@ -278,21 +278,29 @@ export default function MealPlan() {
           </button>
         </div>
       </div>
-      <p className="muted plan-hint">
-        {isList ? (
-          <>
-            Drag a {word} by its <GripIcon /> handle to move it; drop it on another {word} to swap.
-          </>
-        ) : (
-          `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a ${word}'s picture to another day to move it, or onto another ${word} to swap.`
-        )}
-      </p>
-      <div className="plan-actions">
-        <button className="button small" onClick={() => setShoppingOpen(true)}>
-          <CartIcon size={18} />
-          Shop for these
-        </button>
-      </div>
+      {/* How to move things, once there's something planned to move. */}
+      {(shown.length > 0 || !isList) && (
+        <p className="muted plan-hint">
+          {isList ? (
+            <>
+              Drag a {word} by its <GripIcon /> handle to move it; drop it on another {word} to swap.
+            </>
+          ) : shown.length > 0 ? (
+            `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a ${word}'s picture to another day to move it, or onto another ${word} to swap.`
+          ) : (
+            `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}.`
+          )}
+        </p>
+      )}
+      {/* Only with recipes planned from today on: that's what it shops for. */}
+      {shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
+        <div className="plan-actions">
+          <button className="button small" onClick={() => setShoppingOpen(true)}>
+            <CartIcon size={18} />
+            Shop for these
+          </button>
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
 
       <DndContext

@@ -13,6 +13,7 @@ import { ensureLoginNow } from "../session";
 import { queueSender, setShoppingQueue, useShoppingQueue } from "../shoppingQueue";
 import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
 import { aisleOf, byAisle } from "../aisles";
+import { BenMood } from "../Brand";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
 // simply in the order it was added. Remembered on this device.
@@ -259,7 +260,12 @@ export default function ShoppingList() {
       )}
 
       {toBuy.length === 0 && ticked.length === 0 && (
-        <p className="muted">The list is empty. Add things here, or from a recipe's ingredients.</p>
+        <div className="with-ben">
+          <BenMood mood="halo" small />
+          <p className="muted">
+            Nothing to buy, for once. Add things here, or from a recipe's ingredients or the plan's “Shop for these”.
+          </p>
+        </div>
       )}
 
       {toBuy.length > 0 &&

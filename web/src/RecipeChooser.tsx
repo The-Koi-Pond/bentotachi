@@ -204,7 +204,7 @@ export default function RecipeChooser({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={100}
-            placeholder="Or write a note"
+            placeholder="Write a note"
             aria-label={`Write a note for this ${meal} instead`}
           />
           <button className="button primary small" disabled={!note.trim()}>
@@ -221,38 +221,47 @@ export default function RecipeChooser({
 
         <p className="sheet-divider muted">or choose a recipe</p>
 
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search names, tags or ingredients"
-          aria-label="Search recipes"
-        />
-        <div className="filter-chips">
-          <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-            <HeartIcon filled={favoritesOnly} size={14} /> Favorites
-          </button>
-          <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
-            <ZapIcon filled={quickOnly} size={14} /> Quick
-          </button>
-          <button
-            aria-pressed={haveOnly}
-            onClick={() => setHaveOnly(!haveOnly)}
-            title="Recipes where nothing in the pantry is out"
-          >
-            <span aria-hidden="true">🥕</span> We have it
-          </button>
-        </div>
-        <div className="chooser-tools">
-          <button className="button small" onClick={surprise} disabled={shown.length === 0}>
-            <span className="button-mark" aria-hidden="true">🎲</span> Surprise me
-          </button>
-          {all && <span className="muted chooser-count">{shown.length} recipes</span>}
-        </div>
+        {/* Search and filters only once there are recipes to search. */}
+        {all?.length !== 0 && (
+          <>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search names, tags or ingredients"
+              aria-label="Search recipes"
+            />
+            <div className="filter-chips">
+              <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
+                <HeartIcon filled={favoritesOnly} size={14} /> Favorites
+              </button>
+              <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
+                <ZapIcon filled={quickOnly} size={14} /> Quick
+              </button>
+              <button
+                aria-pressed={haveOnly}
+                onClick={() => setHaveOnly(!haveOnly)}
+                title="Recipes where nothing in the pantry is out"
+              >
+                <span aria-hidden="true">🥕</span> We have it
+              </button>
+            </div>
+            <div className="chooser-tools">
+              <button className="button small" onClick={surprise} disabled={shown.length === 0}>
+                <span className="button-mark" aria-hidden="true">🎲</span> Surprise me
+              </button>
+              {all && <span className="muted chooser-count">{shown.length} recipes</span>}
+            </div>
+          </>
+        )}
 
         {error && <p className="error">{error}</p>}
         {!all && !error && <p className="muted">Loading recipes…</p>}
-        {all && all.length === 0 && <p className="muted">No recipes yet. Add some on the Recipes tab first.</p>}
+        {all && all.length === 0 && (
+          <p className="muted">
+            No recipes yet, so a note will do for now. Recipes you add on the Recipes tab show up here.
+          </p>
+        )}
         {all && all.length > 0 && shown.length === 0 && <p className="muted">Nothing matches.</p>}
 
         {suggested && (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   DndContext,
@@ -83,10 +83,30 @@ export function useManageMode() {
   return [managing, setManaging] as const;
 }
 
+// Whether the list has any recipes, for the top bar's bin: an empty list has
+// nothing to delete. Starts from the phone's saved copy, so the bin doesn't
+// pop in on every visit; RecipeList keeps it up to date.
+let anyRecipes = (savedRecipes()?.length ?? 0) > 0;
+const anyRecipesListeners = new Set<() => void>();
+function setAnyRecipes(any: boolean) {
+  if (any === anyRecipes) return;
+  anyRecipes = any;
+  anyRecipesListeners.forEach((listener) => listener());
+}
+function subscribeAnyRecipes(listener: () => void) {
+  anyRecipesListeners.add(listener);
+  return () => {
+    anyRecipesListeners.delete(listener);
+  };
+}
+
 // Top-bar button, shown only on the recipe list: a bin, or a tick
-// ("Done") while deleting.
+// ("Done") while deleting. None while there's nothing to delete (unless
+// deleting the last one just emptied it: the tick stays, to finish).
 export function ManageButton() {
   const [managing, setManaging] = useManageMode();
+  const any = useSyncExternalStore(subscribeAnyRecipes, () => anyRecipes);
+  if (!any && !managing) return null;
   const label = managing ? "Done deleting" : "Delete recipes";
   return (
     <button
@@ -144,6 +164,11 @@ export default function RecipeList() {
 
   // A shelf dragged onto another takes its place, for the whole household.
   // Shown straight away; put back if the server says no.
+  // The top bar's bin shows only while there's something to delete.
+  useEffect(() => {
+    if (all) setAnyRecipes(all.length > 0);
+  }, [all]);
+
   async function moveShelf(fromId: string, toId: string) {
     if (!categories) return;
     const before = categories;
@@ -428,6 +453,9 @@ export default function RecipeList() {
   // Shelves are the start page: no search or filter yet.
   const showShelves =
     !!categories?.length && !offline && !listChosen && !search.trim() && !filtering && !favoritesOnly && !quickOnly;
+  const allShelves = showShelves ? shelves(shown, categories!) : [];
+  const filledShelves = allShelves.filter((shelf) => shelf.recipes.length > 0);
+  const emptyShelves = allShelves.filter((shelf) => shelf.recipes.length === 0);
 
   return (
     <div className="stack">
@@ -619,7 +647,7 @@ export default function RecipeList() {
           onDragCancel={() => setDraggingShelf(null)}
         >
           {shelfError && <p className="error">{shelfError}</p>}
-          {shelves(shown, categories!).map((shelf) => (
+          {filledShelves.map((shelf) => (
             <Shelf
               key={shelf.id}
               id={shelf.id}
@@ -630,17 +658,17 @@ export default function RecipeList() {
               // "Everything else" always comes last.
               movable={shelf.id !== OTHER}
             >
-              {shelf.recipes.length ? (
-                <ul className="recipe-grid">{shelf.recipes.map((recipe) => tile(recipe))}</ul>
-              ) : (
-                <p className="muted shelf-empty">
-                  {shelf.category?.tags?.length
-                    ? `Nothing yet. Tag a recipe “${shelf.category.tags[0]}” to put it here.`
-                    : "Nothing yet. Choose its tags in Categories."}
-                </p>
-              )}
+              <ul className="recipe-grid">{shelf.recipes.map((recipe) => tile(recipe))}</ul>
             </Shelf>
           ))}
+          {/* Empty shelves as one line at the end (Xel, 2026-11-05): a new
+              household's first recipes come first, not seven empty drawers. */}
+          {emptyShelves.length > 0 && (
+            <p className="muted shelf-empty-line">
+              Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}. To put a recipe on one, edit it and
+              tap the shelf under Tags.
+            </p>
+          )}
           {/* What follows the finger while dragging: just the shelf's name. */}
           <DragOverlay>
             {draggingShelf && (

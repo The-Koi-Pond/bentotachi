@@ -10,14 +10,20 @@ const TABS: { to: string; label: string; icon: ReactNode }[] = [
   { to: "/pantry", label: "Pantry", icon: <FridgeIcon /> },
 ];
 
-// Bottom bar for switching between the app's main sections. Anything that
-// isn't another tab's page (a recipe, the add page...) counts as Recipes,
-// except the fridge door (the title opens it), which belongs to no tab.
+// The recipe pages besides the list, which count as the Recipes tab: a
+// recipe, adding one, and the shelves.
+const RECIPE_PAGES = ["/recipes", "/add", "/new", "/categories"];
+
+// Bottom bar for switching between the app's main sections. A tab's own
+// pages light it up; the rest (the fridge door, profile, household,
+// backups, import and export, opened from the title or the ⋮ menu) belong
+// to no tab.
 export default function TabBar() {
   const { pathname } = useLocation();
-  const current = pathname.startsWith("/fridge")
-    ? ""
-    : (TABS.find((tab) => tab.to !== "/" && pathname.startsWith(tab.to))?.to ?? "/");
+  const current =
+    pathname === "/" || RECIPE_PAGES.some((page) => pathname.startsWith(page))
+      ? "/"
+      : (TABS.find((tab) => tab.to !== "/" && pathname.startsWith(tab.to))?.to ?? "");
 
   return (
     <nav className="tabbar" aria-label="Sections">

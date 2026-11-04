@@ -2500,8 +2500,10 @@ legend {
   gap: 8px 12px;
 }
 
+/* On a phone the title gets its own line, with Plan, Edit and Share under
+   it, rather than squeezed into a narrow column beside them. */
 .title-row h1 {
-  flex: 1 1 8rem;
+  flex: 1 1 12rem;
 }
 
 .title-row .button {
@@ -3623,9 +3625,10 @@ footer .person-name:focus-visible {
   border-radius: 6px;
 }
 
-.shelf-empty {
-  margin: 0;
-  padding: 0 0 8px 26px;
+/* "Empty shelves: Sides · Desserts…", one line after the filled shelves. */
+.shelf-empty-line {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
 }
 
 /* Categories page */

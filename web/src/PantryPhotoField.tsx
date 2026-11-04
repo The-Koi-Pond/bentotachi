@@ -8,7 +8,8 @@ export type PhotoChoice = File | null | undefined;
 
 // Phones open the camera for "Take a photo"; on a computer it would only
 // open the same file picker as "Choose a photo", so it isn't offered there.
-const canTakePhoto = isAndroidApp || (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
+// (A recipe's photo, RecipeEdit.tsx, offers the same.)
+export const canTakePhoto = isAndroidApp || (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
 
 // A pantry item's photo in its Add or Edit form: take one, choose one, or
 // find one online (Open Food Facts for its barcodes, else its store links).
