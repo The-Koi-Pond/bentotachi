@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { errorMessage, pb } from "../pb";
-import { browseAndSave, hasBuiltInBrowser } from "../bentoBrowser";
+import { browseAndSave, hasBuiltInBrowser, importBrowsedPage, takeRestoredPage } from "../bentoBrowser";
 import { CloseIcon } from "../icons";
 import { savedPageLink, trimSavedPage } from "../savedPage";
 import { BenMood } from "../Brand";
@@ -68,6 +68,26 @@ export default function AddRecipe() {
     void importLink(sharedUrl, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedUrl]);
+
+  // A page saved in Bento's browser while Android had closed Bento in the
+  // background arrives as "#/add?restored=1" (see bentoBrowser.ts).
+  const restored = searchParams.get("restored") === "1";
+  useEffect(() => {
+    if (!restored) return;
+    setSearchParams({}, { replace: true });
+    const page = takeRestoredPage();
+    if (!page) return;
+    setUrl(page.url);
+    setBusy(true);
+    setError("");
+    importBrowsedPage(page)
+      .then((id) => navigate(`/recipes/${id}`, { replace: true }))
+      .catch((err) => {
+        setError(errorMessage(err));
+        setBusy(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restored]);
 
   function submit(event: FormEvent) {
     event.preventDefault();

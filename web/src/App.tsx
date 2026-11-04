@@ -21,6 +21,7 @@ import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
 import { BentoTitle } from "./Brand";
 import { ShareReceiver } from "./shareReceiver";
+import { RestoredSaveReceiver } from "./bentoBrowser";
 import UpdateBanner from "./UpdateBanner";
 import { UnsavedChangesGuard } from "./unsavedChanges";
 import { ensureLogin } from "./session";
@@ -68,6 +69,7 @@ function Screens() {
   return (
     <>
       <ShareReceiver />
+      <RestoredSaveReceiver />
       <UnsavedChangesGuard />
       <header className="topbar">
         <Link to="/" className="brand" aria-label="Bentotachi: back to the recipes">

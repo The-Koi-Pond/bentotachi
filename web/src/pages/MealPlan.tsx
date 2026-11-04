@@ -192,8 +192,15 @@ export default function MealPlan() {
     }
     try {
       if (there) {
-        await mealPlan().update(moving.id, { recipe: there.recipe, note: there.note });
-        await mealPlan().update(there.id, { recipe: moving.recipe, note: moving.note });
+        // One request, so both are saved or neither (pb_hooks/meal_plan.pb.js).
+        try {
+          await pb.send("/api/cookbook/meal-plan/swap", { method: "POST", body: { a: moving.id, b: there.id } });
+        } catch (err) {
+          // A server older than that route (a friend's own): two saves.
+          if ((err as { status?: number }).status !== 404) throw err;
+          await mealPlan().update(moving.id, { recipe: there.recipe, note: there.note });
+          await mealPlan().update(there.id, { recipe: moving.recipe, note: moving.note });
+        }
       } else {
         await mealPlan().update(moving.id, { date: toStoredDate(target.date), meal: target.meal });
       }

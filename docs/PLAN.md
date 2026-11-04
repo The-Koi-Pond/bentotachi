@@ -144,9 +144,12 @@ keep recipes readable without internet, and avoid subscriptions.
    - [ ] Privacy policy: add pantry item photos (looked up at Open Food
          Facts by barcode, or from a store page you linked). Then the data
          safety form to match.
-   - [ ] Fix the known bugs a lone phone user would meet (TODO.md): Save to
-         Bentotachi lost when Android closes the app in the background,
-         swapping two meals losing one.
+   - [x] Fix the known bugs a lone phone user would meet (2026-11-03):
+         swapping two meals is one request that saves both or neither
+         (pb_hooks/meal_plan.pb.js); a recipe saved in Bentotachi's browser
+         after Android closed the app in the background is imported when
+         it starts again (bentoBrowser.ts RestoredSaveReceiver). The backup
+         pickers' version of that is smaller and left in TODO.md.
    - [ ] A first-time look through recipes, the plan and settings, the way
          the pantry got one: first start, empty screens, wording.
    - [ ] Store listing: 512 px icon, 1024 × 500 banner, 2 to 8 phone
@@ -189,6 +192,13 @@ Changes already live in the browser version, not yet in a published APK
 - Phone-only mode's own server gets the two fixes already live on the Pi:
   shops' "Image coming soon" pictures aren't saved as pantry photos, and
   "400 g e" reads "400 g".
+- A recipe saved in Bentotachi's browser is no longer lost when Android
+  closed the app in the background meanwhile: it's imported when Bentotachi
+  starts again.
+- Swapping two meals on the plan can't lose one any more (also live in the
+  browser version once deployed).
+- Browse keeps your last search (until you clear it with ✕), so after
+  saving a recipe you can go back and look for more.
 
 Released in 1.13.0 (2026-11-02; deployed with its server changes the same
 day, commit 993a485):

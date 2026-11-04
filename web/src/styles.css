@@ -3384,6 +3384,22 @@ footer .person-name:focus-visible {
   padding-right: 48px;
 }
 
+/* Our own ✕ instead of Chrome's (Android's web view), not both. */
+.clearable input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Browse's search box, beside its Search button. */
+.add-row .clearable {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-row .clearable input {
+  width: 100%;
+}
+
 .clearable .clear-field {
   position: absolute;
   right: 6px;

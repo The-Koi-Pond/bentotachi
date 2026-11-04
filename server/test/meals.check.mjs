@@ -53,10 +53,33 @@ try {
   check("a meal still needs a recipe or a note", e.status === 400);
 }
 
+// Swapping two meals: one request, both saved together.
+const swapA = await api(token, "POST", "/collections/meal_plan/records", { date: "2031-03-06 00:00:00.000Z", meal: "dinner", note: "Tacos" });
+const swapB = await api(token, "POST", "/collections/meal_plan/records", { date: "2031-03-07 00:00:00.000Z", meal: "lunch", note: "Salad" });
+await api(token, "POST", "/cookbook/meal-plan/swap", { a: swapA.id, b: swapB.id });
+const afterA = await api(token, "GET", `/collections/meal_plan/records/${swapA.id}`);
+const afterB = await api(token, "GET", `/collections/meal_plan/records/${swapB.id}`);
+check("swapping trades two meals", afterA.note === "Salad" && afterB.note === "Tacos");
+check("each swapped meal keeps its place", afterA.date.startsWith("2031-03-06") && afterA.meal === "dinner" && afterB.meal === "lunch");
+try {
+  await api(token, "POST", "/cookbook/meal-plan/swap", { a: swapA.id, b: "nosuchmeal12345" });
+  check("a swap with a missing meal changes nothing", false);
+} catch (e) {
+  const still = await api(token, "GET", `/collections/meal_plan/records/${swapA.id}`);
+  // 400, not 404: the app reads 404 as "this server has no swap yet".
+  check("a swap with a missing meal changes nothing", e.status === 400 && still.note === "Salad", `(${e.status})`);
+}
+try {
+  await api("", "POST", "/cookbook/meal-plan/swap", { a: swapA.id, b: swapB.id });
+  check("swapping needs a login", false);
+} catch (e) {
+  check("swapping needs a login", e.status === 401);
+}
+
 const settings = await api(token, "GET", "/collections/household_settings/records?perPage=1");
 const record = settings.items[0] ?? (await api(token, "POST", "/collections/household_settings/records", { country: "AU" }));
 const chosen = await api(token, "PATCH", `/collections/household_settings/records/${record.id}`, { plan_meals: ["lunch", "dinner"] });
 check("the household can choose its meals", JSON.stringify(chosen.plan_meals) === JSON.stringify(["lunch", "dinner"]));
 await api(token, "PATCH", `/collections/household_settings/records/${record.id}`, { plan_meals: [] });
 
-for (const entry of [fromOldApp, moved, breakfast]) await api(token, "DELETE", `/collections/meal_plan/records/${entry.id}`);
+for (const entry of [fromOldApp, moved, breakfast, swapA, swapB]) await api(token, "DELETE", `/collections/meal_plan/records/${entry.id}`);

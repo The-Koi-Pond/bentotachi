@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { RECIPE_SITES, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
 import { browseAndSave, hasBuiltInBrowser } from "../bentoBrowser";
@@ -7,10 +7,37 @@ import { useLiveRecords } from "../useLiveRecords";
 import { CloseIcon } from "../icons";
 import { useUnsavedChanges } from "../unsavedChanges";
 
+// The last search stays until cleared (for this visit to Bento), so after
+// saving a recipe found with it, coming back to Browse (Back, or the tab)
+// still shows it, ready to look for more (Xel, 2026-11-04).
+const SEARCH_KEY = "bento.browseSearch";
+
+function rememberedSearch(): string {
+  try {
+    return sessionStorage.getItem(SEARCH_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function rememberSearch(text: string) {
+  try {
+    if (text) sessionStorage.setItem(SEARCH_KEY, text);
+    else sessionStorage.removeItem(SEARCH_KEY);
+  } catch {
+    // Storage blocked: the search just won't be kept.
+  }
+}
+
 export default function Browse() {
   const navigate = useNavigate();
-  const [text, setText] = useState("");
-  const [searched, setSearched] = useState("");
+  const [text, setText] = useState(rememberedSearch);
+  const [searched, setSearchedState] = useState(rememberedSearch);
+  const searchBox = useRef<HTMLInputElement>(null);
+  const setSearched = (value: string) => {
+    setSearchedState(value);
+    rememberSearch(value);
+  };
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const ours = useLiveRecords<SavedSite>("saved_sites");
@@ -57,14 +84,33 @@ export default function Browse() {
       <h1>Browse</h1>
 
       <form className="add-row" onSubmit={search} role="search">
-        <input
-          type="search"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. lasagne"
-          aria-label="Search recipe sites"
-          enterKeyHint="search"
-        />
+        <div className="clearable">
+          <input
+            ref={searchBox}
+            type="search"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="e.g. lasagne"
+            aria-label="Search recipe sites"
+            enterKeyHint="search"
+          />
+          {/* Empties the box and the search, to start another. */}
+          {(text || searched) && (
+            <button
+              type="button"
+              className="clear-field"
+              aria-label="Clear the search"
+              title="Clear the search"
+              onClick={() => {
+                setText("");
+                setSearched("");
+                searchBox.current?.focus();
+              }}
+            >
+              <CloseIcon />
+            </button>
+          )}
+        </div>
         <button className="button primary" disabled={!text.trim()}>
           Search
         </button>
