@@ -14,7 +14,8 @@
     "play": "node scripts/play.mjs",
     "package": "node scripts/package.mjs",
     "deploy": "node scripts/deploy.mjs",
-    "backup": "node scripts/backup.mjs"
+    "backup": "node scripts/backup.mjs",
+    "pi-admin": "node scripts/pi-admin.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",

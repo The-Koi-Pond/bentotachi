@@ -142,7 +142,12 @@ How to run: `README.md`.
   logins, network names or people's names (use made-up examples).
   `npm run deploy` sends changes there (Xel allowed Claude to run it,
   2026-10-30; say when you do, since Bento blinks off for a few seconds),
-  `npm run backup` pulls its nightly backups. The PC's
+  `npm run backup` pulls its nightly backups. Fixing data the app can't
+  (a one-off script, like 2026-11-05's pantry tidy-up): `npm run pi-admin
+  -- <script.mjs>` (web/scripts/pi-admin.mjs) adds a temporary admin
+  login, backs up, runs the script and removes the login. Claude's
+  permissions block adding logins on the Pi, so Xel runs that command; try
+  the script on a throwaway copy of a backup first. The PC's
   `server/pb_data` is a stale pre-move copy; test on throwaway servers.
   The friends' zip uses web/scripts/package-files/Start Bentotachi.bat;
   `server/Start Bentotachi here.bat` is the PC's fallback (asks for YES).
