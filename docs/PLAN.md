@@ -185,6 +185,10 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- (nothing yet)
+
+Released in 1.15.0 (2026-11-04, deployed the same day):
+
 - The fridge door (decided and built 2026-11-04): the title in the top bar
   opens it, with a note icon beside it counting notes someone else left
   since this phone last looked (fridgeSeen.ts; no buzzing phones, which
