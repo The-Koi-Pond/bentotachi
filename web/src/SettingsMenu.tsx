@@ -7,7 +7,7 @@ import { useSingleUser } from "./household";
 import Avatar from "./Avatar";
 import { ChevronIcon, MoreIcon } from "./icons";
 import { forgetOfflineCopy } from "./offline";
-import { isPhoneMode } from "./phoneMode";
+import { isPhoneMode, switchToServer } from "./phoneMode";
 import { canSelfUpdate, checkForUpdate, installUpdate, useUpdateState, type UpdateState } from "./appUpdates";
 import deki from "./assets/deki.svg";
 
@@ -91,7 +91,7 @@ export default function SettingsMenu() {
           {phone && (
             <Link to="/backups" role="menuitem" className="menu-link" onClick={() => setOpen(false)}>
               Backups
-              <span className="menu-item-detail">Save or restore a backup, or move to a server</span>
+              <span className="menu-item-detail">Save or restore a backup</span>
             </Link>
           )}
           {user && !phone && (
@@ -158,7 +158,16 @@ export default function SettingsMenu() {
               <span className="menu-item-detail">Free forever, but I wouldn't say no to a coffee</span>
             </a>
           )}
-          {/* Phone-only Bento logs itself in; leaving it is on the Backups page. */}
+          {/* Phone-only Bento logs itself in, so instead of Log out (where
+              people look for a way out), the way to the household's server. */}
+          {phone && (
+            <button role="menuitem" onClick={switchToServer}>
+              <span className="menu-item-text">
+                Join a household
+                <span className="menu-item-detail">Use the Bentotachi someone at home runs</span>
+              </span>
+            </button>
+          )}
           {!phone && (
             <button
               role="menuitem"

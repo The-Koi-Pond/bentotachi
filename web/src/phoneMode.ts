@@ -134,6 +134,20 @@ export function leavePhoneMode() {
   pb.authStore.clear();
 }
 
+// "Join a household" (⋮ menu, and Backups): after asking, back to the login
+// screen to connect to the household's server. What's on this phone stays,
+// and comes back with "Just me, on this phone".
+export function switchToServer() {
+  if (
+    !window.confirm(
+      "Join your household's Bentotachi? What you've added on this phone stays here, and comes back if you choose “Just me, on this phone” again."
+    )
+  )
+    return;
+  leavePhoneMode();
+  window.location.reload();
+}
+
 // "Delete my account" on a phone-only Bento: everything on this phone goes
 // (the server's data, the saved login, the offline copies), and the app
 // starts again as if new.

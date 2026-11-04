@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { errorMessage } from "../pb";
-import { backUpPhone, lastBackup, leavePhoneMode, phoneAccount, restorePhone } from "../phoneMode";
+import { backUpPhone, lastBackup, phoneAccount, restorePhone, switchToServer } from "../phoneMode";
 import { daysAgo } from "../backupReminder";
 import { formatDay, localToday } from "../dates";
 import { BenMood } from "../Brand";
@@ -47,12 +47,6 @@ export default function Backups() {
     }
   }
 
-  function switchToServer() {
-    if (!window.confirm("Switch to a server? Bentotachi's data stays on this phone, in case you come back to it.")) return;
-    leavePhoneMode();
-    window.location.reload();
-  }
-
   return (
     <div className="stack narrow">
       <h1>Backups</h1>
@@ -92,11 +86,15 @@ export default function Backups() {
       </section>
 
       <section className="card stack">
-        <h2>Moving to a server</h2>
+        <h2>Joining a household</h2>
         <p className="muted">
-          To share Bentotachi with your household, it needs a server (like a Raspberry Pi at home). A backup from here works
-          on a new one: whoever runs it restores your backup from its admin page (Settings → Backups). Then tap “Switch to
-          a server” below, type its address, and log in with the login Bentotachi made for you here.
+          Sharing with your household needs a server (like a Raspberry Pi at home). If someone already runs one, tap “Join a
+          household” and log in with the account they made you.
+        </p>
+        <p className="muted">
+          To bring everything from this phone to a new server instead: whoever runs it restores your backup from its admin
+          page (Settings → Backups). Then tap “Join a household”, type its address, and log in with the login Bentotachi
+          made for you here.
         </p>
         {account && (
           <button className="link-button" aria-expanded={showLogin} onClick={() => setShowLogin((value) => !value)}>
@@ -127,7 +125,7 @@ export default function Backups() {
           </dl>
         )}
         <button className="button ghost push-left" onClick={switchToServer} disabled={busy}>
-          Switch to a server
+          Join a household
         </button>
       </section>
     </div>

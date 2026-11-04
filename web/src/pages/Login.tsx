@@ -12,7 +12,10 @@ import { isPhoneMode, leavePhoneMode, phoneModeSupported, rememberPhoneAccount, 
 export default function Login() {
   const phone = isPhoneMode();
   const firstRun = isAndroidApp && !phone && !savedServerUrl();
-  const [step, setStep] = useState<"phone" | "server">(firstRun ? "phone" : "server");
+  // A new app asks first how it'll be used: two plain choices, so someone
+  // joining their household's server can't take the phone-only form for the
+  // way in (a housemate did, 2026-11-04).
+  const [step, setStep] = useState<"choose" | "phone" | "server">(firstRun ? "choose" : "server");
   // Whether this phone can run phone-only mode: null until known.
   const [phoneOk, setPhoneOk] = useState<boolean | null>(isAndroidApp ? null : false);
   const [server, setServer] = useState(savedServerUrl);
@@ -86,10 +89,28 @@ export default function Login() {
     );
 
   // Still checking whether this phone can run it (a moment).
-  if (step === "phone" && phoneOk === null)
+  if (step !== "server" && phoneOk === null)
     return (
       <main className="login">
         <div className="card stack login-card">{brand}</div>
+      </main>
+    );
+
+  if (step === "choose")
+    return (
+      <main className="login">
+        <div className="card stack login-card">
+          {brand}
+          <h2 className="login-question">How will you use Bentotachi?</h2>
+          <button className="login-choice" onClick={() => setStep("phone")}>
+            <span className="login-choice-title">Just me, on this phone</span>
+            <span className="muted">Nothing to set up. Everything stays on this phone.</span>
+          </button>
+          <button className="login-choice" onClick={() => setStep("server")}>
+            <span className="login-choice-title">With my household</span>
+            <span className="muted">Join the Bentotachi someone at home already runs. You'll need its address.</span>
+          </button>
+        </div>
       </main>
     );
 
@@ -99,12 +120,9 @@ export default function Login() {
         <div className="card stack login-card">
           {brand}
           <PhoneSetupForm />
-          <div className="login-other">
-            <p className="muted">Sharing with your household? A Bentotachi server keeps everyone's phones in step.</p>
-            <button className="button" onClick={() => setStep("server")}>
-              Connect to a server
-            </button>
-          </div>
+          <button className="link-button" onClick={() => setStep("choose")}>
+            ← Back
+          </button>
         </div>
       </main>
     );
@@ -145,8 +163,8 @@ export default function Login() {
         )}
         {needsSetup ? <SetupForm server={server} /> : <LoginForm server={server} />}
         {isAndroidApp && phoneOk && (
-          <button className="link-button" onClick={() => setStep("phone")}>
-            ← Or use Bentotachi on this phone only
+          <button className="link-button" onClick={() => setStep("choose")}>
+            ← Back
           </button>
         )}
       </div>
@@ -177,8 +195,8 @@ function PhoneSetupForm() {
       <div className="setup-intro">
         <h2>Bentotachi on this phone</h2>
         <p className="muted">
-          Everything stays on this phone, so save a backup now and then (⋮ → Backups). You can move to a server later,
-          to share with your household.
+          Everything stays on this phone, so save a backup now and then (⋮ → Backups). To share with your household
+          later: ⋮ → Join a household.
         </p>
       </div>
       <label>

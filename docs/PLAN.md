@@ -199,6 +199,11 @@ Changes already live in the browser version, not yet in a published APK
   browser version once deployed).
 - Browse keeps your last search (until you clear it with ✕), so after
   saving a recipe you can go back and look for more.
+- A new app first asks "How will you use Bentotachi?": "Just me, on this
+  phone" or "With my household", as two equal choices (a housemate took the
+  phone-only form for the way in, 2026-11-04). Phone-only mode's ⋮ menu has
+  "Join a household" where Log out would be (it was only at the bottom of
+  Backups).
 
 Released in 1.13.0 (2026-11-02; deployed with its server changes the same
 day, commit 993a485):

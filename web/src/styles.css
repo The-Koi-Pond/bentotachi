@@ -4053,14 +4053,41 @@ em.soft {
 
 /* Under "Bento on this phone" on the first login screen: the smaller
    choice, connecting to a household's server. */
-.login-other {
+/* A new app's first question: two big, equal choices (Login.tsx). */
+.login-question {
+  margin: 8px 0 0;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.login-choice {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  gap: 4px;
+  padding: 14px 16px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
 }
+
+.login-choice:hover {
+  border-color: var(--accent);
+}
+
+.login-choice:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.login-choice-title {
+  font-weight: 700;
+  color: var(--accent);
+}
+
 
 .login-other p {
   margin: 0;
