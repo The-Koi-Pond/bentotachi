@@ -551,6 +551,8 @@ function PacketsField({
   const [busy, setBusy] = useState(false);
 
   async function add() {
+    // Enter pressed again while it saves (the button is disabled, Enter isn't).
+    if (busy) return;
     setBusy(true);
     // Not added (the page says why): its boxes stay, to try again.
     if (await onAdd(details)) setAdding(false);

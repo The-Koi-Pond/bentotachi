@@ -81,7 +81,7 @@ export default function Pantry() {
     item: PantryItem;
     message: string;
     ask: boolean;
-    restore?: () => Promise<void>;
+    restore?: (to?: PantryStatus) => Promise<void>;
   } | null>(null);
   // Drawers start closed each visit; this holds the ones opened since.
   const [openDrawers, setOpenDrawers] = useState<Set<string>>(new Set());
@@ -130,15 +130,20 @@ export default function Pantry() {
     const timer = window.setTimeout(() => setNotice(""), 5000);
     return () => window.clearTimeout(timer);
   }, [notice]);
-  // Run out with only Undo to offer (it's on the list already): that goes
-  // by itself too, like other Undos.
+  const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
+  // On the list if it's linked, or someone typed the same name by hand.
+  const isOnList = (item: PantryItem) =>
+    waiting.some((w) => w.pantry_item === item.id || (!w.pantry_item && norm(w.text) === norm(item.name)));
+
+  // Run out with only Undo to offer (it's on the list already, or someone
+  // has put it there since it asked): that goes by itself too, like other
+  // Undos.
+  const onlyUndo = !!runOut && (!runOut.ask || isOnList(runOut.item));
   useEffect(() => {
-    if (!runOut || runOut.ask) return;
+    if (!runOut || !onlyUndo) return;
     const timer = window.setTimeout(() => setRunOut((current) => (current === runOut ? null : current)), UNDO_SECONDS * 1000);
     return () => window.clearTimeout(timer);
-  }, [runOut]);
-
-  const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
+  }, [runOut, onlyUndo]);
   const items = pantry.items;
   // Photos found online (Open Food Facts, store links), for items that
   // don't have one yet.
@@ -146,10 +151,6 @@ export default function Pantry() {
 
   const loadError = pantry.loadError || shopping.loadError;
   if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Loading the pantry…</p>;
-
-  // On the list if it's linked, or someone typed the same name by hand.
-  const isOnList = (item: PantryItem) =>
-    waiting.some((w) => w.pantry_item === item.id || (!w.pantry_item && norm(w.text) === norm(item.name)));
 
   // `also`: sent with the change but not kept (see setStatus). Whether it saved.
   async function save(item: PantryItem, patch: Partial<PantryItem>, movedTo: string, also = {}) {
@@ -177,6 +178,14 @@ export default function Pantry() {
   // because its last packet was just finished.
   function setStatus(item: PantryItem, status: PantryStatus, lastPacket = false) {
     if (item.status === status) return;
+    // Back from Out while its Undo is still offered (Out picked by mistake,
+    // then Have): that is the Undo, so its packets come back too. Only while
+    // it's still Out: back in stock another way (a packet added, another
+    // phone) and the Undo is gone from the screen.
+    if (status !== "out" && item.status === "out" && runOut?.item.id === item.id && runOut.restore) {
+      void runOut.restore(status);
+      return;
+    }
     const runsOut = status === "out";
     const putBack = runsOut && item.opened;
     const place = item.location.trim();
@@ -194,10 +203,16 @@ export default function Pantry() {
         ? `${outWords} It's back in ${place ? `the ${place}` : "Other"}, ready for the next one.`
         : "";
     const ask = runsOut && !isOnList(item);
+    // Set just below, before Undo can be tapped.
+    let outSaved: Promise<boolean> = Promise.resolve(false);
+    // Undo: the status it had (or `to`, picked instead), and its packets.
+    // It waits for the Out to reach the server first, or a slow Out could
+    // arrive after it and clear the packets again.
     const restore = cleared.length
-      ? async () => {
+      ? async (to: PantryStatus = item.status) => {
           setRunOut(null);
-          if (!(await save(item, { status: item.status, opened: !!item.opened }, ""))) return;
+          if (!(await outSaved)) return;
+          if (!(await save(item, { status: to, opened: !!item.opened }, ""))) return;
           try {
             for (const packet of cleared) packets.upsert(await pantryPackets().create(packetFields(packet)));
           } catch (err) {
@@ -208,15 +223,14 @@ export default function Pantry() {
     if (ask || restore) setRunOut({ item, ask, restore, message: moved || outWords });
     // The server clears them; off the screen straight away.
     for (const packet of cleared) packets.removeLocally(packet.id);
-    void save(item, putBack ? { status, opened: false } : { status }, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {}).then(
-      (saved) => {
-        if (saved) return;
-        // Didn't save: its question goes (not another item's asked since),
-        // and its packets are still there.
-        setRunOut((current) => (current?.item.id === item.id ? null : current));
-        for (const packet of cleared) packets.upsert(packet);
-      },
-    );
+    outSaved = save(item, putBack ? { status, opened: false } : { status }, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {});
+    void outSaved.then((saved) => {
+      if (saved) return;
+      // Didn't save: its question goes (not another item's asked since),
+      // and its packets are still there.
+      setRunOut((current) => (current?.item.id === item.id ? null : current));
+      for (const packet of cleared) packets.upsert(packet);
+    });
   }
 
   // A packet as it's saved (for adding one, or putting one back).
@@ -266,10 +280,11 @@ export default function Pantry() {
   }
 
   // Finished: tapping a packet. The last one makes the item Out (and asks
-  // about the shopping list); others wait a few seconds for Undo.
+  // about the shopping list); others, and one on an item already Out (a
+  // dropped connection can leave one), wait a few seconds for Undo.
   function finishPacket(item: PantryItem, packet: PantryPacket) {
     const left = packetsOf(packets.items ?? [], item.id, undo.hidden);
-    if (left.length <= 1) {
+    if (left.length <= 1 && item.status !== "out") {
       setStatus(item, "out", true);
       return;
     }

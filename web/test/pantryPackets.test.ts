@@ -34,6 +34,13 @@ test("a scanned packet is what the item remembers, else what Open Food Facts sai
   // An empty memory doesn't count.
   assert.equal(knowsBarcode({ barcode_details: { [CODE]: {} } }, CODE), false);
   assert.deepEqual(detailsFor({}, CODE, null), { brand: "", size: "" });
+  // A packet's brand holds 120 characters.
+  assert.equal(detailsFor({}, CODE, { brand: "B".repeat(150), quantity: "" }).brand.length, 120);
+});
+
+test("remembering a barcode keeps its size, trimmed, as well as its brand", () => {
+  assert.deepEqual(withDetails({}, CODE, { brand: "", size: " 1 kg " }), { [CODE]: { size: "1 kg" } });
+  assert.deepEqual(withDetails({}, CODE, { brand: "White Mill", size: "2 kg" }), { [CODE]: { brand: "White Mill", size: "2 kg" } });
 });
 
 test("remembering a barcode keeps the others, and skips nothing to remember", () => {

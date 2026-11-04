@@ -35,8 +35,9 @@ export function detailsFor(
   looked?: { brand?: string; quantity?: string } | null,
 ): PacketDetails {
   const known = item.barcode_details?.[code];
-  if (known && (known.brand || known.size)) return { brand: known.brand ?? "", size: known.size ?? "" };
-  return { brand: (looked?.brand ?? "").trim(), size: tidySize(looked?.quantity ?? "") };
+  if (knowsBarcode(item, code)) return { brand: known?.brand ?? "", size: known?.size ?? "" };
+  // Cut to what a packet's brand holds (120), as sizes are (tidySize).
+  return { brand: (looked?.brand ?? "").trim().slice(0, 120), size: tidySize(looked?.quantity ?? "") };
 }
 
 // Whether the item already remembers this barcode's brand or size.
