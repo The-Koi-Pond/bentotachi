@@ -19,7 +19,7 @@ import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { refuseUncommittedServerCode } from "./committed.mjs";
+import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -40,8 +40,9 @@ if (!signed && !testKey) {
   );
   process.exit(1);
 }
-// The APK carries the server code for phone-only mode (see committed.mjs).
-refuseUncommittedServerCode("built");
+// The APK carries the web app, and the server code for phone-only mode (see
+// committed.mjs).
+refuseUncommittedCode("built");
 await runTests();
 
 // Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,

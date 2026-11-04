@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { piConfig } from "./piConfig.mjs";
-import { refuseUncommittedServerCode } from "./committed.mjs";
+import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
 const { ssh: PI, url: PI_URL, key: KEY } = piConfig();
@@ -34,8 +34,8 @@ function onPi(command) {
   return execFileSync(ssh, [...sshArgs, command], { encoding: "utf8" });
 }
 
-// Only committed server code goes to the Pi (see committed.mjs).
-refuseUncommittedServerCode("sent");
+// Only committed server code and web app go to the Pi (see committed.mjs).
+refuseUncommittedCode("sent");
 
 await runTests();
 

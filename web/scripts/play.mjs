@@ -18,7 +18,7 @@ import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { refuseUncommittedServerCode } from "./committed.mjs";
+import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -32,8 +32,9 @@ if (!existsSync(join(android, "keystore.properties"))) {
   );
   process.exit(1);
 }
-// The app carries the server code for phone-only mode (see committed.mjs).
-refuseUncommittedServerCode("built");
+// The app carries the web app, and the server code for phone-only mode (see
+// committed.mjs).
+refuseUncommittedCode("built");
 await runTests();
 
 function run(command, cwd, extraEnv = {}) {

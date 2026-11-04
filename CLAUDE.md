@@ -51,9 +51,9 @@ How to run: `README.md`.
     space for this; never test against `server/pb_data` (the real data).
     Always add `--automigrate=false`: without it, changing a collection's
     settings on a test server writes a migration file into `pb_migrations`
-    that would change the real database (deploy, release and package refuse
-    uncommitted files there, web/scripts/committed.mjs, but don't rely on
-    it). Tell any reviewer agent the same.
+    that would change the real database (deploy, release, play and package
+    refuse uncommitted files there, web/scripts/committed.mjs, but don't
+    rely on it). Tell any reviewer agent the same.
 - Real bugs and review findings waiting to be fixed go in `TODO.md` at the
   repository root: kept on this PC only (listed in `.git/info/exclude`,
   never committed), so findings that aren't ready to share stay off GitHub.
@@ -117,6 +117,12 @@ How to run: `README.md`.
   `gradlew assembleDebug -PbentoTest -PbentoPlay`.
   Deploy refuses to send if a folder (like `server/releases`) is missing
   here, and the Pi only swaps folders in once all of them have arrived.
+  Deploy, release, play and package also refuse while the web app (`web/`,
+  apart from `web/android` and `web/scripts`) or the server code has
+  uncommitted changes (web/scripts/committed.mjs): Xel often runs several
+  sessions in this folder, and the build takes files as they are, so
+  another session's half-finished work would go out too. Commit your own
+  work; if the rest is another session's, wait for it.
 - The website (thekoipond.dev/bentotachi; it was /bento before the
   repository was renamed on 2026-11-02) is **not in this repository**: it's
   the `bentotachi/` folder of The Koi Pond's website repository,
