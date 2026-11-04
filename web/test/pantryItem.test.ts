@@ -11,7 +11,6 @@ import {
   storeLinkFields,
   storeLinksOf,
   wantsOnlinePhoto,
-  withBrand,
   withPickedLink,
 } from "../src/pantryItem.ts";
 
@@ -126,11 +125,7 @@ test("opened without a once-opened place (or the same place) stays put", () => {
   });
 });
 
-test("brands are a comma list without repeats", () => {
+test("older items' brands are a comma list", () => {
   assert.deepEqual(brandsOf("Coles, White Mill ,"), ["Coles", "White Mill"]);
   assert.deepEqual(brandsOf(""), []);
-  assert.equal(withBrand("Coles", "White Mill"), "Coles, White Mill");
-  assert.equal(withBrand("Coles, White Mill", "white mill"), "Coles, White Mill");
-  assert.equal(withBrand("", "Coles"), "Coles");
-  assert.equal(withBrand("Coles", " "), "Coles");
 });

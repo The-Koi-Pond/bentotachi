@@ -4323,6 +4323,80 @@ em.soft {
   font-weight: 600;
 }
 
+/* Packets in stock: "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕" under a
+   Detailed row (and in the edit form). Tapping one finishes it. */
+.pantry-packets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.pantry-packets-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.packet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 10px 2px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.packet-chip-x {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.packet-chip:hover .packet-chip-x {
+  color: var(--text);
+}
+
+.packets-field,
+.brand-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.packets-field .label-text {
+  font-weight: 600;
+}
+
+.brand-pick {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: -4px;
+}
+
+.brand-pick .hint {
+  width: 100%;
+}
+
+.packet-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.packet-add input {
+  flex: 1 1 8em;
+  min-width: 0;
+}
+
 /* A scanned number nothing has, big enough to check against the packet. */
 .barcode-number {
   margin: 0;
@@ -4358,11 +4432,22 @@ em.soft {
   gap: 16px;
 }
 
-/* Two answers side by side ("Add it", "Not now"). */
+/* Answers side by side ("Add it", "Not now", maybe "Undo"); on a narrow
+   phone they go under the message, on the right, rather than squeezing it. */
 .toast-actions {
   flex: none;
   display: flex;
   gap: 14px;
+  margin-left: auto;
+}
+
+.undo-toast:has(.toast-actions) {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.undo-toast:has(.toast-actions) > span:first-child {
+  flex: 1 1 12em;
 }
 
 .undo-toast .link-button {

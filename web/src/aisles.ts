@@ -77,6 +77,14 @@ const PANTRY_AISLES: Record<string, Aisle> = {
   "tins & jars": "Tins & jars",
   "oils & vinegars": "Sauces & oils",
   snacks: "Snacks & drinks",
+  // Shelves households often make themselves.
+  noodles: "Pasta, rice & grains",
+  sauce: "Sauces & oils",
+  sauces: "Sauces & oils",
+  condiments: "Sauces & oils",
+  "spreads & syrups": "Tins & jars",
+  spreads: "Tins & jars",
+  juice: "Snacks & drinks",
 };
 
 // The aisle a name sounds like, or Other.

@@ -110,11 +110,16 @@ export interface PantryItem extends RecordModel {
   // more_store_urls; read both with storeLinksOf in pantryItem.ts.
   store_url: string;
   more_store_urls?: string[] | null;
-  // The brands we buy, like "Lea & Perrins" or "Coles, White Mill", or ""
-  // (see pantryItem.ts).
+  // The favourite brand, the one to look for when shopping, like "Lea &
+  // Perrins", or "". Apps before packets (1.15.0 and older) called it "Brands
+  // we buy", so older items may list several: "Coles, White Mill" (see
+  // brandsOf in pantryItem.ts).
   brand: string;
   // Barcodes on its packets, like ["9300633603161"] (see barcodes.ts).
   barcodes: string[] | null;
+  // What each barcode's packet is, once known: {"9300633603161": {"brand":
+  // "White Mill", "size": "1 kg"}} (see pantryPackets.ts).
+  barcode_details?: Record<string, { brand?: string; size?: string }> | null;
   // Anything worth writing down, like "3 cans", or "".
   note?: string;
   // Where it goes once opened, like "Fridge", or "". While opened it shows
@@ -133,6 +138,18 @@ export interface PantryItem extends RecordModel {
 }
 
 export const pantryItems = () => pb.collection<PantryItem>("pantry_items");
+
+// One bag, jar or can of a pantry item actually in stock (see the
+// pantry_packets migration and pantryPackets.ts). Any field may be "".
+export interface PantryPacket extends RecordModel {
+  item: string;
+  brand: string;
+  size: string;
+  barcode: string;
+  created: string;
+}
+
+export const pantryPackets = () => pb.collection<PantryPacket>("pantry_packets");
 
 // One meal on the plan: a recipe, or a short note like "Take-away night"
 // instead. date: "2026-11-02 00:00:00.000Z" (see dates.ts).

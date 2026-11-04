@@ -185,7 +185,24 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- (nothing yet)
+- Packets in stock (2026-11-05; new `pantry_packets` collection and
+  `barcode_details` on pantry items, migration pantry_packets): Detailed
+  rows show "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕", and tapping one
+  finishes it, with Undo. Finishing the last one makes the item Out and asks
+  about the shopping list. Out clears an item's packets (on the server, so
+  older apps do too; pantry.pb.js), and its message has Undo, which puts
+  them back. The edit form has "Packets in stock" (+ Add a packet, brand
+  starting as the favourite; these save straight away). Scanning something
+  already in the pantry offers "+ Add this packet": brand and size come
+  from what the item remembers for that barcode, else Open Food Facts
+  (asked once, then remembered). "Brands we buy" is now "Favourite brand";
+  items listing several offer buttons to pick one, never picked for you,
+  and a scanned other brand no longer joins it (its barcode remembers its
+  brand instead). Simple rows don't show packets. A server from before
+  this has no packets, and the pantry works as before there. Checked in
+  pantryPackets.test.ts, packets.check.mjs, and in Chromium on a copy of
+  the Pi's backup (finish with Undo, last one, Out and Undo, the form,
+  a typed barcode).
 
 Released in 1.15.0 (2026-11-04, deployed the same day):
 
@@ -742,13 +759,14 @@ More may come; these are the ones so far:
       it). Becomes the favourite brand with "Packets in stock" below.
 - [x] A better place for expiry warnings (2026-11-02: a badge beside the
       name).
-- [ ] Packets in stock (designed 2026-11-02; see below). On the row as
+- [x] Packets in stock (designed 2026-11-02, built 2026-11-05; see
+      "Waiting for the next app release"). On the row as
       chips, "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕"; tapping one
       finishes it (Xel's pick in the playground).
 - [x] A more compact Have / Low / Out (2026-11-02: a level that opens a
       dropdown).
 
-### Packets in stock (to build; Xel, 2026-11-02)
+### Packets in stock (Xel, 2026-11-02; built 2026-11-05)
 
 What it's for: knowing what's actually in the cupboard, for households who
 want that. It never pushes stock-taking (VISION.md, 2026-11-02): an item
@@ -787,9 +805,10 @@ Decided (Xel, 2026-11-02):
    list?"), for tapping Out too; built 2026-11-02. Idea still open: the
    shopping list shows "Out at home, not on the list" in a small closed
    section, so it's still seen at the store.
-2. The favourite brand is picked by the person, never guessed. (Items with
-   one brand today: probably keep it as the favourite, since someone typed
-   it; to confirm. Items with several: none chosen until someone picks.)
+2. The favourite brand is picked by the person, never guessed. (Built
+   2026-11-05: items with one brand keep it as the favourite, since someone
+   typed it; items with several show them in the form as buttons to pick
+   one, and stay as they are until someone does.)
 
 ### A more compact Have / Low / Out (Xel, 2026-11-02)
 
@@ -862,8 +881,8 @@ Pieces we already have:
 - Each country's stores and their search addresses (web/src/stores.ts).
 - Store links on pantry items: a linked item can open its exact product
   page instead of a search.
-- Brands on pantry items (one favourite brand, once Packets in stock is
-  built), to add to the search ("Lea & Perrins worcestershire sauce").
+- Brands on pantry items (the favourite brand, since 2026-11-05), to add
+  to the search ("Lea & Perrins worcestershire sauce").
 
 Rough shape (Claude's suggestion, not decided):
 

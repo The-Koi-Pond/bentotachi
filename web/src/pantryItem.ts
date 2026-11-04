@@ -21,7 +21,8 @@ export function placeOf(item: Placed): { location: string; subcategory: string }
   return { location: item.location, subcategory: item.subcategory };
 }
 
-// "Coles, White Mill" -> ["Coles", "White Mill"].
+// "Coles, White Mill" -> ["Coles", "White Mill"]: the brand field of items
+// from before favourite brands, which listed every brand bought.
 export function brandsOf(text: string | undefined): string[] {
   return (text ?? "")
     .split(",")
@@ -114,12 +115,4 @@ export function wantsOnlinePhoto(
   const sources = photoSources(item);
   const tried = item.photo_link_tried ?? "";
   return !!sources && !item.photo && tried !== PHOTO_REMOVED && tried !== sources;
-}
-
-// The brands with one more (no repeats, ignoring capitals), as text again.
-export function withBrand(text: string | undefined, brand: string): string {
-  const brands = brandsOf(text);
-  const extra = brand.trim();
-  if (extra && !brands.some((b) => b.toLowerCase() === extra.toLowerCase())) brands.push(extra);
-  return brands.join(", ");
 }

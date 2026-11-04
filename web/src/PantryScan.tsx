@@ -1,8 +1,9 @@
 // What a scanned barcode turned out to be, on the pantry page. (In a
 // browser, barcodes are typed into the page's find-or-add box, or a USB
 // scanner types them there.)
-import { useState } from "react";
-import type { PantryItem, PantryStatus } from "./pb";
+import { useEffect, useState } from "react";
+import type { PantryItem, PantryPacket, PantryStatus } from "./pb";
+import type { PacketDetails } from "./pantryPackets";
 import { itemWithBarcode } from "./barcodes";
 import { canScan } from "./scanner";
 import { guessPantryItem } from "./pantryLinks";
@@ -10,9 +11,10 @@ import PantryRow from "./PantryRow";
 import { AddPantryItem, EditPantryItem, type Scanned } from "./PantryForms";
 
 // What a scanned barcode is: the pantry item it's on (to mark low or out, or
-// edit), or else a new item filled in from Open Food Facts, or the barcode
-// put on an item already in the pantry (like another brand of it). A number
-// nothing has is checked first, in case the scanner misread it.
+// edit, or to add this packet to its packets in stock), or else a new item
+// filled in from Open Food Facts, or the barcode put on an item already in
+// the pantry (like another brand of it). A number nothing has is checked
+// first, in case the scanner misread it.
 export function ScanResult({
   scanned,
   items,
@@ -28,6 +30,10 @@ export function ScanResult({
   onSaved,
   onDelete,
   onAddBarcodeTo,
+  packetsFor,
+  onAddScannedPacket,
+  onAddTypedPacket,
+  onFinishPacket,
   onClose,
 }: {
   scanned: Scanned;
@@ -45,9 +51,20 @@ export function ScanResult({
   onDelete: (item: PantryItem) => void;
   // The brand: the scanned product's unless given.
   onAddBarcodeTo: (item: PantryItem, brand?: string) => void;
+  // An item's packets in stock; null when the server has none (one from
+  // before packets), so they aren't offered.
+  packetsFor: ((item: PantryItem) => PantryPacket[]) | null;
+  // Adds the scanned packet to the item; whether it did.
+  onAddScannedPacket: (item: PantryItem) => Promise<boolean>;
+  onAddTypedPacket: (item: PantryItem, details: PacketDetails) => Promise<boolean>;
+  onFinishPacket: (item: PantryItem, packet: PantryPacket) => void;
   onClose: () => void;
 }) {
   const [otherId, setOtherId] = useState("");
+  // The scanned packet, once added (one scan, one packet).
+  const [addedPacket, setAddedPacket] = useState<"" | "adding" | "added">("");
+  // Each scan (the same barcode again too) can add its packet.
+  useEffect(() => setAddedPacket(""), [scanned]);
   const found = itemWithBarcode(items, scanned.code);
 
   if (found)
@@ -63,21 +80,50 @@ export function ScanResult({
           <EditPantryItem
             item={found}
             existing={items}
+            packets={packetsFor?.(found) ?? null}
+            onAddPacket={(details) => onAddTypedPacket(found, details)}
+            onFinishPacket={(packet) => onFinishPacket(found, packet)}
             onSaved={onSaved}
             onCancel={() => onEdit(false)}
             onDelete={() => onDelete(found)}
           />
         ) : (
-          <PantryRow
-            item={found}
-            // Everything about it, whichever layout the page is in.
-            layout="detailed"
-            onList={isOnList(found)}
-            onEdit={() => onEdit(true)}
-            onStatus={(status) => onStatus(found, status)}
-            onOpened={(opened) => onOpened(found, opened)}
-            onAddToList={() => onAddToList(found)}
-          />
+          <>
+            <PantryRow
+              item={found}
+              // Everything about it, whichever layout the page is in.
+              layout="detailed"
+              onList={isOnList(found)}
+              packets={packetsFor?.(found) ?? []}
+              onFinishPacket={(packet) => onFinishPacket(found, packet)}
+              onEdit={() => onEdit(true)}
+              onStatus={(status) => onStatus(found, status)}
+              onOpened={(opened) => onOpened(found, opened)}
+              onAddToList={() => onAddToList(found)}
+            />
+            {/* Offered, never done by itself: counting packets is up to
+                each household (docs/VISION.md). */}
+            {packetsFor && (
+              <div className="actions">
+                {addedPacket === "added" ? (
+                  <span className="muted small-note" role="status">
+                    Added this packet.
+                  </span>
+                ) : (
+                  <button
+                    className="button small"
+                    disabled={addedPacket === "adding"}
+                    onClick={() => {
+                      setAddedPacket("adding");
+                      void onAddScannedPacket(found).then((added) => setAddedPacket(added ? "added" : ""));
+                    }}
+                  >
+                    {addedPacket === "adding" ? "Adding…" : "+ Add this packet"}
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </section>
     );

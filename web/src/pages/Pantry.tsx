@@ -7,12 +7,17 @@ import { useSearchParams } from "react-router";
 import {
   errorMessage,
   pantryItems,
+  pantryPackets,
   pb,
   shoppingItems,
   type PantryItem,
+  type PantryPacket,
   type PantryStatus,
   type ShoppingItem,
 } from "../pb";
+import { useUndo } from "../undo";
+import { UNDO_SECONDS } from "../pendingDelete";
+import { detailsFor, knowsBarcode, packetLabel, packetsOf, tidySize, withDetails, type PacketDetails } from "../pantryPackets";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
 import { forEveryone, useSingleUser } from "../household";
@@ -20,7 +25,7 @@ import { useLiveRecords } from "../useLiveRecords";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
-import { placeOf, withBrand } from "../pantryItem";
+import { placeOf } from "../pantryItem";
 import { groupItems, matchesSearch, needsChecking, needsUsingSoon, norm } from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
@@ -50,6 +55,12 @@ export default function Pantry() {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
   const singleUser = useSingleUser();
   const shopping = useLiveRecords<ShoppingItem>("shopping_items");
+  // Not waited for: a server from before packets (a friend's older copy)
+  // hasn't any, and the pantry works without them (packets.items stays null,
+  // and nothing offers to add one).
+  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  // A finished packet waits a few seconds for Undo before it's deleted.
+  const undo = useUndo();
   const [layout, setLayout] = useState<PantryLayout>(savedLayout);
   const [filter, setFilter] = useState<Filter>("all");
   // What's typed in the find-or-add box: filters the pantry, and names the
@@ -62,9 +73,16 @@ export default function Pantry() {
   const [error, setError] = useState("");
   // Says where an item went when it moved drawers ("Opened", or running out).
   const [notice, setNotice] = useState("");
-  // Something that just ran out: "Put it on the shopping list?" (setStatus).
-  // Stays until answered, or until something else runs out.
-  const [runOut, setRunOut] = useState<{ item: PantryItem; message: string } | null>(null);
+  // Something that just ran out (setStatus): "Put it on the shopping list?"
+  // when it isn't on it (`ask`), and Undo when its packets were cleared
+  // (`restore`). Stays until answered, or until something else runs out;
+  // with only Undo to offer, it goes after a few seconds.
+  const [runOut, setRunOut] = useState<{
+    item: PantryItem;
+    message: string;
+    ask: boolean;
+    restore?: () => Promise<void>;
+  } | null>(null);
   // Drawers start closed each visit; this holds the ones opened since.
   const [openDrawers, setOpenDrawers] = useState<Set<string>>(new Set());
   // A store product page to add as a new item, shared to Bento from another
@@ -112,6 +130,13 @@ export default function Pantry() {
     const timer = window.setTimeout(() => setNotice(""), 5000);
     return () => window.clearTimeout(timer);
   }, [notice]);
+  // Run out with only Undo to offer (it's on the list already): that goes
+  // by itself too, like other Undos.
+  useEffect(() => {
+    if (!runOut || runOut.ask) return;
+    const timer = window.setTimeout(() => setRunOut((current) => (current === runOut ? null : current)), UNDO_SECONDS * 1000);
+    return () => window.clearTimeout(timer);
+  }, [runOut]);
 
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
   const items = pantry.items;
@@ -147,21 +172,116 @@ export default function Pantry() {
   // server would add it for apps from before this; ask_about_list tells it
   // this one asks (pantry.pb.js). An opened one that runs out goes back to
   // its own place, for the next unopened one.
-  function setStatus(item: PantryItem, status: PantryStatus) {
+  // Out also clears its packets in stock (the server does that, pb_hooks/
+  // pantry.pb.js), with Undo to put them back. `lastPacket`: it's out
+  // because its last packet was just finished.
+  function setStatus(item: PantryItem, status: PantryStatus, lastPacket = false) {
     if (item.status === status) return;
     const runsOut = status === "out";
     const putBack = runsOut && item.opened;
     const place = item.location.trim();
+    // A packet finished a moment ago stays finished (its Undo goes), so
+    // this Undo only brings back what Out cleared.
+    if (runsOut) void undo.settle();
+    const cleared = runsOut ? packetsOf(packets.items ?? [], item.id, undo.hidden) : [];
+    const outWords = lastPacket
+      ? `That was the last one: ${item.name} is out.`
+      : cleared.length
+        ? `${item.name} is out, so its ${cleared.length === 1 ? "packet is" : `${cleared.length} packets are`} cleared.`
+        : `${item.name} is out.`;
     const moved =
       putBack && norm(placeOf(item).location) !== norm(place)
-        ? `${item.name} is out, so it's back in ${place ? `the ${place}` : "Other"}, ready for the next one.`
+        ? `${outWords} It's back in ${place ? `the ${place}` : "Other"}, ready for the next one.`
         : "";
     const ask = runsOut && !isOnList(item);
-    if (ask) setRunOut({ item, message: `${moved || `${item.name} is out.`} Put it on the shopping list?` });
-    void save(item, putBack ? { status, opened: false } : { status }, ask ? "" : moved, runsOut ? { ask_about_list: true } : {}).then(
-      // Didn't save: its question goes (not another item's asked since).
-      (saved) => !saved && setRunOut((current) => (current?.item.id === item.id ? null : current)),
+    const restore = cleared.length
+      ? async () => {
+          setRunOut(null);
+          if (!(await save(item, { status: item.status, opened: !!item.opened }, ""))) return;
+          try {
+            for (const packet of cleared) packets.upsert(await pantryPackets().create(packetFields(packet)));
+          } catch (err) {
+            setError(errorMessage(err));
+          }
+        }
+      : undefined;
+    if (ask || restore) setRunOut({ item, ask, restore, message: moved || outWords });
+    // The server clears them; off the screen straight away.
+    for (const packet of cleared) packets.removeLocally(packet.id);
+    void save(item, putBack ? { status, opened: false } : { status }, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {}).then(
+      (saved) => {
+        if (saved) return;
+        // Didn't save: its question goes (not another item's asked since),
+        // and its packets are still there.
+        setRunOut((current) => (current?.item.id === item.id ? null : current));
+        for (const packet of cleared) packets.upsert(packet);
+      },
     );
+  }
+
+  // A packet as it's saved (for adding one, or putting one back).
+  const packetFields = (packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode">) => ({
+    item: packet.item,
+    brand: packet.brand,
+    size: packet.size,
+    barcode: packet.barcode,
+  });
+
+  // A packet bought or found: on the item, which is then in stock if it was
+  // out. Its barcode's brand and size are remembered for next time. Whether
+  // the packet was added.
+  async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<boolean> {
+    setError("");
+    try {
+      packets.upsert(
+        await pantryPackets().create(packetFields({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
+      );
+    } catch (err) {
+      setError(errorMessage(err));
+      return false;
+    }
+    const remember = !!barcode && !knowsBarcode(item, barcode) && !!(details.brand.trim() || details.size.trim());
+    if (item.status === "out" || remember) {
+      await save(item, {
+        ...(item.status === "out" && { status: "have" as const }),
+        ...(remember && { barcode_details: withDetails(item, barcode, details) }),
+      }, "");
+    }
+    return true;
+  }
+
+  // A scanned packet of something already in the pantry: its brand and size
+  // are what the item remembers for the barcode, or else what Open Food
+  // Facts says (asked once).
+  async function addScannedPacket(item: PantryItem, code: string): Promise<boolean> {
+    let looked: BarcodeProduct | null = null;
+    if (!knowsBarcode(item, code)) {
+      try {
+        looked = scanned?.code === code && scanned.product ? scanned.product : await lookUpBarcode(code);
+      } catch {
+        // Not known, or no connection: a packet without a brand or size.
+      }
+    }
+    return addPacket(item, detailsFor(item, code, looked), code);
+  }
+
+  // Finished: tapping a packet. The last one makes the item Out (and asks
+  // about the shopping list); others wait a few seconds for Undo.
+  function finishPacket(item: PantryItem, packet: PantryPacket) {
+    const left = packetsOf(packets.items ?? [], item.id, undo.hidden);
+    if (left.length <= 1) {
+      setStatus(item, "out", true);
+      return;
+    }
+    undo.offer([packet.id], `Finished: ${packetLabel(packet)} of ${item.name}.`, async () => {
+      try {
+        await pantryPackets().delete(packet.id);
+        packets.removeLocally(packet.id);
+      } catch (err) {
+        // Already gone (the item ran out meanwhile, clearing it) is fine.
+        if ((err as { status?: number }).status !== 404) setError(errorMessage(err));
+      }
+    });
   }
 
   function setOpened(item: PantryItem, opened: boolean) {
@@ -222,13 +342,17 @@ export default function Pantry() {
   }
 
   // A scanned packet of something already in the pantry (maybe another
-  // brand of it): the barcode goes on that item, and the brand joins its
-  // brands.
+  // brand of it): the barcode goes on that item, remembering its brand and
+  // size. The favourite brand stays as it is: only people pick that. Then
+  // the scan shows that item, offering "Add this packet".
   async function addBarcodeTo(item: PantryItem, code: string, brand: string) {
     setError("");
     try {
       pantry.upsert(
-        await pantryItems().update(item.id, { barcodes: withBarcode(item, code), brand: withBrand(item.brand, brand) })
+        await pantryItems().update(item.id, {
+          barcodes: withBarcode(item, code),
+          barcode_details: withDetails(item, code, { brand, size: tidySize(scanned?.product?.quantity ?? "") }),
+        })
       );
     } catch (err) {
       setError(errorMessage(err));
@@ -271,7 +395,9 @@ export default function Pantry() {
   }
 
   const ranOut = runOut && items.find((i) => i.id === runOut.item.id);
-  const stillAsking = !!runOut && ranOut?.status === "out" && !isOnList(ranOut);
+  // The question goes once someone puts it on the list; Undo stays.
+  const asking = !!runOut?.ask && !!ranOut && !isOnList(ranOut);
+  const stillAsking = !!runOut && ranOut?.status === "out" && (asking || !!runOut.restore);
 
   const lowCount = items.filter((i) => i.status === "low").length;
   const outCount = items.filter((i) => i.status === "out").length;
@@ -356,6 +482,10 @@ export default function Pantry() {
           }}
           onDelete={(item) => void remove(item).then((removed) => removed && setScanned(null))}
           onAddBarcodeTo={(item, brand) => void addBarcodeTo(item, scanned.code, brand ?? scanned.product?.brand ?? "")}
+          packetsFor={packets.items && ((item) => packetsOf(packets.items ?? [], item.id, undo.hidden))}
+          onAddScannedPacket={(item) => addScannedPacket(item, scanned.code)}
+          onFinishPacket={finishPacket}
+          onAddTypedPacket={addPacket}
           onClose={() => setScanned(null)}
         />
       )}
@@ -427,20 +557,32 @@ export default function Pantry() {
           list meanwhile. */}
       {stillAsking ? (
         <p className="toast undo-toast" role="status">
-          <span>{runOut.message}</span>
+          <span>
+            {runOut.message}
+            {asking && " Put it on the shopping list?"}
+          </span>
           <span className="toast-actions">
-            <button
-              className="link-button"
-              onClick={() => {
-                void addToList(runOut.item);
-                setRunOut(null);
-              }}
-            >
-              Add it
-            </button>
-            <button className="link-button" onClick={() => setRunOut(null)}>
-              Not now
-            </button>
+            {asking && (
+              <>
+                <button
+                  className="link-button"
+                  onClick={() => {
+                    void addToList(runOut.item);
+                    setRunOut(null);
+                  }}
+                >
+                  Add it
+                </button>
+                <button className="link-button" onClick={() => setRunOut(null)}>
+                  Not now
+                </button>
+              </>
+            )}
+            {runOut.restore && (
+              <button className="link-button" onClick={() => void runOut.restore?.()}>
+                Undo
+              </button>
+            )}
           </span>
         </p>
       ) : (
@@ -450,6 +592,7 @@ export default function Pantry() {
           </p>
         )
       )}
+      {undo.toast}
       {items.length > 0 && shown.length === 0 && (
         <p className="muted">
           {query.trim()
@@ -487,6 +630,9 @@ export default function Pantry() {
                         <EditPantryItem
                           item={item}
                           existing={items}
+                          packets={packets.items && packetsOf(packets.items, item.id, undo.hidden)}
+                          onAddPacket={(details) => addPacket(item, details)}
+                          onFinishPacket={(packet) => finishPacket(item, packet)}
                           onSaved={(saved) => {
                             pantry.upsert(saved);
                             setEditingId(null);
@@ -499,6 +645,8 @@ export default function Pantry() {
                           item={item}
                           layout={layout}
                           onList={isOnList(item)}
+                          packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
+                          onFinishPacket={(packet) => finishPacket(item, packet)}
                           onEdit={() => setEditingId(item.id)}
                           onStatus={(status) => setStatus(item, status)}
                           onOpened={(opened) => setOpened(item, opened)}

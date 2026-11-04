@@ -1,8 +1,9 @@
 // A pantry item's Add and Edit forms, and their fields (name, places, expiry,
-// store links, brand, note, photo, barcodes). The fields' rules are in
-// pantryFields.ts.
-import { useId, useRef, useState, type FormEvent, type Ref } from "react";
-import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem } from "./pb";
+// store links, favourite brand, note, photo, barcodes, and the packets in
+// stock). The fields' rules are in pantryFields.ts, the packets' in
+// pantryPackets.ts.
+import { useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from "react";
+import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
 import { useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
 import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
@@ -14,6 +15,7 @@ import { brandsOf, cleanStoreLinks, MOST_STORE_LINKS, PHOTO_REMOVED, photoSource
 import { norm, placeOptions, subcategoryOptions } from "./pantryGroups";
 import { fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
+import { brandsToPickFrom, packetLabel, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
 // looked up (null if it doesn't know), for ones not in the pantry yet.
@@ -146,15 +148,27 @@ function ItemFields({
       </label>
       <label>
         <span className="label-text">
-          Brands we buy <span className="optional">(optional)</span>
+          Favourite brand <span className="optional">(optional)</span>
         </span>
         <input
           value={fields.brand}
           onChange={(e) => onChange({ brand: e.target.value })}
           maxLength={120}
-          placeholder="e.g. Coles, White Mill"
+          placeholder="e.g. White Mill"
         />
       </label>
+      {/* Older items listed every brand bought ("Coles, White Mill"): pick
+          the one to look for. Only a person picks it. */}
+      {brandsToPickFrom(fields.brand).length > 0 && (
+        <div className="brand-pick">
+          <span className="hint">The one to look for when shopping. Which is it?</span>
+          {brandsToPickFrom(fields.brand).map((brand) => (
+            <button key={brand} type="button" className="button small" onClick={() => onChange({ brand })}>
+              {brand}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="row">
         <CategorySelect
           label="Where it lives"
@@ -421,6 +435,11 @@ export function AddPantryItem({
           ...record,
           status: "have",
           barcodes,
+          // What the scanned packet is, for the next one scanned.
+          ...(barcode &&
+            product && {
+              barcode_details: withDetails({}, barcode, { brand: product.brand, size: tidySize(product.quantity) }),
+            }),
           // Without one, its photo is looked up online afterwards
           // (useOnlinePhotos).
           ...(photo && { photo, photo_link_tried: photoSources({ ...record, barcodes }) }),
@@ -512,15 +531,126 @@ export function AddPantryItem({
   );
 }
 
+// Packets in stock, in an item's edit form. They change straight away (each
+// is its own record), not on Save: Add puts one in, ✕ finishes one.
+function PacketsField({
+  packets,
+  favourite,
+  onAdd,
+  onFinish,
+}: {
+  packets: PantryPacket[];
+  favourite: string;
+  // Whether it was added.
+  onAdd: (details: PacketDetails) => Promise<boolean>;
+  onFinish: (packet: PantryPacket) => void;
+}) {
+  const labelId = useId();
+  const [adding, setAdding] = useState(false);
+  const [details, setDetails] = useState<PacketDetails>({ brand: "", size: "" });
+  const [busy, setBusy] = useState(false);
+
+  async function add() {
+    setBusy(true);
+    // Not added (the page says why): its boxes stay, to try again.
+    if (await onAdd(details)) setAdding(false);
+    setBusy(false);
+  }
+
+  // Enter in its boxes adds the packet, rather than saving the whole form.
+  const enterAdds = (event: KeyboardEvent) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    void add();
+  };
+
+  return (
+    <div className="packets-field" role="group" aria-labelledby={labelId}>
+      <span className="label-text" id={labelId}>
+        Packets in stock <span className="optional">(optional)</span>
+      </span>
+      {packets.length > 0 && (
+        <span className="pantry-packets">
+          {packets.map((packet) => (
+            <button
+              key={packet.id}
+              type="button"
+              className="packet-chip"
+              onClick={() => onFinish(packet)}
+              aria-label={`${packetLabel(packet)}: tap when it's finished`}
+            >
+              {packetLabel(packet)}
+              <span className="packet-chip-x" aria-hidden="true">
+                ✕
+              </span>
+            </button>
+          ))}
+        </span>
+      )}
+      {adding ? (
+        <span className="packet-add">
+          <input
+            autoFocus
+            value={details.brand}
+            onChange={(e) => setDetails({ ...details, brand: e.target.value })}
+            onKeyDown={enterAdds}
+            maxLength={120}
+            placeholder={favourite || "Brand"}
+            aria-label="The packet's brand"
+          />
+          <input
+            value={details.size}
+            onChange={(e) => setDetails({ ...details, size: e.target.value })}
+            onKeyDown={enterAdds}
+            maxLength={60}
+            placeholder="Size, e.g. 1 kg"
+            aria-label="The packet's size"
+          />
+          <button type="button" className="button small" disabled={busy} onClick={() => void add()}>
+            Add
+          </button>
+          <button type="button" className="button ghost small" onClick={() => setAdding(false)}>
+            Cancel
+          </button>
+        </span>
+      ) : (
+        <span>
+          <button
+            type="button"
+            className="button ghost small"
+            onClick={() => {
+              setDetails({ brand: favourite, size: "" });
+              setAdding(true);
+            }}
+          >
+            + Add a packet
+          </button>
+        </span>
+      )}
+      <span className="hint">
+        {packets.length ? "Tap one when it's finished. These change straight away." : "Only if you'd like to count them."}
+      </span>
+    </div>
+  );
+}
+
 export function EditPantryItem({
   item,
   existing,
+  packets,
+  onAddPacket,
+  onFinishPacket,
   onSaved,
   onCancel,
   onDelete,
 }: {
   item: PantryItem;
   existing: PantryItem[];
+  // Its packets in stock; null when the server has none (one from before
+  // packets), so they aren't offered.
+  packets?: PantryPacket[] | null;
+  onAddPacket?: (details: PacketDetails) => Promise<boolean>;
+  onFinishPacket?: (packet: PantryPacket) => void;
   onSaved: (item: PantryItem) => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -617,6 +747,14 @@ export function EditPantryItem({
             </button>
           )}
         </div>
+      )}
+      {packets && onAddPacket && onFinishPacket && (
+        <PacketsField
+          packets={packets}
+          favourite={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
+          onAdd={onAddPacket}
+          onFinish={onFinishPacket}
+        />
       )}
       {error && <p className="error">{error}</p>}
       <div className="actions">

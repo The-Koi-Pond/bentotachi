@@ -15,7 +15,8 @@ export interface Fields {
   // Its product pages in stores, as typed or picked, one per box (at least
   // one box, maybe empty).
   storeUrls: string[];
-  // The brands we buy ("Coles, White Mill"), or "".
+  // The favourite brand ("White Mill"), or "". Older items may list several
+  // ("Coles, White Mill"; see brandsToPickFrom in pantryPackets.ts).
   brand: string;
   // "3 cans", or "".
   note: string;

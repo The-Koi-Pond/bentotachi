@@ -42,6 +42,11 @@ onRecordUpdateRequest((e) => {
       match.set("pantry_item", e.record.id);
       e.app.save(match);
     }
+
+    // Out means none left, so its packets in stock go too (from any app,
+    // older ones included; the new ones offer Undo, which adds them back).
+    const packets = e.app.findRecordsByFilter("pantry_packets", "item = {:item}", "", 0, 0, { item: e.record.id });
+    for (let i = 0; i < packets.length; i++) e.app.delete(packets[i]);
   }
 }, "pantry_items");
 

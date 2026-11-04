@@ -4,10 +4,13 @@
 //   and how much we have.
 // - Detailed: the photo (or a tile with its first letter), the name, its
 //   brand and note on one muted line, then Opened and the store links.
+//   With packets in stock, a line of them ("In stock: White Mill 1 kg ✕");
+//   tapping one finishes it (Xel's pick, 2026-11-02).
 // Both show the shopping list as an icon beside the level: a cart when it's
 // on the list, a dashed "+ cart" button when it's low or out and isn't.
 import { useState } from "react";
-import { pantryPhotoUrl, type PantryItem, type PantryStatus } from "./pb";
+import { pantryPhotoUrl, type PantryItem, type PantryPacket, type PantryStatus } from "./pb";
+import { packetLabel } from "./pantryPackets";
 import { CartIcon } from "./icons";
 import { describeExpiry, shortExpiry } from "./expiry";
 import { itemExpiry, norm } from "./pantryGroups";
@@ -22,6 +25,8 @@ export default function PantryRow({
   item,
   layout,
   onList,
+  packets = [],
+  onFinishPacket,
   onEdit,
   onStatus,
   onOpened,
@@ -30,6 +35,9 @@ export default function PantryRow({
   item: PantryItem;
   layout: PantryLayout;
   onList: boolean;
+  // Its packets in stock, oldest first (pantryPackets.ts).
+  packets?: PantryPacket[];
+  onFinishPacket?: (packet: PantryPacket) => void;
   onEdit: () => void;
   onStatus: (status: PantryStatus) => void;
   onOpened: (opened: boolean) => void;
@@ -118,6 +126,27 @@ export default function PantryRow({
           {name}
           {end}
         </div>
+        {packets.length > 0 && (
+          <span className="pantry-packets" role="group" aria-label={`${item.name} in stock`}>
+            <span className="pantry-packets-label" aria-hidden="true">
+              In stock:
+            </span>
+            {packets.map((packet) => (
+              <button
+                key={packet.id}
+                className="packet-chip"
+                onClick={() => onFinishPacket?.(packet)}
+                aria-label={`${packetLabel(packet)}: tap when it's finished`}
+                title="Tap when it's finished"
+              >
+                {packetLabel(packet)}
+                <span className="packet-chip-x" aria-hidden="true">
+                  ✕
+                </span>
+              </button>
+            ))}
+          </span>
+        )}
         {(canOpen || storeLinks.length > 0) && (
           <span className="pantry-extra">
             {canOpen && (

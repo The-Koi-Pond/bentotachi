@@ -65,6 +65,9 @@ test("linked things go where the pantry keeps them", () => {
   assert.equal(aisleOf("Peas", { name: "Peas", location: "Freezer", subcategory: "Vegetables" }), "Frozen");
   assert.equal(aisleOf("Feta", { name: "Feta", location: "Fridge", subcategory: "Dairy" }), "Dairy & eggs");
   assert.equal(aisleOf("Stuff", { name: "Stuff", location: "Cupboard", subcategory: "Tins & jars" }), "Tins & jars");
+  // Shelves households make themselves.
+  assert.equal(aisleOf("Buldak", { name: "Buldak", location: "Cupboard", subcategory: "Noodles" }), "Pasta, rice & grains");
+  assert.equal(aisleOf("Kecap manis", { name: "Kecap manis", location: "Cupboard", subcategory: "Sauce" }), "Sauces & oils");
   // A subcategory the pantry made up: guessed from the pantry item's name.
   assert.equal(aisleOf("Za'atar", { name: "Za'atar spice mix", location: "Cupboard", subcategory: "Middle shelf" }), "Baking & spices");
 });
