@@ -185,6 +185,12 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- (nothing yet)
+
+Released in 1.14.0 (2026-11-04, deployed the same day):
+
+- New colours: umeboshi plum and tea-rice instead of orange and cream,
+  with wooden chopsticks (docs/VISION.md).
 - Closing the barcode scanner with Back no longer says "The scanner isn't
   ready yet" (BentoScannerPlugin.java: Android app only).
 - Phone-only mode: no username or password on Profile; Backups keeps the
