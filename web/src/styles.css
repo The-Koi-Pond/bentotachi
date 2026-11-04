@@ -348,6 +348,98 @@ main {
   width: auto;
 }
 
+/* The note beside the title: says the title opens the fridge door, with a
+   count of new notes on its corner. */
+.brand {
+  gap: 6px;
+}
+
+.brand-note {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.brand:hover .brand-note {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.brand-note-count {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 9px;
+}
+
+/* The fridge door (pages/Fridge.tsx). */
+.fridge-heading h1 {
+  margin-bottom: 4px;
+}
+
+.fridge-splash {
+  margin: 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.fridge-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fridge-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--jade-strong);
+  border-radius: 10px;
+}
+
+.fridge-note-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fridge-note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+.fridge-lately {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
 .stack {
   display: flex;
   flex-direction: column;
@@ -1889,15 +1981,13 @@ legend {
   width: auto;
 }
 
-/* "RECIPES · PLAN · PANTRY · TOGETHER" under the title. Written in normal
-   case so screen readers say the words, not the letters. */
+/* The tagline under the title: a plain sentence, never an uppercase,
+   letter-spaced list of words (an AI-made look; docs/VISION.md). */
 .login-tagline {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-size: 0.95rem;
+  font-style: italic;
   text-align: center;
   text-wrap: balance;
 }

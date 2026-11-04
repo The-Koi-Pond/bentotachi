@@ -149,6 +149,16 @@ export function FridgeIcon() {
   );
 }
 
+// A sticky note: the fridge door's notes, beside the title.
+export function NoteIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+      <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+    </Icon>
+  );
+}
+
 export function CloseIcon() {
   return (
     <Icon size={18}>

@@ -60,7 +60,7 @@ export default function Login() {
       <h1>
         <BentoTitle className="login-title" />
       </h1>
-      <p className="login-tagline">Recipes · Plan · Pantry · Together</p>
+      <p className="login-tagline">Because dinner insists on happening every day.</p>
     </div>
   );
 

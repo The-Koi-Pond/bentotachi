@@ -155,6 +155,7 @@ export interface CookedEntry extends RecordModel {
   date: string;
   recipe: string;
   cooked_by: string;
+  created: string;
 }
 
 export const cookedLog = () => pb.collection<CookedEntry>("cooked");
@@ -184,6 +185,16 @@ export interface SavedSite extends RecordModel {
 }
 
 export const savedSites = () => pb.collection<SavedSite>("saved_sites");
+
+// A note on the fridge door (pages/Fridge.tsx), for everyone in the household.
+export interface Note extends RecordModel {
+  text: string;
+  added_by: string;
+  created: string;
+  expand?: { added_by?: User };
+}
+
+export const notes = () => pb.collection<Note>("notes");
 
 // A shelf on the Recipes page: recipes with any of these (lowercase) tags.
 export interface RecipeCategory extends RecordModel {

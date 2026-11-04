@@ -15,11 +15,12 @@ import Household from "./pages/Household";
 import Categories from "./pages/Categories";
 import Backups from "./pages/Backups";
 import Export from "./pages/Export";
+import Fridge from "./pages/Fridge";
+import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
 import { PlusIcon } from "./icons";
 import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
-import { BentoTitle } from "./Brand";
 import { ShareReceiver } from "./shareReceiver";
 import { RestoredSaveReceiver } from "./bentoBrowser";
 import UpdateBanner from "./UpdateBanner";
@@ -72,9 +73,7 @@ function Screens() {
       <RestoredSaveReceiver />
       <UnsavedChangesGuard />
       <header className="topbar">
-        <Link to="/" className="brand" aria-label="Bentotachi: back to the recipes">
-          <BentoTitle className="brand-title" />
-        </Link>
+        <FridgeLink />
         <nav>
           {/* Manage only applies to the recipe list. */}
           <Routes>
@@ -108,6 +107,7 @@ function Screens() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/backups" element={<Backups />} />
           <Route path="/export" element={<Export />} />
+          <Route path="/fridge" element={<Fridge />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

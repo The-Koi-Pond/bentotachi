@@ -17,7 +17,8 @@ onRecordCreateRequest(
   "shopping_items",
   "meal_plan",
   "saved_sites",
-  "cooked"
+  "cooked",
+  "notes"
 );
 
 onRecordUpdateRequest(
@@ -32,5 +33,6 @@ onRecordUpdateRequest(
   "shopping_items",
   "meal_plan",
   "saved_sites",
-  "cooked"
+  "cooked",
+  "notes"
 );

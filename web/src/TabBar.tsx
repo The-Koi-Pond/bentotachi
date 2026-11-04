@@ -11,10 +11,13 @@ const TABS: { to: string; label: string; icon: ReactNode }[] = [
 ];
 
 // Bottom bar for switching between the app's main sections. Anything that
-// isn't another tab's page (a recipe, the add page...) counts as Recipes.
+// isn't another tab's page (a recipe, the add page...) counts as Recipes,
+// except the fridge door (the title opens it), which belongs to no tab.
 export default function TabBar() {
   const { pathname } = useLocation();
-  const current = TABS.find((tab) => tab.to !== "/" && pathname.startsWith(tab.to))?.to ?? "/";
+  const current = pathname.startsWith("/fridge")
+    ? ""
+    : (TABS.find((tab) => tab.to !== "/" && pathname.startsWith(tab.to))?.to ?? "/");
 
   return (
     <nav className="tabbar" aria-label="Sections">

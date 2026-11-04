@@ -78,6 +78,16 @@ Cheeky and silly wherever it can afford to be, while staying clear.
 - **No digs at named competitors.** "No subscriptions" says it; naming and
   shaming another app invites trouble, and Play's listing rules forbid it.
 - Plain English underneath: short sentences, no jargon, spell things out.
+- **The tagline** (decided 2026-11-04): "Because dinner insists on
+  happening every day.", under the title in the app's first screen and on
+  the website. A real sentence in normal case. **No eyebrow taglines:** an
+  uppercase, letter-spaced list of words with dots between them ("RECIPES •
+  PLAN • PANTRY • TOGETHER", which it replaced) is a well-known AI-made
+  look (`C:\Projects\TheKoiPond\AI-DESIGN-TELLS.md`).
+- **Splash lines** (2026-11-04): the fridge door (the page the title opens)
+  shows a random one-liner each visit, from `SPLASH_LINES` in
+  `web/src/fridgeDoor.ts`. Pure garnish, so they can be sillier than
+  anywhere else; add more freely, one line each.
 
 ## Look
 

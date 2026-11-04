@@ -185,7 +185,18 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-- (nothing yet)
+- The fridge door (decided and built 2026-11-04): the title in the top bar
+  opens it, with a note icon beside it counting notes someone else left
+  since this phone last looked (fridgeSeen.ts; no buzzing phones, which
+  would need a company notification service). A random splash line at the
+  top; notes anyone in the household leaves for everyone (new `notes`
+  collection, migration 1764288000; "Done" takes one down, with Undo); and
+  "Lately": how much of the next 7 days is planned, what's run out, and
+  recipes added or cooked this week, with who. On your own (phone-only, or
+  the only account) it's notes to yourself, without "Lately". Rules in
+  fridgeDoor.ts (tested), checked end to end by notes.check.mjs.
+- The tagline "Because dinner insists on happening every day." replaces
+  "Recipes · Plan · Pantry · Together" on the first screen (docs/VISION.md).
 
 Released in 1.14.0 (2026-11-04, deployed the same day):
 
