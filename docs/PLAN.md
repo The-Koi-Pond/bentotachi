@@ -134,16 +134,20 @@ keep recipes readable without internet, and avoid subscriptions.
          showing "The scanner isn't ready yet"; Open Food Facts' "400 g e".
    - [ ] Still needs Xel's hands: scanning a real product with the camera,
          and taking a photo of an item with the camera.
-   - [ ] Google's account-deletion rule also asks for a web page or link
-         where people can ask for deletion without the app: check Play
-         Console's wording; a paragraph in the privacy policy may do.
+   - [x] Google's account-deletion rule also asks for a web page or link
+         where people can ask for deletion without the app (2026-11-05):
+         thekoipond.dev/bentotachi/delete-account.html, linked from the
+         privacy policy and the Bentotachi page's footer. It's the link for
+         the Data safety form.
    - [x] Phone-only mode hides account details (decided and built
          2026-11-03, tried on the Pixel; "To design: simpler accounts"):
          Profile shows no username or password, and Backups keeps the
          login behind "Here's your login" for moving to a server.
-   - [ ] Privacy policy: add pantry item photos (looked up at Open Food
-         Facts by barcode, or from a store page you linked). Then the data
-         safety form to match.
+   - [x] Privacy policy: add pantry item photos (looked up at Open Food
+         Facts by barcode, or from a store page you linked), done
+         2026-11-05 with fridge-door notes, packets and "Take a photo" (the
+         phone's camera app; no camera permission). Then the data safety
+         form to match (Xel, in Play Console).
    - [x] Fix the known bugs a lone phone user would meet (2026-11-03):
          swapping two meals is one request that saves both or neither
          (pb_hooks/meal_plan.pb.js); a recipe saved in Bentotachi's browser
