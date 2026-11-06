@@ -124,7 +124,7 @@ export default function Backups() {
             </div>
           </dl>
         )}
-        <button className="button ghost push-left" onClick={switchToServer} disabled={busy}>
+        <button className="button ghost end-button" onClick={switchToServer} disabled={busy}>
           Join a household
         </button>
       </section>

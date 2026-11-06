@@ -149,16 +149,6 @@ export function FridgeIcon() {
   );
 }
 
-// A sticky note: the fridge door's notes, beside the title.
-export function NoteIcon({ size = 20 }: { size?: number }) {
-  return (
-    <Icon size={size}>
-      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
-      <path d="M15 3v4a2 2 0 0 0 2 2h4" />
-    </Icon>
-  );
-}
-
 export function CloseIcon() {
   return (
     <Icon size={18}>
@@ -280,6 +270,32 @@ export function ChevronIcon() {
   return (
     <Icon size={18}>
       <path d="m9 18 6-6-6-6" />
+    </Icon>
+  );
+}
+
+// The recipe timer's Stop, Pause and Resume: filled, like a player's.
+export function StopIcon({ size = 14 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <rect width="18" height="18" x="3" y="3" rx="2" fill="currentColor" />
+    </Icon>
+  );
+}
+
+export function PauseIcon({ size = 14 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <rect x="14" y="3" width="5" height="18" rx="1" fill="currentColor" />
+      <rect x="5" y="3" width="5" height="18" rx="1" fill="currentColor" />
+    </Icon>
+  );
+}
+
+export function PlayIcon({ size = 14 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" fill="currentColor" />
     </Icon>
   );
 }

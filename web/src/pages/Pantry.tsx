@@ -51,6 +51,25 @@ function savedLayout(): PantryLayout {
   }
 }
 
+// The places (Cupboard, Fridge…) closed on this device. Storage can be
+// missing or refuse; then every place just starts open.
+const CLOSED_PLACES_KEY = "bento.closedPantryPlaces";
+function savedClosedPlaces(): Set<string> {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(CLOSED_PLACES_KEY) ?? "[]");
+    return new Set(Array.isArray(saved) ? saved.filter((key): key is string => typeof key === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+function saveClosedPlaces(closed: Set<string>) {
+  try {
+    localStorage.setItem(CLOSED_PLACES_KEY, JSON.stringify([...closed]));
+  } catch {
+    // Not remembered.
+  }
+}
+
 export default function Pantry() {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
   const singleUser = useSingleUser();
@@ -83,8 +102,9 @@ export default function Pantry() {
     ask: boolean;
     restore?: (to?: PantryStatus) => Promise<void>;
   } | null>(null);
-  // Drawers start closed each visit; this holds the ones opened since.
-  const [openDrawers, setOpenDrawers] = useState<Set<string>>(new Set());
+  // The places closed on this device (remembered, so they stay closed);
+  // every other place starts open.
+  const [closedPlaces, setClosedPlaces] = useState<Set<string>>(savedClosedPlaces);
   // A store product page to add as a new item, shared to Bento from another
   // app ("#/pantry?add=<link>").
   const [fromStore, setFromStore] = useState<{ url: string; name: string } | null>(null);
@@ -427,16 +447,21 @@ export default function Pantry() {
 
   // A filter or a search shows its (short) results with every place open.
   const narrowed = filter !== "all" || !!query.trim();
-  const isOpen = (key: string) => narrowed || openDrawers.has(key);
-  const toggleDrawer = (key: string) =>
-    setOpenDrawers((previous) => {
-      const next = new Set(previous);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  // Places start open, and the ones you close stay closed on this device
+  // (2026-11-06; they used to all start closed on every visit).
+  const isOpen = (key: string) => narrowed || !closedPlaces.has(key);
+  const closePlaces = (next: Set<string>) => {
+    setClosedPlaces(next);
+    saveClosedPlaces(next);
+  };
+  const toggleDrawer = (key: string) => {
+    const next = new Set(closedPlaces);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    closePlaces(next);
+  };
   const allDrawerKeys = groups.map((g) => g.key);
-  const allOpen = allDrawerKeys.length > 0 && allDrawerKeys.every((key) => openDrawers.has(key));
+  const allOpen = allDrawerKeys.length > 0 && allDrawerKeys.every((key) => !closedPlaces.has(key));
 
   return (
     <div className="stack narrow">
@@ -559,7 +584,7 @@ export default function Pantry() {
               className={`open-all ${allOpen ? "all-open" : ""}`}
               aria-label={allOpen ? "Close all places" : "Open all places"}
               title={allOpen ? "Close all places" : "Open all places"}
-              onClick={() => setOpenDrawers(allOpen ? new Set() : new Set(allDrawerKeys))}
+              onClick={() => closePlaces(allOpen ? new Set(allDrawerKeys) : new Set())}
             >
               <ChevronIcon />
             </button>

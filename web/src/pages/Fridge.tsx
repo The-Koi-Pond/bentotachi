@@ -66,14 +66,20 @@ export default function Fridge() {
       {list.loadError && <p className="error">{list.loadError}</p>}
       {error && <p className="error">{error}</p>}
       {list.items && shown.length === 0 && (
-        <p className="muted">
+        // A dashed outline where the notes would go, so it doesn't float.
+        <p className="muted fridge-empty">
           {solo ? "No notes yet. Leave yourself a reminder above." : "Nothing on the fridge yet. Leave a note for everyone above."}
         </p>
       )}
       {shown.length > 0 && (
         <ul className="fridge-notes">
           {shown.map((note) => (
-            <li key={note.id} className="fridge-note">
+            <li
+              key={note.id}
+              className={`fridge-note paper-${paperOf(note.id)}`}
+              // The magnet in their colour (wood on your own).
+              style={solo ? undefined : personStyle(note.expand?.added_by)}
+            >
               <p className="fridge-note-text">{note.text}</p>
               <div className="fridge-note-meta">
                 <span className="muted">
@@ -98,6 +104,14 @@ export default function Fridge() {
       {undo.toast}
     </div>
   );
+}
+
+// Which of the three papers a note is on: from its id, so it keeps its
+// colour when another note is taken down.
+function paperOf(id: string): number {
+  let sum = 0;
+  for (const char of id) sum += char.charCodeAt(0);
+  return sum % 3;
 }
 
 function Person({ user }: { user: User }) {
@@ -129,19 +143,21 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
   }
 
   return (
-    <form className="card stack" onSubmit={post}>
-      <label>
-        {solo ? "A note to yourself" : "A note for everyone"}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={500}
-          rows={2}
-          placeholder={solo ? "e.g. Defrost the chicken tonight" : "e.g. Don't buy eggs, I got two dozen"}
-        />
-      </label>
+    <form className="card stack fridge-form" onSubmit={post}>
+      {/* No heading: the box says who it's for in its placeholder (Xel,
+          2026-11-06); the label stays for screen readers. */}
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        maxLength={500}
+        rows={2}
+        aria-label={solo ? "A note to yourself" : "A note for everyone"}
+        placeholder={
+          solo ? "A note to yourself, like “Defrost the chicken tonight”" : "A note for everyone, like “Don't buy eggs, I got two dozen”"
+        }
+      />
       {error && <p className="error">{error}</p>}
-      <button className="button primary push-left" disabled={busy || !text.trim()}>
+      <button className="button primary end-button" disabled={busy || !text.trim()}>
         {busy ? "Sticking it up…" : "Stick it on the fridge"}
       </button>
     </form>
@@ -199,11 +215,16 @@ function Lately() {
       {data && (
         <ul className="fridge-lately">
           <li>
-            <Link to="/plan">{data.plan}</Link>
+            <Link to="/plan" className="fridge-lately-link">
+              {data.plan}
+            </Link>
           </li>
           {data.out.length > 0 && (
             <li>
-              Run out: <Link to="/pantry">{shortList(data.out)}</Link>
+              Run out:{" "}
+              <Link to="/pantry" className="fridge-lately-link">
+                {shortList(data.out)}
+              </Link>
             </li>
           )}
           {data.items.map((item) => {

@@ -21,7 +21,6 @@ export const SPLASH_LINES = [
   "Your food stays yours. Ben remains very loud.",
   "Free, private, and only slightly screaming.",
   "Know what you've got before buying a fourth jar of cumin.",
-  "Not even Nonna's prized marinara. Especially not Nonna's.",
 ];
 
 export function randomSplash(random = Math.random): string {

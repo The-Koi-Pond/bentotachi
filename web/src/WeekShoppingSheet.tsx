@@ -11,7 +11,7 @@ import { MEALS, mealOf } from "./meals";
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 const RANGES = [7, 14];
 
-// "Shop for these": gathers the ingredients of the meals planned from today
+// "Add these to the shopping list" after the plan: gathers the ingredients of the meals planned from today
 // on into one list, merged and with what we have unticked, and adds the
 // ticked ones to the shopping list.
 export default function WeekShoppingSheet({

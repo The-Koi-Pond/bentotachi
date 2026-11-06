@@ -12,7 +12,7 @@ const TABS: { to: string; label: string; icon: ReactNode }[] = [
 
 // The recipe pages besides the list, which count as the Recipes tab: a
 // recipe, adding one, and the shelves.
-const RECIPE_PAGES = ["/recipes", "/add", "/new", "/categories"];
+const RECIPE_PAGES = ["/recipes", "/add", "/new", "/shelves"];
 
 // Bottom bar for switching between the app's main sections. A tab's own
 // pages light it up; the rest (the fridge door, profile, household,

@@ -26,6 +26,24 @@ export function inCategory(recipe: Tagged, category: Pick<Category, "tags">): bo
   return (recipe.tags ?? []).some((tag) => wanted.has(normaliseTag(tag)));
 }
 
+// A recipe's tags once it's put on a shelf: the shelf's first tag added,
+// unless the recipe is on it already (or the shelf has no tags to add).
+export function puttingOn(tags: string[] | null, category: Pick<Category, "tags">): string[] {
+  const list = tags ?? [];
+  const first = category.tags?.[0];
+  if (!first || inCategory({ tags: list }, category)) return list;
+  return [...list, normaliseTag(first)];
+}
+
+// A recipe's tags once it's taken off a shelf: every tag that counts for
+// the shelf removed, so it really leaves it. (Any of them kept would keep
+// it on the shelf, so a tag another shelf shares goes too, and the recipe
+// leaves that shelf as well: the Recipes page says so and offers Undo.)
+export function takingOff(tags: string[] | null, category: Pick<Category, "tags">): string[] {
+  const gone = new Set((category.tags ?? []).map(normaliseTag));
+  return (tags ?? []).filter((tag) => !gone.has(normaliseTag(tag)));
+}
+
 export function sortCategories<C extends Category>(categories: C[]): C[] {
   return [...categories].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }

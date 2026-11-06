@@ -4,11 +4,11 @@ import { useLiveRecords } from "./useLiveRecords";
 import { unreadNotes } from "./fridgeDoor";
 import { useFridgeSeen } from "./fridgeSeen";
 import { BentoTitle } from "./Brand";
-import { NoteIcon } from "./icons";
 
-// The title in the top bar: it opens the fridge door (pages/Fridge.tsx). The
-// note beside it says it's a way in, and counts notes someone else left
-// since this phone last looked (decided with Xel, 2026-11-04).
+// The title in the top bar: it opens the fridge door (pages/Fridge.tsx). A
+// little sticky note stuck to the end of it says it's a way in (Xel,
+// 2026-11-06: part of the title, not a separate boxed button), and shows
+// how many notes someone else left since this phone last looked.
 export default function FridgeLink() {
   const list = useLiveRecords<Note>("notes");
   const seen = useFridgeSeen();
@@ -21,8 +21,11 @@ export default function FridgeLink() {
     <Link to="/fridge" className="brand" aria-label={label} title="The fridge door">
       <BentoTitle className="brand-title" />
       <span className="brand-note" aria-hidden="true">
-        <NoteIcon size={18} />
-        {unread > 0 && <span className="brand-note-count">{unread > 9 ? "9+" : unread}</span>}
+        {unread > 0 ? (
+          <span className="brand-note-count">{unread > 9 ? "9+" : unread}</span>
+        ) : (
+          <span className="brand-note-lines" />
+        )}
       </span>
     </Link>
   );

@@ -572,7 +572,7 @@ function PacketsField({
         Packets in stock <span className="optional">(optional)</span>
       </span>
       {packets.length > 0 && (
-        <span className="pantry-packets">
+        <span className="pantry-packets-chips">
           {packets.map((packet) => (
             <button
               key={packet.id}

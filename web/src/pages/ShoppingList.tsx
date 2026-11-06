@@ -263,7 +263,7 @@ export default function ShoppingList() {
         <div className="with-ben">
           <BenMood mood="halo" small />
           <p className="muted">
-            Nothing to buy, for once. Add things here, or from a recipe's ingredients or the plan's “Shop for these”.
+            Nothing to buy, for once. Add things here, or from a recipe's ingredients or from the plan.
           </p>
         </div>
       )}

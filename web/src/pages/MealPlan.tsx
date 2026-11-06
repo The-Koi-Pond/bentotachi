@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import {
   DndContext,
@@ -108,6 +108,22 @@ export default function MealPlan() {
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor)
   );
+
+  // The list opens at today rather than at the week's first day, with
+  // yesterday just showing above it (Xel, 2026-11-06); so does "Today".
+  // Once per opening, so it never jumps while you're scrolling.
+  const showToday = useRef(true);
+  const loaded = !!plan.items;
+  useEffect(() => {
+    if (!loaded || view !== "list" || !showToday.current) return;
+    showToday.current = false;
+    const todayRow = document.querySelector<HTMLElement>(".plan-day.today");
+    const yesterday = todayRow?.previousElementSibling;
+    // Early in the week, today is near the top already.
+    if (!todayRow || !yesterday?.classList.contains("plan-day")) return;
+    const topBar = document.querySelector(".topbar")?.getBoundingClientRect().height ?? 0;
+    window.scrollTo({ top: yesterday.getBoundingClientRect().top + window.scrollY - topBar - 8 });
+  });
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
 
@@ -225,13 +241,20 @@ export default function MealPlan() {
   }
 
   const isList = view === "list";
-  const rangeLabel = isList
-    ? `${formatDay(days[0], { day: "numeric", month: "short" })} – ${formatDay(days[days.length - 1], {
-        day: "numeric",
-        month: "short",
-      })}`
-    : formatDay(month, { month: "long", year: "numeric" });
-  const atToday = isList ? start === weekStart(today, firstDay) : month === monthStart(today);
+  const thisWeek = weekStart(today, firstDay);
+  const atToday = isList ? start === thisWeek : month === monthStart(today);
+  // The month view says which month; the list needs no label, as its week
+  // headings say which weeks they are (Xel, 2026-11-06).
+  const monthLabel = formatDay(month, { month: "long", year: "numeric" });
+
+  // The heading over each week in the list.
+  function weekLabel(first: string): string {
+    const weeksAway = Math.round((dayNumber(first) - dayNumber(thisWeek)) / 7);
+    if (weeksAway === 0) return "This week";
+    if (weeksAway === 1) return "Next week";
+    if (weeksAway === -1) return "Last week";
+    return `Week of ${formatDay(first, { day: "numeric", month: "short" })}`;
+  }
 
   function step(direction: 1 | -1) {
     setPicking(null);
@@ -244,6 +267,7 @@ export default function MealPlan() {
     setStart(null);
     setMonth(monthStart(today));
     setSelected(today);
+    showToday.current = true;
   }
 
   return (
@@ -260,8 +284,8 @@ export default function MealPlan() {
         </div>
       </div>
 
-      <div className="plan-toolbar">
-        <strong className="plan-range">{rangeLabel}</strong>
+      <div className={`plan-toolbar ${isList ? "centred" : ""}`}>
+        {!isList && <strong className="plan-range">{monthLabel}</strong>}
         <div className="week-nav">
           <button
             className="icon-button small"
@@ -278,29 +302,6 @@ export default function MealPlan() {
           </button>
         </div>
       </div>
-      {/* How to move things, once there's something planned to move. */}
-      {(shown.length > 0 || !isList) && (
-        <p className="muted plan-hint">
-          {isList ? (
-            <>
-              Drag a {word} by its <GripIcon /> handle to move it; drop it on another {word} to swap.
-            </>
-          ) : shown.length > 0 ? (
-            `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a ${word}'s picture to another day to move it, or onto another ${word} to swap.`
-          ) : (
-            `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}.`
-          )}
-        </p>
-      )}
-      {/* Only with recipes planned from today on: that's what it shops for. */}
-      {shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
-        <div className="plan-actions">
-          <button className="button small" onClick={() => setShoppingOpen(true)}>
-            <CartIcon size={18} />
-            Shop for these
-          </button>
-        </div>
-      )}
       {error && <p className="error">{error}</p>}
 
       <DndContext
@@ -313,17 +314,23 @@ export default function MealPlan() {
         {isList ? (
           <ol className="plan-days">
             {days.map((date, i) => (
-              <DayRow
-                key={date}
-                date={date}
-                today={today}
-                weekBreak={i === 7}
-                meals={mealsOn(date)}
-                labelled={meals.length > 1}
-                entryAt={(meal) => entryAt(date, meal)}
-                onAdd={(meal) => setPicking({ date, meal })}
-                onRemove={remove}
-              />
+              <Fragment key={date}>
+                {/* "This week", "Next week": which week each half is. */}
+                {i % 7 === 0 && (
+                  <li className="plan-week">
+                    <h2>{weekLabel(date)}</h2>
+                  </li>
+                )}
+                <DayRow
+                  date={date}
+                  today={today}
+                  meals={mealsOn(date)}
+                  labelled={meals.length > 1}
+                  entryAt={(meal) => entryAt(date, meal)}
+                  onAdd={(meal) => setPicking({ date, meal })}
+                  onRemove={remove}
+                />
+              </Fragment>
             ))}
           </ol>
         ) : (
@@ -349,11 +356,36 @@ export default function MealPlan() {
             />
           </>
         )}
+        {/* How to move things, once there's something planned to move: one
+            short line after the plan, so the top stays clear (2026-11-06). */}
+        {(shown.length > 0 || !isList) && (
+          <p className="muted plan-hint">
+            {isList ? (
+              <>
+                Drag <GripIcon /> to move a {word}, or onto another to swap.
+              </>
+            ) : shown.length > 0 ? (
+              `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a picture to move it.`
+            ) : (
+              `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}.`
+            )}
+          </p>
+        )}
         {/* The copy of a dinner that follows your finger while dragging. */}
         <DragOverlay>
           {dragging && (isList ? <DinnerCard entry={dragging} lifted /> : <CellThumb entry={dragging} lifted />)}
         </DragOverlay>
       </DndContext>
+
+      {/* After the plan, like "Add to shopping list" under a recipe's
+          ingredients (it sat at the top until 2026-11-06). Only with recipes
+          planned from today on: that's what it shops for. */}
+      {shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
+        <button className="button add-to-list" onClick={() => setShoppingOpen(true)}>
+          <CartIcon size={18} />
+          Add these to the shopping list
+        </button>
+      )}
 
       {picking && (
         <RecipeChooser
@@ -529,30 +561,51 @@ function SelectedDay({ date, meals, labelled, entryAt, onAdd, onRemove }: DayPro
   );
 }
 
-function DayRow({ today, weekBreak, ...day }: DayProps & { today: string; weekBreak: boolean }) {
+function DayRow({ today, ...day }: DayProps & { today: string }) {
   const { date } = day;
   const when = date === today ? "today" : date < today ? "past" : "";
-
+  // Planning several meals a day: the planned ones as cards, the empty ones
+  // as small "+ Breakfast" chips in one row, so a week of mostly empty
+  // breakfasts and lunches doesn't take several screens (2026-11-06).
+  const empty = day.labelled ? day.meals.filter((meal) => !day.entryAt(meal)) : [];
+  const full = day.meals.filter((meal) => !empty.includes(meal));
   return (
-    <li className={`plan-day ${when} ${weekBreak ? "week-break" : ""}`}>
+    <li className={`plan-day ${when}`}>
       <div className="plan-date">
         <strong>{date === today ? "Today" : formatDay(date, { weekday: "short" })}</strong>
         <span>{formatDay(date, { day: "numeric", month: "short" })}</span>
       </div>
       <div className="plan-meals">
-        {day.meals.map((meal) => (
+        {full.map((meal) => (
           <MealPlace key={meal} meal={meal} {...day} />
         ))}
+        {empty.length > 0 && (
+          <div className="plan-empty-meals">
+            {empty.map((meal) => (
+              <MealPlace key={meal} meal={meal} {...day} compact />
+            ))}
+          </div>
+        )}
       </div>
     </li>
   );
 }
 
 // One meal's place in a day row: a dinner (or breakfast, or lunch) that can
-// be dragged, or "+ Add". Meals dragged here land in it.
-function MealPlace({ date, meal, labelled, entryAt, onAdd, onRemove }: DayProps & { meal: Meal }) {
+// be dragged, or "+ Add" (a small chip when compact). Meals dragged here
+// land in it.
+function MealPlace({ date, meal, labelled, entryAt, onAdd, onRemove, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
   const entry = entryAt(meal);
+  if (compact) {
+    return (
+      <div ref={setNodeRef} className={`plan-meal compact ${isOver ? "drop-here" : ""}`}>
+        <button className="plan-add" onClick={() => onAdd(meal)} aria-label={`Add ${meal}`}>
+          + {MEAL_NAMES[meal]}
+        </button>
+      </div>
+    );
+  }
   return (
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}

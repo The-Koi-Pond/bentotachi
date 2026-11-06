@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { createHashRouter, Link, Navigate, Route, RouterProvider, Routes, useParams } from "react-router";
 import { pb, useCurrentUser } from "./pb";
 import Login from "./pages/Login";
-import RecipeList, { ManageButton } from "./pages/RecipeList";
+import RecipeList from "./pages/RecipeList";
 import RecipeView from "./pages/RecipeView";
 import RecipeEdit from "./pages/RecipeEdit";
 import AddRecipe from "./pages/AddRecipe";
@@ -12,7 +12,7 @@ import Browse from "./pages/Browse";
 import MealPlan from "./pages/MealPlan";
 import Profile from "./pages/Profile";
 import Household from "./pages/Household";
-import Categories from "./pages/Categories";
+import Shelves from "./pages/Shelves";
 import Backups from "./pages/Backups";
 import Export from "./pages/Export";
 import Fridge from "./pages/Fridge";
@@ -75,11 +75,6 @@ function Screens() {
       <header className="topbar">
         <FridgeLink />
         <nav>
-          {/* Manage only applies to the recipe list. */}
-          <Routes>
-            <Route path="/" element={<ManageButton />} />
-            <Route path="*" element={null} />
-          </Routes>
           {/* The + adds to the page you're on (Xel, 2026-11-02): a pantry
               item on the pantry, the shopping list's box there, else a recipe. */}
           <Routes>
@@ -104,7 +99,9 @@ function Screens() {
           <Route path="/pantry" element={<Pantry />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/household" element={<Household />} />
-          <Route path="/categories" element={<Categories />} />
+          <Route path="/shelves" element={<Shelves />} />
+          {/* Its old name, before shelves were called shelves everywhere. */}
+          <Route path="/categories" element={<Navigate to="/shelves" replace />} />
           <Route path="/backups" element={<Backups />} />
           <Route path="/export" element={<Export />} />
           <Route path="/fridge" element={<Fridge />} />

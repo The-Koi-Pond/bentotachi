@@ -131,20 +131,23 @@ export default function PantryRow({
             <span className="pantry-packets-label" aria-hidden="true">
               In stock:
             </span>
-            {packets.map((packet) => (
-              <button
-                key={packet.id}
-                className="packet-chip"
-                onClick={() => onFinishPacket?.(packet)}
-                aria-label={`${packetLabel(packet)}: tap when it's finished`}
-                title="Tap when it's finished"
-              >
-                {packetLabel(packet)}
-                <span className="packet-chip-x" aria-hidden="true">
-                  ✕
-                </span>
-              </button>
-            ))}
+            {/* Their own wrapping row, so a second line lines up with the first. */}
+            <span className="pantry-packets-chips">
+              {packets.map((packet) => (
+                <button
+                  key={packet.id}
+                  className="packet-chip"
+                  onClick={() => onFinishPacket?.(packet)}
+                  aria-label={`${packetLabel(packet)}: tap when it's finished`}
+                  title="Tap when it's finished"
+                >
+                  {packetLabel(packet)}
+                  <span className="packet-chip-x" aria-hidden="true">
+                    ✕
+                  </span>
+                </button>
+              ))}
+            </span>
           </span>
         )}
         {(canOpen || storeLinks.length > 0) && (

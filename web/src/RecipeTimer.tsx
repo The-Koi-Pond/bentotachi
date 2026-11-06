@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { errorMessage, type Recipe } from "./pb";
 import { extraTimes, formatMinutes, totalMinutes } from "./format";
+import { PauseIcon, PlayIcon, StopIcon } from "./icons";
 import {
   clock,
   elapsed,
@@ -68,10 +69,15 @@ export default function RecipeTimer({
   }, [running]);
 
   if (!state) {
+    // A footer row: what it's for on the left, the button at the right
+    // (where the running timer then takes over).
     return (
-      <button className="link-button timer-start" onClick={() => setState(startTimer(Date.now()))}>
-        ⏱ Time it
-      </button>
+      <div className="timer-start-row">
+        <span className="muted">How long does it really take?</span>
+        <button className="button small timer-start" onClick={() => setState(startTimer(Date.now()))}>
+          ⏱ Time it
+        </button>
+      </div>
     );
   }
 
@@ -162,11 +168,19 @@ export default function RecipeTimer({
       </div>
       {isPaused && <p className="muted timer-paused">Paused</p>}
       <div className="actions">
-        <button className="button ghost push-left" onClick={stop}>
-          Stop
+        <button className="button push-left" onClick={stop}>
+          <StopIcon /> Stop
         </button>
         <button className="button" onClick={() => act(isPaused ? resumed : paused)}>
-          {isPaused ? "Resume" : "Pause"}
+          {isPaused ? (
+            <>
+              <PlayIcon /> Resume
+            </>
+          ) : (
+            <>
+              <PauseIcon /> Pause
+            </>
+          )}
         </button>
         {cooking ? (
           <button

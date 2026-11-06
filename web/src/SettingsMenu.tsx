@@ -124,7 +124,7 @@ export default function SettingsMenu() {
           )}
           <button role="menuitemcheckbox" aria-checked={drawers.startClosed} onClick={() => drawers.setStartClosed(!drawers.startClosed)}>
             <span className="menu-item-text">
-              Categories start closed
+              Shelves start closed
               <span className="menu-item-detail">Each time you open Bentotachi</span>
             </span>
             <span className="switch" aria-hidden="true" />

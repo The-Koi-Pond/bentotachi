@@ -41,6 +41,7 @@ export default function Browse() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const ours = useLiveRecords<SavedSite>("saved_sites");
+  const [addingSite, setAddingSite] = useState(false);
   const ourSites = [...(ours.items ?? [])].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
   );
@@ -149,7 +150,16 @@ export default function Browse() {
       )}
 
       <section className="stack">
-        <h2>Our sites</h2>
+        {/* "+ Add a site" on the heading's row (Xel, 2026-11-06); its form
+            opens below, after the sites. */}
+        <div className="section-head sites-head">
+          <h2>Our sites</h2>
+          {!addingSite && (
+            <button className="button small" onClick={() => setAddingSite(true)}>
+              + Add a site
+            </button>
+          )}
+        </div>
         {ours.loadError && <p className="error">{ours.loadError}</p>}
         {ours.items?.length === 0 && <p className="muted">The recipe sites you keep going back to, one tap away.</p>}
         {ourSites.length > 0 && (
@@ -174,7 +184,7 @@ export default function Browse() {
             ))}
           </ul>
         )}
-        <AddSiteForm onAdded={ours.upsert} />
+        {addingSite && <AddSiteForm onAdded={ours.upsert} onClose={() => setAddingSite(false)} />}
       </section>
 
       <section className="stack">
@@ -212,15 +222,14 @@ export default function Browse() {
   );
 }
 
-// "+ Add a site": a closed button until tapped, then the address and an
+// After "+ Add a site" (on the "Our sites" heading): the address and an
 // optional name (it defaults to the site's address, like "example.com").
-function AddSiteForm({ onAdded }: { onAdded: (site: SavedSite) => void }) {
-  const [open, setOpen] = useState(false);
+function AddSiteForm({ onAdded, onClose }: { onAdded: (site: SavedSite) => void; onClose: () => void }) {
   const [address, setAddress] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  useUnsavedChanges(open && !!(address.trim() || name.trim()));
+  useUnsavedChanges(!!(address.trim() || name.trim()));
 
   async function add(event: FormEvent) {
     event.preventDefault();
@@ -237,7 +246,7 @@ function AddSiteForm({ onAdded }: { onAdded: (site: SavedSite) => void }) {
       );
       setAddress("");
       setName("");
-      setOpen(false);
+      onClose();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -245,13 +254,6 @@ function AddSiteForm({ onAdded }: { onAdded: (site: SavedSite) => void }) {
     }
   }
 
-  if (!open) {
-    return (
-      <button className="button small add-site-button" onClick={() => setOpen(true)}>
-        + Add a site
-      </button>
-    );
-  }
   return (
     <form className="card stack add-site" onSubmit={add}>
       <label>
@@ -275,7 +277,7 @@ function AddSiteForm({ onAdded }: { onAdded: (site: SavedSite) => void }) {
       </label>
       {error && <p className="error">{error}</p>}
       <div className="actions">
-        <button type="button" className="button ghost" onClick={() => setOpen(false)} disabled={busy}>
+        <button type="button" className="button ghost" onClick={onClose} disabled={busy}>
           Cancel
         </button>
         <button className="button primary" disabled={busy || !address.trim()}>

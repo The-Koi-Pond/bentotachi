@@ -83,6 +83,16 @@
   }
 }
 
+/* Pond Pebbles, The Koi Pond's own display font (a copy of the studio's,
+   the-koi-pond.github.io/font). For page titles only, never body text
+   (BRAND.md); it has no accented letters, so never for anything people
+   type, like recipe names. */
+@font-face {
+  font-family: "Pond Pebbles";
+  src: url("./assets/PondPebbles.woff2") format("woff2");
+  font-display: swap;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -96,8 +106,16 @@ h2 {
   margin: 0;
 }
 
+/* Page titles ("Dinner plan", "Pantry"…) in Pond Pebbles (Xel, 2026-11-06). */
 h1 {
-  font-size: 1.7rem;
+  font: 400 2.1rem/1.1 "Pond Pebbles", system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* A recipe's own name is typed by people (accents, ×…): the plain font. */
+.recipe .title-row h1 {
+  font: 700 1.7rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: normal;
 }
 
 h2 {
@@ -348,43 +366,69 @@ main {
   width: auto;
 }
 
-/* The note beside the title: says the title opens the fridge door, with a
-   count of new notes on its corner. */
+/* A sticky note stuck to the end of the title: says the title opens the
+   fridge door. A square of soft jade paper, tilted, held by a wooden magnet
+   (the chopsticks' wood); scribbled lines on it, or the number of new
+   notes in plum. */
 .brand {
-  gap: 6px;
+  gap: 7px;
+  text-decoration: none; /* the count is text inside the link */
 }
 
 .brand-note {
   position: relative;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  background: var(--jade-soft);
+  border: 1px solid rgb(90 154 138 / 0.45);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.14);
+  transform: rotate(7deg);
+  transition: transform 120ms ease-out;
 }
 
-.brand:hover .brand-note {
-  color: var(--accent);
-  border-color: var(--accent);
+/* The magnet. */
+.brand-note::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: #a87a43;
+  border-radius: 50%;
+  box-shadow: inset 0 -1.5px 0 rgb(0 0 0 / 0.25);
+}
+
+.brand-note-lines {
+  width: 14px;
+  height: 9px;
+  margin-top: 3px;
+  background: repeating-linear-gradient(to bottom, var(--jade-strong) 0 1.5px, transparent 1.5px 4px);
+  opacity: 0.55;
 }
 
 .brand-note-count {
-  position: absolute;
-  top: -7px;
-  right: -8px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 18px;
-  text-align: center;
-  color: var(--accent-text);
-  background: var(--accent);
-  border-radius: 9px;
+  margin-top: 3px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* Straightens a little under the pointer, like it's being looked at. */
+.brand:hover .brand-note {
+  transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-note {
+    transition: none;
+  }
 }
 
 /* The fridge door (pages/Fridge.tsx). */
@@ -398,24 +442,87 @@ main {
   font-style: italic;
 }
 
-.fridge-notes {
-  display: flex;
-  flex-direction: column;
+/* The note form: snug around its box and button (Xel, 2026-11-06),
+   like the recipe details card. Doubled up to beat .card and .stack,
+   which come later in this file. */
+.card.fridge-form {
+  padding: 14px;
   gap: 10px;
+}
+
+/* The notes as paper stuck on a fridge (Xel's pick, 2026-11-06): two
+   columns, each note tilted a little, in soft jade, plum or peach, held by
+   a magnet in the colour of whoever left it (wood when there's no one to
+   tell apart). The page's one playful thing; the words stay plain. */
+/* Filled row by row, newest first (left, then right, then the next row). */
+.fridge-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .fridge-note {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--jade-strong);
-  border-radius: 10px;
+  /* Room above it for its magnet. */
+  margin-top: 8px;
+  padding: 16px 12px 10px;
+  background: var(--jade-soft);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.12);
+  transform: rotate(-1.4deg);
+}
+
+.fridge-note:nth-child(even) {
+  transform: rotate(1.2deg);
+}
+
+.fridge-note:nth-child(3n) {
+  transform: rotate(-0.6deg);
+}
+
+.fridge-note.paper-1 {
+  background: var(--accent-soft);
+}
+
+.fridge-note.paper-2 {
+  background: #f6e4da; /* peach, like the app icon */
+}
+
+@media (prefers-color-scheme: dark) {
+  .fridge-note.paper-2 {
+    background: #3a2e28;
+  }
+}
+
+/* The magnet. */
+.fridge-note::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: var(--person, #a87a43);
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25), 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+/* No notes yet: a dashed outline where they'd go, like the plan's empty
+   "+ Add dinner" places. */
+.fridge-empty {
+  margin: 0;
+  padding: 18px 16px;
+  text-align: center;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
 }
 
 .fridge-note-text {
@@ -426,24 +533,55 @@ main {
 
 .fridge-note-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 0.88rem;
+  gap: 2px 8px;
+  font-size: 0.85rem;
 }
 
+.fridge-note-meta .button {
+  margin-left: -6px;
+}
+
+/* What's been happening: a calm feed, not a page of links. The plan and
+   what's run out are links in plum; recipe names in bold. */
 .fridge-lately {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.fridge-lately a {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fridge-lately .fridge-lately-link {
+  color: var(--accent);
+}
+
+.fridge-lately a:hover,
+.fridge-lately a:focus-visible {
+  text-decoration: underline;
 }
 
 .stack {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* The gap spaces a stack's paragraphs: without this the browser's own 1em
+   margin came on top, 33px around every grey intro line (2026-11-06).
+   :where keeps it weaker than any class that sets a margin on purpose. */
+:where(.stack) > p {
+  margin: 0;
 }
 
 .narrow {
@@ -455,7 +593,8 @@ main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  /* 20px felt airy on a phone (Xel's padding pass, 2026-11-06). */
+  padding: 16px;
 }
 
 .muted {
@@ -483,14 +622,33 @@ main {
   gap: 6px;
 }
 
-/* "− 6 servings +" above the ingredients (ScaleControl.tsx), in a pill like
-   the pantry's status picker, then "Back to 4 servings" once it's changed. */
+/* "Our sites": the same height while "+ Add a site" hides for its form. */
+.sites-head {
+  min-height: 36px;
+}
+
+/* "Makes  − 6 +" above the ingredients (ScaleControl.tsx), in a small card,
+   then "Scaled from 4. … Reset" once it's changed. */
 .scale-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 14px;
+  flex-direction: column;
+  gap: 6px;
   margin: 4px 0 10px;
+  padding: 10px 12px 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.scale-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scale-label {
+  font-weight: 600;
 }
 
 .scale-control {
@@ -504,7 +662,7 @@ main {
 .scale-control .icon-button {
   font-size: 1.25rem;
   line-height: 1;
-  color: var(--text);
+  color: var(--accent);
 }
 
 .scale-control .icon-button:disabled {
@@ -520,14 +678,13 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.scale-row .link-button {
-  align-self: center;
+.scale-note {
+  margin: 0;
+  font-size: 0.82rem;
 }
 
-.scale-note {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.85rem;
+.scale-note .link-button {
+  font-size: inherit;
 }
 
 /* Shopping list */
@@ -559,11 +716,13 @@ main {
   border-top: none;
 }
 
+/* Rows kept fairly tight (2026-11-06), so more of the list fits on screen
+   in the shop; the tick box and the label still make a big tap target. */
 .shopping-list li {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px 4px 14px;
+  padding: 1px 6px 1px 14px;
 }
 
 .shopping-list li + li {
@@ -576,7 +735,8 @@ main {
   align-items: center;
   gap: 12px;
   font-weight: 400;
-  padding: 8px 0;
+  min-height: 44px;
+  padding: 5px 0;
   cursor: pointer;
 }
 
@@ -590,9 +750,17 @@ main {
   text-decoration: line-through;
 }
 
+/* "for Crispy fish tacos": quiet, so the groceries stand out; still a link
+   to the recipe (underlined when pointed at or focused). */
 .item-source {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--muted);
+  text-decoration: none;
+}
+
+.item-source:hover,
+.item-source:focus-visible {
+  text-decoration: underline;
 }
 
 /* Dinner plan */
@@ -648,6 +816,11 @@ main {
   gap: 8px;
 }
 
+/* The list: just ‹ Today ›, in the middle. */
+.plan-toolbar.centred {
+  justify-content: center;
+}
+
 .plan-hint {
   margin: 0;
   font-size: 0.88rem;
@@ -681,9 +854,27 @@ main {
   border-top: 1px solid var(--border);
 }
 
-/* A thicker line between this week and next. */
-.plan-day.week-break {
-  border-top: 3px solid var(--border);
+/* "This week", "Next week": a small heading over each week of the list. */
+.plan-week {
+  /* The words in the middle of their bar. */
+  padding: 7px 12px;
+  background: var(--bg);
+}
+
+.plan-week:first-child {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.plan-week + .plan-day,
+.plan-day + .plan-week {
+  border-top: 1px solid var(--border);
+}
+
+.plan-week h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* Past nights step back without becoming hard to read: the day's name goes
@@ -706,6 +897,23 @@ main {
 .plan-meal.drop-here {
   background: var(--accent-soft);
   border-radius: 10px;
+}
+
+/* Several meals a day: the empty ones as small chips in one row
+   ("+ Breakfast  + Lunch") after the planned ones. */
+.plan-empty-meals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.plan-meal.compact .plan-add {
+  width: auto;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.86rem;
+  border-radius: 999px;
 }
 
 .plan-date {
@@ -771,10 +979,36 @@ main {
   border-color: var(--accent);
 }
 
+/* A planned meal is one card (Xel's pick, 2026-11-06): its drag handle a
+   slim soft-jade tab down the left edge, so it's clearly what moves it,
+   then the photo, the name and ×. */
 .dinner-slot {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
+  padding-right: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dinner-slot .drag-handle {
+  align-self: stretch;
+  width: 22px;
+  height: auto;
+  background: var(--jade-soft);
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+}
+
+/* Inside the card, so the outline isn't cut off by its edge. */
+.dinner-slot .drag-handle:focus-visible {
+  outline-offset: -3px;
+}
+
+.dinner-slot .dinner-card {
+  padding: 4px 0;
 }
 
 /* The original stays put (faded) while its copy follows your finger. */
@@ -1478,10 +1712,19 @@ main {
   transform: rotate(-90deg);
 }
 
-/* A place: its heading (opens and closes it, with "3 to check") and one
-   card of its items, with the subcategories as small headings inside. */
+/* A place: a drawer (see .shelf, .pantry-place), its front opening and
+   closing it (with "3 to check"), its items inside, with the subcategories
+   as small headings. */
 .pantry-place h2 {
   margin: 0;
+}
+
+.pantry-place > .pantry-list {
+  margin: 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
 }
 
 .place-count {
@@ -1578,11 +1821,12 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  width: 36px;
-  height: 32px;
+  gap: 0;
+  width: 30px;
+  height: 28px;
+  padding: 0;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: var(--accent);
   background: none;
@@ -1656,11 +1900,12 @@ main {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  /* The same width whatever the word, so the levels line up down the list. */
-  width: 96px;
+  gap: 4px;
+  /* The same width whatever the word, so the levels line up down the list:
+     just enough for "Have" (2026-11-06; it was roomier). */
+  width: 86px;
   min-height: 36px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
@@ -2061,38 +2306,102 @@ legend {
   outline-offset: 1px;
 }
 
-/* Delete mode: a red bin where the heart usually sits on each card. */
-.delete-toggle {
+/* Edit mode on the Recipes page: the whole card picks it. An empty circle
+   sits where the heart usually is; picked, it fills plum with a tick and
+   the card gets a plum outline. The circle only shows: the card is the
+   button, so it doesn't need its own tap target. */
+.pick-mark {
   position: absolute;
   /* Above the card, which comes after it in the page and would cover it. */
   z-index: 1;
-  top: 4px;
-  right: 4px;
+  top: -6px;
+  right: -6px;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  color: var(--danger-text);
-  background: var(--danger);
-  border: 2px solid #fff;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  background: var(--surface);
+  border: 2px solid var(--muted);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
-  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  pointer-events: none;
 }
 
-.delete-toggle:disabled {
-  opacity: 0.5;
+.recipe-tile.picked .pick-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.recipe-tile.picked .recipe-card {
+  outline: 3px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.recipe-card:disabled {
   cursor: default;
 }
 
-.delete-toggle:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+/* "Tap recipes to pick them…" and Done, at the top in Edit mode. */
+.edit-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
 }
 
-.recipe-card.deleting {
-  opacity: 0.4;
+.edit-bar p {
+  flex: 1;
+  margin: 0;
+}
+
+/* What to do with the picked recipes, floating above the tab bar. */
+.select-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 10px);
+  z-index: 45;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+}
+
+.select-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.select-bar-row .link-button {
+  align-self: center;
+}
+
+.select-bar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.select-bar-hint {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* Room at the end of the list so the bar never covers the last cards. */
+.stack.editing {
+  padding-bottom: 120px;
 }
 
 .recipe-card img,
@@ -2264,15 +2573,25 @@ legend {
   color: var(--heart);
 }
 
-/* Smaller heart for recipe cards; still a comfortable tap target. */
-.heart-toggle.on-photo.small {
+/* A favourite's card wears a small pink heart in its photo's corner: a
+   badge, not a button, so taps go through to the card. */
+.favorite-badge {
+  position: absolute;
+  z-index: 1;
   top: -6px;
   right: -6px;
-  width: 30px;
-  height: 30px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--heart);
+  background: rgb(255 255 255 / 0.95);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+  pointer-events: none;
 }
 
-/* Cards: the heart sits beside the card's link, over its photo. */
+/* Cards: the badge sits beside the card's link, over its photo. */
 .recipe-tile {
   position: relative;
 }
@@ -2282,29 +2601,17 @@ legend {
   display: block;
 }
 
-/* ⚡ in the top-left corner of a quick recipe's picture. */
-.quick-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  /* Bright yellow on a dark disc with a white ring: food photos are mostly
-     yellows and browns, which a gold badge disappeared into. */
-  color: #ffd43b;
-  background: rgb(28 24 21 / 0.85);
-  border: 1.5px solid rgb(255 255 255 / 0.9);
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+/* A quick recipe's time, "⚡ 15 min", in jade (QuickTime.tsx). */
+.quick-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--success);
+  font-weight: 600;
 }
 
-.hero-wrap .quick-badge {
-  top: 10px;
-  left: 10px;
-  width: 44px;
-  height: 44px;
+.quick-time-icon {
+  display: inline-flex;
 }
 
 .quick-button {
@@ -2356,15 +2663,48 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 22px;
-  height: 20px;
-  padding: 0 6px;
+  height: 22px;
+  padding: 0 8px;
   font-size: 0.78rem;
   font-weight: 800;
   color: #fff;
   background: var(--person, var(--accent));
   border-radius: 999px;
+}
+
+/* Their name, cut short with "…" if it's long. */
+.rating-pill-name {
+  max-width: 7em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+/* How it's gone for us, in one card (RecipeView.tsx): the ratings, a line,
+   then when it was last had and next planned, beside "We cooked this". */
+.verdict-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.verdict-card .reactions {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.verdict-card .cook-history {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 /* Thumbs up beside "What we think": grey outline when off, filled in your
@@ -2512,11 +2852,65 @@ legend {
   margin-top: 2px;
 }
 
+/* A recipe's servings and times, in even columns. */
 .facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 8px 12px;
   margin: 0;
+}
+
+/* About a recipe, in one card (RecipeView.tsx): the description, a line,
+   the servings and times, then "⏱ Time it". The ✎ sits in the top-right
+   corner, so whatever comes first leaves room for it. */
+.details-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.details-edit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.details-card .description-box {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+/* After the description-box rule, so it wins when the description is first. */
+.details-card .details-edit + * {
+  padding-right: 40px;
+}
+
+.details-card .description-box + .facts {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* "⏱ Time it", then the running timer, is the card's last part (below a
+   line) rather than a card of its own inside it. */
+.details-card .description-box ~ .timer-start-row,
+.details-card .facts ~ .timer-start-row {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.details-card .recipe-timer {
+  padding: 12px 0 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
 }
 
 .facts dt {
@@ -2538,8 +2932,11 @@ legend {
   margin: 0;
 }
 
+/* Tags and the "+" after them: the same height and pill shape. */
 .tags li a {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
   background: var(--jade-soft);
   border-radius: 999px;
   padding: 4px 12px;
@@ -2676,35 +3073,70 @@ legend {
 }
 
 /* "● Have" beside an ingredient. A dotted outline means Bento guessed. */
+/* Quiet (2026-11-06), so the ingredient stays the thing you read: the
+   pantry's level bars and the word in small grey, no outline; only Out is
+   in colour, as something missing is worth noticing while cooking. One
+   width, starting at the same place, so the bars line up down the list. */
 .pantry-chip {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  width: 64px;
   min-height: 30px;
   margin-top: 3px;
-  padding: 2px 10px;
+  padding: 2px 6px;
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text);
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 
+/* A link Bento guessed: a dotted line under the word. */
 .pantry-chip.guessed {
-  border-style: dashed;
-}
-
-.pantry-chip.status-low {
-  border-color: var(--low);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
 }
 
 .pantry-chip.status-out {
-  border-color: var(--out);
   color: var(--out);
+}
+
+.pantry-chip:hover {
+  background: var(--accent-soft);
+}
+
+.pantry-chip .meter-bars i:nth-child(1) {
+  height: 6px;
+}
+
+.pantry-chip .meter-bars i:nth-child(2) {
+  height: 9px;
+}
+
+.pantry-chip .meter-bars i:nth-child(3) {
+  height: 12px;
+}
+
+.pantry-chip .meter-bars i {
+  width: 4px;
+}
+
+.pantry-chip.status-have .meter-bars i {
+  background: var(--have);
+}
+
+.pantry-chip.status-low .meter-bars i:nth-child(1) {
+  background: var(--low);
+}
+
+.pantry-chip.status-out .meter-bars i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--out);
 }
 
 /* Faint, so lines like "water" stay quiet. */
@@ -2907,13 +3339,6 @@ legend {
   margin: 0;
 }
 
-/* Buttons above the plan: "Shop for these". */
-.plan-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 /* "Shop for the planned dinners" panel. */
 .week-dinners {
   margin: 0;
@@ -2995,8 +3420,10 @@ legend {
   color: var(--muted);
 }
 
-.add-site-button {
-  align-self: flex-start;
+/* Buttons on their own at a card's or list's end sit at the right
+   (2026-11-06), like Save; only Delete and the like stay at the left. */
+.end-button {
+  align-self: flex-end;
 }
 
 /* "Last had 2 weeks ago" on a recipe page. */
@@ -3529,19 +3956,64 @@ footer .person-name:focus-visible {
 
 /* Recipes page shelves: one per category, each a drawer that opens and
    closes, holding all its recipe cards. */
-.shelf {
+/* Recipe shelves and pantry places are drawers (Xel's pick, 2026-11-06):
+   one bordered card whose front (the header) is tinted soft jade, so a
+   stack of closed ones reads as a chest of drawers and an open one shows
+   its contents under its front, instead of a heading floating above. */
+.shelf,
+.pantry-place {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-/* The grip to drag a shelf, then its name (which opens and closes it). */
-.shelf-head {
+/* Its front: the name (which opens and closes it); in Edit mode, the grip
+   to drag it before that and "Edit shelf" after. */
+.shelf-head,
+.pantry-place > h2 {
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-left: -8px;
+  padding: 2px 10px 2px 8px;
+  background: var(--jade-soft);
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+/* Closed: the front is all there is. */
+.shelf-head:last-child,
+.pantry-place > h2:last-child {
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.shelf-head.with-handle {
+  padding-left: 2px;
+}
+
+/* What's inside, under a line. */
+.shelf > .recipe-grid {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.shelf-edit {
+  flex: none;
+  gap: 6px;
+}
+
+.new-shelf {
+  align-self: flex-end;
+}
+
+/* "Delete recipe", alone at the end of a recipe's page. */
+.recipe-delete {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .shelf-head h2 {
@@ -3562,8 +4034,7 @@ footer .person-name:focus-visible {
 }
 
 /* The shelf a dragged one would take the place of. */
-.shelf.drop-here .shelf-head {
-  border-radius: 10px;
+.shelf.drop-here {
   box-shadow: 0 0 0 2px var(--accent);
 }
 
@@ -3631,22 +4102,11 @@ footer .person-name:focus-visible {
   font-size: 0.9rem;
 }
 
-/* Categories page */
-.category-head {
-  display: flex;
-  align-items: center;
-  gap: 4px 10px;
-}
-
-.category-head h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.category-moves {
-  display: flex;
-  margin-left: auto;
-  font-size: 1.1rem;
+/* An empty shelf in Edit mode: a shut drawer with nothing to open, its
+   name lined up with the others' (past where their chevron sits). */
+.shelf-empty-name {
+  padding-left: 26px;
+  cursor: default;
 }
 
 .tag-list {
@@ -3655,16 +4115,12 @@ footer .person-name:focus-visible {
   gap: 6px;
 }
 
-.tag-chip.static {
-  cursor: default;
-}
-
 .tag-chip.selected .tag-count {
   color: inherit;
   opacity: 0.85;
 }
 
-.category-edit,
+/* The shelf form's "+ Add 'one-pot'" stays under the box it adds from. */
 .add-typed-tag {
   align-self: flex-start;
 }
@@ -3727,14 +4183,6 @@ footer .person-name:focus-visible {
 .tag-without {
   font-weight: 400;
   color: var(--danger);
-}
-
-/* Recipe page: changing one part right here (✎ beside its heading). */
-.facts-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 /* "Add to shopping list" under a recipe's ingredients. */
@@ -3918,13 +4366,26 @@ em.soft {
 
 /* Recipe timer (RecipeTimer.tsx): "⏱ Time it" under the times, then a card
    with a prep and a cook clock. */
+.timer-start-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
 .timer-start {
-  align-self: flex-start;
+  flex-shrink: 0;
   font-weight: 600;
 }
 
 .recipe-timer {
   gap: 10px;
+}
+
+/* ■ Stop, ⏸ Pause, ▶ Resume: the symbol, then the word. */
+.recipe-timer .actions .button {
+  gap: 7px;
 }
 
 .timer-stages {
@@ -3994,14 +4455,29 @@ em.soft {
 /* "Last had … · We cooked this" under the ratings on a recipe page. */
 .cook-history {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 12px;
+  gap: 12px;
 }
 
 .cook-history .plan-history {
+  flex: 1;
+  min-width: 0;
   margin: 0;
+}
+
+.cook-history .plan-history p {
+  margin: 0;
+}
+
+/* "4 days ago · 3 times", smaller, under "Last had Mon, Nov 2". */
+.cook-history .plan-history-detail {
+  font-size: 0.8rem;
+}
+
+/* On its own line, "yesterday" starts with a capital. */
+.cook-history .plan-history-detail::first-letter {
+  text-transform: uppercase;
 }
 
 .cooked-button {
@@ -4328,16 +4804,27 @@ em.soft {
 
 /* Packets in stock: "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕" under a
    Detailed row (and in the edit form). Tapping one finishes it. */
+/* "In stock:" then its chips, which wrap in their own column so a second
+   line starts under the first chip, not under the label. */
 .pantry-packets {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 6px;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .pantry-packets-label {
+  flex: none;
+  /* Level with the first row of chips. */
+  line-height: 32px;
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+.pantry-packets-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
 }
 
 .packet-chip {

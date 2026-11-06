@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   DndContext,
@@ -15,11 +15,8 @@ import {
 } from "@dnd-kit/core";
 import {
   averageStars,
-  cookedLog,
   displayName,
   errorMessage,
-  mealPlan,
-  pb,
   personStyle,
   recipeCategories,
   recipeRatings,
@@ -32,19 +29,19 @@ import {
   type User,
 } from "../pb";
 import { formatMinutes, isQuick, totalMinutes } from "../format";
-import QuickBadge from "../QuickBadge";
-import { CheckIcon, GripIcon, HeartIcon, TagIcon, ThumbsDownIcon, ThumbsUpIcon, TrashIcon, ZapIcon } from "../icons";
+import QuickTime from "../QuickTime";
+import { CheckIcon, GripIcon, HeartIcon, PencilIcon, TagIcon, ThumbsDownIcon, ThumbsUpIcon, ZapIcon } from "../icons";
 import { matchesSearch, searchWords } from "../recipeSearch";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
-import { OTHER, movedTo, shelves } from "../recipeCategories";
+import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
 import { useShelfDrawers } from "../shelfDrawers";
-import { forEveryone, useSingleUser } from "../household";
+import { useSingleUser } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
-import { alsoDeleted } from "../deleteWarning";
+import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
 import { ensureLogin } from "../session";
@@ -68,66 +65,37 @@ function savedSort(): SortOrder {
   }
 }
 
-// Delete mode (a bin on every card on screen) lives in the address
-// ("#/?manage=1"), so the button in the top bar can switch it. Changing it
-// keeps any chosen tags and the shelves or list being viewed.
-export function useManageMode() {
+// Edit mode: tidying the collection (Xel, 2026-11-06). Tapping cards picks
+// them for the bar at the bottom ("Put on a shelf", "Delete"), and shelves
+// show their grips (drag to reorder) and "Edit shelf". Everything else
+// about a single recipe is on its own page. Lives in the address
+// ("#/?edit=1"), keeping any chosen tags and the shelves or list being viewed.
+function useEditMode() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const managing = searchParams.has("manage");
-  const setManaging = (on: boolean) => {
+  const editing = searchParams.has("edit");
+  const setEditing = (on: boolean) => {
     const next = new URLSearchParams(searchParams);
-    if (on) next.set("manage", "1");
-    else next.delete("manage");
+    if (on) next.set("edit", "1");
+    else next.delete("edit");
     setSearchParams(next, { replace: true });
   };
-  return [managing, setManaging] as const;
-}
-
-// Whether the list has any recipes, for the top bar's bin: an empty list has
-// nothing to delete. Starts from the phone's saved copy, so the bin doesn't
-// pop in on every visit; RecipeList keeps it up to date.
-let anyRecipes = (savedRecipes()?.length ?? 0) > 0;
-const anyRecipesListeners = new Set<() => void>();
-function setAnyRecipes(any: boolean) {
-  if (any === anyRecipes) return;
-  anyRecipes = any;
-  anyRecipesListeners.forEach((listener) => listener());
-}
-function subscribeAnyRecipes(listener: () => void) {
-  anyRecipesListeners.add(listener);
-  return () => {
-    anyRecipesListeners.delete(listener);
-  };
-}
-
-// Top-bar button, shown only on the recipe list: a bin, or a tick
-// ("Done") while deleting. None while there's nothing to delete (unless
-// deleting the last one just emptied it: the tick stays, to finish).
-export function ManageButton() {
-  const [managing, setManaging] = useManageMode();
-  const any = useSyncExternalStore(subscribeAnyRecipes, () => anyRecipes);
-  if (!any && !managing) return null;
-  const label = managing ? "Done deleting" : "Delete recipes";
-  return (
-    <button
-      className={`icon-button ${managing ? "primary" : ""}`}
-      onClick={() => setManaging(!managing)}
-      aria-label={label}
-      aria-pressed={managing}
-      title={label}
-    >
-      {managing ? <CheckIcon size={24} /> : <TrashIcon />}
-    </button>
-  );
+  return [editing, setEditing] as const;
 }
 
 export default function RecipeList() {
   const [all, setAll] = useState<Recipe[] | null>(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [managing] = useManageMode();
-  // The recipe being deleted right now, if any.
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editing, setEditing] = useEditMode();
+  // Edit mode: the recipes picked, by id; what the bar is doing; whether it
+  // shows the shelves to put them on; and what the last action did.
+  const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  const [working, setWorking] = useState(false);
+  const [choosingShelf, setChoosingShelf] = useState(false);
+  const [done, setDone] = useState("");
+  // After putting recipes on a shelf or taking them off: each changed
+  // recipe's tags from before, for the Undo next to the message.
+  const [undoTags, setUndoTags] = useState<Map<string, string[]> | null>(null);
   // Chosen tags live in the address too ("#/?tag=quick&tag=japanese"), so
   // links from a recipe's tags and the back button both keep the filter.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -164,11 +132,6 @@ export default function RecipeList() {
 
   // A shelf dragged onto another takes its place, for the whole household.
   // Shown straight away; put back if the server says no.
-  // The top bar's bin shows only while there's something to delete.
-  useEffect(() => {
-    if (all) setAnyRecipes(all.length > 0);
-  }, [all]);
-
   async function moveShelf(fromId: string, toId: string) {
     if (!categories) return;
     const before = categories;
@@ -239,30 +202,15 @@ export default function RecipeList() {
   const myRating = (recipe: Recipe) => (ratingsByRecipe.get(recipe.id) ?? []).find((r) => r.user === me?.id);
   const isMyFavorite = (recipe: Recipe) => myRating(recipe)?.favorite ?? false;
 
-  // The heart on a card: flips your favorite straight away, and undoes it if
-  // the server says no.
-  async function toggleFavorite(recipe: Recipe) {
-    if (!me) return;
-    const mine = myRating(recipe);
-    const favorite = !mine?.favorite;
-    const before = ratings;
-    const draft = { ...(mine ?? { id: "", recipe: recipe.id, user: me.id, stars: 0, approved: false }), favorite } as RecipeRating;
-    setRatings([...ratings.filter((r) => r !== mine), draft]);
-    try {
-      const saved = mine
-        ? await recipeRatings().update(mine.id, { favorite })
-        : await recipeRatings().create({ recipe: recipe.id, user: me.id, stars: 0, favorite, approved: false });
-      setRatings((current) => [...current.filter((r) => !(r.recipe === recipe.id && r.user === me.id)), saved]);
-    } catch (err) {
-      setRatings(before);
-      setError(errorMessage(err));
-    }
-  }
-
-  // Entering or leaving delete mode clears an old error.
+  // Entering or leaving Edit mode starts afresh: nothing picked, no old
+  // error or message.
   useEffect(() => {
     setError("");
-  }, [managing]);
+    setDone("");
+    setUndoTags(null);
+    setPicked(new Set());
+    setChoosingShelf(false);
+  }, [editing]);
 
   // A recipe must match every typed word, have every chosen tag and none of
   // the left-out ones, be added by the chosen person, and be quick and/or
@@ -355,33 +303,125 @@ export default function RecipeList() {
     setExcluded(excludedTags.includes(tag) ? excludedTags.filter((t) => t !== tag) : [...excludedTags, tag]);
   }
 
-  // The server deletes the recipe's plan nights, cooked days and ratings
-  // with it, so the question says so.
-  async function deleteRecipe(recipe: Recipe) {
-    const options = { filter: pb.filter("recipe = {:id}", { id: recipe.id }), fields: "id" };
-    const total = (page: Promise<{ totalItems: number }>) => page.then((p) => p.totalItems);
-    let extras = "";
-    try {
-      const [planned, cooked, ratings] = await Promise.all([
-        total(mealPlan().getList(1, 1, options)),
-        total(cookedLog().getList(1, 1, options)),
-        total(recipeRatings().getList(1, 1, options)),
-      ]);
-      extras = alsoDeleted({ planned, cooked, ratings });
-    } catch {
-      // Couldn't count: the question still warns it can't be undone.
-    }
-    if (!window.confirm(`Delete “${recipe.title}”${forEveryone(singleUser)}? ${extras ? `${extras} ` : ""}This can't be undone.`))
-      return;
-    setDeletingId(recipe.id);
+  function togglePicked(id: string) {
+    setDone("");
+    setUndoTags(null);
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // The picked recipes still matching the search and filters (a search or
+  // filter may hide some, and the bar leaves those alone). Ones in a closed
+  // drawer still count, so the Delete question names them.
+  const pickedRecipes = (list: Recipe[]) => list.filter((recipe) => picked.has(recipe.id));
+  const quoted = (titles: string[]) => titles.map((title) => `“${title}”`).join(", ");
+  // The server's reason as a sentence, so the next one can follow it.
+  const reasonOf = (err: unknown) => {
+    const text = errorMessage(err);
+    return /[.?!]$/.test(text) ? text : `${text}.`;
+  };
+
+  async function deletePicked(list: Recipe[]) {
+    // Busy from the first tap, while the question's counts load, so a second
+    // tap can't ask (and delete) twice.
+    setWorking(true);
     setError("");
-    try {
-      await recipes().delete(recipe.id);
-      setAll((previous) => (previous ?? []).filter((r) => r.id !== recipe.id));
-    } catch (err) {
-      setError(`Couldn't delete “${recipe.title}”: ${errorMessage(err)}`);
+    setDone("");
+    setUndoTags(null);
+    if (!(await confirmDelete(list, singleUser))) return setWorking(false);
+    const { deleted, failed } = await deleteRecipes(list);
+    const gone = new Set(deleted);
+    setAll((previous) => (previous ?? []).filter((r) => !gone.has(r.id)));
+    setPicked(new Set(failed.length ? list.filter((r) => !gone.has(r.id)).map((r) => r.id) : []));
+    if (deleted.length) setDone(deleted.length === 1 ? "Deleted 1 recipe." : `Deleted ${deleted.length} recipes.`);
+    if (failed.length) {
+      setError(
+        `Couldn't delete ${quoted(failed.map((f) => f.title))}: ${reasonOf(failed[0].reason)} Still picked, so you can try again.`
+      );
     }
-    setDeletingId(null);
+    setWorking(false);
+  }
+
+  // Puts the picked recipes on a shelf by adding its first tag, or takes
+  // them off (removing every tag that counts for it), like "Put on a shelf"
+  // in the recipe form. `takeOff` is what the tapped chip showed. Each
+  // recipe's tags are read fresh first, so a housemate's change made since
+  // this page loaded isn't saved over. Undo puts the old tags back.
+  async function shelvePicked(list: Recipe[], category: RecipeCategory, takeOff: boolean) {
+    setWorking(true);
+    setError("");
+    setDone("");
+    setUndoTags(null);
+    const changed = new Map<string, Recipe>();
+    const before = new Map<string, string[]>();
+    const failed: { recipe: Recipe; reason: unknown }[] = [];
+    for (const recipe of list) {
+      try {
+        const { tags: current } = await recipes().getOne(recipe.id, { fields: "id,tags" });
+        const tags = takeOff ? takingOff(current, category) : puttingOn(current, category);
+        if (tags.length === (current ?? []).length) continue;
+        changed.set(recipe.id, await recipes().update(recipe.id, { tags }, { expand: "added_by" }));
+        before.set(recipe.id, current ?? []);
+      } catch (reason) {
+        failed.push({ recipe, reason });
+      }
+    }
+    setAll((previous) => (previous ?? []).map((r) => changed.get(r.id) ?? r));
+    // After a failure only the failed ones stay picked, so trying again acts
+    // on just them; otherwise they all stay, ready for another shelf.
+    if (failed.length) setPicked(new Set(failed.map((f) => f.recipe.id)));
+    const count = changed.size === 1 ? "1 recipe" : `${changed.size} recipes`;
+    if (changed.size) {
+      // Taking off removes tags another shelf may share: say which shelves
+      // they left too.
+      const alsoLeft = takeOff
+        ? (categories ?? []).filter(
+            (other) =>
+              other.id !== category.id &&
+              [...changed.values()].some((r) => inCategory({ tags: before.get(r.id) ?? [] }, other) && !inCategory(r, other))
+          )
+        : [];
+      const also = alsoLeft.length
+        ? ` ${changed.size === 1 ? "It" : "They"} left ${alsoLeft.map((c) => c.name).join(" and ")} too (same tags).`
+        : "";
+      setDone(takeOff ? `Took ${count} off ${category.name}.${also}` : `Put ${count} on ${category.name}.`);
+      setUndoTags(before);
+    } else if (!failed.length) {
+      setDone(takeOff ? `None of them are on ${category.name}.` : `They're all on ${category.name} already.`);
+    }
+    if (failed.length) {
+      setError(
+        `Couldn't change ${quoted(failed.map((f) => f.recipe.title))}: ${reasonOf(failed[0].reason)} Still picked, so you can try again.`
+      );
+    } else setChoosingShelf(false);
+    setWorking(false);
+  }
+
+  // Undo after shelving: each changed recipe gets its tags from before back.
+  async function undoShelving() {
+    if (!undoTags) return;
+    setWorking(true);
+    setError("");
+    const restored = new Map<string, Recipe>();
+    const failed: string[] = [];
+    let reason: unknown = null;
+    for (const [id, tags] of undoTags) {
+      try {
+        restored.set(id, await recipes().update(id, { tags }, { expand: "added_by" }));
+      } catch (err) {
+        failed.push(all?.find((r) => r.id === id)?.title ?? id);
+        reason = err;
+      }
+    }
+    setAll((previous) => (previous ?? []).map((r) => restored.get(r.id) ?? r));
+    setUndoTags(null);
+    setDone(restored.size === 1 ? "Put back as it was." : restored.size ? "Put back as they were." : "");
+    if (failed.length) setError(`Couldn't put back ${quoted(failed)}: ${reasonOf(reason)} Change their tags on the recipe instead.`);
+    setWorking(false);
   }
 
   if (!all) return error ? <p className="error">{error}</p> : <p className="muted">Loading recipes…</p>;
@@ -411,39 +451,43 @@ export default function RecipeList() {
               🍲
             </span>
           )}
-          {isQuick(recipe, quickMinutes) && <QuickBadge />}
         </span>
         <span className="recipe-card-text">
           <strong title={recipe.title}>{recipe.title}</strong>
-          <CardDetails recipe={recipe} ratings={ratingsByRecipe.get(recipe.id) ?? []} />
+          <CardDetails
+            recipe={recipe}
+            ratings={ratingsByRecipe.get(recipe.id) ?? []}
+            quick={isQuick(recipe, quickMinutes)}
+          />
         </span>
       </>
     );
+    // Edit mode: the whole card picks it (a tick in the heart's corner shows
+    // it's picked), instead of opening it.
+    if (editing) {
+      const on = picked.has(recipe.id);
+      return (
+        <li key={recipe.id} className={`recipe-tile ${on ? "picked" : ""}`}>
+          <span className="pick-mark" aria-hidden="true">
+            {on && <CheckIcon size={18} />}
+          </span>
+          <button className="recipe-card" aria-pressed={on} aria-label={`Pick ${recipe.title}`} onClick={() => togglePicked(recipe.id)} disabled={working}>
+            {card}
+          </button>
+        </li>
+      );
+    }
     return (
       <li key={recipe.id} className="recipe-tile">
-        {/* Sit over the photo, beside the card's link rather than inside it:
-            the heart, or in delete mode, the bin. */}
-        {managing ? (
-          <button
-            className="delete-toggle"
-            aria-label={`Delete ${recipe.title}`}
-            title="Delete"
-            disabled={deletingId !== null}
-            onClick={() => void deleteRecipe(recipe)}
-          >
-            <TrashIcon size={16} />
-          </button>
-        ) : (
-          <button
-            className="heart-toggle on-photo small"
-            aria-pressed={isMyFavorite(recipe)}
-            aria-label={`Favorite ${recipe.title}`}
-            onClick={() => void toggleFavorite(recipe)}
-          >
-            <HeartIcon filled={isMyFavorite(recipe)} size={16} />
-          </button>
+        {/* Your favourites wear a heart (Xel, 2026-11-06): a badge, not a
+            button. A row of empty hearts was clutter; favouriting is on the
+            recipe's own page. */}
+        {isMyFavorite(recipe) && (
+          <span className="favorite-badge" role="img" aria-label="Your favourite" title="Your favourite">
+            <HeartIcon filled size={14} />
+          </span>
         )}
-        <Link to={`/recipes/${recipe.id}`} className={`recipe-card ${deletingId === recipe.id ? "deleting" : ""}`}>
+        <Link to={`/recipes/${recipe.id}`} className="recipe-card">
           {card}
         </Link>
       </li>
@@ -456,9 +500,12 @@ export default function RecipeList() {
   const allShelves = showShelves ? shelves(shown, categories!) : [];
   const filledShelves = allShelves.filter((shelf) => shelf.recipes.length > 0);
   const emptyShelves = allShelves.filter((shelf) => shelf.recipes.length === 0);
+  const pickedNow = editing ? pickedRecipes(shown) : [];
+  // Shelves recipes can be put on: those with a tag to add.
+  const shelfChoices = sortCategories(categories ?? []).filter((category) => (category.tags ?? []).length > 0);
 
   return (
-    <div className="stack">
+    <div className={`stack ${editing ? "editing" : ""}`}>
       <div className="toolbar">
         <input
           type="search"
@@ -583,28 +630,30 @@ export default function RecipeList() {
           {shown.length} {shown.length === 1 ? "recipe" : "recipes"}
         </span>
         {/* Between the count and Sort: switching between shelves and one
-            list, and the categories. */}
+            list, and Edit mode. */}
         <span className="list-options-links">
           {showShelves && (
-            <>
-              <Link to={{ search: "?list=1" }} className="list-options-link">
-                One list
-              </Link>
-              <span aria-hidden="true">·</span>
-              <Link to="/categories" className="list-options-link" aria-label="Edit categories">
-                Categories
-              </Link>
-            </>
+            <Link to={{ search: editing ? "?list=1&edit=1" : "?list=1" }} className="list-options-link">
+              One list
+            </Link>
           )}
           {listChosen && !!categories?.length && (
             <button className="link-button list-options-link" onClick={showShelvesAgain}>
               Show shelves
             </button>
           )}
-          {categories?.length === 0 && !managing && (
-            <Link to="/categories" className="list-options-link">
-              Make categories
+          {categories?.length === 0 && (
+            <Link to="/shelves?new=1" className="list-options-link">
+              Make shelves
             </Link>
+          )}
+          {!editing && !offline && (
+            <>
+              <span aria-hidden="true">·</span>
+              <button className="link-button list-options-link" onClick={() => setEditing(true)}>
+                Edit
+              </button>
+            </>
           )}
         </span>
         <label className="sort-picker">
@@ -621,12 +670,91 @@ export default function RecipeList() {
 
       {offline && <OfflineNote />}
       <BackupNudge recipes={all.length} />
-      {managing && <p className="muted">Tap the bin on a recipe to delete it. Tap ✓ at the top when you're done.</p>}
-      {managing && error && <p className="error">{error}</p>}
+      {editing && (
+        <div className="edit-bar">
+          <p>
+            Tap recipes to pick them{showShelves ? ", or drag a shelf by its ⠿ to move it" : ""}.
+          </p>
+          <button className="button primary" onClick={() => setEditing(false)}>
+            Done
+          </button>
+        </div>
+      )}
+      {editing && error && <p className="error">{error}</p>}
+      {editing && done && (
+        <p className="success" role="status">
+          {done}
+          {undoTags && (
+            <>
+              {" "}
+              <button className="link-button" onClick={() => void undoShelving()} disabled={working}>
+                Undo
+              </button>
+            </>
+          )}
+        </p>
+      )}
+      {/* What to do with the picked recipes, above the tab bar. */}
+      {pickedNow.length > 0 && (
+        <div className="select-bar" role="region" aria-label="Picked recipes">
+          {choosingShelf ? (
+            <>
+              <div className="select-bar-row">
+                <strong>Put {pickedNow.length === 1 ? "it" : `these ${pickedNow.length}`} on a shelf</strong>
+                <button className="link-button" onClick={() => setChoosingShelf(false)} disabled={working}>
+                  Cancel
+                </button>
+              </div>
+              {shelfChoices.length ? (
+                <>
+                  <div className="tag-list" role="group" aria-label="Shelves">
+                    {shelfChoices.map((category) => {
+                      const on = pickedNow.every((recipe) => inCategory(recipe, category));
+                      return (
+                        <button
+                          key={category.id}
+                          className={`tag-chip ${on ? "selected" : ""}`}
+                          aria-pressed={on}
+                          disabled={working}
+                          onClick={() => void shelvePicked(pickedNow, category, on)}
+                        >
+                          {category.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="muted select-bar-hint">A highlighted shelf already has them all: tap it to take them off.</p>
+                </>
+              ) : (
+                <p className="muted select-bar-hint">
+                  No shelves to put recipes on yet. <Link to="/shelves?new=1">Make one</Link>
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="select-bar-row">
+              <span>
+                <strong>{pickedNow.length}</strong> picked
+              </span>
+              <button className="link-button" onClick={() => setPicked(new Set())} disabled={working}>
+                Clear
+              </button>
+              <span className="select-bar-actions">
+                <button className="button" onClick={() => setChoosingShelf(true)} disabled={working || !categories}>
+                  Put on a shelf
+                </button>
+                <button className="button danger" onClick={() => void deletePicked(pickedNow)} disabled={working}>
+                  Delete
+                </button>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
       {shown.length === 0 && (
         <p className="muted">
           {favoritesOnly && !quickOnly && !search.trim() && !filtering
-            ? "No favorites yet. Tap the ♥ on a recipe to add it here."
+            ? "No favorites yet. Open a recipe and tap its ♥ to add it here."
             : quickOnly && !favoritesOnly && !search.trim() && !filtering
               ? `No recipes take ${quickMinutes} minutes or less. You can change what counts as quick in the ⋮ menu.`
               : search.trim()
@@ -647,27 +775,36 @@ export default function RecipeList() {
           onDragCancel={() => setDraggingShelf(null)}
         >
           {shelfError && <p className="error">{shelfError}</p>}
-          {filledShelves.map((shelf) => (
+          {/* Edit mode shows every shelf in its real order, empty ones as
+              shut drawers with grips, so any can be moved or edited and
+              lands where it's dropped (review, 2026-11-07). Otherwise the
+              empty ones are one line at the end (Xel, 2026-11-05): a new
+              household's first recipes come first, not seven empty drawers. */}
+          {(editing ? allShelves : filledShelves).map((shelf) => (
             <Shelf
               key={shelf.id}
               id={shelf.id}
               name={shelf.name}
               count={shelf.recipes.length}
-              open={drawers.isOpen(shelf.id)}
+              open={shelf.recipes.length > 0 && drawers.isOpen(shelf.id)}
               onToggle={() => drawers.toggle(shelf.id)}
-              // "Everything else" always comes last.
-              movable={shelf.id !== OTHER}
+              // "Everything else" always comes last, and isn't a real shelf.
+              movable={editing && shelf.id !== OTHER}
+              editLink={editing && shelf.id !== OTHER ? `/shelves?edit=${shelf.id}` : null}
             >
               <ul className="recipe-grid">{shelf.recipes.map((recipe) => tile(recipe))}</ul>
             </Shelf>
           ))}
-          {/* Empty shelves as one line at the end (Xel, 2026-11-05): a new
-              household's first recipes come first, not seven empty drawers. */}
-          {emptyShelves.length > 0 && (
+          {!editing && emptyShelves.length > 0 && (
             <p className="muted shelf-empty-line">
-              Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}. To put a recipe on one, edit it and
-              tap the shelf under Tags.
+              Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}. To fill one, tap Edit, pick some recipes,
+              then Put on a shelf.
             </p>
+          )}
+          {editing && (
+            <Link to="/shelves?new=1" className="button small new-shelf">
+              + New shelf
+            </Link>
           )}
           {/* What follows the finger while dragging: just the shelf's name. */}
           <DragOverlay>
@@ -683,14 +820,15 @@ export default function RecipeList() {
         <ul className="recipe-grid">{shown.map((recipe) => tile(recipe))}</ul>
       )}
 
-      {!managing && error && <p className="error">{error}</p>}
+      {!editing && error && <p className="error">{error}</p>}
     </div>
   );
 }
 
-// One shelf: a drawer of recipes with its name and count. A grip before the
-// name drags it onto another shelf to swap places (not "Everything else",
-// which stays last); the shelf it would land on is outlined.
+// One shelf: a drawer of recipes with its name and count. In Edit mode, a
+// grip before the name drags it onto another shelf to swap places (not
+// "Everything else", which stays last; the shelf it would land on is
+// outlined), and "Edit shelf" after it opens its name and tags.
 function Shelf({
   id,
   name,
@@ -698,6 +836,7 @@ function Shelf({
   open,
   onToggle,
   movable,
+  editLink,
   children,
 }: {
   id: string;
@@ -706,27 +845,42 @@ function Shelf({
   open: boolean;
   onToggle: () => void;
   movable: boolean;
+  editLink: string | null;
   children: ReactNode;
 }) {
   const drag = useDraggable({ id, disabled: !movable });
   const drop = useDroppable({ id, disabled: !movable });
   const classes = ["shelf", drag.isDragging ? "dragging" : "", drop.isOver && !drag.isDragging ? "drop-here" : ""];
+  const [editing] = useEditMode();
   return (
     <section ref={drop.setNodeRef} className={classes.join(" ")}>
-      <div className="shelf-head" ref={drag.setNodeRef}>
+      <div className={`shelf-head ${editing ? "with-handle" : ""}`} ref={drag.setNodeRef}>
         {movable ? (
           <button className="drag-handle shelf-handle" aria-label={`Move the ${name} shelf`} title="Drag to move" {...drag.attributes} {...drag.listeners}>
             <GripIcon />
           </button>
         ) : (
-          <span className="shelf-handle-space" aria-hidden="true" />
+          editing && <span className="shelf-handle-space" aria-hidden="true" />
         )}
         <h2>
-          <DrawerToggle open={open} onToggle={onToggle} className="shelf-toggle">
-            <span className="drawer-label">{name}</span>
-            <span className="drawer-counts muted">{count}</span>
-          </DrawerToggle>
+          {count === 0 ? (
+            // An empty shelf (Edit mode only): nothing to open.
+            <span className="drawer-toggle shelf-toggle shelf-empty-name">
+              <span className="drawer-label">{name}</span>
+              <span className="drawer-counts muted">empty</span>
+            </span>
+          ) : (
+            <DrawerToggle open={open} onToggle={onToggle} className="shelf-toggle">
+              <span className="drawer-label">{name}</span>
+              <span className="drawer-counts muted">{count}</span>
+            </DrawerToggle>
+          )}
         </h2>
+        {editLink && (
+          <Link to={editLink} className="button small shelf-edit" aria-label={`Edit the ${name} shelf`}>
+            <PencilIcon /> Edit shelf
+          </Link>
+        )}
       </div>
       {open && children}
     </section>
@@ -735,7 +889,7 @@ function Shelf({
 
 // The small line under a card's name: time, average stars, and a tiny
 // thumbs up if anyone has given it one.
-function CardDetails({ recipe, ratings }: { recipe: Recipe; ratings: RecipeRating[] }) {
+function CardDetails({ recipe, ratings, quick }: { recipe: Recipe; ratings: RecipeRating[]; quick: boolean }) {
   const time = formatMinutes(totalMinutes(recipe));
   const average = averageStars(ratings);
   const thumbsUp = ratings.some((r) => r.approved);
@@ -743,7 +897,7 @@ function CardDetails({ recipe, ratings }: { recipe: Recipe; ratings: RecipeRatin
   if (!time && average === null && !thumbsUp && !thumbsDown) return null;
   return (
     <span className="card-details muted">
-      {time && <span>{time}</span>}
+      {time && <QuickTime quick={quick}>{time}</QuickTime>}
       {average !== null && (
         <span aria-label={`${average} stars`}>
           <span className="star-gold">★</span>

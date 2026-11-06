@@ -158,9 +158,12 @@ keep recipes readable without internet, and avoid subscriptions.
          the pantry got one: first start, empty screens, wording (2026-11-05,
          a new household on a throwaway server at phone width; see
          "Waiting for the next app release").
-   - [ ] Store listing: 512 px icon, 1024 × 500 banner, 2 to 8 phone
+   - [x] Store listing: 512 px icon, 1024 × 500 banner, 2 to 8 phone
          screenshots without store logos, short and long description,
-         content rating questionnaire, target audience.
+         content rating questionnaire, target audience (2026-11-06: text
+         and answers in docs/PLAY-LISTING.md, pictures in branding/play/
+         from branding/make_play_listing.py; entering them in Play Console
+         is Xel's, below).
    - [ ] 12+ testers lined up, and a way for them to send feedback.
 
    Not needed before testing: new features (Packets in stock), iPhone.
@@ -181,7 +184,8 @@ keep recipes readable without internet, and avoid subscriptions.
          in StoreLogo.tsx.
    - [x] App bundle (.aab): `npm run play` makes it (2026-11-03).
    - [ ] In Play Console (Xel): Play App Signing with Bento's key as the
-         upload key, store listing, data safety form, privacy policy link
+         upload key, store listing, data safety form (answers drafted in
+         docs/PLAY-DATA-SAFETY.md, 2026-11-06), privacy policy link
          (thekoipond.dev/bentotachi/privacy.html).
    - [ ] Play-signed builds can't update self-installed ones: everyone
          reinstalls once (recipes are safe on the server).
@@ -191,6 +195,114 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- Tidying recipes and shelves, one system (Xel, 2026-11-06; seen in the
+  store screenshots): browse by default, change a recipe on its own page,
+  tidy the collection in one Edit mode.
+  - The top bar's bin is gone. "Edit" beside "One list" on the Recipes page
+    opens Edit mode: tap cards to pick them (a plum tick and outline), and
+    a bar above the tabs offers "Put on a shelf" (tap a shelf to put them
+    all on it, or a highlighted one to take them off) and "Delete" (one
+    question for all of them, saying what else goes). Done ends it.
+  - Shelves show their drag grips and "Edit shelf" only in Edit mode, with
+    "+ New shelf" at the end; the empty shelves' names open them. The
+    Shelves page (was "Categories", now #/shelves) lost its ↑ ↓: moving
+    shelves is dragging, in one place.
+  - "Delete recipe" at the end of each recipe's page (there was none).
+  - One word, "shelves", everywhere: "Make shelves", "Shelves start
+    closed" in the ⋮ menu.
+- The fridge door's way in is a little sticky note stuck to the end of the
+  title (Xel, 2026-11-06): soft jade paper, tilted, held by a wooden
+  magnet, with scribbles on it, or the number of new notes in plum. It
+  replaced a note icon in its own box that looked like a separate button.
+- A recipe page's details in one card (2026-11-06; looked sloppy in the
+  store screenshots): the description, a line, then servings and times in
+  even columns, then "⏱ Time it" (a running timer stays inside it), with
+  the ✎ for all of those in the card's corner. Tags and their "+" are the
+  same height.
+- Ratings and "when we had it" in one card under the tags (2026-11-06):
+  stars and thumbs, the average with a pill per person that now shows
+  their name ("Alex ★4", "You ★5"; no pills when one person uses
+  Bentotachi), a line, then "Last had Mon, Nov 2 / 4 days ago / Next: …"
+  (or "Not cooked yet") beside "We cooked this", laid out the same way
+  however much there is to say.
+- The dinner plan's tidy-up (2026-11-06): the "how to drag" hint moved
+  from the top to one short line after the plan, "Shop for these" moved
+  there too as a full-width "Add these to the shopping list" (like the
+  one under a recipe's ingredients), and with breakfasts and lunches on,
+  a day's empty meals are small "+ Breakfast  + Lunch" chips after the
+  planned ones (still drop targets) instead of a full dashed box each.
+  The two weeks are named (Xel's pick from three mockups): "This week" /
+  "Next week" headings in the list ("Last week", "Week of Nov 16" once
+  you move), so the list's top has just ‹ Today ›, centred (the month view
+  keeps "November 2026"); and the list opens at today with yesterday just
+  above it (so does "Today"), instead of at Monday. A planned meal is one
+  bordered card with its drag handle as a slim soft-jade tab down the left
+  edge (Xel's pick of two mockups), so it's clearly what moves it.
+- Shopping list (2026-11-06): tighter rows (about 46px instead of 60,
+  still a full-width tap target), and "for Crispy fish tacos" under an
+  item is quieter (smaller, grey, underlined only when pointed at), so the
+  groceries stand out and more of the list fits on screen in the shop.
+- Page titles ("Dinner plan", "Shopping list", "Pantry", "The fridge
+  door"…) are in Pond Pebbles, The Koi Pond's own font (Xel, 2026-11-06;
+  VISION.md). A recipe's own name stays in the phone's font: the font has
+  no accented letters (it does have straight apostrophes and quotes).
+- The fridge door looks like one (Xel's pick, 2026-11-06): notes are paper
+  in soft jade, plum or peach (kept per note), two to a row (filled left
+  to right, newest first), each tilted
+  a little and held by a magnet in the colour of whoever left it (wood
+  when it's just you). "Lately" is a calm feed: no bullets or underlines,
+  names in their colour, recipe names in bold, the plan and "Run out" in
+  plum. No notes yet: the message sits in a dashed outline.
+- The servings changer above the ingredients is a small card (Xel's pick
+  of two mockups, 2026-11-06): "Makes" with − 6 + beside it, then once
+  changed one line, "Scaled from 4. Amounts in the method stay as
+  written. Reset". It was a bare "6", a floating "Back to 4" and a
+  two-line note.
+- An ingredient's pantry status is quiet now (2026-11-06; the outlined
+  chips of different widths looked sloppy, then loud): the pantry's level
+  bars and the word in small grey, no outline, all lined up; only Out is
+  in colour. A guessed link has a dotted line under the word (it was a
+  dotted outline).
+- Recipe shelves and pantry places are drawers (Xel's pick of three
+  mockups, 2026-11-06): one bordered card whose front is tinted soft jade,
+  holding the ⌄, name, count (and in Edit mode the grip and "Edit
+  shelf"), with the contents under a line, so closed ones stack like a
+  chest of drawers instead of headings floating above their cards.
+- Pantry (2026-11-06): places (Cupboard, Fridge…) start open and the ones
+  you close stay closed on that device (they all started closed on every
+  visit, so the page opened looking empty); "In stock:" packets that wrap
+  onto a second line now line up under the first one, not under the
+  label.
+- Edit mode after review (2026-11-07): putting recipes on a shelf or
+  taking them off reads their tags fresh (a housemate's change isn't
+  saved over), offers Undo, and says when they also left another shelf
+  that shares a tag; failures name the recipes and only those stay
+  picked. Empty shelves are shut drawers with grips in Edit mode, so
+  they can be moved (the Shelves page no longer lists shelves; it opens
+  one). Delete asks once even on a double tap, and names the recipes.
+- Padding pass (2026-11-06): grey intro lines no longer get the
+  browser's 1em margin on top of the stack's gap (33px around them on
+  Browse, Add recipe, Shelves, Backups), cards are 16px inside instead
+  of 20px, and a shelf card's Edit sits beside its name instead of on a
+  row of its own. Browse's "+ Add a site" is on the "Our sites"
+  heading's row (it looked like it belonged to "Recipe sites" below).
+- Pond Pebbles has opening quotes now (‘ “, the closing ones turned
+  round), instead of showing the closing shape at both ends: copied in
+  from the website repository's rebuilt font (2026-11-06).
+- Buttons on their own at a card's or list's end sit at the right, like
+  Save (Xel, 2026-11-06): "Stick it on the fridge", Backups' "Join a
+  household", Browse's "+ Add a site", Edit mode's "+ New shelf" and the
+  Shelves page's Edit had drifted left. Delete, Stop and Reset stay on
+  the far left on purpose (the 2026-11-02 rule), away from Save.
+- "⏱ Time it" is the recipe details card's footer: below a line, "How
+  long does it really take?" on the left and an outlined button at the
+  right, where the running timer then takes over. Its Stop is outlined
+  like Pause, and both have a symbol (■ Stop, ⏸ Pause, ▶ Resume).
+- Recipe cards: the ⚡ moved off the photo into the line under the name
+  ("⚡ 15 min" in jade), so it can't be mistaken for a button; same on the
+  recipe page's Total. Only your favourites wear a heart, as a small
+  badge in the photo's corner (Xel, 2026-11-06): no more row of empty
+  heart buttons; favouriting is on the recipe's own page.
 - A first-time look (2026-11-05), as a new household would see it:
   - Recipes: empty shelves fold into one line after the filled ones
     ("Empty shelves: Sides · Desserts… To put a recipe on one, edit it and
@@ -1114,6 +1226,14 @@ phone width; and the voice-pass list as its own short document.
 ## Ideas for later
 
 - Phone notifications when something is about to expire
+- Different lunches per person (meal prep) while dinners are shared: only
+  if someone actually asks (Xel, 2026-11-06). It means a "whose" field on
+  plan entries and dropping the one-meal-per-slot rule, on phones too.
+  Meanwhile a note in the lunch slot does it ("Sam: chicken bowls · Alex:
+  pasta salad"), and a weekly "meal prep" may fit better than daily slots.
+- A servings slider like fancy recipe sites (mocked up 2026-11-06: big "6
+  servings", a 1–12 slider with an "as written" mark): only if enough
+  people ask (Xel). The stepper card stays meanwhile.
 
 ## To fix later
 

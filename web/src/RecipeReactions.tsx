@@ -11,6 +11,7 @@ import {
 } from "./pb";
 import { CloseIcon, HeartIcon, PlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons";
 import { addReasons, MAX_REASON_LENGTH, MAX_REASONS, suggestedReasons } from "./dislikeReasons";
+import { useSingleUser } from "./household";
 
 type Mine = Pick<RecipeRating, "stars" | "favorite" | "approved" | "disliked" | "dislike_reasons">;
 
@@ -99,6 +100,8 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
   const { ratings, mine, me, error, saveMine } = state;
   // Whose thumbs-down reasons are showing (a user id), if anyone's.
   const [showingReasons, setShowingReasons] = useState<string | null>(null);
+  // Alone, the pills would only repeat your own stars.
+  const singleUser = useSingleUser();
   if (!ratings || !me) return error ? <p className="error">{error}</p> : null;
 
   const average = averageStars(ratings);
@@ -165,12 +168,18 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
             <span className="star-gold">★</span> {average} average
           </span>
         )}
-        {/* One pill per person, in their color: their stars, plus 👍 or 👎.
-            A pill with thumbs-down reasons can be tapped to show them. */}
-        {reactions.map((r) => {
+        {/* One pill per person, in their color: their name, their stars,
+            plus 👍 or 👎. A pill with thumbs-down reasons can be tapped to
+            show them. */}
+        {!singleUser && reactions.map((r) => {
           const content = (
             <>
-              {r.stars > 0 && r.stars}
+              <span className="rating-pill-name">{nameOf(r)}</span>
+              {r.stars > 0 && (
+                <span>
+                  ★{r.stars}
+                </span>
+              )}
               {r.approved && <ThumbsUpIcon filled size={11} />}
               {r.disliked && <ThumbsDownIcon filled size={11} />}
             </>

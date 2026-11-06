@@ -158,7 +158,11 @@ The pantry's Have / Low / Out colours stay green, amber and red: they mean
 something at a glance.
 
 **Type.** The phone's own font (system-ui), so it reads like a normal app;
-the drawn title carries the personality.
+the drawn title carries the personality. Page titles ("Dinner plan",
+"Pantry", "The fridge door"…) are in Pond Pebbles, The Koi Pond's own
+display font (decided 2026-11-06). Only for text we write: it has no
+accented letters, so a recipe's own name (on its page) stays in the
+phone's font, and so do buttons and anything longer than a title.
 
 **Follows the phone.** Light or dark mode comes from the phone's setting.
 

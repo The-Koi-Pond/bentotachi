@@ -38,36 +38,42 @@ export default function ScaleControl({
     more = at < FACTORS.length - 1 ? FACTORS[at + 1] : null;
   }
 
+  // A small card (Xel's pick, 2026-11-06; a slider can come later if people
+  // ask): "Makes" with the stepper beside it, then once changed one line
+  // saying what it was scaled from, with Reset.
   return (
     <div className="scale-row">
-      <div className="scale-control" role="group" aria-label="Recipe size">
-        <button
-          className="icon-button small"
-          onClick={() => fewer !== null && onChange(fewer)}
-          disabled={fewer === null}
-          aria-label={base ? "Fewer servings" : "Smaller batch"}
-        >
-          −
-        </button>
-        <span className="scale-value" aria-live="polite">
-          {base ? scaledServings(servings, factor) : `×${kitchenFraction(factor)}`}
-        </span>
-        <button
-          className="icon-button small"
-          onClick={() => more !== null && onChange(more)}
-          disabled={more === null}
-          aria-label={base ? "More servings" : "Bigger batch"}
-        >
-          +
-        </button>
+      <div className="scale-top">
+        <span className="scale-label">{base ? "Makes" : "Batch"}</span>
+        <div className="scale-control" role="group" aria-label="Recipe size">
+          <button
+            className="icon-button small"
+            onClick={() => fewer !== null && onChange(fewer)}
+            disabled={fewer === null}
+            aria-label={base ? "Fewer servings" : "Smaller batch"}
+          >
+            −
+          </button>
+          <span className="scale-value" aria-live="polite">
+            {base ? scaledServings(servings, factor) : `×${kitchenFraction(factor)}`}
+          </span>
+          <button
+            className="icon-button small"
+            onClick={() => more !== null && onChange(more)}
+            disabled={more === null}
+            aria-label={base ? "More servings" : "Bigger batch"}
+          >
+            +
+          </button>
+        </div>
       </div>
       {factor !== 1 && (
-        <>
+        <p className="muted scale-note">
+          {base ? `Scaled from ${servings}.` : "Scaled from the recipe's amounts."} Amounts in the method stay as written.{" "}
           <button className="link-button" onClick={() => onChange(1)}>
-            Back to {base ? servings : "×1"}
+            Reset
           </button>
-          <p className="muted scale-note">Only the ingredients change: amounts in the method stay as written.</p>
-        </>
+        </p>
       )}
     </div>
   );

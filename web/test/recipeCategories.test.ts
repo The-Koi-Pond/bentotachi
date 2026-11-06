@@ -1,7 +1,30 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { OTHER, inCategory, movedTo, shelves } from "../src/recipeCategories.ts";
+import { OTHER, inCategory, movedTo, puttingOn, shelves, takingOff } from "../src/recipeCategories.ts";
+
+test("putting a recipe on a shelf adds the shelf's first tag, once", () => {
+  const mains = { tags: ["Main course", "mains", "dinner"] };
+  assert.deepEqual(puttingOn(["quick"], mains), ["quick", "main course"]);
+  assert.deepEqual(puttingOn(null, mains), ["main course"]);
+  // Already on it through any of its tags: unchanged.
+  assert.deepEqual(puttingOn(["Dinner", "quick"], mains), ["Dinner", "quick"]);
+  // A shelf with no tags can't take recipes.
+  assert.deepEqual(puttingOn(["quick"], { tags: [] }), ["quick"]);
+});
+
+test("taking a recipe off a shelf removes every tag that counts for it", () => {
+  const mains = { tags: ["main course", "mains", "dinner"] };
+  assert.deepEqual(takingOff(["Dinner", "quick", " Mains "], mains), ["quick"]);
+  assert.deepEqual(takingOff(null, mains), []);
+});
+
+test("putting on and taking off leave the recipe's own list alone", () => {
+  const tags = ["quick", "dinner"];
+  puttingOn(tags, { tags: ["dessert"] });
+  takingOff(tags, { tags: ["dinner"] });
+  assert.deepEqual(tags, ["quick", "dinner"]);
+});
 
 test("dragging a shelf onto another puts it in that one's place", () => {
   const list = ["A", "B", "C", "D"].map((name, position) => ({ id: name, name, tags: [], position }));

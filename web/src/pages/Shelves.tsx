@@ -1,22 +1,40 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { errorMessage, recipeCategories, recipes, type Recipe, type RecipeCategory } from "../pb";
-import { inCategory, normaliseTag, sortCategories } from "../recipeCategories";
+import { normaliseTag, sortCategories } from "../recipeCategories";
 import { forEveryone, useSingleUser } from "../household";
-import { saveCategoryOrder } from "../categoryOrder";
 import { useUnsavedChanges } from "../unsavedChanges";
 
-// The household's recipe categories: the shelves on the Recipes page. Each
-// is a name and the tags that count for it, so the many ways websites spell
-// the same thing ("main course", "mains"…) all land on one shelf.
-export default function Categories() {
+// The household's shelves on the Recipes page (stored as recipe
+// categories). Each is a name and the tags that count for it, so the many
+// ways websites spell the same thing ("main course", "mains"…) all land on
+// one shelf. Reordering is on the Recipes page, in Edit mode.
+//
+// The Recipes page's Edit mode opens one shelf ("#/shelves?edit=<id>", or
+// "?new=1" for a new one); Save, Cancel or Delete then go back there. Every
+// shelf is listed there, so this page has no list of its own: without
+// either it goes to that Edit mode.
+export default function Shelves() {
+  const [searchParams] = useSearchParams();
+  const opened = searchParams.get("edit") ?? (searchParams.has("new") ? "new" : null);
+  return opened ? <ShelfPage opened={opened} /> : <Navigate to="/?edit=1" replace />;
+}
+
+function ShelfPage({ opened }: { opened: string }) {
   const [categories, setCategories] = useState<RecipeCategory[] | null>(null);
   const [tagged, setTagged] = useState<Pick<Recipe, "id" | "tags">[]>([]);
   const [error, setError] = useState("");
-  // The category being edited: its id, or "new" for one not saved yet.
-  const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const singleUser = useSingleUser();
+  const navigate = useNavigate();
+
+  // Done: back to the Recipes page's Edit mode (by going back, if that's
+  // where this was opened from).
+  function finish() {
+    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (index > 0) navigate(-1);
+    else navigate("/?edit=1", { replace: true });
+  }
 
   useEffect(() => {
     recipeCategories()
@@ -36,9 +54,10 @@ export default function Categories() {
     return [...totals.entries()].sort(([a, x], [b, y]) => y - x || a.localeCompare(b));
   }, [tagged]);
 
-  if (!categories) return error ? <p className="error">{error}</p> : <p className="muted">Loading categories…</p>;
+  if (!categories) return error ? <p className="error">{error}</p> : <p className="muted">Loading shelves…</p>;
 
-  async function save(original: RecipeCategory | null, name: string, tags: string[]) {
+  // Both say whether it worked; the form then moves on (see finish).
+  async function save(original: RecipeCategory | null, name: string, tags: string[]): Promise<boolean> {
     setBusy(true);
     setError("");
     try {
@@ -47,152 +66,92 @@ export default function Categories() {
         ? await recipeCategories().update(original.id, data)
         : await recipeCategories().create({ ...data, position: Math.max(-1, ...categories!.map((c) => c.position)) + 1 });
       setCategories((list) => sortCategories([...(list ?? []).filter((c) => c.id !== saved.id), saved]));
-      setEditing(null);
+      return true;
     } catch (err) {
       setError(errorMessage(err));
+      return false;
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
-  async function remove(category: RecipeCategory) {
-    if (!window.confirm(`Delete the “${category.name}” category${forEveryone(singleUser)}? Its recipes keep their tags.`)) return;
+  async function remove(category: RecipeCategory): Promise<boolean> {
+    if (!window.confirm(`Delete the “${category.name}” shelf${forEveryone(singleUser)}? Its recipes keep their tags.`)) return false;
     setBusy(true);
     setError("");
     try {
       await recipeCategories().delete(category.id);
       setCategories((list) => (list ?? []).filter((c) => c.id !== category.id));
-      setEditing(null);
+      return true;
     } catch (err) {
       setError(errorMessage(err));
+      return false;
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
-  // Swaps a category with its neighbour, numbering them all 0, 1, 2… so the
-  // order is always clear.
-  async function move(index: number, by: -1 | 1) {
-    const order = [...categories!];
-    [order[index], order[index + by]] = [order[index + by], order[index]];
-    setBusy(true);
-    setError("");
-    try {
-      setCategories(await saveCategoryOrder(order, categories!));
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-    setBusy(false);
-  }
+  const category = opened === "new" ? null : categories.find((c) => c.id === opened);
 
   return (
     <div className="stack narrow">
       <div className="stack">
-        <h1>Categories</h1>
+        <h1>Shelves</h1>
         <p className="muted">
-          Each category is a shelf on the <Link to="/">Recipes</Link> page, holding every recipe with any of its tags.
-          Websites name the same thing in different ways, so add each spelling you see.
+          Each shelf on the <Link to="/">Recipes</Link> page holds every recipe with any of its tags. Websites name the
+          same thing in different ways, so add each spelling you see.
         </p>
       </div>
       {error && <p className="error">{error}</p>}
-
-      {categories.map((category, index) =>
-        editing === category.id ? (
-          <CategoryForm
-            key={category.id}
-            category={category}
-            tagCounts={tagCounts}
-            busy={busy}
-            onSave={(name, tags) => void save(category, name, tags)}
-            onCancel={() => setEditing(null)}
-            onDelete={() => void remove(category)}
-          />
-        ) : (
-          <section key={category.id} className="card stack category-card">
-            <div className="category-head">
-              <h2>{category.name}</h2>
-              <span className="muted">{countLabel(tagged.filter((recipe) => inCategory(recipe, category)).length)}</span>
-              <div className="category-moves">
-                <button
-                  className="icon-button small"
-                  aria-label={`Move ${category.name} up`}
-                  title="Move up"
-                  disabled={busy || index === 0}
-                  onClick={() => void move(index, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  className="icon-button small"
-                  aria-label={`Move ${category.name} down`}
-                  title="Move down"
-                  disabled={busy || index === categories.length - 1}
-                  onClick={() => void move(index, 1)}
-                >
-                  ↓
-                </button>
-              </div>
-            </div>
-            <div className="tag-list">
-              {(category.tags ?? []).length ? (
-                (category.tags ?? []).map((tag) => (
-                  <span key={tag} className="tag-chip static">
-                    {tag}
-                  </span>
-                ))
-              ) : (
-                <span className="muted">No tags yet.</span>
-              )}
-            </div>
-            <button className="button small category-edit" disabled={busy || editing !== null} onClick={() => setEditing(category.id)}>
-              Edit
-            </button>
-          </section>
-        ),
-      )}
-
-      {editing === "new" ? (
+      {category === undefined ? (
+        <p className="muted">
+          That shelf isn't here any more: someone may have deleted it. <Link to="/?edit=1">Back to your recipes</Link>
+        </p>
+      ) : (
         <CategoryForm
-          category={null}
+          category={category}
           tagCounts={tagCounts}
           busy={busy}
-          onSave={(name, tags) => void save(null, name, tags)}
-          onCancel={() => setEditing(null)}
+          onSave={(name, tags) => save(category, name, tags)}
+          onDone={finish}
+          onDelete={category ? () => remove(category) : undefined}
         />
-      ) : (
-        <button className="button primary" disabled={busy || editing !== null} onClick={() => setEditing("new")}>
-          + New category
-        </button>
       )}
     </div>
   );
 }
 
-function countLabel(count: number) {
-  return `${count} ${count === 1 ? "recipe" : "recipes"}`;
-}
-
-// Adding or changing a category: its name, and its tags picked from the
-// ones recipes use (narrowed by typing) or typed in new, like "one-pot".
+// Adding or changing a shelf: its name, and its tags picked from the ones
+// recipes use (narrowed by typing) or typed in new, like "one-pot".
 function CategoryForm({
   category,
   tagCounts,
   busy,
   onSave,
-  onCancel,
+  onDone,
   onDelete,
 }: {
   category: RecipeCategory | null;
   tagCounts: [string, number][];
   busy: boolean;
-  onSave: (name: string, tags: string[]) => void;
-  onCancel: () => void;
-  onDelete?: () => void;
+  // Say whether it worked; the form moves on (onDone) only if it did.
+  onSave: (name: string, tags: string[]) => Promise<boolean>;
+  onDone: () => void;
+  onDelete?: () => Promise<boolean>;
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [tags, setTags] = useState<string[]>((category?.tags ?? []).map(normaliseTag));
   const [typed, setTyped] = useState("");
   const now = JSON.stringify([name, tags]);
   const [opened] = useState(now);
-  useUnsavedChanges(now !== opened || typed.trim() !== "");
+  const { allowLeaving } = useUnsavedChanges(now !== opened || typed.trim() !== "");
+
+  // Saved, deleted or cancelled on purpose: no "unsaved changes?" question
+  // on the way back to the Recipes page.
+  function leave() {
+    allowLeaving();
+    onDone();
+  }
 
   const wanted = normaliseTag(typed);
   const suggestions = tagCounts.filter(([tag]) => !tags.includes(tag) && (!wanted || tag.includes(wanted)));
@@ -204,14 +163,14 @@ function CategoryForm({
     setTyped("");
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
-    onSave(name, tags);
+    if (await onSave(name, tags)) leave();
   }
 
   return (
     <form className="card stack category-form" onSubmit={submit}>
-      <h2>{category ? `Edit “${category.name}”` : "New category"}</h2>
+      <h2>{category ? `Edit “${category.name}”` : "New shelf"}</h2>
       <label>
         Name
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Desserts" required autoFocus />
@@ -270,11 +229,11 @@ function CategoryForm({
 
       <div className="actions">
         {onDelete && (
-          <button type="button" className="button danger push-left" onClick={onDelete} disabled={busy}>
+          <button type="button" className="button danger push-left" onClick={() => void onDelete().then((gone) => gone && leave())} disabled={busy}>
             Delete
           </button>
         )}
-        <button type="button" className="button ghost" onClick={onCancel} disabled={busy}>
+        <button type="button" className="button ghost" onClick={leave} disabled={busy}>
           Cancel
         </button>
         <button className="button primary" disabled={busy || !name.trim()}>

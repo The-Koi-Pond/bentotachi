@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
+import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import {
   cookedLog,
   displayName,
@@ -22,7 +23,7 @@ import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
 import { addToShoppingList, addedMessage } from "../shoppingAdd";
 import RecipeReactions, { FavoriteHeart, useRecipeRatings } from "../RecipeReactions";
-import QuickBadge from "../QuickBadge";
+import QuickTime from "../QuickTime";
 import PlanButton from "../PlanButton";
 import { datePart, formatDay, localToday, timeAgo, toStoredDate } from "../dates";
 import { isOffline, saveRecipe, savedRecipes } from "../offline";
@@ -85,6 +86,9 @@ export default function RecipeView() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState("");
   const singleUser = useSingleUser();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState<"no" | "asking" | "deleting">("no");
+  const [deleteError, setDeleteError] = useState("");
   // For hints like "1 red bell pepper (capsicum)" in the household's words
   // and units.
   const hints = useHints(recipe?.source_url ?? "");
@@ -207,7 +211,6 @@ export default function RecipeView() {
               onDoubleClick={() => setFraming(true)}
             />
           </span>
-          {isQuick(recipe, quickMinutes) && <QuickBadge size={20} />}
           <FavoriteHeart state={ratings} onPhoto />
         </div>
       )}
@@ -234,29 +237,35 @@ export default function RecipeView() {
               <ShareButton recipe={recipe} scale={scale} />
             </span>
           </div>
-          {recipe.description && <DescriptionPreview key={recipe.id} text={recipe.description} />}
-
-          <div className="facts-row">
-            <dl className="facts">
-              {recipe.servings && (
-                <div>
-                  <dt>Makes</dt>
-                  <dd>{scaledServings(recipe.servings, scale)}</dd>
-                </div>
-              )}
-              {times.map(([label, minutes], index) => (
-                <div key={index}>
-                  <dt>{label}</dt>
-                  <dd>{formatMinutes(minutes)}</dd>
-                </div>
-              ))}
-            </dl>
-            {editButton("details", "Change the name, description, servings and times")}
-          </div>
+          {/* About it, in one card: the description, servings and times in
+              even columns, "⏱ Time it", and the ✎ for all of those (and the
+              name) in its corner. */}
+          <section className="details-card" aria-label="About this recipe">
+            <span className="details-edit">{editButton("details", "Change the name, description, servings and times")}</span>
+            {recipe.description && <DescriptionPreview key={recipe.id} text={recipe.description} />}
+            {(recipe.servings || times.length > 0) && (
+              <dl className="facts">
+                {recipe.servings && (
+                  <div>
+                    <dt>Makes</dt>
+                    <dd>{scaledServings(recipe.servings, scale)}</dd>
+                  </div>
+                )}
+                {times.map(([label, minutes], index) => (
+                  <div key={index}>
+                    <dt>{label}</dt>
+                    <dd>
+                      <QuickTime quick={label === "Total" && isQuick(recipe, quickMinutes)}>{formatMinutes(minutes)}</QuickTime>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {/* Timing it while cooking, to save how long it really takes. */}
+            {!offline && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void markCooked()} />}
+          </section>
         </>
       )}
-      {/* Timing it while cooking, to save how long it really takes. */}
-      {!offline && editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void markCooked()} />}
 
       <QuickTags
         tags={recipe.tags ?? []}
@@ -267,14 +276,18 @@ export default function RecipeView() {
 
       {!offline && (
         <>
-          <RecipeReactions state={ratings} showHeart={!recipe.image} />
-          <CookHistory
-            recipeId={recipe.id}
-            cooked={cooked.items ?? []}
-            onCooked={() => void markCooked()}
-            onUndo={(entries) => void undoCooked(entries)}
-          />
-          {cookError && <p className="error">{cookError}</p>}
+          {/* How it's gone for us, in one card: ratings, then when it was
+              last had and next planned, with "We cooked this". */}
+          <div className="verdict-card">
+            <RecipeReactions state={ratings} showHeart={!recipe.image} />
+            <CookHistory
+              recipeId={recipe.id}
+              cooked={cooked.items ?? []}
+              onCooked={() => void markCooked()}
+              onUndo={(entries) => void undoCooked(entries)}
+            />
+            {cookError && <p className="error">{cookError}</p>}
+          </div>
         </>
       )}
 
@@ -456,6 +469,32 @@ export default function RecipeView() {
             </p>
           )}
         </footer>
+      )}
+
+      {/* Deleting it, at the very end, where it can't be tapped by accident
+          while cooking. Several at once: the Recipes page's Edit mode. */}
+      {!offline && editing === null && (
+        <div className="recipe-delete">
+          {deleteError && <p className="error">{deleteError}</p>}
+          <button
+            className="button danger"
+            disabled={deleting !== "no"}
+            onClick={async () => {
+              // Busy from the first tap, while the question's counts load,
+              // so a second tap can't ask twice.
+              setDeleting("asking");
+              setDeleteError("");
+              if (!(await confirmDelete([recipe], singleUser))) return setDeleting("no");
+              setDeleting("deleting");
+              const { failed } = await deleteRecipes([recipe]);
+              setDeleting("no");
+              if (failed.length) setDeleteError(`Couldn't delete it: ${errorMessage(failed[0].reason)}`);
+              else navigate("/", { replace: true });
+            }}
+          >
+            {deleting === "deleting" ? "Deleting…" : "Delete recipe"}
+          </button>
+        </div>
       )}
     </article>
   );
@@ -657,9 +696,10 @@ function IngredientsSection({
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 
-// The pantry status beside an ingredient: "● Have" / "● Low" / "● Out" when
-// it's linked (a dotted outline means Bento guessed), or a faint link button
-// when it isn't. Tapping either changes the link.
+// The pantry status beside an ingredient when it's linked: the pantry's
+// level (three bars) and the word, all the same width so they line up (a
+// dotted outline means Bento guessed the link); or a faint link button when
+// it isn't linked. Tapping either changes the link.
 function PantryChip({ line, link, onClick }: { line: string; link: IngredientLink; onClick: () => void }) {
   if (!link.item) {
     return (
@@ -682,7 +722,11 @@ function PantryChip({ line, link, onClick }: { line: string; link: IngredientLin
       aria-label={`Pantry: ${description}`}
       title={description}
     >
-      <span className={`status-dot status-${status}`} aria-hidden="true" />
+      <span className="meter-bars" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
       {STATUS_WORDS[status]}
     </button>
   );
@@ -758,21 +802,26 @@ function CookHistory({
   const cookedToday = cooked.filter((entry) => entry.recipe === recipeId && datePart(entry.date) === today);
   return (
     <div className="cook-history">
-      <p className="muted plan-history">
+      {/* One line each, beside the button, so it sits the same way however
+          much there is to say. */}
+      <div className="muted plan-history">
         {last && (
           <>
-            {last === today ? "Had today" : `Last had ${timeAgo(last, today)} (${formatDay(last)})`}
-            {days.length > 1 && ` · ${days.length} times`}
+            <p>{last === today ? "Had today" : `Last had ${formatDay(last)}`}</p>
+            {(last !== today || days.length > 1) && (
+              <p className="plan-history-detail">
+                {[last !== today && timeAgo(last, today), days.length > 1 && `${days.length} times`].filter(Boolean).join(" · ")}
+              </p>
+            )}
           </>
         )}
-        {last && next && " · "}
         {next && (
-          <>
+          <p>
             Next: <Link to="/plan">{next === today ? "today" : formatDay(next)}</Link>
-          </>
+          </p>
         )}
-        {!last && !next && "Not cooked yet"}
-      </p>
+        {!last && !next && <p>Not cooked yet</p>}
+      </div>
       {cookedToday.length ? (
         <button className="link-button cooked-undo" onClick={() => onUndo(cookedToday)}>
           Undo “cooked today”
