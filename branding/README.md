@@ -59,3 +59,11 @@ The website's Bentotachi link-preview card and phone icon
 (`bentotachi/og-card.png`, `bentotachi/apple-touch-icon.png` in the website
 repository) are drawn from these SVGs too: after copying the SVGs over, run
 `python branding/make_bentotachi_page.py` in the website repository.
+
+The page titles use Pond Pebbles, The Koi Pond's display font:
+`web/src/assets/PondPebbles.woff2` is a copy of the studio's
+(`font/PondPebbles.woff2` in the website repository, built by its
+`font/make_font.py`). When the font changes there, copy it here again.
+
+The Google Play pictures (`play/`: icon, banner, screenshots) come from
+`make_play_listing.py`; docs/PLAY-LISTING.md says how.
