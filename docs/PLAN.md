@@ -195,6 +195,8 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+Released in 1.17.0 (2026-11-07, deployed the same day):
+
 - Tidying recipes and shelves, one system (Xel, 2026-11-06; seen in the
   store screenshots): browse by default, change a recipe on its own page,
   tidy the collection in one Edit mode.
