@@ -271,7 +271,12 @@ export default function RecipeView() {
     const saved = await recipes().update(current.id, data, { expand: "added_by" });
     setRecipe(saved);
     saveRecipe(saved);
+    return saved;
   }
+  // The cover and photos as saved now: this page doesn't update by itself,
+  // and deciding from its copy could replace a cover someone added since
+  // (which deletes their photo).
+  const photosNow = () => recipes().getOne(current.id, { fields: "id,image,photos" });
   async function photoStepsNow(change: (steps: Record<string, string>) => void) {
     const { photo_steps } = await recipes().getOne(current.id, { fields: "id,photo_steps" });
     const steps = { ...(photo_steps ?? {}) };
@@ -298,20 +303,23 @@ export default function RecipeView() {
   // The photo becomes the cover (framed from the middle), and the cover
   // joins the other photos.
   async function makeCover(name: string) {
+    const now = await photosNow();
     const data: Record<string, unknown> = {
       image: await loadPhoto(recipePhotoUrl(current, name)),
       image_framing: null,
       "photos-": [name],
       photo_steps: await photoStepsNow((steps) => delete steps[name]),
     };
-    if (current.image) data["photos+"] = [await loadPhoto(recipeImageUrl(current))];
+    if (now.image) data["photos+"] = [await loadPhoto(recipeImageUrl({ ...current, image: now.image }))];
     await savePhotos(data);
     setViewing(null);
   }
   // ⋯ → Add photos: shrunk, then added; the first becomes the cover if
   // there isn't one. Says what happened.
   async function addPhotos(files: File[]): Promise<string> {
-    const room = MAX_PHOTOS - (current.photos?.length ?? 0) + (current.image ? 0 : 1);
+    const now = await photosNow();
+    const hasCover = !!now.image;
+    const room = MAX_PHOTOS - (now.photos?.length ?? 0) + (hasCover ? 0 : 1);
     if (room <= 0) return `This recipe already has ${MAX_PHOTOS} photos besides its cover. Remove one to add another.`;
     const picked = files.slice(0, room);
     const shrunk = await Promise.all(
@@ -322,14 +330,21 @@ export default function RecipeView() {
     );
     const data: Record<string, unknown> = {};
     let rest = shrunk;
-    if (!current.image) {
+    if (!hasCover) {
       data.image = shrunk[0];
       data.image_framing = null;
       rest = shrunk.slice(1);
     }
     if (rest.length) data["photos+"] = rest;
-    await savePhotos(data);
-    const added = `Added ${picked.length === 1 ? "the photo" : `${picked.length} photos`}${current.image ? "" : ", the first as the cover"}.`;
+    const saved = await savePhotos(data);
+    // A server older than these photos (a friend's copy not updated yet)
+    // says yes but keeps only the cover.
+    if (rest.length && saved.photos === undefined) {
+      return hasCover
+        ? "This Bentotachi server is too old to keep more photos, so they weren't saved. Whoever runs it can update it, then try again."
+        : "Added the first photo as the cover, but this Bentotachi server is too old to keep more, so the others weren't saved. Whoever runs it can update it, then try again.";
+    }
+    const added = `Added ${picked.length === 1 ? "the photo" : `${picked.length} photos`}${hasCover ? "" : ", the first as the cover"}.`;
     return files.length > picked.length
       ? `${added} The rest didn't fit: a recipe keeps up to ${MAX_PHOTOS} photos besides its cover.`
       : `${added} Tap one to put it with a step.`;
@@ -397,7 +412,8 @@ export default function RecipeView() {
         <PhotoViewer
           recipe={recipe}
           photos={allPhotos}
-          start={Math.max(0, allPhotos.indexOf(viewing))}
+          shown={viewing}
+          onShow={setViewing}
           onClose={() => setViewing(null)}
           onAdjustCover={() => {
             setViewing(null);

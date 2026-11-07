@@ -5,6 +5,7 @@ import {
   carriedStepPhotos,
   galleryPhotos,
   numberedSteps,
+  samePhotoSteps,
   savedName,
   stepPhotos,
   uploadName,
@@ -66,6 +67,28 @@ test("a reworded step after a step was added above goes back to the gallery, not
   assert.deepEqual(carriedStepPhotos(steps, changed, { "a.jpg": "fry the onions." }, ["a.jpg"]), {});
 });
 
+test("a step that moves up into a deleted step's place doesn't take its photo", () => {
+  // "Fry the onions." (with the photo) is deleted; "Add the tomatoes." was
+  // already there and moves up into its place.
+  const removed = ["# The sauce", "Add the tomatoes.", "Simmer.", "Crack in the eggs."];
+  assert.deepEqual(carriedStepPhotos(steps, removed, { "a.jpg": "fry the onions." }, ["a.jpg"]), {});
+});
+
+test("merging two steps and adding one after doesn't put the photo on the new step", () => {
+  const before = ["Chop the onions.", "Fry the onions.", "Serve."];
+  const after = ["Chop and fry the onions.", "Season to taste.", "Serve."];
+  assert.deepEqual(carriedStepPhotos(before, after, { "f.jpg": "fry the onions." }, ["f.jpg"]), {});
+});
+
+test("whether photo_steps changed", () => {
+  assert.equal(samePhotoSteps({ "a.jpg": "simmer." }, { "a.jpg": "simmer." }), true);
+  assert.equal(samePhotoSteps(null, {}), true);
+  // A dropped entry (its step deleted) is a change, either way round.
+  assert.equal(samePhotoSteps({}, { "a.jpg": "simmer." }), false);
+  assert.equal(samePhotoSteps({ "a.jpg": "simmer." }, {}), false);
+  assert.equal(samePhotoSteps({ "a.jpg": "simmer." }, { "a.jpg": "stir." }), false);
+});
+
 test("a deleted step's photo goes back to the gallery", () => {
   const removed = ["Add the tomatoes.", "Simmer.", "Crack in the eggs."];
   assert.deepEqual(carriedStepPhotos(steps, removed, { "a.jpg": "fry the onions." }, ["a.jpg"]), {});
@@ -81,4 +104,6 @@ test("a sent photo is found among the saved ones by its made-up name", () => {
   const base = sent.slice(0, -4);
   assert.equal(savedName(sent, ["other_abc.jpg", `${base}_a1b2c3d4e5.jpg`]), `${base}_a1b2c3d4e5.jpg`);
   assert.equal(savedName(sent, ["other_abc.jpg"]), undefined);
+  // A name that only starts the same way isn't it.
+  assert.equal(savedName(sent, [`${base}x_a1b2c3d4e5.jpg`, `${base.slice(0, 5)}_a1b2c3d4e5.jpg`]), undefined);
 });

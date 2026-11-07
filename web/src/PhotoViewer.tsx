@@ -9,11 +9,14 @@ import { CloseIcon } from "./icons";
 // what can be done with it. The cover can be adjusted (PhotoFramer); the
 // other photos can be put with a step, made the cover, or removed. Each
 // saves straight away, like the rest of the recipe page. `photos` lists
-// what to go through, "" standing for the cover.
+// what to go through, "" standing for the cover; `shown` is the one on
+// screen, followed by its name so it stays put when a change reorders the
+// list (putting it with a step moves it down the list).
 export default function PhotoViewer({
   recipe,
   photos,
-  start,
+  shown,
+  onShow,
   onClose,
   onAdjustCover,
   onSetStep,
@@ -22,7 +25,8 @@ export default function PhotoViewer({
 }: {
   recipe: Recipe;
   photos: string[];
-  start: number;
+  shown: string;
+  onShow: (name: string) => void;
   onClose: () => void;
   onAdjustCover: () => void;
   onSetStep: (name: string, key: string | null) => Promise<void>;
@@ -30,31 +34,38 @@ export default function PhotoViewer({
   onRemove: (name: string) => Promise<void>;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [index, setIndex] = useState(start);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const swipeFrom = useRef<number | null>(null);
+  // Where the shown photo was, for when it leaves the list (removed): the
+  // one that took its place shows next.
+  const lastIndex = useRef(0);
+  const found = photos.indexOf(shown);
+  const count = photos.length;
+  const index = found >= 0 ? found : Math.min(lastIndex.current, count - 1);
+  if (found >= 0) lastIndex.current = found;
 
   useEffect(() => {
     dialogRef.current?.showModal();
   }, []);
 
-  // A photo removed or made the cover leaves the list: stay in range, and
-  // close once there's nothing left to show.
+  // Close once there's nothing left to show; after a removal, show the
+  // photo now in its place.
   useEffect(() => {
-    if (!photos.length) onClose();
-    else if (index >= photos.length) setIndex(photos.length - 1);
-  }, [photos.length, index, onClose]);
+    if (!count) onClose();
+    else if (found < 0) onShow(photos[index]);
+  });
 
-  const count = photos.length;
   const go = (step: number) => {
     setError("");
-    setIndex((i) => (i + step + count) % count);
+    onShow(photos[(index + step + count) % count]);
   };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (count < 2) return;
+      // Not while choosing a step: some browsers change the choice with the
+      // arrow keys too.
+      if (count < 2 || event.target instanceof HTMLSelectElement) return;
       if (event.key === "ArrowLeft") go(-1);
       if (event.key === "ArrowRight") go(1);
     };
@@ -62,7 +73,7 @@ export default function PhotoViewer({
     return () => document.removeEventListener("keydown", onKey);
   });
 
-  const name = photos[Math.min(index, count - 1)];
+  const name = photos[index];
   if (name === undefined) return null;
   const isCover = name === "";
   const steps = numberedSteps(recipe.steps);
