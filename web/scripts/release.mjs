@@ -113,3 +113,11 @@ console.log(
   `\nCommit web/android/app/build.gradle now (version ${versionCode}), so the next release doesn't reuse this number.` +
     "\nThen npm run deploy sends the app to the Pi."
 );
+// The website's "What's new" page and feed only list what someone adds, so
+// say so while the release is fresh (the website's CLAUDE.md has the how).
+console.log(
+  `\nThen add ${versionName} to the website's "What's new": bentotachi/changelog.html and changelog.xml in the` +
+    ' website repository (github.com/The-Koi-Pond/the-koi-pond.github.io; its CLAUDE.md, "Bentotachi\'s changelog",' +
+    " says how). Write it from this release's notes in docs/PLAN.md, in plain words for people who use the app," +
+    " and push it once Xel says go."
+);

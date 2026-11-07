@@ -103,6 +103,10 @@ How to run: `README.md`.
   (unless `--test-key`, for a server whose phones all have test-key builds).
   Commit app/build.gradle after a release (it says so): otherwise the next
   release can reuse a version number phones already have.
+  Then add the release to the website's "What's new" page and feed
+  (`bentotachi/changelog.html` and `changelog.xml` in the website
+  repository; its CLAUDE.md, "Bentotachi's changelog", says how), in plain
+  words for people who use the app, and push it with Xel's go-ahead.
 - The Google Play version: `npm run play` (web/scripts/play.mjs) builds an
   app bundle (`.aab`, at the path it prints) to upload in Play Console,
   signed with the same key (Play's "upload key"). It's the same app without
