@@ -195,6 +195,8 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+Released in 1.18.0 (2026-11-07, deployed the same day):
+
 - Backlog fixes for testers (2026-11-07): the built-in browser no longer
   opens the Play Store (or any app) by itself when an ad redirects, only
   on a tap; Save there finds "What you'll need" headings (curly
