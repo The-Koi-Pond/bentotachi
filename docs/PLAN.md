@@ -1479,10 +1479,14 @@ one recipe from its page's ⋯ → Save as a Paprika file). Still open: 3–6,
      out (photos named "Step 2", "Photo 1", marks at the end of their
      steps). The round trip through our own files is tested; Paprika
      itself reading our gallery still needs trying on a phone.
-   - *Then (part 3):* a setting, off by default, "Bring step photos when
-     saving from a website" (schema.org HowToStep `image`). Xel chose
-     this over always or never: step photos can be 15+ per recipe, which
-     fills phone-only phones and backups for people who don't want them.
+   - *Done (part 3):* "Bring step photos" in the ⋮ menu (each person's
+     own, `users.website_step_photos`, off by default): saving from a
+     link then also downloads the photos the page gives its steps
+     (schema.org HowToStep `image`, recipe_parse.js `stepImages`, up to
+     20) and shows each in its step (import.pb.js). Xel chose this over
+     always or never: step photos can be 15+ per recipe, which fills
+     phone-only phones and backups for people who don't want them.
+     Tried on Allrecipes: 4 step photos, each on its step.
    Paprika (photos linked from the directions by name), Mela and Crouton
    have several photos; Mealie and Tandoor put photos on steps.
 4. **Scan a cookbook page from a photo**: Android's on-device text

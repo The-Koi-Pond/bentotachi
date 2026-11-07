@@ -424,3 +424,43 @@ test("keeps the site's own rating, out of 5, when the page gives one", () => {
   assert.equal(recipe({ ratingValue: 4, ratingCount: "99999999999999999999" }).siteRating, null);
   assert.equal(recipe({ ratingValue: 4, ratingCount: 1e20 }).siteRating, null);
 });
+
+test("a step's own photo is noted with the step it belongs to", () => {
+  const parsed = parseRecipe(
+    page({
+      "@type": "Recipe",
+      name: "Lasagne",
+      image: "https://e.com/cover.jpg",
+      recipeInstructions: [
+        {
+          "@type": "HowToSection",
+          name: "Sauce",
+          itemListElement: [
+            { "@type": "HowToStep", text: "1. Fry the onions.", image: "/img/onions.jpg" },
+            { "@type": "HowToStep", text: "Add the tomatoes.", image: [{ "@type": "ImageObject", url: "https://cdn.e.com/tomatoes.jpg" }] },
+            { "@type": "HowToStep", text: "Simmer." },
+          ],
+        },
+        // The cover again, and a photo already used: not noted twice.
+        { "@type": "HowToStep", text: "Layer it up.", image: "https://e.com/cover.jpg" },
+        { "@type": "HowToStep", text: "Bake.", image: { url: "https://cdn.e.com/tomatoes.jpg" } },
+        // A photo with no step text: no step to put it on.
+        { "@type": "HowToStep", text: "", image: "https://e.com/empty.jpg" },
+      ],
+    }),
+    "https://e.com/lasagne"
+  );
+  assert.deepEqual(parsed.steps, ["# Sauce", "Fry the onions.", "Add the tomatoes.", "Simmer.", "Layer it up.", "Bake."]);
+  assert.deepEqual(parsed.stepImages, [
+    { step: "Fry the onions.", url: "https://e.com/img/onions.jpg" },
+    { step: "Add the tomatoes.", url: "https://cdn.e.com/tomatoes.jpg" },
+  ]);
+  // Plain-text steps have none.
+  assert.deepEqual(parseRecipe(page({ "@type": "Recipe", name: "x", recipeInstructions: "Mix.\nBake." }), "https://e.com").stepImages, []);
+});
+
+test("no more step photos than a recipe keeps", () => {
+  const steps = Array.from({ length: 25 }, (_, i) => ({ "@type": "HowToStep", text: `Step ${i}.`, image: `https://e.com/${i}.jpg` }));
+  const parsed = parseRecipe(page({ "@type": "Recipe", name: "Long", recipeInstructions: steps }), "https://e.com");
+  assert.equal(parsed.stepImages.length, 20);
+});

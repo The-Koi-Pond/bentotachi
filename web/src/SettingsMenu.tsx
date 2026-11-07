@@ -116,7 +116,18 @@ export default function SettingsMenu() {
             </Link>
           )}
           {user && <QuickSetting userId={user.id} value={quickMinutes} />}
-          {user && <NutritionSetting userId={user.id} on={!!user.show_nutrition} />}
+          {user && <AccountSwitch userId={user.id} field="show_nutrition" on={!!user.show_nutrition} label="Show nutrition" />}
+          {/* Only where the server knows the setting (an older one doesn't
+              send it, and would ignore the switch). */}
+          {user && user.website_step_photos !== undefined && (
+            <AccountSwitch
+              userId={user.id}
+              field="website_step_photos"
+              on={user.website_step_photos}
+              label="Bring step photos"
+              detail="When saving from a website, if it has them"
+            />
+          )}
           {wakeLock.supported && (
             <button role="menuitemcheckbox" aria-checked={wakeLock.on} onClick={wakeLock.toggle}>
               Keep screen on
@@ -198,16 +209,31 @@ export default function SettingsMenu() {
   );
 }
 
-// "Show nutrition": recipes' nutrition facts, off unless chosen, as some
-// people would rather not see them. Saved on your account, like "Quick
-// means", and says so when it couldn't be (no connection, say).
-function NutritionSetting({ userId, on }: { userId: string; on: boolean }) {
+// A switch saved on your account (so it's the same on every device), like
+// "Quick means", that says so when it couldn't be saved (no connection,
+// say). "Show nutrition": recipes' nutrition facts, off unless chosen, as
+// some people would rather not see them. "Bring step photos from websites":
+// a recipe saved from a link also brings its steps' photos (import.pb.js),
+// off unless chosen, as they take room on the server or phone.
+function AccountSwitch({
+  userId,
+  field,
+  on,
+  label,
+  detail,
+}: {
+  userId: string;
+  field: "show_nutrition" | "website_step_photos";
+  on: boolean;
+  label: string;
+  detail?: string;
+}) {
   const [error, setError] = useState("");
 
   async function toggle() {
     setError("");
     try {
-      await pb.collection("users").update(userId, { show_nutrition: !on });
+      await pb.collection("users").update(userId, { [field]: !on });
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -216,8 +242,8 @@ function NutritionSetting({ userId, on }: { userId: string; on: boolean }) {
   return (
     <button role="menuitemcheckbox" aria-checked={on} onClick={() => void toggle()}>
       <span className="menu-item-text">
-        Show nutrition
-        {error && <span className="menu-item-detail error">{error}</span>}
+        {label}
+        {error ? <span className="menu-item-detail error">{error}</span> : detail && <span className="menu-item-detail">{detail}</span>}
       </span>
       <span className="switch" aria-hidden="true" />
     </button>

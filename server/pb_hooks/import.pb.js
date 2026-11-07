@@ -136,15 +136,62 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
     }
   }
 
+  // The page's step photos too, for people who turned on "Bring step photos
+  // from websites" (users.website_step_photos), each shown in its step
+  // (photo_steps: { file name: the step's line, lower case }, as
+  // web/src/recipePhotos.ts keeps them). Same checks as the cover; one that
+  // fails is left out, and a slow site can't hold the import up for long.
+  let withStepPhotos = false;
+  const wantsStepPhotos = e.auth && e.auth.collection().name === "users" && e.auth.getBool("website_step_photos");
+  if (wantsStepPhotos && recipe.stepImages && recipe.stepImages.length) {
+    const files = [];
+    const photoSteps = {};
+    const started = Date.now();
+    for (let i = 0; i < recipe.stepImages.length && Date.now() - started < 60000; i++) {
+      const item = recipe.stepImages[i];
+      if (!safeUrl.isPublicUrl(item.url)) continue;
+      try {
+        const photo = $http.send({
+          url: item.url,
+          method: "GET",
+          headers: { "user-agent": parser.BROWSER_USER_AGENT },
+          timeout: 15,
+        });
+        const extension = parser.imageExtension(String((photo.headers["Content-Type"] || [""])[0]), photo.body);
+        if (photo.statusCode !== 200 || !extension || photo.body.length > parser.LIMITS.image) continue;
+        const file = $filesystem.fileFromBytes(photo.body, `step${i + 1}.${extension}`);
+        files.push(file);
+        photoSteps[file.name] = String(item.step).trim().toLowerCase();
+      } catch (err) {
+        e.app.logger().warn("Step photo download failed", "url", item.url, "error", String(err));
+      }
+    }
+    if (files.length) {
+      record.set("photos", files);
+      record.set("photo_steps", photoSteps);
+      withStepPhotos = true;
+    }
+  }
+
   try {
     e.app.save(record);
   } catch (err) {
-    // Still refused with a photo: the photo is the optional part, so save
-    // the recipe without it rather than lose the import.
-    if (!withPhoto) throw err;
-    e.app.logger().warn("Saving the recipe failed with its photo; saving it without", "url", url, "error", String(err));
-    record.set("image", null);
-    e.app.save(record);
+    // Still refused with photos: they're the optional part, so save the
+    // recipe without them (step photos first, then the cover) rather than
+    // lose the import.
+    if (!withPhoto && !withStepPhotos) throw err;
+    e.app.logger().warn("Saving the recipe failed with its photos; saving it without", "url", url, "error", String(err));
+    if (withStepPhotos) {
+      record.set("photos", []);
+      record.set("photo_steps", null);
+    }
+    try {
+      e.app.save(record);
+    } catch (again) {
+      if (!withPhoto) throw again;
+      record.set("image", null);
+      e.app.save(record);
+    }
   }
   return e.json(200, { id: record.id });
 }, $apis.requireAuth());

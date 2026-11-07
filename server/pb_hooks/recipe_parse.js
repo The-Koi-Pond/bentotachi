@@ -245,8 +245,10 @@ function addStep(steps, text) {
 
 // Instructions come as one block of text, a list of strings, a list of
 // HowToStep objects, or HowToSection groups of steps. Section names become
-// "# Heading" lines, which the app shows as headings.
-function collectSteps(node, steps) {
+// "# Heading" lines, which the app shows as headings. A HowToStep's own
+// photo ("image") is noted in `images` as { step: its line, url }, for
+// people who want step photos (import.pb.js).
+function collectSteps(node, steps, images) {
   if (!node) return;
   if (typeof node === "string") {
     var parts = decodeEntities(node).split(/\r?\n|<br\s*\/?>|<\/p>|<\/li>/i);
@@ -257,7 +259,7 @@ function collectSteps(node, steps) {
     return;
   }
   if (Array.isArray(node)) {
-    for (var j = 0; j < node.length; j++) collectSteps(node[j], steps);
+    for (var j = 0; j < node.length; j++) collectSteps(node[j], steps, images);
     return;
   }
   if (typeof node === "object") {
@@ -265,10 +267,13 @@ function collectSteps(node, steps) {
     if (children) {
       var heading = cleanText(node.name);
       if (heading && isType(node, "HowToSection")) steps.push("# " + heading);
-      collectSteps(children, steps);
+      collectSteps(children, steps, images);
       return;
     }
+    var before = steps.length;
     addStep(steps, cleanText(node.text || node.name || node.description));
+    var photo = pickImage(node.image);
+    if (images && photo && steps.length > before) images.push({ step: steps[steps.length - 1], url: photo });
   }
 }
 
@@ -660,19 +665,34 @@ function parseRecipe(html, pageUrl) {
   if (!recipe) return null;
 
   var steps = [];
-  collectSteps(recipe.recipeInstructions, steps);
+  var images = [];
+  collectSteps(recipe.recipeInstructions, steps, images);
 
   // A microdata recipe's own photo is usually a small thumbnail beside the
   // recipe card, so the page's preview image (full size) comes first there.
   var image = recipe.fromMicrodata || recipe.fromPage
     ? findMetaImage(html) || pickImage(recipe.image)
     : pickImage(recipe.image) || findMetaImage(html);
+  var imageUrl = resolveUrl(image, pageUrl);
+
+  // Step photos: full addresses, each once, not the cover again, and no
+  // more than a recipe keeps (the recipes_photos migration's 20).
+  var stepImages = [];
+  var seen = {};
+  for (var i = 0; i < images.length && stepImages.length < LIMITS.stepPhotos; i++) {
+    var url = resolveUrl(images[i].url, pageUrl);
+    if (!url || url === imageUrl || seen[url]) continue;
+    seen[url] = true;
+    stepImages.push({ step: images[i].step, url: url });
+  }
 
   return {
     title: cleanText(recipe.name || recipe.headline),
     description: cleanText(recipe.description),
     sourceUrl: pageUrl,
-    imageUrl: resolveUrl(image, pageUrl),
+    imageUrl: imageUrl,
+    // [{ step: the step's line, url }]: photos the page gives for its steps.
+    stepImages: stepImages,
     servings: pickServings(recipe.recipeYield),
     prepMinutes: durationToMinutes(recipe.prepTime),
     cookMinutes: durationToMinutes(recipe.cookTime),
@@ -744,6 +764,8 @@ var LIMITS = {
   tagBytes: 20000,
   // Photos, in bytes.
   image: 10 * 1024 * 1024,
+  // Photos besides the cover (the recipes_photos migration's maxSelect).
+  stepPhotos: 20,
 };
 
 // Characters as PocketBase counts them (an emoji is one, though JavaScript

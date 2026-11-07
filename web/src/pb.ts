@@ -53,6 +53,9 @@ export interface User extends RecordModel {
   // Whether recipes show their nutrition facts to them (the ⋮ menu's
   // "Show nutrition"; off unless they turn it on).
   show_nutrition?: boolean;
+  // "Bring step photos" from websites (import.pb.js). Missing on an older
+  // server.
+  website_step_photos?: boolean;
   updated: string;
 }
 
