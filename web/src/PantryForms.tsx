@@ -8,6 +8,7 @@ import { useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
 import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
 import StoreLogo from "./StoreLogo";
+import { CloseIcon } from "./icons";
 import { useUnsavedChanges } from "./unsavedChanges";
 import { barcodesOf, normaliseBarcode, withBarcode } from "./barcodes";
 import { canScan, scanBarcode, type BarcodeProduct } from "./scanner";
@@ -713,8 +714,24 @@ export function EditPantryItem({
     }
   }
 
+  // Opened by tapping the item, so easy to open by accident: its name with
+  // a ✕ right where the tap was closes it again (like Cancel), Escape too,
+  // and Remove / Cancel / Save stay in reach at the bottom of the screen
+  // while scrolling through the form (Xel, 2026-11-07).
   return (
-    <form className="pantry-edit stack" onSubmit={submit}>
+    <form
+      className="pantry-edit stack"
+      onSubmit={submit}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") onCancel();
+      }}
+    >
+      <div className="pantry-edit-head">
+        <h3>{item.name}</h3>
+        <button type="button" className="icon-button" onClick={onCancel} aria-label="Close without saving" title="Close without saving">
+          <CloseIcon />
+        </button>
+      </div>
       <ItemFields
         existing={existing}
         fields={fields}
