@@ -119,6 +119,13 @@ How to run: `README.md`.
   so `npm run release` first when there's something new. A test copy of the
   Play version: `VITE_BENTO_PLAY=1 npm run android`, then
   `gradlew assembleDebug -PbentoTest -PbentoPlay`.
+  `npm run play -- upload internal,alpha "notes"` also uploads it to those
+  testing tracks (alpha is closed testing) through Play's upload robot
+  (web/scripts/playUpload.mjs; a Google Cloud service account invited in
+  Play Console with "Release apps to testing tracks", set up 2026-11-07).
+  Its key is web/android/play-publisher.json, gitignored like the signing
+  key: never commit, print or send it. Uploading reaches testers, so only
+  with Xel's go-ahead, like a release.
   Deploy refuses to send if a folder (like `server/releases`) is missing
   here, and the Pi only swaps folders in once all of them have arrived.
   Deploy, release, play and package also refuse while the web app (`web/`,
