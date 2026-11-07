@@ -12,6 +12,8 @@ import {
   type RecipeCategory,
 } from "../pb";
 import { inCategory, sortCategories } from "../recipeCategories";
+import { useLocation, useNavigate } from "react-router";
+import { readSharedFile, type SharedFile } from "../shareReceiver";
 import { paprikaZip, toPaprika } from "../paprikaExport";
 import {
   alreadyHave,
@@ -66,10 +68,47 @@ function ImportRecipes() {
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const busy = progress !== "";
 
-  async function importFile(event: ChangeEvent<HTMLInputElement>) {
+  // A Paprika file opened with Bentotachi from Files, email or chat
+  // (shareReceiver.ts): offered here, imported once you say so.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [opened, setOpened] = useState<SharedFile | null>(() => (location.state as { sharedFile?: SharedFile } | null)?.sharedFile ?? null);
+  useEffect(() => {
+    const state = location.state as { sharedFile?: SharedFile; sharedError?: string } | null;
+    const shared = state?.sharedFile;
+    // A file opened with Bentotachi that couldn't be read.
+    if (state?.sharedError) {
+      setStatus({ text: state.sharedError, isError: true });
+      navigate(".", { replace: true, state: null });
+      return;
+    }
+    if (!shared) return;
+    setOpened(shared);
+    // Taken out of the page's history, so going back doesn't offer it again.
+    navigate(".", { replace: true, state: null });
+  }, [location.state, navigate]);
+
+  async function importOpened() {
+    if (!opened) return;
+    setStatus(null);
+    setProgress("Reading the file…");
+    try {
+      const file = await readSharedFile(opened);
+      setOpened(null);
+      await importFile(file);
+    } catch (err) {
+      setStatus({ text: errorMessage(err), isError: true });
+      setProgress("");
+    }
+  }
+
+  function pickFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (file) void importFile(file);
+  }
+
+  async function importFile(file: File) {
     setStatus(null);
     setProgress("Reading the file…");
     try {
@@ -211,16 +250,31 @@ function ImportRecipes() {
         file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and difficulty go into its notes. Meal plans don't come
         across.
       </p>
+      {opened && !busy && (
+        <div className="opened-file stack" role="status">
+          <p>
+            Import “<strong>{opened.name}</strong>”?
+          </p>
+          <div className="actions">
+            <button className="button" onClick={() => setOpened(null)}>
+              Not now
+            </button>
+            <button className="button primary" onClick={() => void importOpened()}>
+              Import it
+            </button>
+          </div>
+        </div>
+      )}
       <div className="actions">
-        <label className={`button primary ${busy ? "disabled" : ""}`}>
-          {busy ? progress : "Choose a file"}
+        <label className={`button ${opened ? "" : "primary"} ${busy ? "disabled" : ""}`}>
+          {busy ? progress : opened ? "Choose another file" : "Choose a file"}
           {/* Android's file picker greys out types it doesn't know (it has
               no type for .paprikarecipes), so the app lets any file through
               and the import says if it isn't one. */}
           <input
             type="file"
             accept={isAndroidApp ? undefined : ".paprikarecipes,.paprikarecipe"}
-            onChange={(e) => void importFile(e)}
+            onChange={pickFile}
             disabled={busy}
             hidden
           />

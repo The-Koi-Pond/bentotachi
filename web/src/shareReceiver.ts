@@ -1,19 +1,33 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { registerPlugin } from "@capacitor/core";
-import { isAndroidApp } from "./pb";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import { errorMessage, isAndroidApp } from "./pb";
 import { sharedLink } from "./recipeSites";
 import { isStoreLink } from "./stores";
 
 // "Share to Bento", and sharing from it (BentoSharePlugin.java in the
 // Android project).
 interface BentoSharePlugin {
-  take(): Promise<{ text: string | null }>;
+  // A file comes copied into the app's cache: its name and where it is.
+  take(): Promise<{ text: string | null; file?: SharedFile | null }>;
   send(options: { title: string; text: string }): Promise<void>;
   addListener(event: "shared", listener: () => void): Promise<{ remove: () => Promise<void> }>;
 }
 
 const BentoShare = registerPlugin<BentoSharePlugin>("BentoShare");
+
+// A file opened with Bentotachi (a Paprika file from Files, email or chat).
+export interface SharedFile {
+  name: string;
+  path: string;
+}
+
+// The opened file's contents, read from the app's cache.
+export async function readSharedFile(file: SharedFile): Promise<File> {
+  const answer = await fetch(Capacitor.convertFileSrc(`file://${file.path}`));
+  if (!answer.ok) throw new Error("Couldn't read that file. Try opening it again.");
+  return new File([await answer.arrayBuffer()], file.name);
+}
 
 // Shares text from Bento: Android's share sheet in the app, the browser's
 // where it has one (phones, Safari, Edge), or else copied, ready to paste.
@@ -46,14 +60,25 @@ export function useShareReceiver() {
     if (!isAndroidApp) return;
     let stopped = false;
     const takeShared = async () => {
-      const { text } = await BentoShare.take();
-      if (stopped || !text) return;
+      const { text, file } = await BentoShare.take();
+      if (stopped) return;
+      // A file (a Paprika file): Import & export offers to import it.
+      if (file) {
+        navigate("/export", { state: { sharedFile: file } });
+        return;
+      }
+      if (!text) return;
       const link = sharedLink(text);
       if (link && isStoreLink(link)) navigate(`/pantry?add=${encodeURIComponent(link)}`);
       else navigate(link ? `/add?url=${encodeURIComponent(link)}` : "/add?shared=nolink");
     };
-    void takeShared().catch(() => {});
-    const listening = BentoShare.addListener("shared", () => void takeShared().catch(() => {}));
+    // A file that couldn't be read says so on Import & export, rather than
+    // the app opening with nothing (found in review).
+    const failed = (err: unknown) => {
+      if (!stopped) navigate("/export", { state: { sharedError: errorMessage(err) } });
+    };
+    void takeShared().catch(failed);
+    const listening = BentoShare.addListener("shared", () => void takeShared().catch(failed));
     return () => {
       stopped = true;
       void listening.then((handle) => handle.remove());

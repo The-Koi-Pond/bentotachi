@@ -3010,6 +3010,20 @@ legend {
   margin: 0;
 }
 
+/* "Import “Export… .paprikarecipes”?" on Import & export, for a Paprika file
+   opened with Bentotachi from Files, email or chat (Export.tsx). */
+.opened-file {
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.opened-file p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 /* Nutrition per serving (RecipeView.tsx, for people who turned on "Show
    nutrition"): a small label-like card, a row each, name left and amount
    right. */

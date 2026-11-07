@@ -226,6 +226,13 @@ Changes already live in the browser version, not yet in a published APK
     minutes count when the text ones say nothing.
   - Export one shelf or your favorites, not just everything (the file is
     named after it, "Bentotachi Soups 2026-11-07").
+  - Open a Paprika file with Bentotachi (Files, email, chat: "Import into
+    Bentotachi" under Open with or Share): BentoSharePlugin copies it into
+    the app's cache, and Import & export asks "Import “…”?" first. Android
+    has no type for Paprika files, so the app offers itself for zip and
+    "any file" types (the import says if it isn't one). Needs the next APK.
+    Tried on Xel's Pixel with the test build: Open with and Share, from a
+    fresh install through first-time setup, and with the app open.
 - Nutrition facts (Xel, 2026-11-07; most recipe apps keep them):
   imported from a website's recipe data (recipe_parse.js nutritionLines:
   per serving, in label order, bare numbers given their unit) and from
@@ -1434,8 +1441,9 @@ a recipe page now matches other apps (nutrition was the gap). What's
 missing is how recipes get in. Xel: 1 and 2 are wanted soon.
 
 Done 2026-11-07 (see "Importing on par with Paprika, round two" above):
-1, 2, 7, 8, and 11's shelf and favorites export (one recipe to a friend
-waits for the recipe page's ⋯ menu, TODO.md). Still open: 3–6, 10, 12, 13.
+1, 2, 7, 8, 10, and 11's shelf and favorites export (one recipe to a
+friend waits for the recipe page's ⋯ menu, TODO.md). Still open: 3–6, 12,
+13.
 
 1. **"You already have this"**: adding a link already saved quietly
    makes a second copy today. Warn instead, with "Open it" and "Add

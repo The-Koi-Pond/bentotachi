@@ -33,6 +33,21 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
+            <!-- A Paprika file (.paprikarecipes, a zip; .paprikarecipe, a
+                 gzip) opened with Bento from Files, email or chat, or
+                 shared to it: Android has no type of its own for them, so
+                 the zip and "any file" types (BentoSharePlugin; the import
+                 says if it isn't one). -->
+            <intent-filter android:label="@string/import_label">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/gzip" />
+            </intent-filter>
+
         </activity>
 
         <!-- Bento's built-in browser (Browse tab, "Save to Bento"). -->
