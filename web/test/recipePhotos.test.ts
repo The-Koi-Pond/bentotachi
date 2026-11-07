@@ -68,10 +68,11 @@ test("a reworded step after a step was added above goes back to the gallery, not
 });
 
 test("a step that moves up into a deleted step's place doesn't take its photo", () => {
-  // "Fry the onions." (with the photo) is deleted; "Add the tomatoes." was
-  // already there and moves up into its place.
-  const removed = ["# The sauce", "Add the tomatoes.", "Simmer.", "Crack in the eggs."];
-  assert.deepEqual(carriedStepPhotos(steps, removed, { "a.jpg": "fry the onions." }, ["a.jpg"]), {});
+  // "Add the tomatoes." (with the photo) is deleted and "Crack in the
+  // eggs.", already there, moves up into its place, with the steps either
+  // side the same as before.
+  const moved = ["# The sauce", "Fry the onions.", "Crack in the eggs.", "## Then", "Simmer."];
+  assert.deepEqual(carriedStepPhotos(steps, moved, { "a.jpg": "add the tomatoes." }, ["a.jpg"]), {});
 });
 
 test("merging two steps and adding one after doesn't put the photo on the new step", () => {
