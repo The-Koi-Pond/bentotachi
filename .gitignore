@@ -24,6 +24,9 @@ server/releases/
 
 # Bento's signing key and its password. Back these up; never commit them.
 web/android/keystore.properties
+# The Google Play upload robot's key (uploads new versions to Play): like
+# the signing key, it never goes on GitHub.
+web/android/play-publisher.json
 signing/
 *.jks
 

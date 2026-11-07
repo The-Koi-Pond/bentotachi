@@ -13,6 +13,15 @@
 // It uses the version number in android/app/build.gradle as it is. Play
 // needs a higher one for every upload, so run "npm run release" first when
 // there's something new (it bumps the number), then this.
+//
+// Uploading it too (2026-11-07), instead of by hand in Play Console:
+//
+//   npm run play -- upload internal "What's new, for testers"
+//
+// puts it on that testing track (internal, or alpha for closed testing, or
+// a custom track's name; several with commas, "internal,alpha") through the
+// upload robot (playUpload.mjs; its key is android/play-publisher.json).
+// The notes are optional.
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -20,10 +29,25 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
+import { uploadBundle } from "./playUpload.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
 const javaHome = process.env.BENTO_JAVA_HOME || "C:\\Program Files\\Android\\Android Studio\\jbr";
+const [action, track, ...noteWords] = process.argv.slice(2);
+const keyFile = join(android, "play-publisher.json");
+if (action && action !== "upload") {
+  console.error('Usage: npm run play  (build only), or  npm run play -- upload <track> "notes"');
+  process.exit(1);
+}
+if (action === "upload" && (!track || !existsSync(keyFile))) {
+  console.error(
+    !track
+      ? "Which track? For example: npm run play -- upload internal"
+      : "No android/play-publisher.json (the upload robot's key), so it can't upload. Nothing was built."
+  );
+  process.exit(1);
+}
 
 if (!existsSync(join(android, "keystore.properties"))) {
   console.error(
@@ -69,9 +93,25 @@ const gradle = readFileSync(join(android, "app", "build.gradle"), "utf8");
 const versionCode = gradle.match(/versionCode\s+(\d+)/)?.[1];
 const versionName = gradle.match(/versionName\s+"([^"]*)"/)?.[1];
 const bundle = join(android, "app", "build", "outputs", "bundle", "release", "app-release.aab");
-console.log(
-  `\nBuilt the Google Play bundle: Bentotachi ${versionName} (version ${versionCode}), without the self-updater.\n` +
+console.log(`\nBuilt the Google Play bundle: Bentotachi ${versionName} (version ${versionCode}), without the self-updater.`);
+console.log("(The web build in android/ is now the Play one; npm run release and npm run android rebuild it as usual.)");
+
+if (action === "upload") {
+  try {
+    const uploaded = await uploadBundle({ keyFile, packageName: "com.xel.bento", bundleFile: bundle, track, notes: noteWords.join(" ").trim() });
+    console.log(`\nUploaded version ${uploaded.versionCode} to: ${track}. Google reviews it as usual; Play Console shows its progress.`);
+    if (uploaded.drafts.length) {
+      console.log(
+        `On ${uploaded.drafts.join(", ")} it's a draft (that track isn't live yet): finish it in Play Console → that track → Edit release → Send for review.`
+      );
+    }
+  } catch (err) {
+    console.error(`\nThe upload didn't go through: ${err.message}\nThe bundle is built; you can still upload it in Play Console:\n  ${bundle}`);
+    process.exit(1);
+  }
+} else {
+  console.log(
     `Upload this file in Play Console:\n  ${bundle}\n` +
-    "Play needs a higher version number for every upload: run npm run release first next time there's something new.\n" +
-    "(The web build in android/ is now the Play one; npm run release and npm run android rebuild it as usual.)"
-);
+      "Play needs a higher version number for every upload: run npm run release first next time there's something new."
+  );
+}
