@@ -4,6 +4,7 @@ import type { PastedRecipe } from "../pastedRecipe";
 import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
 import { carriedLinks, sameLinks } from "../pantryLinks";
+import { changedFields } from "../changedFields";
 import TagSuggestions from "../TagSuggestions";
 import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
@@ -84,6 +85,25 @@ function fromPasted(recipe: PastedRecipe): Draft {
   };
 }
 
+// The form as fields to save.
+function toFields(draft: Draft): Record<string, unknown> {
+  return {
+    title: draft.title.trim(),
+    description: draft.description.trim(),
+    source_url: draft.source_url.trim(),
+    servings: draft.servings.trim(),
+    prep_minutes: Number(draft.prep_minutes) || 0,
+    cook_minutes: Number(draft.cook_minutes) || 0,
+    total_minutes: Number(draft.total_minutes) || 0,
+    extra_times: fromRows(draft.extra_times),
+    ingredients: textToLines(draft.ingredients),
+    steps: textToLines(draft.steps),
+    tags: textToTags(draft.tags),
+    notes: draft.notes.trim(),
+    author_notes: draft.author_notes.trim(),
+  };
+}
+
 // Used for both "add by hand" (/new) and editing (/recipes/:id/edit).
 export default function RecipeEdit() {
   const { id } = useParams();
@@ -142,22 +162,9 @@ export default function RecipeEdit() {
     if (!draft) return;
     setBusy(true);
     setError("");
-    const ingredients = textToLines(draft.ingredients);
-    const data: Record<string, unknown> = {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      source_url: draft.source_url.trim(),
-      servings: draft.servings.trim(),
-      prep_minutes: Number(draft.prep_minutes) || 0,
-      cook_minutes: Number(draft.cook_minutes) || 0,
-      total_minutes: Number(draft.total_minutes) || 0,
-      extra_times: fromRows(draft.extra_times),
-      ingredients,
-      steps: textToLines(draft.steps),
-      tags: textToTags(draft.tags),
-      notes: draft.notes.trim(),
-      author_notes: draft.author_notes.trim(),
-    };
+    // An edit sends only the fields changed here (changedFields.ts), so
+    // someone else's change saved meanwhile stays; a new recipe sends all.
+    const data = existing ? changedFields(toFields(draft), toFields(JSON.parse(original))) : toFields(draft);
     // A new photo starts centred; otherwise any framing chosen here.
     if (photo) {
       data.image = photo;
@@ -169,7 +176,7 @@ export default function RecipeEdit() {
     // The website's rating belongs to the site it came from: with the link
     // gone or pointing at another site, it's forgotten rather than credited
     // to the wrong one (or shown on a "home recipe").
-    if (existing?.site_rating && siteHost(data.source_url as string) !== siteHost(existing.source_url)) {
+    if (existing?.site_rating && "source_url" in data && siteHost(data.source_url as string) !== siteHost(existing.source_url)) {
       data.site_rating = 0;
       data.site_rating_count = 0;
     }
@@ -177,10 +184,12 @@ export default function RecipeEdit() {
       // Pantry links are keyed by a line's wording: a reworded line keeps its
       // link, and lines that are gone lose theirs (carriedLinks). Worked out
       // from the links as saved now, so one someone else picked while this
-      // was open isn't undone, and only sent when they changed.
-      if (existing) {
+      // was open isn't undone, and only sent when they changed. Only when
+      // the ingredients were changed here: otherwise lines someone else
+      // added meanwhile would lose their links.
+      if (existing && "ingredients" in data) {
         const { ingredient_links: current } = await recipes().getOne(existing.id, { fields: "id,ingredient_links" });
-        const links = carriedLinks(existing.ingredients ?? [], ingredients, current);
+        const links = carriedLinks(existing.ingredients ?? [], data.ingredients as string[], current);
         if (!sameLinks(links, current)) data.ingredient_links = links;
       }
       const saved = existing

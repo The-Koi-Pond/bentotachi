@@ -683,10 +683,13 @@ function IngredientsSection({
     setStatus(null);
     if (added) pantry.upsert(added);
     const key = linkKey(line);
-    const links = { ...(recipe.ingredient_links ?? {}), [key]: pantryItemId };
     const before = recipe;
-    onRecipeChange({ ...recipe, ingredient_links: links });
+    onRecipeChange({ ...recipe, ingredient_links: { ...(recipe.ingredient_links ?? {}), [key]: pantryItemId } });
     try {
+      // Added to the links as saved now, not this page's copy, so a link
+      // someone else chose meanwhile isn't undone.
+      const { ingredient_links: current } = await recipes().getOne(recipe.id, { fields: "id,ingredient_links" });
+      const links = { ...(current ?? {}), [key]: pantryItemId };
       const saved = await recipes().update(recipe.id, { ingredient_links: links }, { expand: "added_by" });
       onRecipeChange(saved);
     } catch (err) {
