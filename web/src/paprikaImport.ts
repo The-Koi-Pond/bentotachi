@@ -7,7 +7,7 @@
 
 import { gunzipSync, strFromU8, unzipSync } from "fflate";
 import { stepTimes } from "./stepTimers.ts";
-import { textToTags } from "./format.ts";
+import { headingOf, textToTags } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 
 // What Bento keeps from each recipe (the same fields as a Bento recipe).
@@ -148,8 +148,9 @@ export function toMinutes(value: unknown): number {
 
 // Paprika's own text marks that mean nothing here (Paprika 4, 2026-11-07):
 // "[recipe:Lasagne]" links to another recipe (the name stays),
-// "[photo:Step 3]" shows one of its photos (gone: the photos don't come
-// across), "[a guide](https://…)" is a link (the words stay).
+// "[photo:Step 3]" shows one of its photos there (the mark goes; in the
+// directions, its photo becomes that step's: paprikaStepPhotos),
+// "[a guide](https://…)" is a link (the words stay).
 // **bold** and *italic* stay: Bentotachi shows them as bold and soft text.
 function withoutPaprikaLinks(line: string): string {
   return line
@@ -168,12 +169,40 @@ function withoutPaprikaLinks(line: string): string {
 // allows lists; Bentotachi numbers the steps itself, so "1. Preheat" would
 // show numbered twice). "1.5 kg" keeps its number: it needs a space after.
 function asLines(value: unknown, { steps = false } = {}): string[] {
-  return text(value)
-    .split(/\r?\n/)
-    .map((line) => withoutPaprikaLinks(line).replace(/^[-•]\s+/, ""))
-    .map((line) => (steps ? line.replace(/^\d{1,2}[.)]\s+/, "") : line).trim())
-    .filter(Boolean)
-    .map((line) => (/^[^\d]{1,60}:$/.test(line) ? `# ${line.slice(0, -1).trim()}` : line));
+  return markedLines(value, { steps }).map((marked) => marked.line);
+}
+
+// The same lines, each with the names of the photos marked in it. A mark on
+// a line of its own belongs to the line before it (or after, at the top).
+function markedLines(value: unknown, { steps = false } = {}): { line: string; photos: string[] }[] {
+  const marked: { line: string; photos: string[] }[] = [];
+  let waiting: string[] = [];
+  for (const raw of text(value).split(/\r?\n/)) {
+    const photos = [...raw.matchAll(/\[photo:([^\]]*)\]/gi)].map((match) => match[1].trim()).filter(Boolean);
+    let line = withoutPaprikaLinks(raw).replace(/^[-•]\s+/, "");
+    line = (steps ? line.replace(/^\d{1,2}[.)]\s+/, "") : line).trim();
+    if (!line) {
+      if (marked.length) marked[marked.length - 1].photos.push(...photos);
+      else waiting.push(...photos);
+      continue;
+    }
+    if (/^[^\d]{1,60}:$/.test(line)) line = `# ${line.slice(0, -1).trim()}`;
+    marked.push({ line, photos: [...waiting, ...photos] });
+    waiting = [];
+  }
+  return marked;
+}
+
+// Which step each of Paprika's photos shows in: { photo name: the step's
+// line, as the import makes it }. A photo marked on a heading isn't on a
+// step, so it stays with the other photos.
+export function paprikaStepPhotos(raw: Record<string, unknown>): Record<string, string> {
+  const steps: Record<string, string> = {};
+  for (const { line, photos } of markedLines(raw.directions, { steps: true })) {
+    if (headingOf(line) !== null) continue;
+    for (const name of photos) steps[name] ??= line;
+  }
+  return steps;
 }
 
 // Bento's export put the recipe writer's notes after its own, under "From the
@@ -204,13 +233,26 @@ function photoType(bytes: Uint8Array): string | null {
 // (found in review). The import may swap a preview for the website's
 // full-size photo (paprikaPhotoUrl).
 export function paprikaPhoto(raw: Record<string, unknown>): ImportedRecipe["photo"] {
-  const own = photoOf(raw.photo_data);
-  if (own) return own;
+  return paprikaPhotos(raw).cover;
+}
+
+// The cover (as paprikaPhoto) and the rest of Paprika's gallery, each with
+// its name (what "[photo:…]" marks point at); unreadable ones are left out.
+export function paprikaPhotos(raw: Record<string, unknown>): {
+  cover: ImportedRecipe["photo"];
+  gallery: { bytes: Uint8Array; type: string; name: string }[];
+} {
+  const gallery: { bytes: Uint8Array; type: string; name: string }[] = [];
   for (const photo of Array.isArray(raw.photos) ? raw.photos : []) {
-    const data = photo && typeof photo === "object" ? photoOf((photo as Record<string, unknown>).data) : null;
-    if (data) return data;
+    if (!photo || typeof photo !== "object") continue;
+    const entry = photo as Record<string, unknown>;
+    const data = photoOf(entry.data);
+    if (data) gallery.push({ ...data, name: text(entry.name) });
   }
-  return null;
+  const own = photoOf(raw.photo_data);
+  if (own) return { cover: own, gallery };
+  const [first, ...rest] = gallery;
+  return { cover: first ? { bytes: first.bytes, type: first.type } : null, gallery: rest };
 }
 
 // The site's full-size photo for a recipe Paprika saved from a website

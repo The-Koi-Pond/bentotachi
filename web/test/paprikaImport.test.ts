@@ -10,6 +10,8 @@ import {
   paprikaEntries,
   isSmallPhoto,
   paprikaPhoto,
+  paprikaPhotos,
+  paprikaStepPhotos,
   paprikaPhotoUrl,
   paprikaRating,
   photoSize,
@@ -389,4 +391,69 @@ test("odd values don't break it", () => {
   assert.deepEqual(recipe.tags, []);
   assert.equal(recipe.source_url, "");
   assert.equal(recipe.photo, null);
+});
+
+test("Paprika's gallery: the cover, the other photos with their names, and which step each is marked in", () => {
+  const raw = {
+    ...paprika,
+    photo_data: PNG,
+    photos: [
+      { name: "Step 2", data: base64(jpegOf(800, 600)) },
+      { name: "Done", data: base64(jpegOf(400, 300)) },
+      { name: "Broken", data: "not a photo" },
+    ],
+    directions: "Make the pastry.\n\nBake blind for 15 minutes. [photo:Step 2]\n\nFill and bake.\n[photo:Done]",
+  };
+  const { cover, gallery } = paprikaPhotos(raw);
+  assert.deepEqual(photoSize(cover!.bytes), { width: 1, height: 1 });
+  assert.deepEqual(gallery.map((photo) => photo.name), ["Step 2", "Done"]);
+  // A mark at the end of a step, and one on a line of its own after it.
+  assert.deepEqual(paprikaStepPhotos(raw), { "Step 2": "Bake blind for 15 minutes.", Done: "Fill and bake." });
+  // The marks themselves are gone from the steps.
+  assert.deepEqual(fromPaprika(raw).steps, ["Make the pastry.", "Bake blind for 15 minutes.", "Fill and bake."]);
+  // Without a photo of its own, the first gallery photo is the cover, and
+  // isn't in the gallery twice.
+  const noCover = paprikaPhotos({ ...raw, photo_data: "" });
+  assert.deepEqual(photoSize(noCover.cover!.bytes), { width: 800, height: 600 });
+  assert.deepEqual(noCover.gallery.map((photo) => photo.name), ["Done"]);
+});
+
+test("a photo marked on a heading isn't put on a step", () => {
+  assert.deepEqual(paprikaStepPhotos({ directions: "For the sauce: [photo:Sauce]\nStir." }), {});
+});
+
+test("Bento's step photos go out as Paprika's and come back on the same steps", () => {
+  const recipe = {
+    id: "r2",
+    title: "Shakshuka",
+    description: "",
+    source_url: "",
+    servings: "4",
+    prep_minutes: 0,
+    cook_minutes: 0,
+    total_minutes: 0,
+    ingredients: [],
+    steps: ["# Sauce", "Fry the onions.", "Add the tomatoes.", "# Eggs", "Crack in the eggs."],
+    tags: [],
+    notes: "",
+    author_notes: "",
+    created: "",
+    photo_steps: { "a.jpg": "fry the onions.", "b.jpg": "fry the onions.", "c.jpg": "crack in the eggs." },
+  };
+  const extras = ["a.jpg", "b.jpg", "c.jpg", "d.jpg"].map((file) => ({ file, data: PNG }));
+  const out = toPaprika(recipe, PNG, 0, false, extras);
+  // Both parts start at step 1: the names stay unique; d isn't on a step.
+  assert.deepEqual(out.photos.map((photo) => photo.name), ["Step 1", "Step 1 (2)", "Step 1 (3)", "Photo 1"]);
+  assert.equal(
+    out.directions,
+    "Sauce:\n\nFry the onions. [photo:Step 1] [photo:Step 1 (2)]\n\nAdd the tomatoes.\n\nEggs:\n\nCrack in the eggs. [photo:Step 1 (3)]"
+  );
+  const raw = readPaprikaFile(paprikaFile([out])).recipes[0];
+  assert.equal(paprikaPhotos(raw).gallery.length, 4);
+  assert.deepEqual(paprikaStepPhotos(raw), {
+    "Step 1": "Fry the onions.",
+    "Step 1 (2)": "Fry the onions.",
+    "Step 1 (3)": "Crack in the eggs.",
+  });
+  assert.deepEqual(fromPaprika(raw).steps, recipe.steps);
 });

@@ -11,6 +11,7 @@
 import { gzipSync, strToU8 } from "fflate";
 import { extraTimes, formatMinutes, headingOf, totalMinutes } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
+import { numberedSteps, stepKey } from "./recipePhotos.ts";
 
 // What the export needs from a recipe (a Bento recipe has all of these).
 export interface ExportRecipe {
@@ -30,6 +31,24 @@ export interface ExportRecipe {
   author_notes: string;
   nutrition?: string[] | null;
   created: string;
+  // Which step each extra photo goes with (recipePhotos.ts).
+  photo_steps?: Record<string, string> | null;
+}
+
+// One of a recipe's photos besides the cover: its file name here, and the
+// photo as base64.
+export interface ExtraPhoto {
+  file: string;
+  data: string;
+}
+
+// A photo in Paprika's gallery: "name" is what its directions point at,
+// "[photo:Step 3]".
+export interface PaprikaPhoto {
+  name: string;
+  filename: string;
+  data: string;
+  hash: string;
 }
 
 export interface PaprikaRecipe {
@@ -51,6 +70,7 @@ export interface PaprikaRecipe {
   photo: string;
   photo_data: string;
   photo_hash: string;
+  photos: PaprikaPhoto[];
   categories: string[];
   rating: number;
   // On the exporting person's favorites (their heart).
@@ -73,11 +93,14 @@ function siteName(url: string): string {
 }
 
 // Bento's "# Sauce" headings are Paprika's "Sauce:" (a line ending in a colon).
-function lines(list: string[] | null, separator: string): string {
+// `marks`: photo names to point at from the end of a line, by its place.
+function lines(list: string[] | null, separator: string, marks?: Map<number, string[]>): string {
   return (list ?? [])
-    .map((line) => {
+    .map((line, i) => {
       const heading = headingOf(line);
-      return heading === null ? plain(line) : `${plain(heading)}:`;
+      const text = heading === null ? plain(line) : `${plain(heading)}:`;
+      const photos = marks?.get(i);
+      return text && photos ? `${text} ${photos.map((name) => `[photo:${name}]`).join(" ")}` : text;
     })
     .filter(Boolean)
     .join(separator);
@@ -101,8 +124,41 @@ export function paprikaUid(id: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export function toPaprika(recipe: ExportRecipe, photo: string, rating: number, favorite = false): PaprikaRecipe {
+// The extra photos as Paprika's gallery, and the marks that put each step's
+// photos in its directions: a step's are named "Step 3" (then "Step 3
+// (2)"), the rest "Photo 1", "Photo 2", each name used once.
+function paprikaGallery(recipe: ExportRecipe, uid: string, extras: ExtraPhoto[]) {
+  const numbered = numberedSteps(recipe.steps);
+  const used = new Set<string>();
+  const unique = (name: string) => {
+    let candidate = name;
+    for (let n = 2; used.has(candidate.toLowerCase()); n++) candidate = `${name} (${n})`;
+    used.add(candidate.toLowerCase());
+    return candidate;
+  };
+  const marks = new Map<number, string[]>(); // step index -> photo names
+  let others = 0;
+  const photos = extras.map((extra, i): PaprikaPhoto => {
+    const key = recipe.photo_steps?.[extra.file];
+    const step = key ? numbered.find((s) => stepKey(s.line) === key) : undefined;
+    const name = step ? unique(`Step ${step.number}`) : unique(`Photo ${++others}`);
+    if (step) marks.set(step.index, [...(marks.get(step.index) ?? []), name]);
+    return { name, filename: `${uid}-${i + 1}.jpg`, data: extra.data, hash: "" };
+  });
+  return { photos, marks };
+}
+
+// morePhotos: the photos besides the cover (see ExtraPhoto), which Paprika
+// shows in its gallery, a step's in that step.
+export function toPaprika(
+  recipe: ExportRecipe,
+  photo: string,
+  rating: number,
+  favorite = false,
+  morePhotos: ExtraPhoto[] = []
+): PaprikaRecipe {
   const uid = paprikaUid(recipe.id);
+  const gallery = paprikaGallery(recipe, uid, morePhotos);
   // Paprika has no place for times like "Cool: 7 hr", so they go in the notes.
   const extras = extraTimes(recipe).map((time) => `${time.label}: ${formatMinutes(time.minutes)}`);
   const notes = [
@@ -117,8 +173,9 @@ export function toPaprika(recipe: ExportRecipe, photo: string, rating: number, f
     name: plain(recipe.title) || "Untitled recipe",
     description: plain(recipe.description),
     ingredients: lines(recipe.ingredients, "\n"),
-    // A blank line between steps: Mealie splits steps there.
-    directions: lines(recipe.steps, "\n\n"),
+    // A blank line between steps: Mealie splits steps there. A step's
+    // photos go at its end, as Paprika's "[photo:Step 3]".
+    directions: lines(recipe.steps, "\n\n", gallery.marks),
     notes,
     // A line each, as Paprika shows its free-text nutrition.
     nutritional_info: (recipe.nutrition ?? []).map(plain).filter(Boolean).join("\n"),
@@ -134,6 +191,7 @@ export function toPaprika(recipe: ExportRecipe, photo: string, rating: number, f
     photo: photo ? `${uid}.jpg` : "",
     photo_data: photo,
     photo_hash: "",
+    photos: gallery.photos,
     categories: recipe.tags ?? [],
     rating: Math.max(0, Math.min(5, Math.round(rating))),
     on_favorites: favorite,

@@ -124,7 +124,7 @@ export default function RecipeMenu({
     if (saved) {
       setMessage(
         missingPhotos.length
-          ? `Saved “${name}”, without its photo (it wouldn't load): try again to include it.`
+          ? `Saved “${name}”, but a photo wouldn't load, so it's left out: try again to include it.`
           : `Saved “${name}”. Send it to anyone: Bentotachi, Paprika, Mealie and Tandoor can import it.`
       );
     }

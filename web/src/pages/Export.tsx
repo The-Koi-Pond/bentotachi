@@ -19,11 +19,13 @@ import {
   fromPaprika,
   isSmallPhoto,
   paprikaEntries,
-  paprikaPhoto,
+  paprikaPhotos,
   paprikaPhotoUrl,
   paprikaRating,
+  paprikaStepPhotos,
   someNames,
 } from "../paprikaImport";
+import { MAX_PHOTOS, savedName, stepKey, uploadName } from "../recipePhotos";
 import { localToday } from "../dates";
 
 // ⋮ → Import & export: bring in recipes from a Paprika file (Paprika,
@@ -157,7 +159,7 @@ function ImportRecipes() {
         // the summary says so (their cards tell them apart, recipeTwins).
         const twin = existing.some((other) => other.title.trim().toLowerCase() === recipe.title.trim().toLowerCase());
         // Decoded only now: the slow part, and only for recipes being added.
-        const photo = paprikaPhoto(raw);
+        const { cover: photo, gallery } = paprikaPhotos(raw);
         let image =
           photo && photo.bytes.length <= MAX_PHOTO
             ? new File([new Uint8Array(photo.bytes)], `photo.${photo.type.split("/")[1]}`, { type: photo.type })
@@ -176,9 +178,19 @@ function ImportRecipes() {
           }
         }
         if (small && !full) smallPhotos += 1;
+        // Its other photos too (up to Bentotachi's limit), sent under
+        // made-up names to find them again for their steps.
+        const sent: [string, string][] = [];
+        const photos: File[] = [];
+        for (const extra of gallery) {
+          if (photos.length >= MAX_PHOTOS || extra.bytes.length > MAX_PHOTO) continue;
+          const upload = uploadName();
+          photos.push(new File([new Uint8Array(extra.bytes)], upload, { type: extra.type }));
+          sent.push([extra.name, upload]);
+        }
         let created: Recipe;
         try {
-          created = await recipes().create({ ...recipe, ...(image && { image }) });
+          created = await recipes().create({ ...recipe, ...(image && { image }), ...(photos.length && { photos }) });
           existing.push({ id: created.id, title: recipe.title, source_url: recipe.source_url, ingredients: recipe.ingredients } as Recipe);
           added += 1;
           if (twin) sameName.push(recipe.title);
@@ -186,6 +198,15 @@ function ImportRecipes() {
           failed.push(recipe.title);
           continue;
         }
+        // Photos marked in a step ("[photo:Step 3]") show in that step. The
+        // recipe is in either way.
+        const marks = paprikaStepPhotos(raw);
+        const photo_steps: Record<string, string> = {};
+        for (const [name, upload] of sent) {
+          const saved = savedName(upload, created.photos);
+          if (marks[name] && saved) photo_steps[saved] = stepKey(marks[name]);
+        }
+        if (Object.keys(photo_steps).length) await recipes().update(created.id, { photo_steps }).catch(() => {});
         // Paprika's rating and favorite are the person's own, so they
         // become the importing person's onigiri and heart. The recipe is in
         // either way; a rating that won't save is only counted.
@@ -340,7 +361,7 @@ function ExportRecipes() {
         const text = `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${name}”.`;
         // A connection that dropped partway: say so, as the copy is missing them.
         const missing = missingPhotos.length
-          ? ` ${missingPhotos.length === 1 ? "1 photo" : `${missingPhotos.length} photos`} couldn't be fetched, so ${someNames(missingPhotos)} ${missingPhotos.length === 1 ? "is" : "are"} saved without ${missingPhotos.length === 1 ? "it" : "them"}: export again to include ${missingPhotos.length === 1 ? "it" : "them"}.`
+          ? ` Some photos couldn't be fetched, so ${someNames(missingPhotos)} ${missingPhotos.length === 1 ? "is" : "are"} saved without ${missingPhotos.length === 1 ? "one" : "some"}: export again to include them.`
           : "";
         setStatus({ text: text + missing, isError: false });
       }

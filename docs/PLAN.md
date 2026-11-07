@@ -1473,9 +1473,12 @@ one recipe from its page's ⋯ → Save as a Paprika file). Still open: 3–6,
      remove it. A step's photos show in its card (`photo_steps`, kept when
      the step is reworded: recipePhotos.ts). Duplicate copies them.
      Offline copies show the cover only.
-   - *Next (part 2):* Paprika files bring their gallery in (`photos`),
-     turning `[photo:Step 3]` marks in the directions into step photos
-     instead of dropping them, and our export takes both out.
+   - *Done (part 2):* Paprika files bring their gallery in (`photos`,
+     paprikaPhotos), a `[photo:Step 3]` mark in the directions putting its
+     photo on that step (paprikaStepPhotos), and our export takes both
+     out (photos named "Step 2", "Photo 1", marks at the end of their
+     steps). The round trip through our own files is tested; Paprika
+     itself reading our gallery still needs trying on a phone.
    - *Then (part 3):* a setting, off by default, "Bring step photos when
      saving from a website" (schema.org HowToStep `image`). Xel chose
      this over always or never: step photos can be 15+ per recipe, which

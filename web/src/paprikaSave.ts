@@ -1,5 +1,5 @@
-import { averageStars, recipeImageUrl, type Recipe, type RecipeRating } from "./pb";
-import { paprikaZip, toPaprika } from "./paprikaExport";
+import { averageStars, recipeImageUrl, recipePhotoUrl, type Recipe, type RecipeRating } from "./pb";
+import { paprikaZip, toPaprika, type ExtraPhoto } from "./paprikaExport";
 import { startFile } from "./saveFile";
 
 // Saves recipes, with their photos, as one Paprika file (paprikaExport.ts):
@@ -25,9 +25,17 @@ export async function savePaprikaFile(
     const theirs = ratings.filter((r) => r.recipe === recipe.id);
     const stars = averageStars(theirs) ?? 0;
     const favorite = theirs.some((r) => r.user === me && r.favorite);
-    const photo = await photoOf(recipe);
-    if (photo === null) missingPhotos.push(recipe.title);
-    zip.add(toPaprika(recipe, photo ?? "", stars, favorite));
+    const photo = recipe.image ? await base64Of(recipeImageUrl(recipe)) : "";
+    // The other photos too; one that won't load is left out.
+    const extras: ExtraPhoto[] = [];
+    let missing = photo === null;
+    for (const file of recipe.photos ?? []) {
+      const data = await base64Of(recipePhotoUrl(recipe, file));
+      if (data === null) missing = true;
+      else extras.push({ file, data });
+    }
+    if (missing) missingPhotos.push(recipe.title);
+    zip.add(toPaprika(recipe, photo ?? "", stars, favorite, extras));
     for (const piece of pieces) await file.add(piece);
     pieces = [];
   }
@@ -43,11 +51,9 @@ export function fileNamePart(text: string): string {
   return text.replace(/[\\/:*?"<>|\x00-\x1f]/g, "").trim().slice(0, 60);
 }
 
-// The recipe's photo as base64: "" when it has none, null when it has one
-// that wouldn't load (the recipe then goes without it).
-async function photoOf(recipe: Recipe): Promise<string | null> {
-  const url = recipeImageUrl(recipe);
-  if (!url) return "";
+// A photo as base64, or null when it wouldn't load (the recipe then goes
+// without it).
+async function base64Of(url: string): Promise<string | null> {
   try {
     const answer = await fetch(url);
     if (!answer.ok) return null;
