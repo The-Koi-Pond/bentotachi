@@ -1469,8 +1469,11 @@ main {
 }
 
 /* "📅 Plan" on a recipe page, and its little pop-up. */
+/* The Plan popup hangs from the whole title row, at its right edge, rather
+   than from Plan, Edit and ⋯: on a phone those sit at the left, under the
+   title, and a popup right-aligned to them ran off the screen (a tester,
+   2026-11-07). */
 .title-actions {
-  position: relative;
   flex: none;
   display: flex;
   gap: 6px;
@@ -1496,6 +1499,23 @@ main {
 
 .plan-popup p {
   margin: 0;
+}
+
+/* Day and meal side by side, the button below them when there's no room:
+   squeezed onto one line, the meal shrank to an empty sliver (a tester). */
+.plan-popup .add-row {
+  flex-wrap: wrap;
+}
+
+.plan-popup input[type="date"] {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+
+.plan-popup select,
+.plan-popup .button {
+  flex: none;
+  width: auto;
 }
 
 /* Browse */
@@ -2983,6 +3003,7 @@ legend {
 /* The title beside Plan, Edit and Share, wrapping onto more lines; on a
    very narrow phone the buttons move under it instead of squeezing it. */
 .title-row {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;

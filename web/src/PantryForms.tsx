@@ -350,6 +350,7 @@ export function AddPantryItem({
   onAdded,
   onUseExisting,
   onScanAgain,
+  onScan,
   onClose,
 }: {
   existing: PantryItem[];
@@ -364,6 +365,9 @@ export function AddPantryItem({
   // barcode (and brand) on that item instead.
   onUseExisting?: (item: PantryItem, brand: string) => void;
   onScanAgain?: () => void;
+  // Scan a packet instead of typing: for an empty pantry, whose find box
+  // (with its 📷) isn't shown yet (a tester couldn't find the scanner).
+  onScan?: () => void;
   onClose?: () => void;
 }) {
   const product = fromBarcode?.product ?? null;
@@ -522,6 +526,11 @@ export function AddPantryItem({
         {onClose && (
           <button type="button" className="button ghost" onClick={onClose}>
             Done
+          </button>
+        )}
+        {onScan && (
+          <button type="button" className="button" onClick={onScan}>
+            <span className="button-mark" aria-hidden="true">📷</span> Scan a barcode
           </button>
         )}
         <button className="button primary" disabled={busy || !fields.name.trim()}>

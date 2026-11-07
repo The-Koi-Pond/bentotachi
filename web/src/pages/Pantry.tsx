@@ -536,6 +536,7 @@ export default function Pantry() {
           existing={items}
           fromStore={fromStore}
           startName={startName}
+          onScan={canScan && items.length === 0 ? () => void scan() : undefined}
           onAdded={(item) => {
             pantry.upsert(item);
             setFromStore(null);
