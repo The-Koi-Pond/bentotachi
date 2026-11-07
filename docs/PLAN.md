@@ -838,6 +838,15 @@ for phone-only mode, which only shows on a fresh install):
   recipe lines show the household's word as a soft hint ("bell pepper
   (capsicum)"). Only certain meanings: no hints for plain "mince",
   "tomato sauce", or "coriander" (could be the ground spice in the US).
+  Since 2026-11-07 also British words both countries say differently
+  (aubergine, courgette, mangetout, Chinese leaf, cling film…), about 30
+  more pairs (Swiss brown/cremini, wombok/napa cabbage, eye fillet/beef
+  tenderloin, baking/parchment paper…), spellings that link and search
+  alike without a hint (yoghurt/yogurt, chilli/chili, filo/phyllo), and
+  accents and hyphens no longer matter anywhere names are matched
+  ("jalapeno" finds "jalapeños"). Hints follow plurals ("2 aubergines
+  (eggplants)"). Still left out on purpose: "shallots" (spring onions in
+  much of NSW), "tomato purée", "pawpaw", "biscuit", "jelly", "pumpkin".
 - Photo framing: double-tap (or double-click) a recipe's photo, or "Adjust
   photo" on the Edit page, to drag it and zoom (1-3x). Saved as
   image_framing; the photo file is untouched, so Reset undoes it. Used on

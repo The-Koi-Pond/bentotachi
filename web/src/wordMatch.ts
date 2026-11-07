@@ -2,7 +2,27 @@
 // everywhere (pantry links, tag suggestions, regional names): as whole
 // words, allowing plurals ("Onion" matches "2 onions, diced"), and not as
 // part of a different product ("rice vinegar" isn't Rice, "coconut milk"
-// isn't Milk; see the word lists below).
+// isn't Milk; see the word lists below). Accents and hyphens don't count:
+// "Jalapeno" matches "jalapeños", "Self raising flour" "self-raising flour".
+
+// The text in lower case, without accents, and with hyphens as spaces, one
+// character for each character so positions in it are positions in the
+// text: "Crème-fraîche" -> "creme fraiche".
+export function foldText(text: string): string {
+  let folded = "";
+  for (const char of text) {
+    if (char === "-") {
+      folded += " ";
+      continue;
+    }
+    const lower = char.toLowerCase();
+    const plain = lower.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    // Kept as it is when a change would alter the length ("İ" lowercases
+    // to two characters).
+    folded += plain.length === char.length ? plain : lower.length === char.length ? lower : char;
+  }
+  return folded;
+}
 
 // "Tomatoes" -> "tomato", "Eggs" -> "egg", "Rice" -> "rice".
 export function stem(name: string): string {
@@ -34,11 +54,13 @@ const singular = (word: string) => (word.length > 3 && word.endsWith("s") && !wo
 // Where the name first appears in the line (as above), or null. The
 // positions are in the line as given.
 export function findMention(line: string, name: string): { start: number; end: number } | null {
-  const text = line.toLowerCase();
-  const stemmed = stem(name);
+  const text = foldText(line);
+  const stemmed = stem(foldText(name));
   if (!stemmed) return null;
   // Whole words only: "egg" mustn't match "eggplant", "salt" not "unsalted".
-  const pattern = new RegExp(`(^|[^a-z])(${escapeForRegex(stemmed)}(?:e?s)?)(?=$|[^a-z])`, "g");
+  // Any spacing between a name's words ("self  raising", "self-raising").
+  const words = escapeForRegex(stemmed).replace(/\s+/g, "\\s+");
+  const pattern = new RegExp(`(^|[^a-z])(${words}(?:e?s)?)(?=$|[^a-z])`, "g");
   for (const match of text.matchAll(pattern)) {
     const start = match.index + match[1].length;
     const end = start + match[2].length;

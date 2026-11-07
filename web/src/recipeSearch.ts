@@ -2,6 +2,7 @@
 // plan's chooser).
 
 import { searchVariants } from "./regionalNames.ts";
+import { foldText } from "./wordMatch.ts";
 
 type Searchable = { title: string; tags: string[] | null; ingredients: string[] | null };
 
@@ -13,7 +14,9 @@ export function searchWords(text: string): string[][] {
 
 // Every word typed must appear somewhere in the title, tags or ingredients,
 // so "chicken quick" finds quick chicken dishes. Any of the variants will do.
+// Accents and hyphens don't count ("jalapeno" finds "jalapeños"), as in
+// the variants.
 export function matchesSearch(recipe: Searchable, variants: string[][]): boolean {
-  const haystack = [recipe.title, ...(recipe.tags ?? []), ...(recipe.ingredients ?? [])].join(" ").toLowerCase();
+  const haystack = foldText([recipe.title, ...(recipe.tags ?? []), ...(recipe.ingredients ?? [])].join(" "));
   return variants.some((words) => words.every((word) => haystack.includes(word)));
 }
