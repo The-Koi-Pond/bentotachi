@@ -56,9 +56,11 @@ Check the wording in Play Console when you fill it in; Google changes it.
 Tick only these:
 
 - **Personal info:** Name, Email address, User IDs
+- **Messages:** Other in-app messages (fridge-door notes: household members
+  writing to each other; added 2026-11-07 when filling in the form)
 - **Photos and videos:** Photos
 - **Files and docs:** Files and docs (a saved web page to import a recipe from)
-- **App activity:** Other user-generated content (recipes, ratings, notes, the plan, lists, the pantry)
+- **App activity:** Other user-generated content (recipes, ratings, the plan, lists, the pantry)
 - **App info and performance:** Diagnostics (Google's scanner)
 - **Device or other IDs:** Device or other IDs (Google's scanner)
 
@@ -78,6 +80,7 @@ collected (optional).
 | Name | App functionality, Account management |
 | Email address | Account management |
 | User IDs | App functionality, Account management |
+| Other in-app messages | App functionality |
 | Photos | App functionality |
 | Files and docs | App functionality |
 | Other user-generated content | App functionality |
@@ -87,7 +90,7 @@ collected (optional).
 ## What the store listing will then show
 
 Roughly: "No data shared with third parties", "This app may collect these
-data types: Personal info, Photos and videos, Files and docs, App activity,
+data types: Personal info, Messages, Photos and videos, Files and docs, App activity,
 App info and performance, Device or other IDs", "Data isn't encrypted",
 "You can request that data be deleted". The store description can explain
 that "collect" here means "sends to your own household server".

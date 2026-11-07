@@ -22,38 +22,41 @@ people searching for a recipe app find it.)
 A recipe box, dinner plan, shopping list and pantry for your whole household.
 ```
 
-**Full description** (4,000 at most; it mustn't repeat the short one):
+**Full description** (4,000 at most; it mustn't repeat the short one). The
+section names are in `<b>…</b>`, which Play shows as bold (2026-11-07; check
+the listing's preview). Keep the blank lines: Play keeps line breaks, though
+Play Console's summary pages squash it into one block.
 
 ```
 Bentotachi keeps your recipes, the week's dinners, the shopping list and the pantry in one place, starring an onigiri who is fine, actually. He screams a bit. It's fine.
 
 Everything lives on your phone: no sign-up, no cloud, no ads and no tracking, and we never see your recipes. Not even Nonna's prized marinara.
 
-Save recipes from anywhere
+<b>Save recipes from anywhere</b>
 Paste a link, share one straight from your browser, or type in Grandma's by hand. Bentotachi skips the blogger's life story and keeps the recipe. Sites that block importing? Open them in Bentotachi's own browser and save the page you're looking at.
 
-Shelves and tags
+<b>Shelves and tags</b>
 Desserts, one-pot, "things we make when we're sad": sort recipes onto shelves and tag them however you like.
 
-Plan the week
+<b>Plan the week</b>
 Plan dinners (and breakfasts and lunches, if you're that organised) and finally settle "didn't we just have that?" Bentotachi remembers what you last had, and when.
 
-One shopping list
+<b>One shopping list</b>
 Tick a recipe's ingredients and they hop onto one list, sorted by aisle so you're not doubling back for the milk. It even works in the supermarket's no-signal corner.
 
-The pantry
+<b>The pantry</b>
 Mark things Have, Low or Out, scan barcodes, keep track of packets if you like, and leave notes like "3 jars, do not buy more". Run out of something and Bentotachi asks whether it should go on the list.
 
-Cook with it
+<b>Cook with it</b>
 Cooking for six instead of four? The amounts change for you. Tap "10 min" in a step to start a timer, tick off steps as you go, and time how long a recipe really takes.
 
-The fridge door
+<b>The fridge door</b>
 Leave notes for everyone at home, like an actual fridge, minus the magnets.
 
-Sharing with your household
+<b>Sharing with your household</b>
 Bentotachi works on its own on one phone. To share recipes, the plan and the shopping list with the people you live with, run the Bentotachi server on a computer at home (a Raspberry Pi or an old PC will do) and everyone connects to it. The guide on GitHub walks you through it, and your data stays on that computer.
 
-Yours to keep
+<b>Yours to keep</b>
 No subscriptions, no paid features and no ads, ever. Back up whenever you like, or export your recipes to take them elsewhere. Already have recipes in Paprika, Mealie or Tandoor? Bring their export file along.
 
 Made by The Koi Pond, a few friends, for our own households first.
