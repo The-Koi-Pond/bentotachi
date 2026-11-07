@@ -50,6 +50,9 @@ export interface User extends RecordModel {
   color: string;
   // Their profile picture's file name, or "" for none (see Avatar.tsx).
   avatar: string;
+  // Whether recipes show their nutrition facts to them (the ⋮ menu's
+  // "Show nutrition"; off unless they turn it on).
+  show_nutrition?: boolean;
   updated: string;
 }
 
@@ -79,6 +82,9 @@ export interface Recipe extends RecordModel {
   // (0 = none) and how many gave it. Missing on an older server.
   site_rating?: number;
   site_rating_count?: number;
+  // Nutrition facts per serving, a line each ("Calories: 420 kcal"),
+  // shown to people who turn on "Show nutrition". Missing on an older server.
+  nutrition?: string[] | null;
   added_by: string;
   created: string;
   updated: string;

@@ -9,11 +9,12 @@ import {
   fromPaprika,
   paprikaEntries,
   paprikaPhoto,
+  paprikaRating,
   readPaprikaFile,
   someNames,
   toMinutes,
 } from "../src/paprikaImport.ts";
-import { paprikaFile, toPaprika } from "../src/paprikaExport.ts";
+import { paprikaFile, paprikaUid, toPaprika } from "../src/paprikaExport.ts";
 
 // A 1×1 PNG.
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -49,6 +50,37 @@ test("a Paprika recipe in Bento's shape", () => {
   assert.equal(recipe.photo?.type, "image/png");
 });
 
+test("what Bentotachi has no place for goes into the notes, not lost", () => {
+  const recipe = fromPaprika({
+    ...paprika,
+    source: "Ottolenghi Simple, p. 42",
+    source_url: "",
+    difficulty: "Easy",
+    nutritional_info: "Calories: 420\nProtein: 12 g",
+  });
+  assert.equal(recipe.notes, "Freezes well.\n\nSource: Ottolenghi Simple, p. 42\nDifficulty: Easy");
+  // Nutrition has a place of its own, a line each (blank lines left out).
+  assert.deepEqual(recipe.nutrition, ["Calories: 420", "Protein: 12 g"]);
+  assert.deepEqual(fromPaprika({ ...paprika, nutritional_info: "Calories: 420\r\n\n  Protein: 12 g\n" }).nutrition, ["Calories: 420", "Protein: 12 g"]);
+  // A source that's only the link's site adds nothing (the card shows it).
+  assert.equal(fromPaprika({ ...paprika, source: "example.com" }).notes, "Freezes well.");
+  // Written in the link box instead, it's kept too.
+  assert.equal(fromPaprika({ ...paprika, notes: "", source_url: "Nan's recipe card" }).notes, "Source: Nan's recipe card");
+});
+
+test("the person's own rating and favorite, for their onigiri and heart", () => {
+  assert.deepEqual(paprikaRating(paprika), { stars: 4, favorite: false });
+  assert.deepEqual(paprikaRating({ rating: 0, on_favorites: true }), { stars: 0, favorite: true });
+  assert.deepEqual(paprikaRating({ rating: "5", on_favorites: 1 }), { stars: 5, favorite: true });
+  assert.deepEqual(paprikaRating({ rating: 9 }), { stars: 5, favorite: false });
+  assert.equal(paprikaRating({ rating: 0, on_favorites: false }), null);
+  assert.equal(paprikaRating({ rating: "lots" }), null);
+  // "0" and "false" aren't favorites.
+  assert.equal(paprikaRating({ on_favorites: "0" }), null);
+  assert.equal(paprikaRating({ on_favorites: "false" }), null);
+  assert.equal(paprikaRating({}), null);
+});
+
 test("times as Paprika apps write them", () => {
   assert.equal(toMinutes("15 mins"), 15);
   assert.equal(toMinutes("1 hour"), 60);
@@ -82,6 +114,7 @@ test("Bento's own export comes back as it was", () => {
     tags: ["soup", "winter"],
     notes: "Double it.",
     author_notes: "Use butternut.",
+    nutrition: ["Calories: 210 kcal", "Protein: 4 g"],
     created: "2026-10-31 09:15:00.000Z",
   };
   const file = paprikaFile([toPaprika(original, PNG, 5)]);
@@ -92,11 +125,18 @@ test("Bento's own export comes back as it was", () => {
   assert.deepEqual(back.tags, ["soup", "winter"]);
   assert.equal(back.notes, "Double it.");
   assert.equal(back.author_notes, "Use butternut.");
+  assert.deepEqual(back.nutrition, ["Calories: 210 kcal", "Protein: 4 g"]);
   assert.equal(back.prep_minutes, 10);
   assert.equal(back.cook_minutes, 30);
   // The export writes the total it showed (40), so it comes back as one.
   assert.equal(back.total_minutes, 40);
   assert.ok(back.photo);
+  // The household's rating and the exporter's heart come along.
+  const raw = readPaprikaFile(paprikaFile([toPaprika(original, "", 4.4, true)])).recipes[0];
+  assert.deepEqual(paprikaRating(raw), { stars: 4, favorite: true });
+  // Without a link, nothing is added to the notes either.
+  const homemade = readPaprikaFile(paprikaFile([toPaprika({ ...original, source_url: "" }, "", 0)])).recipes[0];
+  assert.equal(fromPaprika(homemade).notes, "Double it.");
 });
 
 test("recipes we already have are skipped: the same name, and the same link or ingredients", () => {
@@ -141,6 +181,15 @@ test("Bentotachi's own export comes back as already here, however the export rew
   // Its uid is the recipe's id here, enough on its own (renamed since).
   assert.equal(alreadyHave(back, [{ ...original, title: "Renamed", ingredients: [] }], String(raw.uid)), true);
   assert.equal(alreadyHave(back, [{ ...original, id: "other", title: "Renamed" }], String(raw.uid)), false);
+  // A real 15-character id comes back from its UUID too, and so does a
+  // file from before uids were UUIDs (the plain id).
+  const real = { ...original, id: "h5hx6eedrsxetc0", title: "Renamed", ingredients: [] };
+  assert.equal(alreadyHave(back, [real], paprikaUid("h5hx6eedrsxetc0")), true);
+  assert.equal(alreadyHave(back, [real], paprikaUid("h5hx6eedrsxetc1")), false);
+  assert.equal(alreadyHave(back, [real], "h5hx6eedrsxetc0"), true);
+  assert.equal(alreadyHave(back, [{ ...real, id: "0abcdefghijklmn" }], paprikaUid("0abcdefghijklmn")), true);
+  // Paprika's own uids never match a recipe here.
+  assert.equal(alreadyHave(back, [real], "8F5A2D3C-1B2E-4C6D-9A0B-7E3F5D1C2B4A"), false);
 });
 
 test("a file's recipes come one at a time, in order", () => {

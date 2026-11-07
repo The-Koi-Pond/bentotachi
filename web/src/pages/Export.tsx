@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from "react";
-import { averageStars, errorMessage, isAndroidApp, recipeImageUrl, recipeRatings, recipes, type Recipe } from "../pb";
+import { averageStars, errorMessage, isAndroidApp, pb, recipeImageUrl, recipeRatings, recipes, type Recipe } from "../pb";
 import { paprikaZip, toPaprika } from "../paprikaExport";
-import { alreadyHave, fitImported, fromPaprika, paprikaEntries, paprikaPhoto, someNames } from "../paprikaImport";
+import { alreadyHave, fitImported, fromPaprika, paprikaEntries, paprikaPhoto, paprikaRating, someNames } from "../paprikaImport";
 import { startFile } from "../saveFile";
 import { localToday } from "../dates";
 
@@ -45,7 +45,10 @@ function ImportRecipes() {
       // memory (paprikaEntries).
       const entries = paprikaEntries(bytes);
       const existing = await recipes().getFullList({ fields: "id,title,source_url,ingredients" });
+      const me = pb.authStore.record?.id;
       let added = 0;
+      let rated = 0;
+      let unrated = 0;
       let unreadable = 0;
       let i = 0;
       const skipped: string[] = [];
@@ -83,13 +86,27 @@ function ImportRecipes() {
           photo && photo.bytes.length <= MAX_PHOTO
             ? new File([new Uint8Array(photo.bytes)], `photo.${photo.type.split("/")[1]}`, { type: photo.type })
             : undefined;
+        let created: Recipe;
         try {
-          const created = await recipes().create({ ...recipe, ...(image && { image }) });
+          created = await recipes().create({ ...recipe, ...(image && { image }) });
           existing.push({ id: created.id, title: recipe.title, source_url: recipe.source_url, ingredients: recipe.ingredients } as Recipe);
           added += 1;
           if (twin) sameName.push(recipe.title);
         } catch {
           failed.push(recipe.title);
+          continue;
+        }
+        // Paprika's rating and favorite are the person's own, so they
+        // become the importing person's onigiri and heart. The recipe is in
+        // either way; a rating that won't save is only counted.
+        const rating = paprikaRating(raw);
+        if (rating && me) {
+          try {
+            await recipeRatings().create({ recipe: created.id, user: me, stars: rating.stars, favorite: rating.favorite, approved: false });
+            rated += 1;
+          } catch {
+            unrated += 1;
+          }
         }
       }
       if (!added && !skipped.length && !failed.length) {
@@ -97,6 +114,8 @@ function ImportRecipes() {
         return;
       }
       const parts = [`Added ${added} ${added === 1 ? "recipe" : "recipes"}.`];
+      if (rated) parts.push(`${rated === 1 ? "1 came" : `${rated} came`} with a rating or favorite, now yours.`);
+      if (unrated) parts.push(`${unrated === 1 ? "1 rating" : `${unrated} ratings`} couldn't be saved: rate ${unrated === 1 ? "it" : "them"} on the recipe page.`);
       if (skipped.length) {
         parts.push(`${skipped.length} ${skipped.length === 1 ? "was" : "were"} already here (${someNames(skipped)}).`);
       }
@@ -128,7 +147,11 @@ function ImportRecipes() {
         Adds recipes from a Paprika file (<code>.paprikarecipes</code>), with their photos. Paprika, Mealie, Tandoor and
         Bentotachi itself can export one. Recipes already here are skipped, so importing the same file twice is fine.
       </p>
-      <p className="muted small-note">Categories become tags. Ratings and meal plans don't come across.</p>
+      <p className="muted small-note">
+        Categories become tags, and each recipe's rating becomes your own onigiri (and a favorite your heart, where the
+        file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and difficulty go into its notes. Meal plans don't come
+        across.
+      </p>
       <div className="actions">
         <label className={`button primary ${busy ? "disabled" : ""}`}>
           {busy ? progress : "Choose a file"}
@@ -181,6 +204,7 @@ function ExportRecipes() {
   async function exportAll() {
     setStatus(null);
     setProgress("Getting the recipes…");
+    const me = pb.authStore.record?.id;
     try {
       const [all, ratings] = await Promise.all([
         recipes().getFullList({ sort: "title" }),
@@ -194,10 +218,12 @@ function ExportRecipes() {
       const missingPhotos: string[] = [];
       for (const [i, recipe] of all.entries()) {
         setProgress(`Adding ${i + 1} of ${all.length}…`);
-        const stars = averageStars(ratings.filter((r) => r.recipe === recipe.id)) ?? 0;
+        const theirs = ratings.filter((r) => r.recipe === recipe.id);
+        const stars = averageStars(theirs) ?? 0;
+        const favorite = theirs.some((r) => r.user === me && r.favorite);
         const photo = await photoOf(recipe);
         if (photo === null) missingPhotos.push(recipe.title);
-        zip.add(toPaprika(recipe, photo ?? "", stars));
+        zip.add(toPaprika(recipe, photo ?? "", stars, favorite));
         for (const piece of pieces) await file.add(piece);
         pieces = [];
       }
@@ -229,8 +255,9 @@ function ExportRecipes() {
         Tandoor can import it, so you can move your recipes to another app, or just keep a copy.
       </p>
       <p className="muted small-note">
-        Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, and each recipe's
-        rating is the household's average onigiri (as stars, Paprika's way). The meal plan, shopping list, pantry and cooking history aren't included.
+        Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
+        rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favorites. The meal
+        plan, shopping list, pantry and cooking history aren't included.
       </p>
       <div className="actions">
         <button className="button" onClick={() => void exportAll()} disabled={busy}>

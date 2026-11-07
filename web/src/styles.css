@@ -853,7 +853,8 @@ main {
   cursor: pointer;
 }
 
-.view-switch button[aria-pressed="true"] {
+.view-switch button[aria-pressed="true"],
+.view-switch button[aria-current="true"] {
   color: var(--text);
   background: var(--surface);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
@@ -862,6 +863,24 @@ main {
 .view-switch button:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* The recipe page's Ingredients · Method · Notes (RecipeJumpBar.tsx): just
+   above the ingredients, then stuck under the top bar (its `top` is set
+   to the top bar's height), on the page's own background so the recipe
+   scrolls away under it. */
+.recipe-jump {
+  position: sticky;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  margin: -8px -16px;
+  padding: 8px 16px;
+  background: var(--bg);
+}
+
+.recipe-jump .view-switch button {
+  padding: 2px 16px;
 }
 
 /* The date range (or month) and the ‹ Today › buttons. */
@@ -2991,6 +3010,43 @@ legend {
   margin: 0;
 }
 
+/* Nutrition per serving (RecipeView.tsx, for people who turned on "Show
+   nutrition"): a small label-like card, a row each, name left and amount
+   right. */
+.nutrition-note {
+  margin: -4px 0 8px;
+  font-size: 0.85rem;
+}
+
+.nutrition-list {
+  margin: 0;
+  padding: 4px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.nutrition-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.nutrition-list > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.nutrition-list dt {
+  color: var(--muted);
+}
+
+.nutrition-list dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
 /* About a recipe, in one card (RecipeView.tsx): the description, a line,
    the servings and times, then "⏱ Time it". The ✎ sits in the top-right
    corner, so whatever comes first leaves room for it. */
@@ -3322,6 +3378,15 @@ legend {
   text-decoration: line-through;
 }
 
+/* Each step is a card holding its text (a button: tap to tick it off) and
+   any timers under the text, so they belong to their step rather than
+   floating between cards (Xel, 2026-11-07). */
+.steps > li:not(.list-heading) {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .step {
   display: flex;
   gap: 12px;
@@ -3329,24 +3394,25 @@ legend {
   text-align: left;
   font: inherit;
   color: inherit;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: none;
+  border: none;
   border-radius: var(--radius);
   padding: 12px 14px;
   cursor: pointer;
 }
 
-.step.done {
+.step.done,
+.steps > li:has(.step.done) .step-timers {
   opacity: 0.55;
 }
 
-/* "⏱ 10 min" under a step that mentions a time, lined up with its text
-   (the card's padding, the number and the gap: 14 + 28 + 12). */
+/* "⏱ 10 min" inside a step that mentions a time, under its text and lined
+   up with it (the card's padding, the number and the gap: 14 + 28 + 12). */
 .step-timers {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 4px 0 6px 54px;
+  margin: -4px 14px 12px 54px;
 }
 
 .timer-chip {
@@ -5144,6 +5210,7 @@ em.soft {
   .cook-history,
   .scale-row,
   .step-timers,
+  .recipe-jump,
   .add-notes,
   .heart-toggle,
   .recipe button:not(.step),
@@ -5163,6 +5230,10 @@ em.soft {
     padding: 4px 0;
     border: none;
     break-inside: avoid;
+  }
+
+  .steps > li:not(.list-heading) {
+    border: none;
   }
 
   .ingredient-row {

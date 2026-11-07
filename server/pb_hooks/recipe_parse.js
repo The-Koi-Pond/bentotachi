@@ -193,6 +193,26 @@ function toLines(list) {
   return lines;
 }
 
+// Some sites list each ingredient's amount and name as two ingredients
+// ("1 tablespoon", "olive oil": The Kitchn, found 2026-11-07 when Paprika
+// showed them on separate lines). An amount alone, maybe with its unit,
+// is joined to the line after it, unless that's a heading or another
+// amount.
+var AMOUNT_ONLY =
+  /^[\d½¼¾⅓⅔⅛⅜⅝⅞]+(\s*[.,/\-–]?\s*[\d½¼¾⅓⅔⅛⅜⅝⅞]+)*(\s+(cups?|c|tablespoons?|tbsps?|tbs|teaspoons?|tsps?|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|millilit(er|re)s?|ml|lit(er|re)s?|l|quarts?|pints?|pinch(es)?|dash(es)?|cloves?|cans?|sprigs?|bunch(es)?|handfuls?|sticks?|slices?|pieces?|large|medium|small|whole))?\.?$/i;
+
+function joinAmounts(lines) {
+  var joined = [];
+  for (var i = 0; i < lines.length; i++) {
+    var next = lines[i + 1];
+    if (AMOUNT_ONLY.test(lines[i]) && next && next[0] !== "#" && !AMOUNT_ONLY.test(next)) {
+      joined.push(lines[i] + " " + next);
+      i += 1;
+    } else joined.push(lines[i]);
+  }
+  return joined;
+}
+
 // Some sites run numbered steps together in one piece of text: "1. Heat the
 // oil.2. Add the onion." Splits it at each number, but only when the numbers
 // go 1, 2, 3… in order, each right after the end of a sentence and before a
@@ -585,6 +605,53 @@ function siteRating(aggregate) {
   return { value: Math.round((value / best) * 50) / 10, count: count };
 }
 
+// The page's nutrition facts (schema.org NutritionInformation, per
+// serving) as lines like "Calories: 420 kcal", in the order nutrition
+// labels use. A bare number gets its usual unit; the site's own wording
+// ("12 grams") is otherwise kept. [] when there are none.
+var NUTRIENTS = [
+  ["servingSize", "Serving", ""],
+  ["calories", "Calories", "kcal"],
+  ["fatContent", "Fat", "g"],
+  ["saturatedFatContent", "Saturated fat", "g"],
+  ["transFatContent", "Trans fat", "g"],
+  ["unsaturatedFatContent", "Unsaturated fat", "g"],
+  ["cholesterolContent", "Cholesterol", "mg"],
+  ["sodiumContent", "Sodium", "mg"],
+  ["carbohydrateContent", "Carbohydrates", "g"],
+  ["fiberContent", "Fiber", "g"],
+  ["sugarContent", "Sugar", "g"],
+  ["proteinContent", "Protein", "g"],
+];
+
+function nutritionLines(nutrition) {
+  if (Array.isArray(nutrition)) nutrition = nutrition[0];
+  if (!nutrition || typeof nutrition !== "object") return [];
+  var lines = [];
+  for (var i = 0; i < NUTRIENTS.length; i++) {
+    var value = nutrition[NUTRIENTS[i][0]];
+    if (Array.isArray(value)) value = value[0];
+    var key = NUTRIENTS[i][0];
+    var unit = NUTRIENTS[i][2];
+    // Text or a number; an object (some sites' QuantitativeValue) would
+    // come out as "[object Object]".
+    if (typeof value !== "string" && typeof value !== "number") continue;
+    // Without the label when the site repeats it ("Calories: 420").
+    var text = cleanText(value).replace(new RegExp("^" + NUTRIENTS[i][1] + "\\s*:?\\s*", "i"), "");
+    if (!text) continue;
+    // A nutrient needs a number ("g" alone says nothing); a serving needn't
+    // ("one bowl"). 0 calories means the site didn't know (0 g fat is real).
+    if (unit && !/\d/.test(text)) continue;
+    if (key === "calories" && parseFloat(text) === 0) continue;
+    if (unit && /^[\d.,]+$/.test(text)) text += " " + unit;
+    // "420 calories", "420 Cal", "420kcal", "420 KCAL" all say "420 kcal"
+    // (the unit must follow the number, so "kcal" isn't read as k + cal).
+    if (key === "calories") text = text.replace(/(\d)\s*(kilocalories|k?cal(orie)?s?)\.?$/i, "$1 kcal");
+    lines.push(NUTRIENTS[i][1] + ": " + text.slice(0, 100));
+  }
+  return lines;
+}
+
 // Returns the recipe as plain data, or null if the page has no recipe data.
 function parseRecipe(html, pageUrl) {
   var blocks = findJsonLdBlocks(html);
@@ -610,13 +677,14 @@ function parseRecipe(html, pageUrl) {
     prepMinutes: durationToMinutes(recipe.prepTime),
     cookMinutes: durationToMinutes(recipe.cookTime),
     totalMinutes: durationToMinutes(recipe.totalTime),
-    ingredients: toLines(recipe.recipeIngredient || recipe.ingredients),
+    ingredients: joinAmounts(toLines(recipe.recipeIngredient || recipe.ingredients)),
     steps: steps,
     tags: collectTags(recipe),
     authorNotes: findAuthorNotes(html).join("\n"),
     // From the page's recipe data (JSON-LD); microdata and plain-text
     // recipes don't carry one here.
     siteRating: siteRating(recipe.aggregateRating),
+    nutrition: nutritionLines(recipe.nutrition),
   };
 }
 
@@ -726,6 +794,8 @@ function fitRecipe(recipe) {
   fitted.ingredients = fitLines(recipe.ingredients, LIMITS.listBytes);
   fitted.steps = fitLines(recipe.steps, LIMITS.listBytes);
   fitted.tags = fitLines(recipe.tags, LIMITS.tagBytes);
+  // Its field keeps the same 20,000 bytes as tags (recipes_nutrition).
+  if (recipe.nutrition) fitted.nutrition = fitLines(recipe.nutrition, LIMITS.tagBytes);
   return fitted;
 }
 

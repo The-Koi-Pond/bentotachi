@@ -8,6 +8,7 @@ import {
   pb,
   personStyle,
   recipes,
+  useCurrentUser,
   useQuickMinutes,
   type CookedEntry,
   type MealPlanEntry,
@@ -46,6 +47,7 @@ import ShareButton from "../ShareButton";
 import { scaleLine } from "../scaling";
 import { stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
+import RecipeJumpBar from "../RecipeJumpBar";
 import { startTimer, useStepTimers } from "../StepTimerTray";
 
 // An ingredient or method line with soft hints for the household: weights,
@@ -80,13 +82,15 @@ const withHints = (line: string, { country, measures, tablespoon }: Hints) =>
 const SOFT_HINT = " Select words and press B, I or U to make them bold, soft grey italics or underlined.";
 
 // The parts of a recipe that can be changed right on its page.
-type Part = "details" | "ingredients" | "steps" | "author_notes" | "notes";
+type Part = "details" | "ingredients" | "steps" | "author_notes" | "notes" | "nutrition";
 
 export default function RecipeView() {
   const { id = "" } = useParams();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState("");
   const singleUser = useSingleUser();
+  // Nutrition shows only to people who turned on "Show nutrition".
+  const showNutrition = !!useCurrentUser()?.show_nutrition;
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState<"no" | "asking" | "deleting">("no");
   const [deleteError, setDeleteError] = useState("");
@@ -313,6 +317,16 @@ export default function RecipeView() {
         </>
       )}
 
+      {/* Ingredients · Method · Notes, sticking under the top bar. */}
+      <RecipeJumpBar
+        sections={[
+          { id: "jump-ingredients", label: "Ingredients" },
+          { id: "jump-method", label: "Method" },
+          ...(recipe.author_notes || recipe.notes ? [{ id: "jump-notes", label: "Notes" }] : []),
+        ]}
+      />
+
+      <div id="jump-ingredients" className="jump-target">
       {editing === "ingredients" ? (
         <section>
           <h2>Ingredients</h2>
@@ -337,8 +351,9 @@ export default function RecipeView() {
           onScale={setScale}
         />
       )}
+      </div>
 
-      <section>
+      <section id="jump-method">
         <div className="section-head">
           <h2>Method</h2>
           {editButton("steps", "Change the method")}
@@ -410,6 +425,8 @@ export default function RecipeView() {
         )}
       </section>
 
+      {(recipe.author_notes || recipe.notes || editing === "author_notes" || editing === "notes") && (
+      <div id="jump-notes" className="stack">
       {(recipe.author_notes || editing === "author_notes") && (
         <section>
           <div className="section-head">
@@ -450,7 +467,50 @@ export default function RecipeView() {
           )}
         </section>
       )}
-      {!offline && editing === null && (!recipe.notes || !recipe.author_notes) && (
+      </div>
+      )}
+      {/* Per serving, for people who turned on "Show nutrition" (the ⋮ menu):
+          from the website's recipe data or a Paprika file, or typed in. */}
+      {showNutrition && ((recipe.nutrition?.length ?? 0) > 0 || editing === "nutrition") && (
+        <section className="nutrition">
+          <div className="section-head">
+            <h2>Nutrition</h2>
+            {editButton("nutrition", "Change the nutrition")}
+          </div>
+          {editing === "nutrition" ? (
+            <TextEditor
+              label="Nutrition"
+              hint="Per serving, one per line, like “Calories: 420 kcal”."
+              initial={(recipe.nutrition ?? []).join("\n")}
+              rows={8}
+              onSave={(text) => save({ nutrition: textToLines(text) })}
+              onCancel={stopEditing}
+            />
+          ) : (
+            <>
+              <p className="muted nutrition-note">Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}.</p>
+              <dl className="nutrition-list">
+                {(recipe.nutrition ?? []).map((line, i) => {
+                  const at = line.indexOf(":");
+                  return at > 0 ? (
+                    <div key={i}>
+                      <dt>{line.slice(0, at)}</dt>
+                      <dd>{line.slice(at + 1).trim()}</dd>
+                    </div>
+                  ) : (
+                    <div key={i}>
+                      <dd>{line}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </>
+          )}
+        </section>
+      )}
+      {!offline &&
+        editing === null &&
+        (!recipe.notes || !recipe.author_notes || (showNutrition && !recipe.nutrition?.length)) && (
         <p className="add-notes">
           {/* In the same order as the sections they add. */}
           {!recipe.author_notes && (
@@ -461,6 +521,11 @@ export default function RecipeView() {
           {!recipe.notes && (
             <button className="link-button" onClick={() => setEditing("notes")}>
               + Add our notes
+            </button>
+          )}
+          {showNutrition && !recipe.nutrition?.length && (
+            <button className="link-button" onClick={() => setEditing("nutrition")}>
+              + Add nutrition
             </button>
           )}
         </p>

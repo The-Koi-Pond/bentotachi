@@ -321,6 +321,63 @@ test("drops the stray comma WP Recipe Maker puts inside ingredient brackets", ()
   ]);
 });
 
+test("keeps the nutrition facts per serving, in label order, with units", () => {
+  const nutrition = (facts) =>
+    parseRecipe(page({ "@type": "Recipe", name: "Soup", recipeIngredient: ["1 onion"], recipeInstructions: ["Simmer."], nutrition: facts }), "https://example.com/soup").nutrition;
+  assert.deepEqual(
+    nutrition({
+      "@type": "NutritionInformation",
+      proteinContent: "12 g",
+      calories: "420 calories",
+      servingSize: "1 bowl",
+      fatContent: 9,
+      sodiumContent: "800",
+      sugarContent: "0 g",
+    }),
+    ["Serving: 1 bowl", "Calories: 420 kcal", "Fat: 9 g", "Sodium: 800 mg", "Sugar: 0 g", "Protein: 12 g"]
+  );
+  // Every usual way of writing calories says "N kcal" (once).
+  for (const calories of ["420 kcal", "420", 420, "420kcal", "420 KCAL", "420 Cal", "420 kilocalories", "420 calories."])
+    assert.deepEqual(nutrition({ calories }), ["Calories: 420 kcal"], String(calories));
+  assert.deepEqual(nutrition({ calories: "1,200 kcal" }), ["Calories: 1,200 kcal"]);
+  assert.deepEqual(nutrition({ calories: "420 calories per serving" }), ["Calories: 420 calories per serving"]);
+  // A label the site repeats in the value isn't shown twice.
+  assert.deepEqual(nutrition({ calories: "Calories: 420", proteinContent: "protein 12 g" }), ["Calories: 420 kcal", "Protein: 12 g"]);
+  // Unknowns written as 0 calories or a lone unit are left out; none at all is [].
+  assert.deepEqual(nutrition({ calories: "0", fatContent: "g", proteinContent: "3g" }), ["Protein: 3g"]);
+  // A serving needn't have a number; one written as an object is left out.
+  assert.deepEqual(nutrition({ servingSize: "one bowl" }), ["Serving: one bowl"]);
+  assert.deepEqual(nutrition({ servingSize: { "@type": "QuantitativeValue", value: 250, unitText: "g" }, proteinContent: "3 g" }), ["Protein: 3 g"]);
+  // Some sites wrap the facts, or a value, in a list.
+  assert.deepEqual(nutrition([{ proteinContent: ["5 g"] }]), ["Protein: 5 g"]);
+  assert.deepEqual(nutrition(undefined), []);
+  assert.deepEqual(nutrition("lots"), []);
+});
+
+test("an amount listed apart from its ingredient is joined back to it", () => {
+  const ingredients = (recipeIngredient) =>
+    parseRecipe(page({ "@type": "Recipe", name: "Stew", recipeIngredient, recipeInstructions: ["Cook."] }), "https://www.thekitchn.com/stew").ingredients;
+  assert.deepEqual(ingredients(["1 tablespoon", "olive oil", "2 pounds", "beef chuck", "1", "sprig of rosemary", "1 1/2 cups", "stock", "½ tsp", "salt", "1 Tablespoon", "honey", "1 tbsp.", "soy sauce"]), [
+    "1 tablespoon olive oil",
+    "2 pounds beef chuck",
+    "1 sprig of rosemary",
+    "1 1/2 cups stock",
+    "½ tsp salt",
+    "1 Tablespoon honey",
+    "1 tbsp. soy sauce",
+  ]);
+  // Whole lines, a heading after an amount, and two amounts in a row stay put.
+  assert.deepEqual(ingredients(["2 eggs", "Salt", "For the sauce:", "1 cup", "# Topping", "3", "200 g"]), [
+    "2 eggs",
+    "Salt",
+    "# For the sauce",
+    "1 cup",
+    "# Topping",
+    "3",
+    "200 g",
+  ]);
+});
+
 test("keeps the site's own rating, out of 5, when the page gives one", () => {
   const recipe = (aggregateRating) =>
     parseRecipe(page({ "@type": "Recipe", name: "Soup", recipeIngredient: ["1 onion"], recipeInstructions: ["Simmer."], aggregateRating }), "https://example.com/soup");

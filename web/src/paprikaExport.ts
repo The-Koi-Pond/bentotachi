@@ -28,6 +28,7 @@ export interface ExportRecipe {
   tags: string[] | null;
   notes: string;
   author_notes: string;
+  nutrition?: string[] | null;
   created: string;
 }
 
@@ -52,6 +53,8 @@ export interface PaprikaRecipe {
   photo_hash: string;
   categories: string[];
   rating: number;
+  // On the exporting person's favorites (their heart).
+  on_favorites: boolean;
   created: string;
   hash: string;
 }
@@ -82,7 +85,24 @@ function lines(list: string[] | null, separator: string): string {
 
 // A recipe in Paprika's shape. photo: the photo as base64 JPEG/PNG/WebP, or
 // "". rating: 0 to 5 stars (the household's average, rounded).
-export function toPaprika(recipe: ExportRecipe, photo: string, rating: number): PaprikaRecipe {
+// The recipe's id in the shape Paprika insists on, a UUID like
+// "00000000-0000-0002-6A5F-0C3D8B1E92A4": Paprika refuses a whole file over
+// one other id ("invalid recipe uid", found importing into Paprika on a
+// phone, 2026-11-07). Bentotachi's ids are 15 letters and digits, read as
+// one base-36 number and written in hex, so the same recipe always gets
+// the same uid and the import can tell its own recipes coming back.
+export function paprikaUid(id: string): string {
+  let n = 0n;
+  for (const c of id.toLowerCase()) {
+    const digit = parseInt(c, 36);
+    if (!Number.isNaN(digit)) n = n * 36n + BigInt(digit);
+  }
+  const hex = n.toString(16).padStart(32, "0").slice(-32).toUpperCase();
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+export function toPaprika(recipe: ExportRecipe, photo: string, rating: number, favorite = false): PaprikaRecipe {
+  const uid = paprikaUid(recipe.id);
   // Paprika has no place for times like "Cool: 7 hr", so they go in the notes.
   const extras = extraTimes(recipe).map((time) => `${time.label}: ${formatMinutes(time.minutes)}`);
   const notes = [
@@ -93,14 +113,15 @@ export function toPaprika(recipe: ExportRecipe, photo: string, rating: number): 
     .filter(Boolean)
     .join("\n\n");
   return {
-    uid: recipe.id,
+    uid,
     name: plain(recipe.title) || "Untitled recipe",
     description: plain(recipe.description),
     ingredients: lines(recipe.ingredients, "\n"),
     // A blank line between steps: Mealie splits steps there.
     directions: lines(recipe.steps, "\n\n"),
     notes,
-    nutritional_info: "",
+    // A line each, as Paprika shows its free-text nutrition.
+    nutritional_info: (recipe.nutrition ?? []).map(plain).filter(Boolean).join("\n"),
     servings: recipe.servings ?? "",
     prep_time: minutes(recipe.prep_minutes),
     cook_time: minutes(recipe.cook_minutes),
@@ -110,11 +131,12 @@ export function toPaprika(recipe: ExportRecipe, photo: string, rating: number): 
     source: siteName(recipe.source_url ?? ""),
     source_url: recipe.source_url ?? "",
     image_url: "",
-    photo: photo ? `${recipe.id}.jpg` : "",
+    photo: photo ? `${uid}.jpg` : "",
     photo_data: photo,
     photo_hash: "",
     categories: recipe.tags ?? [],
     rating: Math.max(0, Math.min(5, Math.round(rating))),
+    on_favorites: favorite,
     // Paprika's "2026-10-31 09:15:00".
     created: (recipe.created ?? "").slice(0, 19),
     hash: "",

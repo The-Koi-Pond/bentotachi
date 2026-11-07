@@ -24,6 +24,8 @@ export interface ImportedRecipe {
   tags: string[];
   notes: string;
   author_notes: string;
+  // Nutrition facts, a line each ("Calories: 420 kcal").
+  nutrition: string[];
   // The photo's bytes and type, if the file has one.
   photo: { bytes: Uint8Array; type: string } | null;
 }
@@ -194,9 +196,36 @@ function photoOf(value: unknown): ImportedRecipe["photo"] {
   }
 }
 
+// What Paprika keeps that Bentotachi has no place for, kept in the notes
+// rather than lost (Xel, 2026-11-07): where it's from when that isn't a
+// link (a cookbook, "Grandma's card") and the difficulty. Bentotachi's own
+// export leaves these empty (its source is the link's site), so nothing is
+// added coming back. (Nutrition has its own place: `nutrition`.)
+function paprikaExtras(raw: Record<string, unknown>): string {
+  const link = text(raw.source_url);
+  const source = text(raw.source) || (/^https?:\/\//i.test(link) ? "" : link);
+  const difficulty = text(raw.difficulty);
+  return [!/^https?:\/\//i.test(link) && source && `Source: ${source}`, difficulty && `Difficulty: ${difficulty}`]
+    .filter(Boolean)
+    .join("\n");
+}
+
+// The person's own rating in Paprika (0 to 5 stars; 0 is none) and whether
+// it's on their favorites, which the import makes the importing person's
+// onigiri and heart. Null when there's neither.
+export function paprikaRating(raw: Record<string, unknown>): { stars: number; favorite: boolean } | null {
+  const rating = Number(raw.rating);
+  const stars = Number.isFinite(rating) ? Math.max(0, Math.min(5, Math.round(rating))) : 0;
+  const favorite = raw.on_favorites === true || raw.on_favorites === 1 || raw.on_favorites === "1" || raw.on_favorites === "true";
+  return stars || favorite ? { stars, favorite } : null;
+}
+
 // `withPhoto: false` leaves the photo for later (paprikaPhoto).
 export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } = {}): ImportedRecipe {
-  const { notes, author_notes } = splitNotes(text(raw.notes));
+  const split = splitNotes(text(raw.notes));
+  const extras = paprikaExtras(raw);
+  const notes = [split.notes, extras].filter(Boolean).join("\n\n");
+  const author_notes = split.author_notes;
   // Lowercase, like tags typed in Bento (textToTags).
   const tags = Array.isArray(raw.categories) ? textToTags(raw.categories.map(text).join(",")) : [];
   return {
@@ -212,6 +241,11 @@ export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } =
     tags,
     notes,
     author_notes,
+    // Paprika's is free text: a line each, blank lines left out.
+    nutrition: text(raw.nutritional_info)
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
     photo: withPhoto ? photoOf(raw.photo_data) : null,
   };
 }
@@ -235,8 +269,20 @@ function comparable(lines: string[] | null | undefined): string {
   );
 }
 
+// The Bentotachi recipe id an export's uid was made from (paprikaUid in
+// paprikaExport.ts: the 15-character id as a base-36 number, in hex), or ""
+// for Paprika's own uids, which come out far longer than any id here.
+// Without leading zeros, as a number has none (compared that way below).
+function idFromUid(uid: string): string {
+  const hex = uid.replace(/-/g, "");
+  if (!/^[0-9a-f]{32}$/i.test(hex)) return "";
+  const id = BigInt(`0x${hex}`).toString(36);
+  return id.length <= 15 ? id : "";
+}
+
 // Whether a recipe is already in Bento: Bentotachi's own export of it (its
-// `uid` is the recipe's id here), or the same name and either the same link
+// `uid` is the recipe's id here, or since 2026-11-07 that id in Paprika's
+// UUID shape), or the same name and either the same link
 // (both have one) or the same ingredients. So importing the same file twice
 // adds nothing, but two different "Pancakes" (one without a link) both come
 // in; before 2026-11-07 a missing link counted as a match.
@@ -247,9 +293,10 @@ export function alreadyHave(
 ): boolean {
   const name = recipe.title.trim().toLowerCase();
   const lines = comparable(recipe.ingredients);
+  const ownId = idFromUid(uid);
   return existing.some(
     (other) =>
-      (!!uid && other.id === uid) ||
+      (!!uid && (other.id === uid || (!!ownId && other.id?.replace(/^0+/, "") === ownId))) ||
       (other.title.trim().toLowerCase() === name &&
         ((!!recipe.source_url && other.source_url === recipe.source_url) || comparable(other.ingredients) === lines))
   );
@@ -294,6 +341,8 @@ export function fitImported<R extends Omit<ImportedRecipe, "photo">>(recipe: R):
     ingredients: fitLines(recipe.ingredients, LIMITS.listBytes),
     steps: fitLines(recipe.steps, LIMITS.listBytes),
     tags: fitLines(recipe.tags, LIMITS.tagBytes),
+    // Its field keeps the same as tags (migration recipes_nutrition).
+    nutrition: fitLines(recipe.nutrition, LIMITS.tagBytes),
   };
 }
 

@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { crc32 } from "node:zlib";
 import { gunzipSync, strFromU8, unzipSync } from "fflate";
-import { paprikaFile, paprikaZip, toPaprika, type ExportRecipe } from "../src/paprikaExport.ts";
+import { paprikaFile, paprikaUid, paprikaZip, toPaprika, type ExportRecipe } from "../src/paprikaExport.ts";
 
 const recipe: ExportRecipe = {
   id: "abc123",
@@ -41,6 +41,17 @@ test("a Bento recipe in Paprika's shape", () => {
   assert.equal(p.photo, "");
 });
 
+test("each recipe's uid is a UUID, as Paprika refuses a file otherwise, the same for the same recipe", () => {
+  const uuid = /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/;
+  const real = paprikaUid("h5hx6eedrsxetc0");
+  assert.match(real, uuid);
+  assert.equal(paprikaUid("h5hx6eedrsxetc0"), real);
+  assert.notEqual(paprikaUid("h5hx6eedrsxetc1"), real);
+  // The largest possible id still fits.
+  assert.match(paprikaUid("zzzzzzzzzzzzzzz"), uuid);
+  assert.equal(toPaprika(recipe, "", 0).uid, paprikaUid("abc123"));
+});
+
 test("the file is a zip of gzipped JSON, one per recipe, readable like Mealie and Tandoor do", () => {
   const bytes = paprikaFile([
     toPaprika(recipe, "aGVsbG8=", 0),
@@ -55,7 +66,7 @@ test("the file is a zip of gzipped JSON, one per recipe, readable like Mealie an
   for (const key of ["name", "directions", "notes", "nutritional_info", "source", "source_url", "ingredients"])
     assert.equal(typeof first[key], "string", key);
   assert.equal(first.photo_data, "aGVsbG8=");
-  assert.equal(first.photo, "abc123.jpg");
+  assert.equal(first.photo, `${first.uid}.jpg`);
   const third = JSON.parse(strFromU8(gunzipSync(files[names[2]])));
   assert.equal(third.name, 'Mac/cheese: "best"');
   assert.equal(third.prep_time, "");

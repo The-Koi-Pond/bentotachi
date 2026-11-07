@@ -206,6 +206,42 @@ Changes already live in the browser version, not yet in a published APK
   so a housemate's link isn't undone); "Shop for these" drops formatting
   marks; a brand that repeats the name ("Nutella") isn't shown twice;
   household settings no longer flash back to defaults on a login renewal.
+- Nutrition facts (Xel, 2026-11-07; most recipe apps keep them):
+  imported from a website's recipe data (recipe_parse.js nutritionLines:
+  per serving, in label order, bare numbers given their unit) and from
+  Paprika files (both ways), stored on every recipe (migration
+  recipes_nutrition, a list of lines). Shown only to people who turn on
+  "Show nutrition" in the ⋮ menu (users.show_nutrition, off by default,
+  as some would rather not see it): a label-like card after the notes,
+  editable there, with "+ Add nutrition" on recipes without. Recipes
+  imported before this have none; re-saving them from their link would.
+  Looked at and left out: the recipe's author (the card already says
+  the site), keywords (mostly search-engine filler), videos and
+  equipment (few sites give them).
+- Timer buttons sit inside their step's card, under its text.
+- The recipe page has an Ingredients · Method · Notes switch (Xel,
+  2026-11-07, like Paprika's tabs but on one page): it sits above the
+  ingredients and sticks under the top bar; each section remembers where
+  you were, so step 5 → ingredients → Method lands back on step 5
+  (recipeJump.ts, RecipeJumpBar.tsx).
+- Imports join an amount listed apart from its ingredient ("1
+  tablespoon" + "olive oil", as The Kitchn's recipe data has it;
+  recipe_parse.js joinAmounts). Two household recipes imported from
+  there on 2026-10-30 still have split lines and need fixing once.
+- Paprika files carry more across (Xel, 2026-11-07): a recipe's rating
+  and favorite (Paprika's are the person's own) become the importing
+  person's onigiri and heart, and the export writes the exporter's hearts
+  as favorites (its rating is still the household's average). Where a
+  recipe is from when that isn't a link (a cookbook, "Nan's card"), its
+  difficulty and its nutrition go into its notes rather than being lost.
+  Not carried: Paprika's extra photos (Bentotachi keeps one), a photo
+  only given as a web address, and the date it was added.
+  Paprika itself refused Bentotachi's exports ("invalid recipe uid":
+  it wants UUIDs, and stops the whole file at one other id). Each
+  recipe's uid is now its id in UUID shape (paprikaUid), and the import
+  still recognises its own recipes coming back, from old files too.
+  Checked in Paprika on Xel's phone: the household's export imported,
+  with photos, links, categories, times and ingredients.
 - Paprika import and export cope with big collections (stress test
   2026-11-07, made-up exports of 1000 and 3000 recipes, a third with
   photos): the import unpacks and saves one recipe at a time and the
@@ -1361,6 +1397,88 @@ Questions for Xel:
 2. Should it read in the phone's default voice, or is a Ben voice a
    future wish (it would need recorded or generated audio, a much bigger
    job)?
+
+## To consider: more ways to bring recipes in, and more photos (Xel, 2026-11-07)
+
+Compared with Paprika 4 (released 2026-11-06), what Bentotachi saves from
+a recipe page now matches other apps (nutrition was the gap). What's
+missing is how recipes get in. Xel: 1 and 2 are wanted soon.
+
+1. **"You already have this"**: adding a link already saved quietly
+   makes a second copy today. Warn instead, with "Open it" and "Add
+   another copy" (Paprika 4 warns). Small: look for the same source_url
+   (and the same link without www/https differences) before importing,
+   in the Add page, the share route and the built-in browser's Save.
+2. **Paste a whole recipe as text**, split into ingredients and method
+   for you (Paprika 4's "Create from Clipboard", Premium-only there).
+   Reuses recipe_parse.js's plain-text recipe reader (findPlainTextRecipe,
+   made for blog posts). Covers recipes in messages, emails and copied
+   TikTok/Instagram captions.
+3. **Our photos**: several photos per recipe, added by anyone in the
+   household (how ours turned out, Nan's handwritten card, the cookbook
+   page), swiped through on the recipe page, with a chosen cover.
+   Paprika files bring their extra photos in (`photos` in each recipe)
+   and take ours out. Not extra photos from websites: they're mostly the
+   same picture in other crops, and step photos would fill the Pi and
+   phone-only phones. Medium: a multi-file field (shrunk like pantry
+   photos), a gallery, bigger backups; offline copies keep the cover.
+   Paprika, Mela and Crouton have several photos; Mealie and Tandoor one
+   (Tandoor adds photos on steps).
+4. **Scan a cookbook page from a photo**: Android's on-device text
+   recognition (Google's ML Kit; free, offline), its text fed to 2's
+   reader. Needs a native plugin like the barcode scanner's.
+5. **Straight from TikTok, Instagram or YouTube**: those sites block
+   automated reading; Paprika does it through its own servers, with an
+   account and usage limits. 2's paste covers most of it without that.
+6. **Highlight text on a page to fill a field** in the built-in browser
+   (Paprika's "clipboard tools"), for pages that won't import. Today the
+   fallback is "Add by hand".
+
+Not missing: a review screen before saving (Paprika shows the filled-in
+form first; Bentotachi saves and lets you edit, fewer taps).
+
+A full pass over Paprika's import, export and file fields (research
+notes, section 2, 3 and 9) found these too:
+
+7. **Paprika's photos are only small previews**: checked in a real
+   Paprika 4 export (Xel's phone, 2026-11-07, free version): every
+   recipe's `photo_data` is a thumbnail, at most 280×280 px (~20 KB), even
+   for recipes that went in with full-size photos; `photos` was empty and
+   `photo_large` null. So a Paprika collection comes in with blurry,
+   stamp-sized photos on every recipe page. Recipes Paprika saved from a
+   website also carry `image_url`, the site's full-size photo. Fix:
+   fetch `image_url` when there is one (through the server, like the link
+   import's photo; browsers can't fetch other sites' images), use a
+   `photos` entry if a paid Paprika fills it, and keep the preview only
+   as a last resort (the summary could say how many only had a small
+   one). Paprika 4 also adds `prep_minutes`/`cook_minutes`/`total_minutes`
+   as numbers and `servings_min`/`servings_max`; the text versions the
+   import reads are still there.
+8. **Paprika 4's formatting leftovers**: numbered steps ("1. Preheat")
+   would show numbered twice; `[recipe:Name]`, `[photo:Name]` and
+   `[title](url)` links show as raw text. Strip the numbers, keep the
+   names and titles.
+9. ~~Paprika 4 cookbooks as tags~~: its export carries only
+   `cookbook_uid`, an id with no name (and empty on all 50 recipes in
+   Xel's export), so there's nothing to name a tag with. Dropped.
+10. **Open a Paprika file with Bentotachi** from Files, email or chat
+    (Paprika opens `.paprikarecipes` attachments as imports): an Android
+    intent filter for the file, landing on Import & export with it.
+11. **Export part of the collection**: one shelf or tag, or one recipe
+    to send to a friend (Paprika exports by cookbook and category, and
+    shares a single recipe as a Paprika file). Today it's everything.
+12. **A readable export**: a recipe web page per recipe plus an index,
+    with schema.org recipe data, that opens in any browser and other apps
+    can read (Paprika's HTML export). Lower priority.
+13. **Other apps' backups**: several apps (Copy Me That, Recipe Keeper,
+    Paprika's HTML export; to check with real files) export zips of
+    recipe web pages, which the importer already reads one at a time
+    (Add → saved web page). Taking the zip could cover several apps for
+    little work. Paprika's old formats (MasterCook, MealMaster, Living
+    Cookbook, Cook'n, Pepperplate, My CookBook, YAML) aren't worth it.
+
+Left out on purpose: Paprika's "Analyze Ingredients" (Premium: nutrition
+estimated from a USDA food match per ingredient); big, and an estimate.
 
 ## Ideas for later
 

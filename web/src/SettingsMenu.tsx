@@ -116,6 +116,7 @@ export default function SettingsMenu() {
             </Link>
           )}
           {user && <QuickSetting userId={user.id} value={quickMinutes} />}
+          {user && <NutritionSetting userId={user.id} on={!!user.show_nutrition} />}
           {wakeLock.supported && (
             <button role="menuitemcheckbox" aria-checked={wakeLock.on} onClick={wakeLock.toggle}>
               Keep screen on
@@ -194,6 +195,32 @@ export default function SettingsMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+// "Show nutrition": recipes' nutrition facts, off unless chosen, as some
+// people would rather not see them. Saved on your account, like "Quick
+// means", and says so when it couldn't be (no connection, say).
+function NutritionSetting({ userId, on }: { userId: string; on: boolean }) {
+  const [error, setError] = useState("");
+
+  async function toggle() {
+    setError("");
+    try {
+      await pb.collection("users").update(userId, { show_nutrition: !on });
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  return (
+    <button role="menuitemcheckbox" aria-checked={on} onClick={() => void toggle()}>
+      <span className="menu-item-text">
+        Show nutrition
+        {error && <span className="menu-item-detail error">{error}</span>}
+      </span>
+      <span className="switch" aria-hidden="true" />
+    </button>
   );
 }
 

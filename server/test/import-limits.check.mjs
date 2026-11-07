@@ -28,6 +28,8 @@ const recipe = {
   // The site's own rating is kept (recipe_parse.js siteRating), in fields
   // the database must have (migration recipes_site_rating).
   aggregateRating: { "@type": "AggregateRating", ratingValue: "4.83", ratingCount: "2,341" },
+  // And its nutrition (nutritionLines; migration recipes_nutrition).
+  nutrition: { "@type": "NutritionInformation", calories: "310 kcal", proteinContent: "18 g" },
   recipeInstructions: Array.from({ length: 4000 }, (_, i) => ({ "@type": "HowToStep", text: `Step ${i + 1}: stir gently and taste as you go.` })),
 };
 const html = `<html><head><script type="application/ld+json">${JSON.stringify(recipe)}</script></head><body></body></html>`;
@@ -40,6 +42,7 @@ if (imported.data?.id) {
   check("its description is cut to 5,000", [...saved.description].length <= 5000 && saved.description.endsWith("…"), `(${[...saved.description].length})`);
   check("its servings are cut to 100", [...saved.servings].length <= 100, `(${[...saved.servings].length})`);
   check("it keeps its ingredients", JSON.stringify(saved.ingredients) === JSON.stringify(["1 kg pumpkin", "1 onion"]));
+  check("it keeps the nutrition", JSON.stringify(saved.nutrition) === JSON.stringify(["Calories: 310 kcal", "Protein: 18 g"]), `(${JSON.stringify(saved.nutrition)})`);
   check("it keeps the site's rating: 4.8 from 2,341", saved.site_rating === 4.8 && saved.site_rating_count === 2341, `(${saved.site_rating} from ${saved.site_rating_count})`);
   check("it keeps as many steps as fit, from the start", saved.steps.length > 1000 && saved.steps[0].startsWith("Step 1:"), `(${saved.steps.length} steps; first: ${saved.steps[0]})`);
   await call(admin, "DELETE", `/collections/recipes/records/${imported.data.id}`);
