@@ -151,6 +151,16 @@ export function DownloadIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+// A camera: add photos (Lucide "camera").
+export function CameraIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </Icon>
+  );
+}
+
 // A stopwatch: a step's timer (Lucide "timer").
 export function TimerIcon({ size = 24 }: { size?: number }) {
   return (

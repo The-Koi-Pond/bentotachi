@@ -1465,16 +1465,23 @@ one recipe from its page's ⋯ → Save as a Paprika file). Still open: 3–6,
    Reuses recipe_parse.js's plain-text recipe reader (findPlainTextRecipe,
    made for blog posts). Covers recipes in messages, emails and copied
    TikTok/Instagram captions.
-3. **Our photos**: several photos per recipe, added by anyone in the
-   household (how ours turned out, Nan's handwritten card, the cookbook
-   page), swiped through on the recipe page, with a chosen cover.
-   Paprika files bring their extra photos in (`photos` in each recipe)
-   and take ours out. Not extra photos from websites: they're mostly the
-   same picture in other crops, and step photos would fill the Pi and
-   phone-only phones. Medium: a multi-file field (shrunk like pantry
-   photos), a gallery, bigger backups; offline copies keep the cover.
-   Paprika, Mela and Crouton have several photos; Mealie and Tandoor one
-   (Tandoor adds photos on steps).
+3. **Our photos, and step photos** (Xel, 2026-11-07), in three parts:
+   - *Done (part 1):* up to 20 photos per recipe besides the cover
+     (`photos`, shrunk to 1600 pixels), added from ⋯ → Add photos,
+     swiped through at the top of the recipe page; tapping one opens it
+     full size (PhotoViewer) to put it with a step, make it the cover or
+     remove it. A step's photos show in its card (`photo_steps`, kept when
+     the step is reworded: recipePhotos.ts). Duplicate copies them.
+     Offline copies show the cover only.
+   - *Next (part 2):* Paprika files bring their gallery in (`photos`),
+     turning `[photo:Step 3]` marks in the directions into step photos
+     instead of dropping them, and our export takes both out.
+   - *Then (part 3):* a setting, off by default, "Bring step photos when
+     saving from a website" (schema.org HowToStep `image`). Xel chose
+     this over always or never: step photos can be 15+ per recipe, which
+     fills phone-only phones and backups for people who don't want them.
+   Paprika (photos linked from the directions by name), Mela and Crouton
+   have several photos; Mealie and Tandoor put photos on steps.
 4. **Scan a cookbook page from a photo**: Android's on-device text
    recognition (Google's ML Kit; free, offline), its text fed to 2's
    reader. Needs a native plugin like the barcode scanner's.

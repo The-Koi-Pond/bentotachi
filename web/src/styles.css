@@ -4508,9 +4508,177 @@ em.soft {
   accent-color: var(--accent);
 }
 
-/* The photo on a recipe page can be double-tapped to adjust it. */
+/* The photos on a recipe page open full size when tapped (PhotoViewer). */
 .hero {
   cursor: zoom-in;
+}
+
+.hero-button,
+.hero-slide,
+.step-photo {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: zoom-in;
+}
+
+.hero-button {
+  width: 100%;
+}
+
+/* Several photos at the top (HeroPhotos.tsx): swiped sideways, each the
+   same shape, with dots under them. */
+.hero-strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: var(--radius);
+}
+
+.hero-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+.hero-strip .hero {
+  aspect-ratio: 3 / 2;
+  height: auto;
+  max-height: 380px;
+}
+
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hero-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.hero-dots span.on {
+  background: var(--accent);
+}
+
+/* A step's photos, under its text, lined up with it like its timers. */
+.step-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 14px 12px 54px;
+}
+
+.step-photo img {
+  display: block;
+  width: 140px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* A photo full size (PhotoViewer.tsx): dark around it, what can be done
+   with it underneath. */
+.photo-viewer {
+  width: min(900px, 100%);
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 18px;
+}
+
+.photo-viewer::backdrop {
+  background: rgb(0 0 0 / 0.8);
+}
+
+.photo-viewer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+}
+
+.photo-viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.photo-viewer-frame {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  background: #111;
+  border-radius: 10px;
+}
+
+.photo-viewer-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.photo-viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photo-viewer-nav.prev {
+  left: 8px;
+}
+
+.photo-viewer-nav.next {
+  right: 8px;
+}
+
+.photo-viewer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-viewer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photo-step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.photo-step select {
+  font-weight: 400;
 }
 
 .photo-adjust {

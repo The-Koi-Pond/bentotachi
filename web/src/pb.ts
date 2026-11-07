@@ -85,6 +85,10 @@ export interface Recipe extends RecordModel {
   // Nutrition facts per serving, a line each ("Calories: 420 kcal"),
   // shown to people who turn on "Show nutrition". Missing on an older server.
   nutrition?: string[] | null;
+  // Photos besides the cover (file names), and which step each goes with
+  // (see recipePhotos.ts). Missing on an older server.
+  photos?: string[];
+  photo_steps?: Record<string, string> | null;
   added_by: string;
   created: string;
   updated: string;
@@ -272,6 +276,12 @@ export function averageStars(ratings: RecipeRating[]): number | null {
 export function recipeImageUrl(recipe: Recipe, thumb?: string): string {
   if (!recipe.image) return "";
   return pb.files.getURL(recipe, recipe.image, thumb ? { thumb } : undefined);
+}
+
+// One of a recipe's other photos (recipePhotos.ts), whole or as the
+// 600-wide copy ("600x0").
+export function recipePhotoUrl(recipe: Recipe, name: string, thumb?: string): string {
+  return pb.files.getURL(recipe, name, thumb ? { thumb } : undefined);
 }
 
 // A pantry item's photo, as the small copy that keeps the whole packet in

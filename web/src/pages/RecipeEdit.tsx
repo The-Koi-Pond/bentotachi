@@ -5,6 +5,7 @@ import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
 import { carriedLinks, sameLinks } from "../pantryLinks";
 import { changedFields } from "../changedFields";
+import { carriedStepPhotos, samePhotoSteps } from "../recipePhotos";
 import TagSuggestions from "../TagSuggestions";
 import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
@@ -187,10 +188,17 @@ export default function RecipeEdit() {
       // was open isn't undone, and only sent when they changed. Only when
       // the ingredients were changed here: otherwise lines someone else
       // added meanwhile would lose their links.
-      if (existing && "ingredients" in data) {
-        const { ingredient_links: current } = await recipes().getOne(existing.id, { fields: "id,ingredient_links" });
-        const links = carriedLinks(existing.ingredients ?? [], data.ingredients as string[], current);
-        if (!sameLinks(links, current)) data.ingredient_links = links;
+      // Step photos likewise stay on their steps (recipePhotos.ts).
+      if (existing && ("ingredients" in data || "steps" in data)) {
+        const now = await recipes().getOne(existing.id, { fields: "id,ingredient_links,photo_steps,photos" });
+        if ("ingredients" in data) {
+          const links = carriedLinks(existing.ingredients ?? [], data.ingredients as string[], now.ingredient_links);
+          if (!sameLinks(links, now.ingredient_links)) data.ingredient_links = links;
+        }
+        if ("steps" in data) {
+          const onSteps = carriedStepPhotos(existing.steps, data.steps as string[], now.photo_steps, now.photos);
+          if (!samePhotoSteps(onSteps, now.photo_steps)) data.photo_steps = onSteps;
+        }
       }
       const saved = existing
         ? await recipes().update(existing.id, data)

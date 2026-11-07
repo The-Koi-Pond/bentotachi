@@ -8,6 +8,7 @@ import {
   pb,
   personStyle,
   recipeImageUrl,
+  recipePhotoUrl,
   recipes,
   useCurrentUser,
   useQuickMinutes,
@@ -40,8 +41,22 @@ import QuickTags from "../QuickTags";
 import { DetailsEditor, EditButton, TextEditor } from "../RecipeInlineEdit";
 import SoftText from "../SoftText";
 import { withoutSoftMarks } from "../softMarks";
-import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
+import PhotoViewer from "../PhotoViewer";
+import HeroPhotos from "../HeroPhotos";
+import { shrinkPhoto } from "../pantryPhoto";
+import {
+  MAX_PHOTOS,
+  PHOTO_SIDE,
+  carriedStepPhotos,
+  galleryPhotos,
+  numberedSteps,
+  samePhotoSteps,
+  savedName,
+  stepKey,
+  stepPhotos,
+  uploadName,
+} from "../recipePhotos";
 import RecipeTimer from "../RecipeTimer";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
@@ -107,8 +122,11 @@ export default function RecipeView() {
   const [offline, setOffline] = useState(false);
   // The part being changed right here, if any (one at a time).
   const [editing, setEditing] = useState<Part | null>(null);
-  // The photo framer, opened by double-tapping (or double-clicking) the photo.
+  // The photo framer, opened from the cover photo's viewer.
   const [framing, setFraming] = useState(false);
+  // The photo open full size (PhotoViewer.tsx): its file name, "" for the
+  // cover, or null.
+  const [viewing, setViewing] = useState<string | null>(null);
   // How much bigger or smaller the ingredients are shown (1 = as written),
   // only while this recipe is open.
   const [scale, setScale] = useState(1);
@@ -178,7 +196,26 @@ export default function RecipeView() {
       const answer = await fetch(recipeImageUrl(recipe)).catch(() => null);
       if (answer?.ok) data.image = new File([await answer.blob()], recipe.image);
     }
+    // The other photos too, sent under made-up names to find them again.
+    const sent: [string, string][] = [];
+    const photos: File[] = [];
+    for (const name of recipe.photos ?? []) {
+      const answer = await fetch(recipePhotoUrl(recipe, name)).catch(() => null);
+      if (!answer?.ok) continue;
+      const upload = uploadName();
+      photos.push(new File([await answer.blob()], upload));
+      sent.push([name, upload]);
+    }
+    if (photos.length) data.photos = photos;
     const copy = await recipes().create(data);
+    // Step photos stay with their steps, under the copies' names.
+    const onSteps: Record<string, string> = {};
+    for (const [name, upload] of sent) {
+      const key = recipe.photo_steps?.[name];
+      const saved = savedName(upload, copy.photos);
+      if (key && saved) onSteps[saved] = key;
+    }
+    if (Object.keys(onSteps).length) await recipes().update(copy.id, { photo_steps: onSteps });
     navigate(`/recipes/${copy.id}/edit`);
   }
 
@@ -218,6 +255,86 @@ export default function RecipeView() {
     await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried });
   }
 
+  // The method, with step photos kept on their steps (carriedStepPhotos),
+  // worked out from them as saved now, like the pantry links.
+  async function saveSteps(text: string) {
+    const steps = textToLines(text);
+    const { photo_steps, photos } = await recipes().getOne(current.id, { fields: "id,photo_steps,photos" });
+    const carried = carriedStepPhotos(current.steps, steps, photo_steps, photos);
+    await save(samePhotoSteps(carried, photo_steps) ? { steps } : { steps, photo_steps: carried });
+  }
+
+  // The photos besides the cover (recipePhotos.ts). Each change saves
+  // straight away; step choices are made on photo_steps as saved now, so
+  // someone else's meanwhile isn't undone.
+  async function savePhotos(data: Record<string, unknown>) {
+    const saved = await recipes().update(current.id, data, { expand: "added_by" });
+    setRecipe(saved);
+    saveRecipe(saved);
+  }
+  async function photoStepsNow(change: (steps: Record<string, string>) => void) {
+    const { photo_steps } = await recipes().getOne(current.id, { fields: "id,photo_steps" });
+    const steps = { ...(photo_steps ?? {}) };
+    change(steps);
+    return steps;
+  }
+  async function loadPhoto(url: string): Promise<File> {
+    const answer = await fetch(url).catch(() => null);
+    if (!answer?.ok) throw new Error("Couldn't load the photo. Check the connection and try again.");
+    const blob = await answer.blob();
+    return new File([blob], uploadName(), { type: blob.type });
+  }
+  async function setPhotoStep(name: string, key: string | null) {
+    const photo_steps = await photoStepsNow((steps) => {
+      if (key) steps[name] = key;
+      else delete steps[name];
+    });
+    await savePhotos({ photo_steps });
+  }
+  async function removePhoto(name: string) {
+    const photo_steps = await photoStepsNow((steps) => delete steps[name]);
+    await savePhotos({ "photos-": [name], photo_steps });
+  }
+  // The photo becomes the cover (framed from the middle), and the cover
+  // joins the other photos.
+  async function makeCover(name: string) {
+    const data: Record<string, unknown> = {
+      image: await loadPhoto(recipePhotoUrl(current, name)),
+      image_framing: null,
+      "photos-": [name],
+      photo_steps: await photoStepsNow((steps) => delete steps[name]),
+    };
+    if (current.image) data["photos+"] = [await loadPhoto(recipeImageUrl(current))];
+    await savePhotos(data);
+    setViewing(null);
+  }
+  // ⋯ → Add photos: shrunk, then added; the first becomes the cover if
+  // there isn't one. Says what happened.
+  async function addPhotos(files: File[]): Promise<string> {
+    const room = MAX_PHOTOS - (current.photos?.length ?? 0) + (current.image ? 0 : 1);
+    if (room <= 0) return `This recipe already has ${MAX_PHOTOS} photos besides its cover. Remove one to add another.`;
+    const picked = files.slice(0, room);
+    const shrunk = await Promise.all(
+      picked.map(async (file) => {
+        const small = await shrinkPhoto(file, PHOTO_SIDE);
+        return new File([small], uploadName(), { type: small.type });
+      })
+    );
+    const data: Record<string, unknown> = {};
+    let rest = shrunk;
+    if (!current.image) {
+      data.image = shrunk[0];
+      data.image_framing = null;
+      rest = shrunk.slice(1);
+    }
+    if (rest.length) data["photos+"] = rest;
+    await savePhotos(data);
+    const added = `Added ${picked.length === 1 ? "the photo" : `${picked.length} photos`}${current.image ? "" : ", the first as the cover"}.`;
+    return files.length > picked.length
+      ? `${added} The rest didn't fit: a recipe keeps up to ${MAX_PHOTOS} photos besides its cover.`
+      : `${added} Tap one to put it with a step.`;
+  }
+
   // "We cooked this" (or finishing the timer): today, by whoever's logged
   // in. Once a day is enough.
   const cookedToday = (cooked.items ?? []).some((entry) => entry.recipe === current.id && datePart(entry.date) === localToday());
@@ -255,24 +372,41 @@ export default function RecipeView() {
     ["Total", totalMinutes(recipe)],
   ].filter(([, minutes]) => minutes) as [string, number][];
   let stepNumber = 0;
+  // The photos: the cover and the gallery at the top, the rest in their
+  // steps; the viewer goes through them in that order ("" is the cover).
+  const gallery = galleryPhotos(recipe);
+  const byStep = stepPhotos(recipe);
+  const allPhotos = [
+    ...new Set([
+      ...(recipe.image ? [""] : []),
+      ...gallery,
+      ...numberedSteps(recipe.steps).flatMap((step) => byStep.get(stepKey(step.line)) ?? []),
+    ]),
+  ];
 
   return (
     <article className="recipe stack">
       {offline && <OfflineNote />}
-      {recipe.image && !offline && (
+      {(recipe.image || gallery.length > 0) && !offline && (
         <div className="hero-wrap">
-          {/* Clips a zoomed photo to its box; the heart hangs over the edge. */}
-          <span className="hero-clip">
-            <RecipePhoto
-              recipe={recipe}
-              size="full"
-              className="hero"
-              title="Double-tap to adjust the photo"
-              onDoubleClick={() => setFraming(true)}
-            />
-          </span>
+          <HeroPhotos recipe={recipe} gallery={gallery} onOpen={setViewing} />
           <FavoriteHeart state={ratings} onPhoto />
         </div>
+      )}
+      {viewing !== null && !offline && (
+        <PhotoViewer
+          recipe={recipe}
+          photos={allPhotos}
+          start={Math.max(0, allPhotos.indexOf(viewing))}
+          onClose={() => setViewing(null)}
+          onAdjustCover={() => {
+            setViewing(null);
+            setFraming(true);
+          }}
+          onSetStep={setPhotoStep}
+          onMakeCover={makeCover}
+          onRemove={removePhoto}
+        />
       )}
       {framing && (
         <PhotoFramer recipe={recipe} onSave={(image_framing) => save({ image_framing })} onClose={() => setFraming(false)} />
@@ -301,6 +435,7 @@ export default function RecipeView() {
                 editing={editing !== null}
                 onDuplicate={duplicate}
                 onDelete={remove}
+                onAddPhotos={addPhotos}
               />
             </span>
           </div>
@@ -418,7 +553,7 @@ export default function RecipeView() {
             }
             initial={linesToText(recipe.steps)}
             rows={12}
-            onSave={(text) => save({ steps: textToLines(text) })}
+            onSave={saveSteps}
             onCancel={stopEditing}
           />
         ) : (
@@ -439,6 +574,7 @@ export default function RecipeView() {
               stepNumber += 1;
               const number = stepNumber;
               const times = stepTimes(withoutSoftMarks(line));
+              const photosHere = offline ? [] : (byStep.get(stepKey(line)) ?? []);
               return (
                 <li key={i}>
                   <button className={`step ${done.has(key) ? "done" : ""}`} onClick={() => toggle(key)} aria-pressed={done.has(key)}>
@@ -467,6 +603,15 @@ export default function RecipeView() {
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+                  {photosHere.length > 0 && (
+                    <div className="step-photos">
+                      {photosHere.map((name) => (
+                        <button key={name} className="step-photo" onClick={() => setViewing(name)} aria-label={`Step ${number}'s photo, full size`}>
+                          <img src={recipePhotoUrl(recipe, name, "600x0")} alt="" loading="lazy" />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </li>

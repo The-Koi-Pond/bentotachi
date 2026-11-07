@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { errorMessage, isAndroidApp, pb, recipeRatings, type Recipe } from "./pb";
-import { CopyIcon, DownloadIcon, MoreIcon, PrintIcon, ShareIcon, TrashIcon } from "./icons";
+import { CameraIcon, CopyIcon, DownloadIcon, MoreIcon, PrintIcon, ShareIcon, TrashIcon } from "./icons";
 import { recipeAsText } from "./recipeText";
 import { shareText } from "./shareReceiver";
 import { fileNamePart, savePaprikaFile } from "./paprikaSave";
@@ -20,6 +20,7 @@ export default function RecipeMenu({
   editing,
   onDuplicate,
   onDelete,
+  onAddPhotos,
 }: {
   recipe: Recipe;
   scale: number;
@@ -29,8 +30,13 @@ export default function RecipeMenu({
   editing: boolean;
   onDuplicate: () => Promise<void>;
   onDelete: () => Promise<void>;
+  // Adds the chosen photos (RecipeView's addPhotos), saying what happened.
+  onAddPhotos: (files: File[]) => Promise<string>;
 }) {
   const [open, setOpen] = useState(false);
+  // Outside the panel, so it's still there when the photo picker answers
+  // (the panel closes when Android's picker covers the app).
+  const photoInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -159,6 +165,21 @@ export default function RecipeMenu({
               <PrintIcon />
             </button>
           )}
+          {!offline && (
+            <button
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                photoInput.current?.click();
+              }}
+            >
+              <span className="menu-item-text">
+                Add photos
+                <span className="menu-item-detail">How yours turned out, or one for a step</span>
+              </span>
+              <CameraIcon />
+            </button>
+          )}
           {!offline && !editing && (
             <button role="menuitem" onClick={() => void run("Duplicating", onDuplicate)}>
               <span className="menu-item-text">
@@ -176,6 +197,19 @@ export default function RecipeMenu({
           )}
         </div>
       )}
+      <input
+        ref={photoInput}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(event) => {
+          const files = [...(event.target.files ?? [])];
+          // So choosing the same photo again still counts.
+          event.target.value = "";
+          if (files.length) void run("Adding photos", async () => setMessage(await onAddPhotos(files)));
+        }}
+      />
       {message && (
         <p className="toast" role="status">
           {message}

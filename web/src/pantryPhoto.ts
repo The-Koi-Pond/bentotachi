@@ -11,15 +11,15 @@ import { photoSources, storeLinksOf, wantsOnlinePhoto } from "./pantryItem";
 // 4 MB photo comes out around 50 KB.
 const LONGEST_SIDE = 600;
 
-// The photo made at most 600 pixels across, as a JPEG on white (a see-
-// through PNG would otherwise turn black). If the browser can't read it
-// (an iPhone's HEIC photo in some browsers), it's kept as it is, and the
-// server says if it can't take it.
-export async function shrinkPhoto(photo: Blob): Promise<File> {
+// The photo made at most 600 pixels across (or `longestSide`: recipes'
+// photos keep 1600), as a JPEG on white (a see-through PNG would otherwise
+// turn black). If the browser can't read it (an iPhone's HEIC photo in some
+// browsers), it's kept as it is, and the server says if it can't take it.
+export async function shrinkPhoto(photo: Blob, longestSide = LONGEST_SIDE): Promise<File> {
   const original = photo instanceof File ? photo : new File([photo], `photo.${photo.type.split("/")[1] || "jpg"}`, { type: photo.type });
   try {
     const bitmap = await createImageBitmap(photo);
-    const scale = Math.min(1, LONGEST_SIDE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, longestSide / Math.max(bitmap.width, bitmap.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));
     canvas.height = Math.max(1, Math.round(bitmap.height * scale));
