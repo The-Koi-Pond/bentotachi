@@ -8,6 +8,7 @@
 import { gunzipSync, strFromU8, unzipSync } from "fflate";
 import { stepTimes } from "./stepTimers.ts";
 import { textToTags } from "./format.ts";
+import { withoutSoftMarks } from "./softMarks.ts";
 
 // What Bento keeps from each recipe (the same fields as a Bento recipe).
 export interface ImportedRecipe {
@@ -30,21 +31,106 @@ export interface ImportedRecipe {
 const GZIP = (bytes: Uint8Array) => bytes[0] === 0x1f && bytes[1] === 0x8b;
 const ZIP = (bytes: Uint8Array) => bytes[0] === 0x50 && bytes[1] === 0x4b;
 
+// One entry's raw recipe (gzipped JSON, or plain JSON), or null when it
+// isn't one.
+function recipeIn(blob: Uint8Array | undefined): Record<string, unknown> | null {
+  if (!blob) return null;
+  try {
+    const json = JSON.parse(strFromU8(GZIP(blob) ? gunzipSync(blob) : blob));
+    return json && typeof json === "object" && typeof json.name === "string" ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+// Entries of index i in [from, to) of a zip, unpacked in one pass and
+// returned in order (undefined for one that can't be unpacked). Several in
+// one pass because each pass reads the zip's whole directory; one entry per
+// pass made a 3000-recipe file 9 million directory reads.
+function unpackRange(bytes: Uint8Array, names: string[], from: number, to: number): (Uint8Array | undefined)[] {
+  const unpackOne = (i: number) => {
+    let at = -1;
+    try {
+      return Object.values(unzipSync(bytes, { filter: () => ++at === i }))[0];
+    } catch {
+      // Damaged, or packed in a way fflate can't read: just this one.
+      return undefined;
+    }
+  };
+  const wanted = names.slice(from, to);
+  // Entries come back keyed by name, so a name used twice in the range
+  // can't be told apart: one at a time then.
+  if (new Set(wanted).size === wanted.length) {
+    try {
+      let at = -1;
+      const found = unzipSync(bytes, {
+        filter: () => {
+          at += 1;
+          return at >= from && at < to;
+        },
+      });
+      return wanted.map((name) => found[name]);
+    } catch {
+      // One of them is damaged: find which, one at a time.
+    }
+  }
+  return wanted.map((_, n) => unpackOne(from + n));
+}
+
+// About this many bytes of entries unpacked per pass: few passes, but never
+// much of the file in memory at once.
+const BATCH_BYTES = 8 * 1024 * 1024;
+
+// A file's recipes, unpacked a few MB at a time: how many entries it has,
+// and each entry's raw recipe in turn (null when it can't be read, so one
+// damaged entry doesn't end the import). A .paprikarecipes file is a zip
+// of gzipped JSON; a single .paprikarecipe is one gzipped JSON. Never all
+// at once: a big collection's photos make the file hundreds of MB, and
+// unpacking it whole took 4-5 times that in memory, enough for Android to
+// close the app on many phones (stress test, 2026-11-07).
+export function paprikaEntries(bytes: Uint8Array): { count: number; recipes: () => Generator<Record<string, unknown> | null> } {
+  if (!ZIP(bytes)) {
+    return {
+      count: bytes.length ? 1 : 0,
+      recipes: function* () {
+        if (bytes.length) yield recipeIn(bytes);
+      },
+    };
+  }
+  // Listing the entries unpacks nothing (the filter says no to each).
+  const names: string[] = [];
+  const sizes: number[] = [];
+  unzipSync(bytes, {
+    filter: (file) => {
+      names.push(file.name);
+      sizes.push(file.size);
+      return false;
+    },
+  });
+  return {
+    count: names.length,
+    recipes: function* () {
+      let from = 0;
+      while (from < names.length) {
+        let to = from + 1;
+        let batch = sizes[from];
+        while (to < names.length && batch + sizes[to] <= BATCH_BYTES) batch += sizes[to++];
+        for (const blob of unpackRange(bytes, names, from, to)) yield recipeIn(blob);
+        from = to;
+      }
+    },
+  };
+}
+
 // The recipes' raw JSON objects in a file, and how many entries couldn't be
-// read. A .paprikarecipes file is a zip of gzipped JSON; a single
-// .paprikarecipe is one gzipped JSON.
+// read, all at once (for small files and the tests; the import screen goes
+// through them one at a time with paprikaEntries).
 export function readPaprikaFile(bytes: Uint8Array): { recipes: Record<string, unknown>[]; unreadable: number } {
-  const blobs = ZIP(bytes) ? Object.values(unzipSync(bytes)) : [bytes];
   const recipes: Record<string, unknown>[] = [];
   let unreadable = 0;
-  for (const blob of blobs) {
-    try {
-      const json = JSON.parse(strFromU8(GZIP(blob) ? gunzipSync(blob) : blob));
-      if (json && typeof json === "object" && typeof json.name === "string") recipes.push(json);
-      else unreadable += 1;
-    } catch {
-      unreadable += 1;
-    }
+  for (const recipe of paprikaEntries(bytes).recipes()) {
+    if (recipe) recipes.push(recipe);
+    else unreadable += 1;
   }
   if (!recipes.length && !unreadable) unreadable = 1;
   return { recipes, unreadable };
@@ -86,12 +172,21 @@ function photoType(bytes: Uint8Array): string | null {
   return null;
 }
 
+// A raw recipe's photo, decoded (it's the slow part of reading a recipe,
+// so the import only does it for recipes it's going to add).
+export function paprikaPhoto(raw: Record<string, unknown>): ImportedRecipe["photo"] {
+  return photoOf(raw.photo_data);
+}
+
 function photoOf(value: unknown): ImportedRecipe["photo"] {
   const data = text(value);
   if (!data) return null;
   try {
     const binary = atob(data.replace(/^data:[^,]*,/, ""));
-    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    // A plain loop: several times faster than Uint8Array.from with a
+    // function, which made photos most of a big import's time.
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const type = photoType(bytes);
     return type ? { bytes, type } : null;
   } catch {
@@ -99,7 +194,8 @@ function photoOf(value: unknown): ImportedRecipe["photo"] {
   }
 }
 
-export function fromPaprika(raw: Record<string, unknown>): ImportedRecipe {
+// `withPhoto: false` leaves the photo for later (paprikaPhoto).
+export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } = {}): ImportedRecipe {
   const { notes, author_notes } = splitNotes(text(raw.notes));
   // Lowercase, like tags typed in Bento (textToTags).
   const tags = Array.isArray(raw.categories) ? textToTags(raw.categories.map(text).join(",")) : [];
@@ -116,17 +212,95 @@ export function fromPaprika(raw: Record<string, unknown>): ImportedRecipe {
     tags,
     notes,
     author_notes,
-    photo: photoOf(raw.photo_data),
+    photo: withPhoto ? photoOf(raw.photo_data) : null,
   };
 }
 
-// Whether a recipe is already in Bento: the same name, and the same link
-// when both have one. So importing the same file twice adds nothing.
-export function alreadyHave(recipe: ImportedRecipe, existing: { title: string; source_url?: string }[]): boolean {
+// Ingredient lines as compared for "already here": formatting marks, a
+// heading's #s and a trailing colon left out, as an export and import
+// change those ("## For the glaze" comes back "# For the glaze", "# Day 1"
+// as "Day 1:", "*soft*" as plain), then capitals and spaces.
+function comparable(lines: string[] | null | undefined): string {
+  return JSON.stringify(
+    (lines ?? [])
+      .map((line) =>
+        withoutSoftMarks(line)
+          .trim()
+          .replace(/^#+\s*/, "")
+          .replace(/:\s*$/, "")
+          .trim()
+          .toLowerCase()
+      )
+      .filter(Boolean)
+  );
+}
+
+// Whether a recipe is already in Bento: Bentotachi's own export of it (its
+// `uid` is the recipe's id here), or the same name and either the same link
+// (both have one) or the same ingredients. So importing the same file twice
+// adds nothing, but two different "Pancakes" (one without a link) both come
+// in; before 2026-11-07 a missing link counted as a match.
+export function alreadyHave(
+  recipe: Pick<ImportedRecipe, "title" | "source_url" | "ingredients">,
+  existing: { id?: string; title: string; source_url?: string; ingredients?: string[] | null }[],
+  uid = ""
+): boolean {
   const name = recipe.title.trim().toLowerCase();
+  const lines = comparable(recipe.ingredients);
   return existing.some(
     (other) =>
-      other.title.trim().toLowerCase() === name &&
-      (!recipe.source_url || !other.source_url || other.source_url === recipe.source_url)
+      (!!uid && other.id === uid) ||
+      (other.title.trim().toLowerCase() === name &&
+        ((!!recipe.source_url && other.source_url === recipe.source_url) || comparable(other.ingredients) === lines))
   );
+}
+
+// What the database keeps (as server/pb_hooks/recipe_parse.js LIMITS and
+// the recipes collection's field sizes): longer text is cut, ending in
+// "…", and lists keep as many lines as fit, so an over-long recipe still
+// comes in instead of failing (stress test, 2026-11-07).
+// (A test checks these match the server's.)
+export const IMPORT_LIMITS = { title: 300, description: 5000, servings: 100, notes: 20000, listBytes: 200000, tagBytes: 20000 };
+const LIMITS = IMPORT_LIMITS;
+
+// Characters as PocketBase counts them: an emoji is one.
+function fitText(text: string, max: number): string {
+  const characters = [...text];
+  return characters.length <= max ? text : `${characters.slice(0, max - 1).join("").trimEnd()}…`;
+}
+
+function fitLines(lines: string[], maxBytes: number): string[] {
+  const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+  if (bytes(lines) <= maxBytes) return lines;
+  const kept: string[] = [];
+  let size = 2;
+  for (const line of lines) {
+    const add = bytes(line) + 1;
+    if (size + add > maxBytes) break;
+    kept.push(line);
+    size += add;
+  }
+  return kept;
+}
+
+export function fitImported<R extends Omit<ImportedRecipe, "photo">>(recipe: R): R {
+  return {
+    ...recipe,
+    title: fitText(recipe.title, LIMITS.title),
+    description: fitText(recipe.description, LIMITS.description),
+    servings: fitText(recipe.servings, LIMITS.servings),
+    notes: fitText(recipe.notes, LIMITS.notes),
+    author_notes: fitText(recipe.author_notes, LIMITS.notes),
+    ingredients: fitLines(recipe.ingredients, LIMITS.listBytes),
+    steps: fitLines(recipe.steps, LIMITS.listBytes),
+    tags: fitLines(recipe.tags, LIMITS.tagBytes),
+  };
+}
+
+// Up to five names for a message, each kept short: "“Soup”, “Tart” and 3
+// more".
+export function someNames(names: string[]): string {
+  const shown = names.slice(0, names.length > 5 ? 4 : 5).map((name) => `“${fitText(name, 50)}”`);
+  if (names.length > 5) return `${shown.join(", ")} and ${names.length - 4} more`;
+  return shown.length > 1 ? `${shown.slice(0, -1).join(", ")} and ${shown[shown.length - 1]}` : (shown[0] ?? "");
 }

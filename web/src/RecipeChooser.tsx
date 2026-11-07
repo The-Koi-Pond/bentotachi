@@ -14,8 +14,9 @@ import { formatDay, localToday, timeAgo } from "./dates";
 import { formatMinutes, isQuick, totalMinutes } from "./format";
 import { matchesSearch, searchWords } from "./recipeSearch";
 import { pantryCheck } from "./pantryLinks";
+import { twinLabels } from "./recipeTwins";
 import { useLiveRecords } from "./useLiveRecords";
-import { CloseIcon, HeartIcon, ZapIcon } from "./icons";
+import { CloseIcon, HeartIcon, OnigiriIcon, ZapIcon } from "./icons";
 import RecipePhoto from "./RecipePhoto";
 import { MEAL_NAMES, type Meal } from "./meals";
 
@@ -74,7 +75,7 @@ export default function RecipeChooser({
       .getFullList({
         sort: "title",
         fields:
-          "id,collectionId,collectionName,title,image,tags,ingredients,ingredient_links,prep_minutes,cook_minutes,total_minutes,extra_times",
+          "id,collectionId,collectionName,title,image,tags,ingredients,ingredient_links,prep_minutes,cook_minutes,total_minutes,extra_times,source_url,created,site_rating",
       })
       .then(setAll)
       .catch((err) => setError(errorMessage(err)));
@@ -104,6 +105,9 @@ export default function RecipeChooser({
     return !!check && check.linked > 0 && check.out.length === 0;
   };
 
+  // Recipes sharing a name, each with a line to tell it apart (recipeTwins).
+  const twins = useMemo(() => twinLabels(all ?? []), [all]);
+
   const words = searchWords(search);
   const shown = (all ?? []).filter(
     (recipe) =>
@@ -132,7 +136,21 @@ export default function RecipeChooser({
     const last = lastHad.get(recipe.id);
     return (
       <span className="muted chooser-details">
-        {[time, average !== null && `★ ${average}`].filter(Boolean).join(" · ")}
+        {/* Another recipe has this name: where this one's from first. */}
+        {[twins.get(recipe.id), time].filter(Boolean).join(" · ")}
+        {/* The household's onigiri, or until anyone rates it the site's ★. */}
+        {average !== null ? (
+          <span aria-label={`${average} of 5 onigiri`}>
+            {time || twins.has(recipe.id) ? " · " : ""}
+            <OnigiriIcon size={12} /> {average}
+          </span>
+        ) : (
+          !!recipe.site_rating && !!recipe.source_url && (
+            <span className="site-star" aria-label={`${recipe.site_rating} of 5 stars on its website`}>
+              {time || twins.has(recipe.id) ? " · " : ""}★ {recipe.site_rating}
+            </span>
+          )
+        )}
         {out.length > 0 && (
           <span className="chooser-out" title={`Out: ${out.map((item) => item.name).join(", ")}`}>
             {" "}

@@ -29,6 +29,12 @@
   --out-text: #ffffff;
   --gold: #e0a100;
   --heart: #d6336c;
+  /* The household's ratings are onigiri (Xel, 2026-11-07): rice, its
+     outline, the nori, and an empty one's outline. */
+  --rice: #fffdf6;
+  --rice-line: #3a2f28;
+  --nori: #24312d;
+  --rice-off: #c9cfcc;
   --radius: 12px;
   --tabbar-height: 60px;
   color-scheme: light;
@@ -63,6 +69,10 @@
     --out-text: #141b1b;
     --gold: #ffca28;
     --heart: #f06595;
+    --rice: #f4efe4;
+    --rice-line: #f4efe4;
+    --nori: #1c2624;
+    --rice-off: #4a5653;
     color-scheme: dark;
   }
 }
@@ -692,6 +702,52 @@ main {
 .add-row {
   display: flex;
   gap: 8px;
+}
+
+/* The pages' main boxes (Pantry, Shopping list, Browse): the button joined
+   onto the box's right end, one control rather than two (Xel, 2026-11-07). */
+.add-row.joined {
+  gap: 0;
+  border-radius: 8px;
+}
+
+.add-row.joined > :first-child,
+.add-row.joined > :first-child input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.add-row.joined > .button {
+  align-self: stretch;
+  min-height: 0;
+  padding-inline: 18px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Typing in it (or tabbing to its button) outlines the whole thing, box
+   and button together, instead of the box alone. The small ✕ and 📷
+   inside Pantry's box get their own ring instead (below). */
+.add-row.joined:has(input:focus-visible, > .button:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.add-row.joined .find-box button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: 6px;
+}
+
+.add-row.joined input:focus-visible,
+.add-row.joined .find-box:has(input:focus-visible),
+.add-row.joined .button:focus-visible {
+  outline: none;
+}
+
+/* Tabbed to the button (a keyboard): a ring inside it, so it's clear the
+   button is the one in focus, not the box. */
+.add-row.joined .button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-text);
 }
 
 .shopping-list {
@@ -1772,7 +1828,8 @@ main {
   align-items: center;
   gap: 12px;
   min-height: 52px;
-  padding: 8px 10px 8px 14px;
+  /* Less on the right: the level sits close to the edge (2026-11-07). */
+  padding: 8px 6px 8px 14px;
 }
 
 .pantry-row.detailed {
@@ -1900,13 +1957,13 @@ main {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   /* The same width whatever the word, so the levels line up down the list:
-     just enough for "Have" (2026-11-06; it was roomier). */
-  width: 86px;
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.85rem;
+     just enough for "Have" (snugger again 2026-11-07, Xel). */
+  width: 72px;
+  min-height: 32px;
+  padding: 3px 7px 3px 6px;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text);
   background: var(--surface);
@@ -2462,6 +2519,15 @@ legend {
   text-overflow: ellipsis;
 }
 
+/* Under the name: where it's from (its site, "home recipe", or what tells
+   it apart from a recipe of the same name; recipeTwins.ts). */
+.card-source {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Phones: three small cards per row. */
 @media (max-width: 520px) {
   .recipe-grid {
@@ -2508,6 +2574,40 @@ legend {
   color: var(--gold);
 }
 
+/* The household's ratings (OnigiriIcon in icons.tsx); an empty one is just
+   its outline. */
+.onigiri {
+  flex: none;
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.onigiri-rice {
+  fill: var(--rice);
+  stroke: var(--rice-line);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.onigiri-nori {
+  fill: var(--nori);
+}
+
+.onigiri.off .onigiri-rice {
+  fill: none;
+  stroke: var(--rice-off);
+}
+
+.onigiri.off .onigiri-nori {
+  fill: var(--rice-off);
+}
+
+/* A website's own rating: grey ★, so it's never taken for the household's
+   onigiri (a card shows it until someone here rates the recipe). */
+.site-star {
+  color: var(--muted);
+}
+
 .reactions {
   display: flex;
   flex-direction: column;
@@ -2527,28 +2627,23 @@ legend {
   width: 100%;
 }
 
-.star-picker {
+.onigiri-picker {
   display: flex;
   flex: none;
 }
 
-.star-picker button {
+.onigiri-picker button {
+  display: grid;
+  place-items: center;
   width: 34px;
   height: 44px;
   padding: 0;
-  font-size: 1.7rem;
-  line-height: 1;
-  color: var(--border);
   background: none;
   border: none;
   cursor: pointer;
 }
 
-.star-picker button.on {
-  color: var(--gold);
-}
-
-.star-picker button:focus-visible,
+.onigiri-picker button:focus-visible,
 .favorites-button:focus-visible,
 .heart-toggle:focus-visible,
 .thumb-toggle:focus-visible {
@@ -2730,6 +2825,12 @@ legend {
   background: none;
   border: none;
   border-radius: 0;
+}
+
+/* "★ 4.8 from 2,341 ratings on taste.com.au", under the household's own. */
+.verdict-card .site-rating {
+  margin: -6px 0 0;
+  font-size: 0.85rem;
 }
 
 .verdict-card .cook-history {
@@ -3731,7 +3832,7 @@ button.rating-pill:focus-visible {
   gap: 6px;
 }
 
-.reactions .star-picker button {
+.reactions .onigiri-picker button {
   width: 31px;
 }
 

@@ -62,8 +62,8 @@ export function confirmDiscard(dirty: boolean): boolean {
 }
 
 // Whether anything on screen has unsaved changes: for changes that stay on
-// the same page but replace a form (the pantry's find box, scanning, or the
-// top bar's +), which the guard above doesn't see.
+// the same page but replace a form (the pantry's find box, scanning, or a
+// store page shared to it), which the guard above doesn't see.
 export function hasUnsavedChanges(): boolean {
   return unsaved.size > 0;
 }

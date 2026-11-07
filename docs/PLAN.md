@@ -206,6 +206,48 @@ Changes already live in the browser version, not yet in a published APK
   so a housemate's link isn't undone); "Shop for these" drops formatting
   marks; a brand that repeats the name ("Nutella") isn't shown twice;
   household settings no longer flash back to defaults on a login renewal.
+- Paprika import and export cope with big collections (stress test
+  2026-11-07, made-up exports of 1000 and 3000 recipes, a third with
+  photos): the import unpacks and saves one recipe at a time and the
+  export writes its zip as it goes (its own small stored-zip writer,
+  checked with Python's zipfile), so on the Pixel a 1000-recipe, 165 MB
+  import peaked at 528 MB instead of 1.46 GB and gave it all back after;
+  the export 593 MB instead of 770, with the save screen up in seconds.
+  Over-long recipes are trimmed to what the database keeps instead of
+  failing; a same-named recipe is only "already here" with the same link
+  or the same ingredients (two different "Pancakes" both come in); the
+  summary names up to five skipped or failed recipes; an empty file says
+  so. Round trip checked: 1013/1013 recipes, every photo byte for byte.
+  After review: Bentotachi's own export comes back as "already here"
+  even when it reworded lines (formatting, "##", "Day 1:") or by its id;
+  a damaged entry counts as unreadable instead of stopping the import;
+  photos are decoded only for recipes being added and the file is
+  unpacked a few MB at a time (a 3000-recipe re-import 5.6 s instead of
+  26, the screen updating throughout); shortened recipes and photos an
+  export couldn't fetch are named; a strict zip test guards the writer.
+- Ratings are onigiri now (Xel, 2026-11-07): the household rates with
+  five onigiri (OnigiriIcon, drawn for Bentotachi; still stored as
+  `stars`), and a website's own rating, saved when a recipe is imported
+  from a link (migration recipes_site_rating, recipe_parse.js siteRating
+  from the page's aggregateRating), shows as grey ★: on a card until the
+  household rates it, and on the recipe page as "★ 4.8 from 2,341
+  ratings on taste.com.au". Every card also says where it's from (its
+  site, or "home recipe"), so a recipe is easy to find without opening
+  several (card version C from the mockups). Recipes imported before
+  this have no site rating; Paprika files carry none (their rating is the
+  person's own). "Top rated" still sorts by the household's.
+- Recipes with the same name (Xel, 2026-11-07): their cards, and the
+  plan's recipe chooser, add a small line telling them apart, the site
+  each came from or the day it was added (recipeTwins.ts), and an import
+  that brings in a different recipe under a name already here says so.
+  Not built: a "keep both / skip / replace mine" choice per clash during
+  import, until a tester needs to update recipes that way.
+- The top bar's + is a plum book-with-a-plus that always adds a recipe
+  (Xel, 2026-11-07); it used to add to the page you were on, but Pantry
+  and the shopping list have their own add box at the top, now joined to
+  its button (the outline wraps both). Pantry's stock level is slimmer and
+  sits closer to the edge; an opened pantry item has its name and a ✕ at
+  the top, and its buttons stay on screen while scrolling.
 
 Released in 1.17.0 (2026-11-07, deployed the same day):
 

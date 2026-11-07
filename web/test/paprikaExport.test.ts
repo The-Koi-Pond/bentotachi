@@ -1,8 +1,9 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
+import { crc32 } from "node:zlib";
 import { gunzipSync, strFromU8, unzipSync } from "fflate";
-import { paprikaFile, toPaprika, type ExportRecipe } from "../src/paprikaExport.ts";
+import { paprikaFile, paprikaZip, toPaprika, type ExportRecipe } from "../src/paprikaExport.ts";
 
 const recipe: ExportRecipe = {
   id: "abc123",
@@ -58,4 +59,62 @@ test("the file is a zip of gzipped JSON, one per recipe, readable like Mealie an
   const third = JSON.parse(strFromU8(gunzipSync(files[names[2]])));
   assert.equal(third.name, 'Mac/cheese: "best"');
   assert.equal(third.prep_time, "");
+});
+
+// fflate (above) reads only part of a zip and checks no checksums; Python
+// (Mealie, Tandoor), Java and Paprika read more, so this walks the file the
+// way strict readers do (review, 2026-11-07: 28 of 50 deliberate breaks to
+// the writer passed the test above, and would have broken every export for
+// those apps).
+test("the zip is what strict readers expect: checksums, sizes, counts, UTF-8 names", () => {
+  const titles = ["Plain soup", "Crème brûlée 🍜"];
+  const bytes = paprikaFile(titles.map((title, i) => toPaprika({ ...recipe, id: `r${i}`, title }, "", 0)));
+  const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  // Front to back, as a streaming reader does: each local header must
+  // describe its data.
+  const offsets: number[] = [];
+  let at = 0;
+  for (const title of titles) {
+    assert.equal(v.getUint32(at, true), 0x04034b50);
+    offsets.push(at);
+    const size = v.getUint32(at + 18, true);
+    const nameLength = v.getUint16(at + 26, true);
+    assert.equal(v.getUint16(at + 6, true) & 0x0800, 0x0800, "UTF-8 flag");
+    assert.equal(v.getUint16(at + 8, true), 0, "stored");
+    assert.equal(new TextDecoder().decode(bytes.subarray(at + 30, at + 30 + nameLength)), `${title}.paprikarecipe`);
+    const data = bytes.subarray(at + 30 + nameLength, at + 30 + nameLength + size);
+    assert.equal(v.getUint32(at + 14, true), crc32(data), "CRC");
+    assert.equal(v.getUint32(at + 22, true), size);
+    assert.equal(JSON.parse(strFromU8(gunzipSync(data))).name, title);
+    at += 30 + nameLength + size;
+  }
+  // The end record: both counts, and where and how big the directory is.
+  const end = bytes.length - 22;
+  assert.equal(v.getUint32(end, true), 0x06054b50);
+  assert.equal(v.getUint16(end + 8, true), titles.length);
+  assert.equal(v.getUint16(end + 10, true), titles.length);
+  assert.equal(v.getUint32(end + 16, true), at);
+  assert.equal(v.getUint32(end + 12, true), end - at);
+  // Each directory entry matches its local header.
+  for (const offset of offsets) {
+    assert.equal(v.getUint32(at, true), 0x02014b50);
+    assert.equal(v.getUint32(at + 42, true), offset);
+    assert.equal(v.getUint16(at + 8, true), v.getUint16(offset + 6, true), "flags");
+    assert.equal(v.getUint32(at + 16, true), v.getUint32(offset + 14, true), "CRC");
+    assert.equal(v.getUint32(at + 20, true), v.getUint32(offset + 18, true), "size");
+    assert.equal(v.getUint32(at + 24, true), v.getUint32(offset + 22, true), "uncompressed size");
+    assert.equal(v.getUint16(at + 28, true), v.getUint16(offset + 26, true), "name length");
+    at += 46 + v.getUint16(at + 28, true);
+  }
+  assert.equal(at, end);
+});
+
+test("written a piece at a time, the file is the same as written whole", () => {
+  const recipes = Array.from({ length: 5 }, (_, i) => toPaprika({ ...recipe, id: `p${i}` }, "", 0));
+  const pieces: Uint8Array[] = [];
+  const zip = paprikaZip((piece) => pieces.push(piece));
+  for (const r of recipes) zip.add(r);
+  zip.end();
+  assert.ok(pieces.length > 5);
+  assert.deepEqual(Buffer.concat(pieces), Buffer.from(paprikaFile(recipes)));
 });

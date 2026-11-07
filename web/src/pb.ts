@@ -75,6 +75,10 @@ export interface Recipe extends RecordModel {
   notes: string;
   // The recipe writer's own tips from the original page; "notes" are ours.
   author_notes: string;
+  // The website's own rating when it was imported from a link: out of 5
+  // (0 = none) and how many gave it. Missing on an older server.
+  site_rating?: number;
+  site_rating_count?: number;
   added_by: string;
   created: string;
   updated: string;

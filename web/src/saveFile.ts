@@ -22,13 +22,54 @@ function base64(bytes: Uint8Array): string {
   return btoa(text);
 }
 
-export async function saveFile(name: string, mime: string, bytes: Uint8Array): Promise<boolean> {
+// A file saved a piece at a time as it's made (a big recipe export), so it
+// never has to be in memory whole on a phone: add() the pieces in order,
+// then save() asks where (Android) or downloads it (a browser, which keeps
+// the pieces until then).
+export async function startFile(): Promise<{ add: (bytes: Uint8Array) => Promise<void>; save: (name: string, mime: string) => Promise<boolean> }> {
   if (isAndroidApp) {
     await Files.begin();
-    for (let at = 0; at < bytes.length; at += PIECE) await Files.append({ data: base64(bytes.subarray(at, at + PIECE)) });
-    return (await Files.save({ name, mime })).saved;
+    // Whatever arrives fills one PIECE-sized buffer, sent to Android each
+    // time it's full (and the rest at the end), so no piece is bigger.
+    const buffer = new Uint8Array(PIECE);
+    let filled = 0;
+    const flush = async () => {
+      if (!filled) return;
+      const piece = buffer.subarray(0, filled);
+      filled = 0;
+      await Files.append({ data: base64(piece) });
+    };
+    return {
+      add: async (bytes) => {
+        let at = 0;
+        while (at < bytes.length) {
+          const take = Math.min(PIECE - filled, bytes.length - at);
+          buffer.set(bytes.subarray(at, at + take), filled);
+          filled += take;
+          at += take;
+          if (filled === PIECE) await flush();
+        }
+      },
+      save: async (name, mime) => {
+        await flush();
+        return (await Files.save({ name, mime })).saved;
+      },
+    };
   }
-  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime }));
+  const pieces: BlobPart[] = [];
+  return {
+    add: async (bytes) => {
+      pieces.push(bytes as BlobPart);
+    },
+    save: async (name, mime) => {
+      download(name, new Blob(pieces, { type: mime }));
+      return true;
+    },
+  };
+}
+
+function download(name: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = name;
@@ -36,5 +77,4 @@ export async function saveFile(name: string, mime: string, bytes: Uint8Array): P
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  return true;
 }

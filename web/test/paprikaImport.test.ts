@@ -2,7 +2,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { gzipSync, strToU8, zipSync } from "fflate";
-import { alreadyHave, fromPaprika, readPaprikaFile, toMinutes } from "../src/paprikaImport.ts";
+import {
+  IMPORT_LIMITS,
+  alreadyHave,
+  fitImported,
+  fromPaprika,
+  paprikaEntries,
+  paprikaPhoto,
+  readPaprikaFile,
+  someNames,
+  toMinutes,
+} from "../src/paprikaImport.ts";
 import { paprikaFile, toPaprika } from "../src/paprikaExport.ts";
 
 // A 1×1 PNG.
@@ -89,12 +99,176 @@ test("Bento's own export comes back as it was", () => {
   assert.ok(back.photo);
 });
 
-test("recipes we already have are skipped", () => {
+test("recipes we already have are skipped: the same name, and the same link or ingredients", () => {
   const tart = fromPaprika(paprika);
-  assert.equal(alreadyHave(tart, [{ title: "lemon tart", source_url: "https://www.example.com/tart" }]), true);
-  assert.equal(alreadyHave(tart, [{ title: "Lemon tart", source_url: "" }]), true);
-  assert.equal(alreadyHave(tart, [{ title: "Lemon tart", source_url: "https://other.example.com/tart" }]), false);
-  assert.equal(alreadyHave(tart, [{ title: "Lime tart" }]), false);
+  // Same name and link.
+  assert.equal(alreadyHave(tart, [{ title: "lemon tart", source_url: "https://www.example.com/tart", ingredients: [] }]), true);
+  // Same name and ingredients (capitals and spaces aside), no link here.
+  assert.equal(alreadyHave(tart, [{ title: "Lemon tart", source_url: "", ingredients: tart.ingredients.map((l) => ` ${l.toUpperCase()}`) }]), true);
+  // Same name, but different ingredients and no matching link: a different
+  // recipe, so it comes in (it used to be skipped when either had no link).
+  assert.equal(alreadyHave(tart, [{ title: "Lemon tart", source_url: "", ingredients: ["1 lemon"] }]), false);
+  assert.equal(alreadyHave(tart, [{ title: "Lemon tart", source_url: "https://other.example.com/tart", ingredients: ["1 lemon"] }]), false);
+  assert.equal(alreadyHave(tart, [{ title: "Lime tart", ingredients: tart.ingredients }]), false);
+  // Two different recipes of the same name, neither with a link, both come in.
+  const pancakes = { title: "Pancakes", source_url: "", ingredients: ["2 eggs"] };
+  assert.equal(alreadyHave(pancakes, [{ title: "Pancakes", source_url: "", ingredients: ["1 banana"] }]), false);
+});
+
+test("Bentotachi's own export comes back as already here, however the export reworded it", () => {
+  const original = {
+    id: "rec123",
+    title: "Pancakes",
+    description: "",
+    source_url: "",
+    servings: "",
+    prep_minutes: 0,
+    cook_minutes: 0,
+    total_minutes: 0,
+    // Formatting marks, a heading with a digit, a ## heading and a line
+    // ending in a colon: all changed by the export.
+    ingredients: ["2 eggs *or 3 if small*", "# Day 1", "## For the glaze", "Salt to taste:"],
+    steps: ["Mix."],
+    tags: [],
+    notes: "",
+    author_notes: "",
+    created: "",
+  };
+  const raw = readPaprikaFile(paprikaFile([toPaprika(original, "", 0)])).recipes[0];
+  const back = fromPaprika(raw);
+  assert.notDeepEqual(back.ingredients, original.ingredients);
+  assert.equal(alreadyHave(back, [original]), true);
+  // Its uid is the recipe's id here, enough on its own (renamed since).
+  assert.equal(alreadyHave(back, [{ ...original, title: "Renamed", ingredients: [] }], String(raw.uid)), true);
+  assert.equal(alreadyHave(back, [{ ...original, id: "other", title: "Renamed" }], String(raw.uid)), false);
+});
+
+test("a file's recipes come one at a time, in order", () => {
+  const recipe = (name: string) => gzipSync(strToU8(JSON.stringify({ ...paprika, name })));
+  const zipped = zipSync({ "a.paprikarecipe": recipe("A"), "b.paprikarecipe": strToU8("not json"), "c.paprikarecipe": recipe("C") }, { level: 0 });
+  const entries = paprikaEntries(zipped);
+  assert.equal(entries.count, 3);
+  assert.deepEqual([...entries.recipes()].map((r) => r?.name ?? null), ["A", null, "C"]);
+  // A single recipe, and nothing at all.
+  assert.deepEqual([...paprikaEntries(recipe("Solo")).recipes()].map((r) => r?.name), ["Solo"]);
+  assert.equal(paprikaEntries(new Uint8Array(0)).count, 0);
+  assert.deepEqual([...paprikaEntries(new Uint8Array(0)).recipes()], []);
+});
+
+test("many entries come in order across several batches", () => {
+  const recipe = (name: string) => gzipSync(strToU8(JSON.stringify({ ...paprika, name })));
+  // Big entries (like photos) make several few-MB batches; order is kept.
+  const names = Array.from({ length: 40 }, (_, i) => `R${i}`);
+  const filler = new Uint8Array(3 * 1024 * 1024).map((_, i) => (i * 7919) % 251);
+  const files: Record<string, Uint8Array> = {};
+  names.forEach((name, i) => {
+    files[`${name}.paprikarecipe`] = recipe(name);
+    if (i % 10 === 5) files[`filler-${i}`] = filler;
+  });
+  const read = [...paprikaEntries(zipSync(files, { level: 0 })).recipes()];
+  assert.equal(read.length, 44);
+  assert.deepEqual(read.filter(Boolean).map((r) => r?.name), names);
+});
+
+test("two entries of the same name both come in", () => {
+  // Some exporters might write two entries with one name; entries come back
+  // keyed by name, so the batch reader must not let one hide the other.
+  const entry = (name: string) => gzipSync(strToU8(JSON.stringify({ name })));
+  const zipped = zipSync({ "Soup1.paprikarecipe": entry("Soup A"), "Soup2.paprikarecipe": entry("Soup B") }, { level: 0 });
+  // Rename "Soup2" to "Soup1" in its local header and directory entry.
+  const target = strToU8("Soup2.paprikarecipe");
+  for (let i = 0; i + target.length <= zipped.length; i++) {
+    if (target.every((b, k) => zipped[i + k] === b)) zipped[i + 4] = 0x31;
+  }
+  assert.deepEqual([...paprikaEntries(zipped).recipes()].map((r) => r?.name ?? null), ["Soup A", "Soup B"]);
+});
+
+test("the import's photo, decoded later, is the whole photo", () => {
+  // The import screen converts without the photo, then decodes it only for
+  // recipes it adds (paprikaPhoto).
+  assert.equal(fromPaprika(paprika, { withPhoto: false }).photo, null);
+  const photo = paprikaPhoto(paprika);
+  assert.equal(photo?.type, "image/png");
+  assert.deepEqual(photo?.bytes, new Uint8Array(Buffer.from(PNG, "base64")));
+  assert.equal(paprikaPhoto({ name: "No photo" }), null);
+});
+
+test("one damaged entry is unreadable, not the end of the import", () => {
+  const good = gzipSync(strToU8(JSON.stringify({ name: "A" })));
+  const later = gzipSync(strToU8(JSON.stringify({ name: "C" })));
+  const zipped = zipSync(
+    { "a.paprikarecipe": good, "b.paprikarecipe": [strToU8("x".repeat(500)), { level: 6 }], "c.paprikarecipe": later },
+    { level: 0 }
+  );
+  // Entry b's compressed data starts with a block type that doesn't exist.
+  const second = zipped.indexOf(0x50, 30 + 15 + good.length);
+  zipped[second + 30 + 15] = 0x07;
+  assert.deepEqual([...paprikaEntries(zipped).recipes()].map((r) => r?.name ?? null), ["A", null, "C"]);
+});
+
+test("an over-long recipe is cut to what the database keeps, not refused", () => {
+  const long = fitImported({
+    ...fromPaprika(paprika),
+    title: "T".repeat(400),
+    description: "Story. ".repeat(1000),
+    ingredients: Array.from({ length: 20000 }, (_, i) => `${i} g item`),
+    notes: "🍜".repeat(20005),
+  });
+  assert.equal([...long.title].length, 300);
+  assert.ok(long.title.endsWith("…"));
+  assert.ok([...long.description].length <= 5000);
+  assert.ok(new TextEncoder().encode(JSON.stringify(long.ingredients)).length <= 200000);
+  assert.equal(long.ingredients[0], "0 g item");
+  // Emoji count as one character each, as the database counts them.
+  assert.equal([...long.notes].length, 20000);
+  // A normal recipe is left as it is.
+  const tart = fromPaprika(paprika);
+  const { photo, ...plain } = tart;
+  assert.deepEqual(fitImported(plain), plain);
+  assert.ok(photo);
+});
+
+test("every text field and list is cut to fit, by the database's own measure", () => {
+  const long = fitImported({
+    ...fromPaprika({ name: "x" }),
+    servings: "s".repeat(200),
+    author_notes: "a".repeat(20005),
+    steps: Array.from({ length: 20000 }, (_, i) => `Step ${i}`),
+    ingredients: Array.from({ length: 20000 }, () => "ラーメン 1 杯"),
+    tags: Array.from({ length: 5000 }, (_, i) => `tag${i}`),
+  });
+  const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+  assert.equal([...long.servings].length, 100);
+  assert.equal([...long.author_notes].length, 20000);
+  assert.ok(bytes(long.steps) <= 200000 && long.steps.length > 1000);
+  // Lists are measured in bytes, so Japanese lines take their full size.
+  assert.ok(bytes(long.ingredients) <= 200000 && bytes(long.ingredients) > 190000);
+  assert.ok(bytes(long.tags) <= 20000 && bytes(long.tags) > 19000);
+  // Exactly at the limit is kept whole, an emoji counting as one.
+  assert.equal(fitImported({ ...long, title: "🍜".repeat(300) }).title, "🍜".repeat(300));
+});
+
+test("the import's limits are the server's", async () => {
+  const { createRequire } = await import("node:module");
+  const server = createRequire(import.meta.url)("../../server/pb_hooks/recipe_parse.js").LIMITS;
+  assert.deepEqual(IMPORT_LIMITS, {
+    title: server.title,
+    description: server.description,
+    servings: server.servings,
+    notes: server.authorNotes,
+    listBytes: server.listBytes,
+    tagBytes: server.tagBytes,
+  });
+});
+
+test("messages name up to five recipes, kept short", () => {
+  assert.equal(someNames([]), "");
+  assert.equal(someNames(["Soup"]), "“Soup”");
+  assert.equal(someNames(["Soup", "Tart"]), "“Soup” and “Tart”");
+  assert.equal(someNames(["A", "B", "C"]), "“A”, “B” and “C”");
+  assert.equal(someNames(["A", "B", "C", "D", "E"]), "“A”, “B”, “C”, “D” and “E”");
+  assert.equal(someNames(["A", "B", "C", "D", "E", "F", "G"]), "“A”, “B”, “C”, “D” and 3 more");
+  assert.equal(someNames(["x".repeat(80)]), `“${"x".repeat(49)}…”`);
 });
 
 test("odd values don't break it", () => {

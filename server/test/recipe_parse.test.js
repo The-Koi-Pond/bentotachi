@@ -320,3 +320,34 @@ test("drops the stray comma WP Recipe Maker puts inside ingredient brackets", ()
     "4 eggs",
   ]);
 });
+
+test("keeps the site's own rating, out of 5, when the page gives one", () => {
+  const recipe = (aggregateRating) =>
+    parseRecipe(page({ "@type": "Recipe", name: "Soup", recipeIngredient: ["1 onion"], recipeInstructions: ["Simmer."], aggregateRating }), "https://example.com/soup");
+  assert.deepEqual(recipe({ "@type": "AggregateRating", ratingValue: "4.83", ratingCount: "2341" }).siteRating, { value: 4.8, count: 2341 });
+  // Review counts stand in for rating counts; commas for decimal points.
+  assert.deepEqual(recipe({ ratingValue: "4,5", reviewCount: 12 }).siteRating, { value: 4.5, count: 12 });
+  // Out of 10, scaled to 5.
+  assert.deepEqual(recipe({ ratingValue: 9, bestRating: 10, ratingCount: 3 }).siteRating, { value: 4.5, count: 3 });
+  // No ratings yet, nonsense, or none at all: nothing.
+  assert.equal(recipe({ ratingValue: 0, ratingCount: 0 }).siteRating, null);
+  assert.equal(recipe({ ratingValue: 5, ratingCount: 0 }).siteRating, null);
+  assert.equal(recipe({ ratingValue: 7, ratingCount: 4 }).siteRating, null);
+  assert.equal(recipe({ ratingValue: "great", ratingCount: 4 }).siteRating, null);
+  assert.equal(recipe(undefined).siteRating, null);
+  // A perfect score is kept, and the rating count wins over reviews.
+  assert.deepEqual(recipe({ ratingValue: 5, ratingCount: 3 }).siteRating, { value: 5, count: 3 });
+  assert.deepEqual(recipe({ ratingValue: 4.6, ratingCount: 120, reviewCount: 30 }).siteRating, { value: 4.6, count: 120 });
+  // Counts written with thousands separators are whole numbers.
+  assert.deepEqual(recipe({ ratingValue: "4.6", ratingCount: "1,234" }).siteRating, { value: 4.6, count: 1234 });
+  assert.deepEqual(recipe({ ratingValue: "4,6", ratingCount: "1.234.567" }).siteRating, { value: 4.6, count: 1234567 });
+  assert.deepEqual(recipe({ ratingValue: "4.6", ratingCount: "1 234" }).siteRating, { value: 4.6, count: 1234 });
+  // ...but a count written as a decimal is just that number.
+  assert.deepEqual(recipe({ ratingValue: "4.6", ratingCount: "12.0" }).siteRating, { value: 4.6, count: 12 });
+  assert.deepEqual(recipe({ ratingValue: "4.6", ratingCount: " 12 " }).siteRating, { value: 4.6, count: 12 });
+  // A negative count falls back to reviews; an absurd one (which the
+  // database would refuse, failing the whole import) means no rating.
+  assert.deepEqual(recipe({ ratingValue: 4, ratingCount: "-5", reviewCount: 8 }).siteRating, { value: 4, count: 8 });
+  assert.equal(recipe({ ratingValue: 4, ratingCount: "99999999999999999999" }).siteRating, null);
+  assert.equal(recipe({ ratingValue: 4, ratingCount: 1e20 }).siteRating, null);
+});

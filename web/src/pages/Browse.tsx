@@ -84,7 +84,7 @@ export default function Browse() {
     <div className="stack narrow">
       <h1>Browse</h1>
 
-      <form className="add-row" onSubmit={search} role="search">
+      <form className="add-row joined" onSubmit={search} role="search">
         <div className="clearable">
           <input
             ref={searchBox}

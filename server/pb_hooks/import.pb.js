@@ -70,6 +70,11 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   record.set("steps", recipe.steps);
   record.set("tags", recipe.tags);
   record.set("author_notes", recipe.authorNotes);
+  // The website's own rating, when its page gives one (recipe_parse.js).
+  if (recipe.siteRating) {
+    record.set("site_rating", recipe.siteRating.value);
+    record.set("site_rating_count", recipe.siteRating.count);
+  }
   if (e.auth && e.auth.collection().name === "users") {
     record.set("added_by", e.auth.id);
   }

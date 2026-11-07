@@ -50,6 +50,32 @@ export function BookIcon() {
   );
 }
 
+// An onigiri: the household's rating (5 of them), filled or empty. Drawn
+// for Bentotachi (not Lucide); colours from styles.css (--rice, --nori).
+// Website ratings stay ★, so the two are never confused.
+export function OnigiriIcon({ size = 14, filled = true }: { size?: number; filled?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={`onigiri ${filled ? "" : "off"}`}>
+      <path
+        className="onigiri-rice"
+        d="M12 2.8c1.2 0 2 .6 2.7 1.7l6.4 10.9c1.4 2.4.2 5.6-3 5.6H5.9c-3.2 0-4.4-3.2-3-5.6L9.3 4.5C10 3.4 10.8 2.8 12 2.8z"
+      />
+      <rect className="onigiri-nori" x="8.4" y="14.2" width="7.2" height="6.8" rx="1" />
+    </svg>
+  );
+}
+
+// A book with a plus: the top bar's "Add recipe".
+export function BookPlusIcon() {
+  return (
+    <Icon>
+      <path d="M12 7v6" />
+      <path d="M15 10H9" />
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+    </Icon>
+  );
+}
+
 export function CartIcon({ size = 24 }: { size?: number }) {
   return (
     <Icon size={size}>

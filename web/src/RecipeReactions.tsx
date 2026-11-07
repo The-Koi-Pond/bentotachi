@@ -9,7 +9,7 @@ import {
   useCurrentUser,
   type RecipeRating,
 } from "./pb";
-import { CloseIcon, HeartIcon, PlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons";
+import { CloseIcon, HeartIcon, OnigiriIcon, PlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons";
 import { addReasons, MAX_REASON_LENGTH, MAX_REASONS, suggestedReasons } from "./dislikeReasons";
 import { useSingleUser } from "./household";
 
@@ -106,7 +106,7 @@ export function FavoriteHeart({ state, onPhoto = false }: { state: RecipeRatings
   );
 }
 
-// The ratings box: your stars with your thumbs up and thumbs down beside
+// The ratings box: your onigiri (stored as `stars`) with your thumbs up and thumbs down beside
 // them (and the heart too, when the recipe has no photo to put it on), then
 // the average and everyone's pills. The thumbs up is stored as "approved"
 // (it used to be shown as a seal of approval). With your thumbs down on, you
@@ -129,7 +129,7 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
   // "Sam: 2 stars, thumbs down", for hovering and screen readers.
   const describe = (r: RecipeRating) => {
     const parts: string[] = [];
-    if (r.stars > 0) parts.push(`${r.stars} star${r.stars > 1 ? "s" : ""}`);
+    if (r.stars > 0) parts.push(`${r.stars} of 5 onigiri`);
     if (r.approved) parts.push("thumbs up");
     if (r.disliked) parts.push("thumbs down");
     return `${nameOf(r)}: ${parts.join(", ")}`;
@@ -139,7 +139,7 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
   return (
     <section className="reactions" aria-label="Ratings">
       <div className="reaction-row">
-        <StarPicker value={mine?.stars ?? 0} onChange={(stars) => void saveMine({ stars })} />
+        <OnigiriPicker value={mine?.stars ?? 0} onChange={(stars) => void saveMine({ stars })} />
         <span className="reaction-toggles">
           {/* Filled in your own color once you've chosen it. Up and down are
               either/or: choosing one takes back the other. */}
@@ -180,7 +180,7 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
           reactions.length === 0 && "No ratings yet"
         ) : (
           <span>
-            <span className="star-gold">★</span> {average} average
+            <OnigiriIcon /> {average} average
           </span>
         )}
         {/* One pill per person, in their color: their name, their stars,
@@ -192,7 +192,7 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
               <span className="rating-pill-name">{nameOf(r)}</span>
               {r.stars > 0 && (
                 <span>
-                  ★{r.stars}
+                  <OnigiriIcon size={11} /> {r.stars}
                 </span>
               )}
               {r.approved && <ThumbsUpIcon filled size={11} />}
@@ -375,20 +375,20 @@ function ReasonsEditor({
   );
 }
 
-// Five tappable stars. Tapping the star you already chose clears it.
-function StarPicker({ value, onChange }: { value: number; onChange: (stars: number) => void }) {
+// Five tappable onigiri (the household's rating; a website's is ★).
+// Tapping the one you already chose clears it. Stored as `stars`, 0 to 5.
+function OnigiriPicker({ value, onChange }: { value: number; onChange: (stars: number) => void }) {
   return (
-    <div className="star-picker" role="group" aria-label="Your rating">
+    <div className="onigiri-picker" role="group" aria-label="Your rating">
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
           type="button"
-          className={n <= value ? "on" : ""}
-          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+          aria-label={`${n} of 5 onigiri`}
           aria-pressed={value === n}
           onClick={() => onChange(value === n ? 0 : n)}
         >
-          ★
+          <OnigiriIcon size={28} filled={n <= value} />
         </button>
       ))}
     </div>

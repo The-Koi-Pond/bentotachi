@@ -112,8 +112,6 @@ export default function Pantry() {
   const [editingScanned, setEditingScanned] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedStoreLink = searchParams.get("add");
-  // The top bar's + on this page ("#/pantry?new=1"): a new item.
-  const plusTapped = searchParams.get("new");
 
   // Opening a different add form (or a scan) throws away the one on screen;
   // with unsaved changes in it, ask first. `replaces`: whether it would.
@@ -121,19 +119,20 @@ export default function Pantry() {
   // The add form is on screen (an empty pantry always shows it).
   const addFormOpen = adding || pantry.items?.length === 0;
 
+  // A store product page shared to Bentotachi ("#/pantry?add=<link>"): a
+  // new item from it.
   useEffect(() => {
-    if (!sharedStoreLink && !plusTapped) return;
+    if (!sharedStoreLink) return;
     // Out of the address, so going back doesn't open the form again.
     setSearchParams({}, { replace: true });
-    // The + on a blank add form already open changes nothing.
-    const replaces = !!scanned || (addFormOpen && (!!sharedStoreLink || !!fromStore || !!startName));
+    const replaces = !!scanned || addFormOpen;
     if (!okToReplaceForm(replaces)) return;
-    setFromStore(sharedStoreLink ? { url: sharedStoreLink, name: searchParams.get("name") ?? "" } : null);
+    setFromStore({ url: sharedStoreLink, name: searchParams.get("name") ?? "" });
     setStartName("");
     setScanned(null);
     setAdding(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sharedStoreLink, plusTapped]);
+  }, [sharedStoreLink]);
 
   function changeLayout(next: PantryLayout) {
     setLayout(next);
@@ -478,7 +477,7 @@ export default function Pantry() {
       </div>
 
       {items.length > 0 && (
-        <form className="add-row" role="search" onSubmit={findOrAdd}>
+        <form className="add-row joined" role="search" onSubmit={findOrAdd}>
           <span className="find-box">
             <input
               value={query}

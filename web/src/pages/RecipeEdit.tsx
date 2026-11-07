@@ -12,6 +12,7 @@ import FormatTextarea from "../FormatTextarea";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { usePreviewUrl } from "../pantryPhoto";
 import { canTakePhoto } from "../PantryPhotoField";
+import { siteHost } from "../recipeSites";
 
 interface Draft {
   title: string;
@@ -141,6 +142,13 @@ export default function RecipeEdit() {
       data.image = null;
       data.image_framing = null;
     } else if (framing) data.image_framing = framing;
+    // The website's rating belongs to the site it came from: with the link
+    // gone or pointing at another site, it's forgotten rather than credited
+    // to the wrong one (or shown on a "home recipe").
+    if (existing?.site_rating && siteHost(data.source_url as string) !== siteHost(existing.source_url)) {
+      data.site_rating = 0;
+      data.site_rating_count = 0;
+    }
     try {
       // Pantry links are keyed by a line's wording: a reworded line keeps its
       // link, and lines that are gone lose theirs (carriedLinks). Worked out

@@ -552,6 +552,39 @@ function findAuthorNotes(html) {
   return [];
 }
 
+// The site's own rating from a recipe's aggregateRating, out of 5 with one
+// decimal, and how many people gave it; null when there's none or it makes
+// no sense (no ratings yet, a value off the scale). Sites rating out of 10
+// or 100 (bestRating) are scaled to 5.
+function siteRating(aggregate) {
+  if (Array.isArray(aggregate)) aggregate = aggregate[0];
+  if (!aggregate || typeof aggregate !== "object") return null;
+  var number = function (v) {
+    var n = parseFloat(String(v === undefined || v === null ? "" : v).replace(",", "."));
+    return isFinite(n) ? n : NaN;
+  };
+  // A count is a whole number: "2,341", "2.341" and "2 341" are all 2341
+  // (a separator followed by three digits groups thousands), while "12.0"
+  // is 12. One past what the database can keep exactly (2^53) is nonsense,
+  // and would make the import fail.
+  var whole = function (v) {
+    if (Array.isArray(v)) v = v[0];
+    var n = typeof v === "number" ? Math.round(v) : NaN;
+    if (typeof v === "string") {
+      if (/^\s*\d{1,3}([\s.,']\d{3})+\s*$/.test(v)) n = parseInt(v.replace(/\D/g, ""), 10);
+      else if (/^\s*\d+(\.\d+)?\s*$/.test(v)) n = Math.round(parseFloat(v));
+    }
+    return n >= 0 && n <= 9007199254740991 ? n : NaN;
+  };
+  var value = number(aggregate.ratingValue);
+  var best = number(aggregate.bestRating);
+  if (!(best > 0)) best = 5;
+  var count = whole(aggregate.ratingCount);
+  if (!(count >= 0)) count = whole(aggregate.reviewCount);
+  if (!(value > 0) || value > best || !(count >= 1)) return null;
+  return { value: Math.round((value / best) * 50) / 10, count: count };
+}
+
 // Returns the recipe as plain data, or null if the page has no recipe data.
 function parseRecipe(html, pageUrl) {
   var blocks = findJsonLdBlocks(html);
@@ -581,6 +614,9 @@ function parseRecipe(html, pageUrl) {
     steps: steps,
     tags: collectTags(recipe),
     authorNotes: findAuthorNotes(html).join("\n"),
+    // From the page's recipe data (JSON-LD); microdata and plain-text
+    // recipes don't carry one here.
+    siteRating: siteRating(recipe.aggregateRating),
   };
 }
 

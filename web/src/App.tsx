@@ -18,7 +18,7 @@ import Export from "./pages/Export";
 import Fridge from "./pages/Fridge";
 import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
-import { PlusIcon } from "./icons";
+import { BookPlusIcon } from "./icons";
 import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
 import { ShareReceiver } from "./shareReceiver";
@@ -57,11 +57,14 @@ function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
   return <Page key={id} />;
 }
 
-// The top bar's plum +.
-function PlusButton({ to, label }: { to: string; label: string }) {
+// The top bar's plum book-with-a-plus: adds a recipe, from any page (Xel,
+// 2026-11-07). It used to add to the page you were on, but Pantry and the
+// shopping list have their own add box at the top, and one button meaning
+// three things was harder to trust than one that always means "recipe".
+function AddRecipeButton() {
   return (
-    <Link to={to} className="icon-button primary" aria-label={label} title={label}>
-      <PlusIcon />
+    <Link to="/add" className="icon-button primary" aria-label="Add recipe" title="Add recipe">
+      <BookPlusIcon />
     </Link>
   );
 }
@@ -75,13 +78,7 @@ function Screens() {
       <header className="topbar">
         <FridgeLink />
         <nav>
-          {/* The + adds to the page you're on (Xel, 2026-11-02): a pantry
-              item on the pantry, the shopping list's box there, else a recipe. */}
-          <Routes>
-            <Route path="/pantry" element={<PlusButton to="/pantry?new=1" label="Add a pantry item" />} />
-            <Route path="/shopping" element={<PlusButton to="/shopping?new=1" label="Add to the shopping list" />} />
-            <Route path="*" element={<PlusButton to="/add" label="Add recipe" />} />
-          </Routes>
+          <AddRecipeButton />
           <SettingsMenu />
         </nav>
       </header>

@@ -30,7 +30,7 @@ import {
 } from "../pb";
 import { formatMinutes, isQuick, totalMinutes } from "../format";
 import QuickTime from "../QuickTime";
-import { CheckIcon, GripIcon, HeartIcon, PencilIcon, TagIcon, ThumbsDownIcon, ThumbsUpIcon, ZapIcon } from "../icons";
+import { CheckIcon, GripIcon, HeartIcon, OnigiriIcon, PencilIcon, TagIcon, ThumbsDownIcon, ThumbsUpIcon, ZapIcon } from "../icons";
 import { matchesSearch, searchWords } from "../recipeSearch";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
@@ -41,6 +41,7 @@ import { useShelfDrawers } from "../shelfDrawers";
 import { useSingleUser } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
+import { sourceLines } from "../recipeTwins";
 import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
@@ -237,6 +238,10 @@ export default function RecipeList() {
     else next.set(name, "1");
     setSearchParams(next, { replace: true });
   }
+
+  // Each card's source line: its site, "home recipe", or what tells it
+  // apart from a recipe of the same name (recipeTwins).
+  const sources = useMemo(() => sourceLines(all ?? []), [all]);
 
   // Every tag in use, most-used first.
   const allTags = useMemo(() => {
@@ -454,6 +459,9 @@ export default function RecipeList() {
         </span>
         <span className="recipe-card-text">
           <strong title={recipe.title}>{recipe.title}</strong>
+          {/* Where it's from, so a recipe is easy to find without opening
+              several (Xel, 2026-11-07); see recipeTwins.ts. */}
+          <span className="card-source muted">{sources.get(recipe.id)}</span>
           <CardDetails
             recipe={recipe}
             ratings={ratingsByRecipe.get(recipe.id) ?? []}
@@ -887,21 +895,27 @@ function Shelf({
   );
 }
 
-// The small line under a card's name: time, average stars, and a tiny
-// thumbs up if anyone has given it one.
+// The small line under a card's name: time, the household's average in
+// onigiri (or, until anyone here rates it, the website's own in grey ★),
+// and a tiny thumbs up if anyone has given it one.
 function CardDetails({ recipe, ratings, quick }: { recipe: Recipe; ratings: RecipeRating[]; quick: boolean }) {
   const time = formatMinutes(totalMinutes(recipe));
   const average = averageStars(ratings);
+  const site = average === null && recipe.site_rating && recipe.source_url ? recipe.site_rating : null;
   const thumbsUp = ratings.some((r) => r.approved);
   const thumbsDown = ratings.some((r) => r.disliked);
-  if (!time && average === null && !thumbsUp && !thumbsDown) return null;
+  if (!time && average === null && site === null && !thumbsUp && !thumbsDown) return null;
   return (
     <span className="card-details muted">
       {time && <QuickTime quick={quick}>{time}</QuickTime>}
       {average !== null && (
-        <span aria-label={`${average} stars`}>
-          <span className="star-gold">★</span>
-          {average}
+        <span aria-label={`${average} of 5 onigiri`}>
+          <OnigiriIcon size={12} /> {average}
+        </span>
+      )}
+      {site !== null && (
+        <span className="site-star" aria-label={`${site} of 5 stars on its website`} title="The website's rating">
+          ★ {site}
         </span>
       )}
       {thumbsUp && (

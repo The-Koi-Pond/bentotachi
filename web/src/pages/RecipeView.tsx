@@ -45,6 +45,7 @@ import ScaleControl, { scaledServings } from "../ScaleControl";
 import ShareButton from "../ShareButton";
 import { scaleLine } from "../scaling";
 import { stepTimes } from "../stepTimers";
+import { siteHost } from "../recipeSites";
 import { startTimer, useStepTimers } from "../StepTimerTray";
 
 // An ingredient or method line with soft hints for the household: weights,
@@ -291,6 +292,16 @@ export default function RecipeView() {
               last had and next planned, with "We cooked this". */}
           <div className="verdict-card">
             <RecipeReactions state={ratings} showHeart={!recipe.image} />
+            {/* The website's own rating, plainly the site's (★, not onigiri). */}
+            {!!recipe.site_rating && !!siteHost(recipe.source_url) && (
+              <p className="muted site-rating">
+                <span className="site-star">★</span> {recipe.site_rating}
+                {recipe.site_rating_count
+                  ? ` from ${recipe.site_rating_count.toLocaleString()} ${recipe.site_rating_count === 1 ? "rating" : "ratings"}`
+                  : ""}{" "}
+                on {siteHost(recipe.source_url)}
+              </p>
+            )}
             <CookHistory
               recipeId={recipe.id}
               cooked={cooked.items ?? []}
