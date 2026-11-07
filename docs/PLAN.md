@@ -206,6 +206,14 @@ Changes already live in the browser version, not yet in a published APK
   so a housemate's link isn't undone); "Shop for these" drops formatting
   marks; a brand that repeats the name ("Nutella") isn't shown twice;
   household settings no longer flash back to defaults on a login renewal.
+- The recipe page tidied (Xel, 2026-11-07): Ingredients and Method are
+  cards of their own (the scaling box and the steps inside are light rows,
+  not cards in a card), and a ⋯ beside Plan and Edit holds Share, Save as
+  a Paprika file (one recipe, to send to a friend: paprikaSave.ts, shared
+  with Import & export), Print (browsers), Duplicate ("Lasagne (copy)",
+  with its photo, opened in the editor; ratings and history stay with the
+  original) and Delete (still asks first; it was a red button at the
+  page's end). RecipeMenu.tsx; ShareButton.tsx is gone.
 - Importing on par with Paprika, round two (Xel, 2026-11-07; the list
   under "To consider: more ways to bring recipes in"):
   - "You already have this": importing a page already here (by its link,
@@ -1441,9 +1449,9 @@ a recipe page now matches other apps (nutrition was the gap). What's
 missing is how recipes get in. Xel: 1 and 2 are wanted soon.
 
 Done 2026-11-07 (see "Importing on par with Paprika, round two" above):
-1, 2, 7, 8, 10, and 11's shelf and favorites export (one recipe to a
-friend waits for the recipe page's ⋯ menu, TODO.md). Still open: 3–6, 12,
-13.
+1, 2, 7, 8, 10 and 11 (a shelf or your favorites from Import & export;
+one recipe from its page's ⋯ → Save as a Paprika file). Still open: 3–6,
+12, 13.
 
 1. **"You already have this"**: adding a link already saved quietly
    makes a second copy today. Warn instead, with "Open it" and "Add

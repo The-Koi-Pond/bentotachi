@@ -7,6 +7,7 @@ import {
   errorMessage,
   pb,
   personStyle,
+  recipeImageUrl,
   recipes,
   useCurrentUser,
   useQuickMinutes,
@@ -43,7 +44,7 @@ import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
 import RecipeTimer from "../RecipeTimer";
 import ScaleControl, { scaledServings } from "../ScaleControl";
-import ShareButton from "../ShareButton";
+import RecipeMenu from "../RecipeMenu";
 import { scaleLine } from "../scaling";
 import { stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
@@ -92,8 +93,6 @@ export default function RecipeView() {
   // Nutrition shows only to people who turned on "Show nutrition".
   const showNutrition = !!useCurrentUser()?.show_nutrition;
   const navigate = useNavigate();
-  const [deleting, setDeleting] = useState<"no" | "asking" | "deleting">("no");
-  const [deleteError, setDeleteError] = useState("");
   // For hints like "1 red bell pepper (capsicum)" in the household's words
   // and units.
   const hints = useHints(recipe?.source_url ?? "");
@@ -148,6 +147,51 @@ export default function RecipeView() {
   if (!recipe) return <p className="muted">Loading…</p>;
 
   const current = recipe;
+  // ⋯ → Duplicate: a copy to make a variation ("Lasagne (copy)"), with the
+  // photo, opened in the editor to change. Ratings, cooking history and
+  // plans stay with the original.
+  async function duplicate() {
+    if (!recipe) return;
+    const data: Record<string, unknown> = {
+      title: `${recipe.title.slice(0, 290)} (copy)`,
+      description: recipe.description,
+      source_url: recipe.source_url,
+      servings: recipe.servings,
+      prep_minutes: recipe.prep_minutes,
+      cook_minutes: recipe.cook_minutes,
+      total_minutes: recipe.total_minutes,
+      extra_times: recipe.extra_times,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      tags: recipe.tags,
+      notes: recipe.notes,
+      author_notes: recipe.author_notes,
+      nutrition: recipe.nutrition,
+      ingredient_links: recipe.ingredient_links,
+      site_rating: recipe.site_rating,
+      site_rating_count: recipe.site_rating_count,
+      image_framing: recipe.image_framing,
+      added_by: pb.authStore.record?.id,
+    };
+    if (recipe.image) {
+      // The photo comes along when it loads; the copy is made either way.
+      const answer = await fetch(recipeImageUrl(recipe)).catch(() => null);
+      if (answer?.ok) data.image = new File([await answer.blob()], recipe.image);
+    }
+    const copy = await recipes().create(data);
+    navigate(`/recipes/${copy.id}/edit`);
+  }
+
+  // ⋯ → Delete recipe, after asking (confirmDelete). Several at once: the
+  // Recipes page's Edit mode.
+  async function remove() {
+    if (!recipe) return;
+    if (!(await confirmDelete([recipe], singleUser))) return;
+    const { failed } = await deleteRecipes([recipe]);
+    if (failed.length) throw new Error(`Couldn't delete it: ${errorMessage(failed[0].reason)}`);
+    navigate("/", { replace: true });
+  }
+
   // Saves changes to this recipe, showing them straight away and undoing
   // them if the server says no (the editor then shows why).
   async function save(changes: Partial<Recipe>) {
@@ -249,8 +293,15 @@ export default function RecipeView() {
                   </Link>
                 </>
               )}
-              {/* Works offline too: it's only the text. */}
-              <ShareButton recipe={recipe} scale={scale} />
+              {/* Share, Save as a Paprika file, Print, Duplicate, Delete. */}
+              <RecipeMenu
+                recipe={recipe}
+                scale={scale}
+                offline={offline}
+                editing={editing !== null}
+                onDuplicate={duplicate}
+                onDelete={remove}
+              />
             </span>
           </div>
           {/* About it, in one card: the description, servings and times in
@@ -328,7 +379,7 @@ export default function RecipeView() {
 
       <div id="jump-ingredients" className="jump-target">
       {editing === "ingredients" ? (
-        <section>
+        <section className="recipe-card">
           <h2>Ingredients</h2>
           <TextEditor
             label="Ingredients"
@@ -353,7 +404,7 @@ export default function RecipeView() {
       )}
       </div>
 
-      <section id="jump-method">
+      <section id="jump-method" className="recipe-card">
         <div className="section-head">
           <h2>Method</h2>
           {editButton("steps", "Change the method")}
@@ -558,31 +609,6 @@ export default function RecipeView() {
         </footer>
       )}
 
-      {/* Deleting it, at the very end, where it can't be tapped by accident
-          while cooking. Several at once: the Recipes page's Edit mode. */}
-      {!offline && editing === null && (
-        <div className="recipe-delete">
-          {deleteError && <p className="error">{deleteError}</p>}
-          <button
-            className="button danger"
-            disabled={deleting !== "no"}
-            onClick={async () => {
-              // Busy from the first tap, while the question's counts load,
-              // so a second tap can't ask twice.
-              setDeleting("asking");
-              setDeleteError("");
-              if (!(await confirmDelete([recipe], singleUser))) return setDeleting("no");
-              setDeleting("deleting");
-              const { failed } = await deleteRecipes([recipe]);
-              setDeleting("no");
-              if (failed.length) setDeleteError(`Couldn't delete it: ${errorMessage(failed[0].reason)}`);
-              else navigate("/", { replace: true });
-            }}
-          >
-            {deleting === "deleting" ? "Deleting…" : "Delete recipe"}
-          </button>
-        </div>
-      )}
     </article>
   );
 }
@@ -697,7 +723,7 @@ function IngredientsSection({
   const allPicked = picked.size === pickable.length;
 
   return (
-    <section>
+    <section className="recipe-card">
       <div className="section-head">
         <h2>Ingredients</h2>
         {!picking && editButton}

@@ -130,6 +130,27 @@ export function PrintIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+// Two overlapping sheets: duplicate (Lucide "copy").
+export function CopyIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <rect x="8" y="8" width="14" height="14" rx="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </Icon>
+  );
+}
+
+// An arrow into a tray: save a file (Lucide "download").
+export function DownloadIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Icon size={size}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
+    </Icon>
+  );
+}
+
 // A stopwatch: a step's timer (Lucide "timer").
 export function TimerIcon({ size = 24 }: { size?: number }) {
   return (

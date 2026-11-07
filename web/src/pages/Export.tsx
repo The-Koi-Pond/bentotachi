@@ -1,11 +1,9 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
-  averageStars,
   errorMessage,
   isAndroidApp,
   pb,
   recipeCategories,
-  recipeImageUrl,
   recipeRatings,
   recipes,
   type Recipe,
@@ -14,7 +12,7 @@ import {
 import { inCategory, sortCategories } from "../recipeCategories";
 import { useLocation, useNavigate } from "react-router";
 import { readSharedFile, type SharedFile } from "../shareReceiver";
-import { paprikaZip, toPaprika } from "../paprikaExport";
+import { fileNamePart, savePaprikaFile } from "../paprikaSave";
 import {
   alreadyHave,
   fitImported,
@@ -26,7 +24,6 @@ import {
   paprikaRating,
   someNames,
 } from "../paprikaImport";
-import { startFile } from "../saveFile";
 import { localToday } from "../dates";
 
 // ⋮ → Import & export: bring in recipes from a Paprika file (Paprika,
@@ -306,24 +303,6 @@ function ExportRecipes() {
       .catch(() => setCategories([]));
   }, []);
 
-  // The recipe's photo as base64: "" when it has none, null when it has one
-  // that wouldn't load (the recipe then goes without it, and the message
-  // says how many).
-  async function photoOf(recipe: Recipe): Promise<string | null> {
-    const url = recipeImageUrl(recipe);
-    if (!url) return "";
-    try {
-      const answer = await fetch(url);
-      if (!answer.ok) return null;
-      const bytes = new Uint8Array(await answer.arrayBuffer());
-      let text = "";
-      for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      return btoa(text);
-    } catch {
-      return null;
-    }
-  }
-
   async function exportAll() {
     setStatus(null);
     setProgress("Getting the recipes…");
@@ -353,30 +332,10 @@ function ExportRecipes() {
         });
         return;
       }
-      // Written into the file a recipe (and its photo) at a time, so a big
-      // collection never has to fit in memory at once (paprikaZip).
-      const file = await startFile();
-      let pieces: Uint8Array[] = [];
-      const zip = paprikaZip((piece) => pieces.push(piece));
-      const missingPhotos: string[] = [];
-      for (const [i, recipe] of all.entries()) {
-        setProgress(`Adding ${i + 1} of ${all.length}…`);
-        const theirs = ratings.filter((r) => r.recipe === recipe.id);
-        const stars = averageStars(theirs) ?? 0;
-        const favorite = theirs.some((r) => r.user === me && r.favorite);
-        const photo = await photoOf(recipe);
-        if (photo === null) missingPhotos.push(recipe.title);
-        zip.add(toPaprika(recipe, photo ?? "", stars, favorite));
-        for (const piece of pieces) await file.add(piece);
-        pieces = [];
-      }
-      zip.end();
-      for (const piece of pieces) await file.add(piece);
-      setProgress("Saving…");
       // "Bentotachi recipes 2026-11-07", "Bentotachi Soups 2026-11-07".
-      const part = which === "favorites" ? "favorites" : shelf ? shelf.name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "").trim().slice(0, 40) : "";
+      const part = which === "favorites" ? "favorites" : shelf ? fileNamePart(shelf.name).slice(0, 40) : "";
       const name = `Bentotachi ${part || "recipes"} ${localToday()}.paprikarecipes`;
-      const saved = await file.save(name, "application/octet-stream");
+      const { saved, missingPhotos } = await savePaprikaFile(all, ratings, me, name, setProgress);
       if (saved) {
         const text = `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${name}”.`;
         // A connection that dropped partway: say so, as the copy is missing them.

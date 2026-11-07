@@ -4218,15 +4218,6 @@ footer .person-name:focus-visible {
   align-self: flex-end;
 }
 
-/* "Delete recipe", alone at the end of a recipe's page. */
-.recipe-delete {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 16px;
-}
-
 .shelf-head h2 {
   flex: 1;
   min-width: 0;
@@ -5178,17 +5169,62 @@ em.soft {
   font-weight: 600;
 }
 
-/* Share and Print beside a recipe's title (ShareButton.tsx): just the icon.
-   Print only where there's room: on a phone the title needs it, and people
-   share from phones rather than print. */
+/* Icon-only buttons beside a recipe's title (its ⋯, RecipeMenu.tsx). */
 .button.icon-only {
   padding: 8px 10px;
 }
 
-@media (max-width: 599px) {
-  .print-button {
-    display: none;
-  }
+/* The recipe's ⋯ menu: wide enough for its notes, and Delete in red. */
+.recipe-menu {
+  /* Placed on the screen from where the ⋯ is (RecipeMenu.tsx sets the
+     side, width and height), above the sticky bars, scrolling inside when
+     the space is short. */
+  position: fixed;
+  z-index: 20;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.recipe-menu .danger-item {
+  color: var(--danger);
+}
+
+/* Ingredients and Method as cards of their own (Xel, 2026-11-07), like the
+   cards above them. Inside, the scaling box and the steps become light
+   rows instead of cards in a card. */
+.recipe-card {
+  padding: 10px 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.recipe-card .scale-row {
+  background: var(--bg);
+  border-color: transparent;
+}
+
+.recipe-card .steps {
+  gap: 0;
+}
+
+.recipe-card .steps > li:not(.list-heading) {
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.recipe-card .steps > li:not(.list-heading) + li:not(.list-heading) {
+  border-top: 1px solid var(--border);
+}
+
+.recipe-card .step {
+  padding: 12px 0;
+}
+
+/* Lined up with the step's text: the number and the gap (28 + 12). */
+.recipe-card .step-timers {
+  margin: -6px 0 12px 40px;
 }
 
 /* Printing a recipe: black on white, just the recipe. The bars, buttons,
@@ -5246,7 +5282,13 @@ em.soft {
     break-inside: avoid;
   }
 
-  .steps > li:not(.list-heading) {
+  .steps > li:not(.list-heading),
+  .recipe-card .steps > li:not(.list-heading) + li:not(.list-heading) {
+    border: none;
+  }
+
+  .recipe-card {
+    padding: 0;
     border: none;
   }
 
