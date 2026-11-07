@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { errorMessage, pb } from "../pb";
+import { errorMessage } from "../pb";
 import { browseAndSave, hasBuiltInBrowser, importBrowsedPage, takeRestoredPage } from "../bentoBrowser";
+import { importRecipe, type ImportResult } from "../recipeImport";
+import AlreadyHere from "../AlreadyHere";
+import { readPastedRecipe } from "../pastedRecipe";
 import { CloseIcon } from "../icons";
 import { savedPageLink, trimSavedPage } from "../savedPage";
 import { BenMood } from "../Brand";
@@ -42,16 +45,26 @@ export default function AddRecipe() {
   const linkBox = useRef<HTMLInputElement>(null);
   const pagePicker = useRef<HTMLInputElement>(null);
   const [pageError, setPageError] = useState("");
+  // A recipe from that page already here: offered instead of a second copy,
+  // with how to add one anyway (AlreadyHere).
+  const [duplicate, setDuplicate] = useState<{ id: string; title: string; again: () => void } | null>(null);
 
-  async function importLink(link: string, replace = false) {
+  // The import's result: open the new recipe, or offer the one already here.
+  function landed(result: ImportResult, again: () => void, replace = false) {
+    if ("id" in result) {
+      navigate(`/recipes/${result.id}`, { replace });
+      return;
+    }
+    setDuplicate({ ...result.duplicate, again });
+    setBusy(false);
+  }
+
+  async function importLink(link: string, replace = false, again = false) {
     setBusy(true);
     setError("");
+    setDuplicate(null);
     try {
-      const result = await pb.send<{ id: string }>("/api/cookbook/import", {
-        method: "POST",
-        body: { url: link.trim() },
-      });
-      navigate(`/recipes/${result.id}`, { replace });
+      landed(await importRecipe({ url: link.trim(), again }), () => void importLink(link, replace, true), replace);
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);
@@ -78,14 +91,7 @@ export default function AddRecipe() {
     const page = takeRestoredPage();
     if (!page) return;
     setUrl(page.url);
-    setBusy(true);
-    setError("");
-    importBrowsedPage(page)
-      .then((id) => navigate(`/recipes/${id}`, { replace: true }))
-      .catch((err) => {
-        setError(errorMessage(err));
-        setBusy(false);
-      });
+    void importPage(page, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restored]);
 
@@ -94,14 +100,28 @@ export default function AddRecipe() {
     void importLink(url);
   }
 
+  // A page the app's browser loaded (now, or before Android closed Bento).
+  async function importPage(page: { url: string; html: string }, replace = false, again = false) {
+    setBusy(true);
+    setError("");
+    setDuplicate(null);
+    try {
+      landed(await importBrowsedPage(page, again), () => void importPage(page, replace, true), replace);
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+    }
+  }
+
   // Android app only: open the page in Bento's browser and save it from
   // there, which works even when the site blocks the server.
   async function openInBrowser() {
     setBusy(true);
     setError("");
+    setDuplicate(null);
     try {
-      const id = await browseAndSave(url.trim());
-      if (id) navigate(`/recipes/${id}`);
+      const saved = await browseAndSave(url.trim());
+      if (saved) landed(saved.result, () => void importPage(saved.page, false, true));
       else setBusy(false);
     } catch (err) {
       setError(errorMessage(err));
@@ -117,21 +137,41 @@ export default function AddRecipe() {
     if (!file) return;
     setBusy(true);
     setPageError("");
+    setDuplicate(null);
     try {
       const html = await file.text();
       const link = savedPageLink(html) || url.trim();
       if (!/^https?:\/\/\S+$/i.test(link)) {
         throw new Error("Couldn't tell which site that page is from. Paste its link in the box above, then pick the file again.");
       }
-      const result = await pb.send<{ id: string }>("/api/cookbook/import", {
-        method: "POST",
-        body: { url: link, html: trimSavedPage(html) },
-      });
-      navigate(`/recipes/${result.id}`);
+      const page = { url: link, html: trimSavedPage(html) };
+      const again = async () => {
+        setBusy(true);
+        try {
+          landed(await importRecipe({ ...page, again: true }), () => {});
+        } catch (err) {
+          setPageError(errorMessage(err));
+          setBusy(false);
+        }
+      };
+      landed(await importRecipe(page), () => void again());
     } catch (err) {
       setPageError(errorMessage(err));
       setBusy(false);
     }
+  }
+
+  // A whole recipe pasted as text: sorted into the add-by-hand form
+  // (pastedRecipe.ts), to check and save there.
+  const [pasted, setPasted] = useState("");
+  const [pasteError, setPasteError] = useState("");
+  function fillFromPaste() {
+    const recipe = readPastedRecipe(pasted);
+    if (!recipe) {
+      setPasteError("Couldn't find ingredients or steps in that. Check it's the whole recipe, or add it by hand.");
+      return;
+    }
+    navigate("/new", { state: { pasted: recipe } });
   }
 
   // "Add by hand" (both the button and the link in an error) brings the
@@ -188,6 +228,7 @@ export default function AddRecipe() {
           {busy ? "Importing…" : "Import"}
         </button>
       </form>
+      {duplicate && <AlreadyHere duplicate={duplicate} busy={busy} onAgain={duplicate.again} />}
 
       {!hasBuiltInBrowser && (
         <div className="card stack">
@@ -217,10 +258,31 @@ export default function AddRecipe() {
 
       <div className="card stack">
         <h2>Type or paste it in</h2>
-        <p className="muted">For family recipes, cookbooks, or anything that won’t import.</p>
-        <Link to={handLink} className="button">
-          Add by hand
-        </Link>
+        <p className="muted">
+          For family recipes, cookbooks, a recipe someone sent you, or a caption under a video. Paste the whole thing and
+          Bentotachi sorts it into the form for you to check.
+        </p>
+        <label>
+          Paste a recipe
+          <textarea
+            rows={5}
+            value={pasted}
+            onChange={(e) => {
+              setPasted(e.target.value);
+              setPasteError("");
+            }}
+            placeholder={"Name\nIngredients\n…\nMethod\n…"}
+          />
+        </label>
+        {pasteError && <p className="error">{pasteError}</p>}
+        <div className="actions">
+          <Link to={handLink} className="button">
+            Add by hand
+          </Link>
+          <button className="button primary" onClick={fillFromPaste} disabled={!pasted.trim()}>
+            Sort it out
+          </button>
+        </div>
       </div>
     </div>
   );

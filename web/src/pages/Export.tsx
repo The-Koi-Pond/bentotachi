@@ -1,7 +1,29 @@
-import { useState, type ChangeEvent } from "react";
-import { averageStars, errorMessage, isAndroidApp, pb, recipeImageUrl, recipeRatings, recipes, type Recipe } from "../pb";
+import { useEffect, useState, type ChangeEvent } from "react";
+import {
+  averageStars,
+  errorMessage,
+  isAndroidApp,
+  pb,
+  recipeCategories,
+  recipeImageUrl,
+  recipeRatings,
+  recipes,
+  type Recipe,
+  type RecipeCategory,
+} from "../pb";
+import { inCategory, sortCategories } from "../recipeCategories";
 import { paprikaZip, toPaprika } from "../paprikaExport";
-import { alreadyHave, fitImported, fromPaprika, paprikaEntries, paprikaPhoto, paprikaRating, someNames } from "../paprikaImport";
+import {
+  alreadyHave,
+  fitImported,
+  fromPaprika,
+  isSmallPhoto,
+  paprikaEntries,
+  paprikaPhoto,
+  paprikaPhotoUrl,
+  paprikaRating,
+  someNames,
+} from "../paprikaImport";
 import { startFile } from "../saveFile";
 import { localToday } from "../dates";
 
@@ -19,6 +41,22 @@ export default function Export() {
 
 // A photo bigger than the server takes (10 MB) is left off its recipe.
 const MAX_PHOTO = 10 * 1024 * 1024;
+
+// A recipe's full-size photo from its web address, fetched by the server
+// (server/pb_hooks/recipe_photo.pb.js; browsers can't read other sites'
+// files), or null if it couldn't be.
+async function recipePhoto(url: string): Promise<Blob | null> {
+  try {
+    const answer = await fetch(pb.buildURL("/api/cookbook/recipe-photo"), {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: pb.authStore.token },
+      body: JSON.stringify({ url }),
+    });
+    return answer.ok ? await answer.blob() : null;
+  } catch {
+    return null;
+  }
+}
 
 // Adds the recipes from a Paprika file (see paprikaImport.ts), with their
 // photos, skipping any already here (alreadyHave: Bentotachi's own export
@@ -49,6 +87,8 @@ function ImportRecipes() {
       let added = 0;
       let rated = 0;
       let unrated = 0;
+      // Added with only Paprika's small preview as their photo.
+      let smallPhotos = 0;
       let unreadable = 0;
       let i = 0;
       const skipped: string[] = [];
@@ -82,10 +122,24 @@ function ImportRecipes() {
         const twin = existing.some((other) => other.title.trim().toLowerCase() === recipe.title.trim().toLowerCase());
         // Decoded only now: the slow part, and only for recipes being added.
         const photo = paprikaPhoto(raw);
-        const image =
+        let image =
           photo && photo.bytes.length <= MAX_PHOTO
             ? new File([new Uint8Array(photo.bytes)], `photo.${photo.type.split("/")[1]}`, { type: photo.type })
             : undefined;
+        // Paprika's photo is only a small preview; one saved from a website
+        // has the site's full-size photo's address, which the server fetches.
+        // The preview stays if that fails.
+        const small = !!photo && isSmallPhoto(photo.bytes);
+        const link = paprikaPhotoUrl(raw);
+        let full = false;
+        if (link && (!photo || small)) {
+          const blob = await recipePhoto(link);
+          if (blob && blob.size <= MAX_PHOTO) {
+            image = new File([blob], `photo.${blob.type.split("/")[1] || "jpg"}`, { type: blob.type });
+            full = true;
+          }
+        }
+        if (small && !full) smallPhotos += 1;
         let created: Recipe;
         try {
           created = await recipes().create({ ...recipe, ...(image && { image }) });
@@ -128,6 +182,11 @@ function ImportRecipes() {
       if (shortened.length) {
         parts.push(
           `${someNames(shortened)} ${shortened.length === 1 ? "was" : "were"} too long, so ${shortened.length === 1 ? "it was" : "they were"} shortened to fit.`
+        );
+      }
+      if (smallPhotos) {
+        parts.push(
+          `The file only had small previews of ${smallPhotos === 1 ? "1 photo" : `${smallPhotos} photos`}, so ${smallPhotos === 1 ? "it" : "they"} may look blurry: a better one can go in from the recipe's Edit.`
         );
       }
       if (unreadable) parts.push(`${unreadable} couldn't be read.`);
@@ -182,6 +241,16 @@ function ExportRecipes() {
   const [progress, setProgress] = useState("");
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const busy = progress !== "";
+  // What to export: "all", "favorites" (yours), or a shelf's id (its
+  // recipes are the ones with its tags, as on the recipe list).
+  const [which, setWhich] = useState("all");
+  const [categories, setCategories] = useState<RecipeCategory[] | null>(null);
+  useEffect(() => {
+    recipeCategories()
+      .getFullList()
+      .then((list) => setCategories(sortCategories(list).filter((category) => (category.tags ?? []).length > 0)))
+      .catch(() => setCategories([]));
+  }, []);
 
   // The recipe's photo as base64: "" when it has none, null when it has one
   // that wouldn't load (the recipe then goes without it, and the message
@@ -206,10 +275,30 @@ function ExportRecipes() {
     setProgress("Getting the recipes…");
     const me = pb.authStore.record?.id;
     try {
-      const [all, ratings] = await Promise.all([
+      const [every, ratings] = await Promise.all([
         recipes().getFullList({ sort: "title" }),
         recipeRatings().getFullList(),
       ]);
+      // Every recipe, one shelf's, or your favorites.
+      const shelf = (categories ?? []).find((category) => category.id === which);
+      const all =
+        which === "favorites"
+          ? every.filter((recipe) => ratings.some((r) => r.recipe === recipe.id && r.user === me && r.favorite))
+          : shelf
+            ? every.filter((recipe) => inCategory(recipe, shelf))
+            : every;
+      if (!all.length) {
+        setStatus({
+          text:
+            which === "favorites"
+              ? "You haven't hearted any recipes yet."
+              : shelf
+                ? "There are no recipes on that shelf yet."
+                : "There are no recipes to export yet.",
+          isError: true,
+        });
+        return;
+      }
       // Written into the file a recipe (and its photo) at a time, so a big
       // collection never has to fit in memory at once (paprikaZip).
       const file = await startFile();
@@ -230,7 +319,9 @@ function ExportRecipes() {
       zip.end();
       for (const piece of pieces) await file.add(piece);
       setProgress("Saving…");
-      const name = `Bentotachi recipes ${localToday()}.paprikarecipes`;
+      // "Bentotachi recipes 2026-11-07", "Bentotachi Soups 2026-11-07".
+      const part = which === "favorites" ? "favorites" : shelf ? shelf.name.replace(/[\\/:*?"<>|\x00-\x1f]/g, "").trim().slice(0, 40) : "";
+      const name = `Bentotachi ${part || "recipes"} ${localToday()}.paprikarecipes`;
       const saved = await file.save(name, "application/octet-stream");
       if (saved) {
         const text = `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${name}”.`;
@@ -251,9 +342,22 @@ function ExportRecipes() {
     <section className="card stack">
       <h2>Export recipes</h2>
       <p>
-        Saves every recipe, with its photo, as one Paprika file (<code>.paprikarecipes</code>). Paprika, Mealie and
-        Tandoor can import it, so you can move your recipes to another app, or just keep a copy.
+        Saves recipes, with their photos, as one Paprika file (<code>.paprikarecipes</code>). Paprika, Mealie, Tandoor
+        and Bentotachi can import it, so you can move your recipes to another app, share a shelf with a friend, or just
+        keep a copy.
       </p>
+      <label>
+        Which recipes
+        <select value={which} onChange={(e) => setWhich(e.target.value)} disabled={busy}>
+          <option value="all">Every recipe</option>
+          <option value="favorites">My favorites</option>
+          {(categories ?? []).map((category) => (
+            <option key={category.id} value={category.id}>
+              The {category.name} shelf
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="muted small-note">
         Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
         rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favorites. The meal

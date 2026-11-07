@@ -206,6 +206,26 @@ Changes already live in the browser version, not yet in a published APK
   so a housemate's link isn't undone); "Shop for these" drops formatting
   marks; a brand that repeats the name ("Nutella") isn't shown twice;
   household settings no longer flash back to defaults on a login renewal.
+- Importing on par with Paprika, round two (Xel, 2026-11-07; the list
+  under "To consider: more ways to bring recipes in"):
+  - "You already have this": importing a page already here (by its link,
+    however it's written: recipe_parse.js linkKey) offers "Open it" or
+    "Add another copy" instead of a second copy, for a pasted or shared
+    link, the built-in browser and saved pages (import.pb.js answers 409
+    with the recipe; recipeImport.ts, AlreadyHere.tsx).
+  - Paste a whole recipe as text (Add recipe → "Type or paste it in" →
+    "Sort it out"): pastedRecipe.ts sorts it into the add-by-hand form to
+    check (headings, "Serves 4", times, list marks, step numbers,
+    hashtags; works without headings too).
+  - Paprika imports get the full-size photo from the site when Paprika
+    saved the recipe from one (its `image_url`, fetched by the new
+    recipe_photo.pb.js), else a full-size one from `photos`, else the
+    small preview (the summary says how many only had that).
+  - Paprika 4's leftovers tidied: step numbers ("1. Preheat"), list
+    marks, `[recipe:…]`/`[photo:…]`/`[text](link)` marks; its number
+    minutes count when the text ones say nothing.
+  - Export one shelf or your favorites, not just everything (the file is
+    named after it, "Bentotachi Soups 2026-11-07").
 - Nutrition facts (Xel, 2026-11-07; most recipe apps keep them):
   imported from a website's recipe data (recipe_parse.js nutritionLines:
   per serving, in label order, bare numbers given their unit) and from
@@ -1412,6 +1432,10 @@ Questions for Xel:
 Compared with Paprika 4 (released 2026-11-06), what Bentotachi saves from
 a recipe page now matches other apps (nutrition was the gap). What's
 missing is how recipes get in. Xel: 1 and 2 are wanted soon.
+
+Done 2026-11-07 (see "Importing on par with Paprika, round two" above):
+1, 2, 7, 8, and 11's shelf and favorites export (one recipe to a friend
+waits for the recipe page's ⋯ menu, TODO.md). Still open: 3–6, 10, 12, 13.
 
 1. **"You already have this"**: adding a link already saved quietly
    makes a second copy today. Warn instead, with "Open it" and "Add

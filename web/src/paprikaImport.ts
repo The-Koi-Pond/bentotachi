@@ -146,12 +146,32 @@ export function toMinutes(value: unknown): number {
   return time ? Math.round(time.seconds / 60) : 0;
 }
 
+// Paprika's own text marks that mean nothing here (Paprika 4, 2026-11-07):
+// "[recipe:Lasagne]" links to another recipe (the name stays),
+// "[photo:Step 3]" shows one of its photos (gone: the photos don't come
+// across), "[a guide](https://…)" is a link (the words stay).
+// **bold** and *italic* stay: Bentotachi shows them as bold and soft text.
+function withoutPaprikaLinks(line: string): string {
+  return line
+    .replace(/\[photo:[^\]]*\]/gi, "")
+    .replace(/\[recipe:([^\]]*)\]/gi, "$1")
+    .replace(/\[([^\]]+)\]\((?:https?:\/\/|www\.)[^)\s]*\)/gi, "$1")
+    .replace(/\s{2,}/g, " ")
+    // No space left before punctuation where a photo was.
+    .replace(/\s+([.,;:!?)])/g, "$1")
+    .trim();
+}
+
 // A line on its own that ends in a colon ("For the sauce:") is a heading,
 // as Paprika writes them; one with an amount in it ("Salt: 1 tsp") isn't.
-function asLines(value: unknown): string[] {
+// A list's "- " or "• " goes, and for steps their "1." too (Paprika 4
+// allows lists; Bentotachi numbers the steps itself, so "1. Preheat" would
+// show numbered twice). "1.5 kg" keeps its number: it needs a space after.
+function asLines(value: unknown, { steps = false } = {}): string[] {
   return text(value)
     .split(/\r?\n/)
-    .map((line) => line.trim())
+    .map((line) => withoutPaprikaLinks(line).replace(/^[-•]\s+/, ""))
+    .map((line) => (steps ? line.replace(/^\d{1,2}[.)]\s+/, "") : line).trim())
     .filter(Boolean)
     .map((line) => (/^[^\d]{1,60}:$/.test(line) ? `# ${line.slice(0, -1).trim()}` : line));
 }
@@ -175,9 +195,55 @@ function photoType(bytes: Uint8Array): string | null {
 }
 
 // A raw recipe's photo, decoded (it's the slow part of reading a recipe,
-// so the import only does it for recipes it's going to add).
+// so the import only does it for recipes it's going to add): `photo_data`,
+// the recipe's own photo, though only a small preview (at most 280×280,
+// seen in a real export, 2026-11-07). Paprika's `photos` list is the
+// recipe's gallery (step photos and the like, which "[photo:Step 3]"
+// marks point at), so one of those only stands in when there's no photo
+// at all (the first that reads), not as the cover over the recipe's own
+// (found in review). The import may swap a preview for the website's
+// full-size photo (paprikaPhotoUrl).
 export function paprikaPhoto(raw: Record<string, unknown>): ImportedRecipe["photo"] {
-  return photoOf(raw.photo_data);
+  const own = photoOf(raw.photo_data);
+  if (own) return own;
+  for (const photo of Array.isArray(raw.photos) ? raw.photos : []) {
+    const data = photo && typeof photo === "object" ? photoOf((photo as Record<string, unknown>).data) : null;
+    if (data) return data;
+  }
+  return null;
+}
+
+// The site's full-size photo for a recipe Paprika saved from a website
+// (`image_url`), or "": the server fetches it (recipe_photo.pb.js).
+export function paprikaPhotoUrl(raw: Record<string, unknown>): string {
+  const url = text(raw.image_url);
+  return /^https?:\/\/\S+$/i.test(url) ? url : "";
+}
+
+// A photo's width and height in pixels (JPEG or PNG), or null.
+export function photoSize(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes.length >= 24) {
+    const read = (at: number) => ((bytes[at] << 24) | (bytes[at + 1] << 16) | (bytes[at + 2] << 8) | bytes[at + 3]) >>> 0;
+    return { width: read(16), height: read(20) };
+  }
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  for (let at = 2; at + 9 < bytes.length; ) {
+    if (bytes[at] !== 0xff) return null;
+    const marker = bytes[at + 1];
+    // Start-of-frame markers (not 0xc4, 0xc8, 0xcc, which are tables).
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return { width: (bytes[at + 7] << 8) | bytes[at + 8], height: (bytes[at + 5] << 8) | bytes[at + 6] };
+    }
+    at += 2 + ((bytes[at + 2] << 8) | bytes[at + 3]);
+  }
+  return null;
+}
+
+// A preview too small to look good across the recipe page (Paprika's are
+// 280 px at most).
+export function isSmallPhoto(bytes: Uint8Array): boolean {
+  const size = photoSize(bytes);
+  return !!size && Math.max(size.width, size.height) <= 400;
 }
 
 function photoOf(value: unknown): ImportedRecipe["photo"] {
@@ -220,9 +286,21 @@ export function paprikaRating(raw: Record<string, unknown>): { stars: number; fa
   return stars || favorite ? { stars, favorite } : null;
 }
 
+// Free text (description, notes) without Paprika's links, line by line.
+const tidyText = (value: unknown) =>
+  text(value)
+    .split(/\r?\n/)
+    .map(withoutPaprikaLinks)
+    .join("\n")
+    .trim();
+
+// Minutes as Paprika 4 also writes them, a plain number (or null), for
+// when the text version says nothing readable.
+const minutesNumber = (value: unknown) => (typeof value === "number" && value > 0 ? Math.round(value) : 0);
+
 // `withPhoto: false` leaves the photo for later (paprikaPhoto).
 export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } = {}): ImportedRecipe {
-  const split = splitNotes(text(raw.notes));
+  const split = splitNotes(tidyText(raw.notes));
   const extras = paprikaExtras(raw);
   const notes = [split.notes, extras].filter(Boolean).join("\n\n");
   const author_notes = split.author_notes;
@@ -230,14 +308,14 @@ export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } =
   const tags = Array.isArray(raw.categories) ? textToTags(raw.categories.map(text).join(",")) : [];
   return {
     title: text(raw.name) || "Untitled recipe",
-    description: text(raw.description),
+    description: tidyText(raw.description),
     source_url: /^https?:\/\//i.test(text(raw.source_url)) ? text(raw.source_url) : "",
     servings: text(raw.servings),
-    prep_minutes: toMinutes(raw.prep_time),
-    cook_minutes: toMinutes(raw.cook_time),
-    total_minutes: toMinutes(raw.total_time),
+    prep_minutes: toMinutes(raw.prep_time) || minutesNumber(raw.prep_minutes),
+    cook_minutes: toMinutes(raw.cook_time) || minutesNumber(raw.cook_minutes),
+    total_minutes: toMinutes(raw.total_time) || minutesNumber(raw.total_minutes),
     ingredients: asLines(raw.ingredients),
-    steps: asLines(raw.directions),
+    steps: asLines(raw.directions, { steps: true }),
     tags,
     notes,
     author_notes,

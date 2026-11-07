@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
+import type { PastedRecipe } from "../pastedRecipe";
 import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
 import { carriedLinks, sameLinks } from "../pantryLinks";
@@ -65,13 +66,35 @@ const blankDraft: Draft = {
   author_notes: "",
 };
 
+function fromPasted(recipe: PastedRecipe): Draft {
+  const minutes = (n: number) => (n ? String(n) : "");
+  return {
+    ...blankDraft,
+    title: recipe.title,
+    description: recipe.description,
+    servings: recipe.servings,
+    prep_minutes: minutes(recipe.prep_minutes),
+    cook_minutes: minutes(recipe.cook_minutes),
+    total_minutes: minutes(recipe.total_minutes),
+    ingredients: linesToText(recipe.ingredients),
+    steps: linesToText(recipe.steps),
+    // The recipe writer's notes, like a link import's ("Our notes" are for
+    // the household's own).
+    author_notes: recipe.notes,
+  };
+}
+
 // Used for both "add by hand" (/new) and editing (/recipes/:id/edit).
 export default function RecipeEdit() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [existing, setExisting] = useState<Recipe | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(id ? null : { ...blankDraft, source_url: searchParams.get("source") ?? "" });
+  // A recipe pasted as text on Add recipe arrives sorted into the boxes
+  // (pastedRecipe.ts), to check before saving.
+  const pasted = (useLocation().state as { pasted?: PastedRecipe } | null)?.pasted;
+  const startDraft: Draft = { ...blankDraft, source_url: searchParams.get("source") ?? "" };
+  const [draft, setDraft] = useState<Draft | null>(id ? null : pasted ? fromPasted(pasted) : startDraft);
   const [photo, setPhoto] = useState<File | null>(null);
   // The chosen photo, shown before it's saved.
   const photoPreview = usePreviewUrl(photo);
@@ -88,7 +111,8 @@ export default function RecipeEdit() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   // The form as it started, to tell whether anything has been changed.
-  const [original, setOriginal] = useState(() => (draft ? JSON.stringify(draft) : ""));
+  // (A pasted recipe counts as changes: leaving asks first.)
+  const [original, setOriginal] = useState(() => (id ? "" : JSON.stringify(startDraft)));
   const dirty = !!draft && (JSON.stringify(draft) !== original || !!photo || removePhoto || !!framing);
   const { allowLeaving } = useUnsavedChanges(dirty);
 

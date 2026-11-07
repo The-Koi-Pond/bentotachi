@@ -1,7 +1,23 @@
 // Run from the project folder with: node --test "server/test/*.test.js"
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseRecipe, durationToMinutes } = require("../pb_hooks/recipe_parse.js");
+const { parseRecipe, durationToMinutes, linkKey } = require("../pb_hooks/recipe_parse.js");
+
+test("the same recipe page counts as the same link, however it's written", () => {
+  const key = linkKey("https://www.recipetineats.com/chicken-chasseur/");
+  for (const same of [
+    "http://recipetineats.com/chicken-chasseur",
+    "https://WWW.RecipeTinEats.com/chicken-chasseur/#comments",
+    "https://www.recipetineats.com/chicken-chasseur/?utm_source=facebook&fbclid=abc",
+    "https://www.recipetineats.com:443/chicken-chasseur",
+  ])
+    assert.equal(linkKey(same), key, same);
+  // A different page, or a query that picks the recipe, isn't the same.
+  assert.notEqual(linkKey("https://www.recipetineats.com/chicken-chasseur-2/"), key);
+  assert.notEqual(linkKey("https://example.com/recipe?id=1"), linkKey("https://example.com/recipe?id=2"));
+  assert.equal(linkKey("https://example.com/r?b=2&a=1"), linkKey("https://example.com/r?a=1&b=2"));
+  assert.equal(linkKey("not a link"), "");
+});
 
 function page(jsonLd, extraHead = "") {
   const scripts = [].concat(jsonLd).map(

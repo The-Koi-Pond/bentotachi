@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { RECIPE_SITES, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
-import { browseAndSave, hasBuiltInBrowser } from "../bentoBrowser";
+import { browseAndSave, hasBuiltInBrowser, importBrowsedPage } from "../bentoBrowser";
+import AlreadyHere from "../AlreadyHere";
 import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import { CloseIcon } from "../icons";
@@ -40,6 +41,8 @@ export default function Browse() {
   };
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // A recipe saved from the browser that's already here (AlreadyHere).
+  const [duplicate, setDuplicate] = useState<{ id: string; title: string; page: { url: string; html: string } } | null>(null);
   const ours = useLiveRecords<SavedSite>("saved_sites");
   const [addingSite, setAddingSite] = useState(false);
   const ourSites = [...(ours.items ?? [])].sort((a, b) =>
@@ -69,12 +72,30 @@ export default function Browse() {
     if (!hasBuiltInBrowser) return;
     event.preventDefault();
     setError("");
+    setDuplicate(null);
     try {
       setSaving(true);
-      const id = await browseAndSave(url);
-      if (id) navigate(`/recipes/${id}`);
+      const saved = await browseAndSave(url);
+      if (!saved) return;
+      if ("id" in saved.result) navigate(`/recipes/${saved.result.id}`);
+      else setDuplicate({ ...saved.result.duplicate, page: saved.page });
     } catch (err) {
       setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // "Add another copy" of a recipe already here.
+  async function saveAgain() {
+    if (!duplicate) return;
+    setSaving(true);
+    try {
+      const result = await importBrowsedPage(duplicate.page, true);
+      if ("id" in result) navigate(`/recipes/${result.id}`);
+    } catch (err) {
+      setError(errorMessage(err));
+      setDuplicate(null);
     } finally {
       setSaving(false);
     }
@@ -123,6 +144,7 @@ export default function Browse() {
         </p>
       )}
       {error && <p className="error">{error}</p>}
+      {duplicate && <AlreadyHere duplicate={duplicate} busy={saving} onAgain={() => void saveAgain()} />}
 
       {searched && (
         <section className="stack" aria-live="polite">

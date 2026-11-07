@@ -8,8 +8,11 @@ import {
   fitImported,
   fromPaprika,
   paprikaEntries,
+  isSmallPhoto,
   paprikaPhoto,
+  paprikaPhotoUrl,
   paprikaRating,
+  photoSize,
   readPaprikaFile,
   someNames,
   toMinutes,
@@ -79,6 +82,64 @@ test("the person's own rating and favorite, for their onigiri and heart", () => 
   assert.equal(paprikaRating({ on_favorites: "0" }), null);
   assert.equal(paprikaRating({ on_favorites: "false" }), null);
   assert.equal(paprikaRating({}), null);
+});
+
+// The start of a JPEG of the given size: enough for photoSize to read.
+function jpegOf(width: number, height: number): Uint8Array {
+  return new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0, 0xff, 0xc0, 0, 17, 8, height >> 8, height & 255, width >> 8, width & 255, 3, 0, 0, 0]);
+}
+const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
+
+test("Paprika's photos: a full-size one wins over the small preview, and the site's link is offered", () => {
+  assert.deepEqual(photoSize(jpegOf(280, 210)), { width: 280, height: 210 });
+  assert.deepEqual(photoSize(Buffer.from(PNG, "base64")), { width: 1, height: 1 });
+  assert.equal(isSmallPhoto(jpegOf(280, 280)), true);
+  assert.equal(isSmallPhoto(jpegOf(1500, 1000)), false);
+  assert.equal(photoSize(new Uint8Array([1, 2, 3])), null);
+  // The recipe's own photo, even a preview, beats its gallery (step photos).
+  const raw = { ...paprika, photo_data: base64(jpegOf(280, 280)), photos: [{ name: "Step 1", data: base64(jpegOf(800, 600)) }] };
+  assert.deepEqual(photoSize(paprikaPhoto(raw)!.bytes), { width: 280, height: 280 });
+  // With no photo of its own, the first gallery photo that reads.
+  const gallery = { ...paprika, photo_data: "", photos: [{ name: "a", data: "not a photo" }, { name: "b", data: base64(jpegOf(400, 300)) }] };
+  assert.deepEqual(photoSize(paprikaPhoto(gallery)!.bytes), { width: 400, height: 300 });
+  assert.equal(paprikaPhoto({ ...paprika, photo_data: "", photos: [] }), null);
+  // Real JPEG layouts: tables before the frame, and a progressive frame.
+  const tablesFirst = new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0, 4, 0, 0, 0xff, 0xc4, 0, 4, 0, 0, 0xff, 0xc0, 0, 17, 8, 800 >> 8, 800 & 255, 1200 >> 8, 1200 & 255, 3, 0, 0, 0]);
+  assert.deepEqual(photoSize(tablesFirst), { width: 1200, height: 800 });
+  const progressive = new Uint8Array([0xff, 0xd8, 0xff, 0xc2, 0, 17, 8, 0, 200, 1, 44, 3, 0, 0, 0, 0]);
+  assert.deepEqual(photoSize(progressive), { width: 300, height: 200 });
+  // A PNG that isn't square: width first.
+  const png = new Uint8Array(24);
+  png.set([0x89, 0x50, 0x4e, 0x47], 0);
+  png.set([0, 0, 2, 128, 0, 0, 1, 224], 16);
+  assert.deepEqual(photoSize(png), { width: 640, height: 480 });
+  assert.equal(paprikaPhotoUrl({ image_url: "https://www.allrecipes.com/photo.jpg" }), "https://www.allrecipes.com/photo.jpg");
+  assert.equal(paprikaPhotoUrl({ image_url: "" }), "");
+  assert.equal(paprikaPhotoUrl({ image_url: "file:///x.jpg" }), "");
+});
+
+test("Paprika 4's links and list marks are tidied away", () => {
+  const recipe = fromPaprika({
+    ...paprika,
+    description: "Goes with [recipe:Garlic bread]. See [the guide](https://example.com/guide).",
+    ingredients: "- 2 eggs\n• 1 cup flour\n1. 200 g butter",
+    directions: "1. Preheat the oven.\n2) Mix.\n[photo:Step 2]\n1.5 kg is plenty, so bake it.",
+    notes: "Like [recipe:Mum's lasagne] [photo:Done].",
+  });
+  assert.equal(recipe.description, "Goes with Garlic bread. See the guide.");
+  // Ingredient numbers could be amounts, so only the list marks go.
+  assert.deepEqual(recipe.ingredients, ["2 eggs", "1 cup flour", "1. 200 g butter"]);
+  // A step's own number goes (Bentotachi numbers them); "1.5 kg" stays; a photo-only line goes.
+  assert.deepEqual(recipe.steps, ["Preheat the oven.", "Mix.", "1.5 kg is plenty, so bake it."]);
+  assert.equal(recipe.notes, "Like Mum's lasagne.");
+});
+
+test("Paprika 4's minutes as numbers count when the text says nothing", () => {
+  const recipe = fromPaprika({ ...paprika, prep_time: "", prep_minutes: 25, cook_time: "", cook_minutes: 30, total_time: "", total_minutes: 45 });
+  assert.equal(recipe.prep_minutes, 25);
+  assert.equal(recipe.cook_minutes, 30);
+  assert.equal(recipe.total_minutes, 45);
+  assert.equal(fromPaprika({ ...paprika, cook_time: "", cook_minutes: null }).cook_minutes, 0);
 });
 
 test("times as Paprika apps write them", () => {

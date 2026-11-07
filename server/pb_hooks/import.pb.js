@@ -21,6 +21,35 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
     throw new BadRequestError("Paste the full link, starting with http:// or https://");
   }
 
+  // A recipe from this page already here: say so (409, with its id and
+  // name, for "Open it" and "Add another copy"), unless asked for another
+  // copy ("again"). Older apps just show the message.
+  if (body.again !== true) {
+    const key = parser.linkKey(url);
+    // Narrowed by the site and the last part of the address ("chasseur",
+    // "p=123"), so a site with hundreds of recipes still finds an old one
+    // (found in review); linkKey then decides.
+    const host = key.split(/[/?]/)[0];
+    const tail = key.slice(host.length).split(/[/?&]/).filter(Boolean).pop() || "";
+    if (key) {
+      const filter = tail ? "source_url ~ {:host} && source_url ~ {:tail}" : "source_url ~ {:host}";
+      // A "%" in the value would make PocketBase's "~" match from the start
+      // instead of anywhere (accented addresses arrive as %C3%A8…), so it's
+      // escaped (found in review).
+      const candidates = e.app.findRecordsByFilter("recipes", filter, "-created", 500, 0, {
+        host: host,
+        tail: tail.replace(/%/g, "\\%"),
+      });
+      const same = candidates.find((record) => parser.linkKey(record.getString("source_url")) === key);
+      // Sent as it is (not an ApiError, whose extra data PocketBase blanks
+      // out): PocketBase's own error shape, so older apps show the message.
+      if (same) {
+        const title = same.getString("title");
+        return e.json(409, { status: 409, message: `You already have “${title}” from that link.`, data: {}, id: same.id, title: title });
+      }
+    }
+  }
+
   let html = typeof body.html === "string" ? body.html : "";
   if (html.length > 5 * 1024 * 1024) {
     throw new BadRequestError("That page is too big to save.");

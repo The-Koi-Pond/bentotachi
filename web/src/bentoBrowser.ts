@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { App } from "@capacitor/app";
 import { registerPlugin } from "@capacitor/core";
-import { isAndroidApp, pb } from "./pb";
+import { isAndroidApp } from "./pb";
+import { importRecipe, type ImportResult } from "./recipeImport";
 import { noteRestoredBackup } from "./phoneMode";
 
 type BrowserResult = { saved: boolean; url?: string; html?: string; name?: string };
@@ -18,22 +19,21 @@ const BentoBrowser = registerPlugin<BentoBrowserPlugin>("BentoBrowser");
 // Only the Android app has it; in a web browser, links just open normally.
 export const hasBuiltInBrowser = isAndroidApp;
 
-// Has the server read the recipe from a page the phone loaded; returns the
-// new recipe's id.
-export async function importBrowsedPage(page: SavedPage): Promise<string> {
-  const { id } = await pb.send<{ id: string }>("/api/cookbook/import", {
-    method: "POST",
-    body: { url: page.url, html: page.html },
-  });
-  return id;
+// Has the server read the recipe from a page the phone loaded: the new
+// recipe, or the one from that page already here (recipeImport.ts);
+// `again` adds another copy anyway.
+export function importBrowsedPage(page: SavedPage, again = false): Promise<ImportResult> {
+  return importRecipe({ url: page.url, html: page.html, again });
 }
 
-// Opens the page in Bento's browser. After "Save to Bento" this returns the
-// new recipe's id; if the browser was simply closed, it returns null.
-export async function browseAndSave(url: string): Promise<string | null> {
-  const result = await BentoBrowser.open({ url });
-  if (!result.saved || !result.url || !result.html) return null;
-  return importBrowsedPage({ url: result.url, html: result.html });
+// Opens the page in Bento's browser. After "Save to Bento" this gives the
+// import's result and the page (to add another copy of one already here);
+// if the browser was simply closed, null.
+export async function browseAndSave(url: string): Promise<{ result: ImportResult; page: SavedPage } | null> {
+  const opened = await BentoBrowser.open({ url });
+  if (!opened.saved || !opened.url || !opened.html) return null;
+  const page = { url: opened.url, html: opened.html };
+  return { result: await importBrowsedPage(page), page };
 }
 
 // Android sometimes closes Bento in the background while its browser is open

@@ -1,13 +1,21 @@
 // Whether the server may fetch an address for someone: only public websites,
 // never this computer or the home network (a router's settings page, the
 // Pi itself, other devices). Used by the recipe importer for the page and
-// for the photo address the page gives, which anyone's website controls.
-// Tested in server/test/safe_url.test.js.
+// for the photo address the page gives, which anyone's website controls,
+// by the pantry's photo lookup, and by recipe_photo.pb.js (a Paprika
+// file's photo address). Tested in server/test/safe_url.test.js.
 //
 // Only the address as written is checked: PocketBase's fetch has no way to
 // see where a name points or to refuse redirects, so a public name that
-// points (or redirects) to a home address isn't caught. What's fetched is
-// only read as a recipe or saved as a photo, never shown back.
+// points (or redirects) to a home address isn't caught. Pages fetched are
+// only read as a recipe; what can come back to someone is an image only
+// (checked by its first bytes: never a page, SVG or data), shown as a
+// recipe's photo or, from recipe_photo.pb.js, handed to the logged-in
+// member who asked. So at worst a household member could see an image on
+// the home network (a camera snapshot, say). An outside website or Paprika
+// file can choose an address that gets fetched, but only the household
+// ever sees what comes back: every route needs a login (review,
+// 2026-11-07).
 
 // The host part, lowercased, without login details or port:
 // "https://sam@Example.com:8080/x" -> "example.com", "http://[::1]/" -> "[::1]".

@@ -688,6 +688,28 @@ function parseRecipe(html, pageUrl) {
   };
 }
 
+// A recipe link reduced to what says which page it is, so the same page
+// counts as the same whether it's http or https, with or without "www.", a
+// trailing slash, a #part or tracking extras (utm_…, fbclid, gclid…), and
+// whatever the capitals in the site's name. "" for something that isn't a
+// web link. Used to warn before saving a recipe that's already here
+// (import.pb.js; Xel, 2026-11-07).
+function linkKey(url) {
+  var m = String(url || "").trim().match(/^https?:\/\/([^/?#]+)([^?#]*)(\?[^#]*)?/i);
+  if (!m) return "";
+  var host = m[1].toLowerCase().replace(/^www\./, "").replace(/:(80|443)$/, "");
+  var path = m[2].replace(/\/+$/, "");
+  var query = (m[3] || "")
+    .slice(1)
+    .split("&")
+    .filter(function (pair) {
+      return pair && !/^(utm_[^=]*|fbclid|gclid|mc_cid|mc_eid|ref|share|igshid)(=|$)/i.test(pair);
+    })
+    .sort()
+    .join("&");
+  return host + path + (query ? "?" + query : "");
+}
+
 // A downloaded photo's file extension, from the signature every image format
 // starts with. "" if it isn't one PocketBase takes. Not from the site's
 // Content-Type: sites label vaguely (PureWow's "binary/octet-stream") or
@@ -803,6 +825,7 @@ module.exports = {
   BROWSER_USER_AGENT: BROWSER_USER_AGENT,
   LIMITS: LIMITS,
   fitRecipe: fitRecipe,
+  linkKey: linkKey,
   imageExtension: imageExtension,
   productPhotoUrl: productPhotoUrl,
   parseRecipe: parseRecipe,
