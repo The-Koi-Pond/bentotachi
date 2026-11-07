@@ -195,6 +195,18 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+- Backlog fixes for testers (2026-11-07): the built-in browser no longer
+  opens the Play Store (or any app) by itself when an ad redirects, only
+  on a tap; Save there finds "What you'll need" headings (curly
+  apostrophe too); a backup saved while Android closed Bentotachi in the
+  background still lands where it was picked, with a message; "Restored
+  from the backup." after a restore; "1 cup" not "1 cups" when scaling;
+  a quick heart-then-star on an unrated recipe no longer errors;
+  rewording an ingredient keeps its pantry link (both editors, read fresh
+  so a housemate's link isn't undone); "Shop for these" drops formatting
+  marks; a brand that repeats the name ("Nutella") isn't shown twice;
+  household settings no longer flash back to defaults on a login renewal.
+
 Released in 1.17.0 (2026-11-07, deployed the same day):
 
 - Tidying recipes and shelves, one system (Xel, 2026-11-06; seen in the
@@ -1160,6 +1172,15 @@ Worth knowing before deciding:
 - Food safety: AI answers can be wrong about allergies, undercooked meat
   or preserving. Keep a plain short note on answers, and never treat an
   AI swap as safe for an allergy.
+- Teenagers in a household (Xel, 2026-11-07): keep the helper to adults
+  without asking anyone's age. Off by default; whoever runs the household
+  server switches it on per person (parents leave it off for their
+  kids); and it needs a person's own AI key, which providers only give
+  adults (or teens with a parent's consent). Google Play's newer age
+  signals for apps are worth checking then, but aren't needed for this.
+  The Play listing's target audience is 18+ for now; it doesn't stop
+  teens installing, and 13+ is an option later (the privacy policy's
+  "not made for children" would then say "under 13").
 
 **Decided (Xel, 2026-11-03): not now.** The Google Play work comes first;
 the questions below wait until this comes back.

@@ -1,7 +1,15 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { guessPantryItem, linkFor, linkKey, pantryCheck, suggestedName } from "../src/pantryLinks.ts";
+import {
+  carriedLinks,
+  guessPantryItem,
+  linkFor,
+  linkKey,
+  pantryCheck,
+  sameLinks,
+  suggestedName,
+} from "../src/pantryLinks.ts";
 
 const item = (id: string, name: string) => ({ id, name, status: "have" }) as never;
 const pantry = [
@@ -105,4 +113,104 @@ test("a pantry item named for the product still matches it", () => {
   const shelf = [item("rice", "Rice"), item("vinegar", "Rice vinegar")];
   assert.equal((guessPantryItem("2 tbsp rice vinegar", shelf) as { id: string }).id, "vinegar");
   assert.equal((guessPantryItem("1 cup rice", shelf) as { id: string }).id, "rice");
+});
+
+test("a reworded ingredient keeps its link, or its 'not a pantry item'", () => {
+  const before = ["2 onions", "1 cup rice", "water"];
+  const links = { "2 onions": "brown-onion", "1 cup rice": "", water: "" };
+  assert.deepEqual(carriedLinks(before, ["3 onions", "1.5 cups rice", "water"], links), {
+    "3 onions": "brown-onion",
+    "1.5 cups rice": "",
+    water: "",
+  });
+  // A different thing in its place isn't the same ingredient.
+  assert.deepEqual(carriedLinks(before, ["1 leek", "1 cup rice", "water"], links), { "1 cup rice": "", water: "" });
+  // Amounts, plurals and notes aside, it's still onions.
+  assert.deepEqual(carriedLinks(["2 onions, diced"], ["3 Onion, sliced"], { "2 onions, diced": "o" }), {
+    "3 onion, sliced": "o",
+  });
+});
+
+test("a reworded line never takes a different ingredient's link", () => {
+  const one = (from: string, to: string, link = "x") => carriedLinks([from], [to], { [from.toLowerCase()]: link });
+  // One word in common isn't the same thing (the review's cases, 2026-11-07).
+  assert.deepEqual(one("2 tbsp soy sauce", "1 tbsp fish sauce"), {});
+  assert.deepEqual(one("juice of 1 lemon", "zest of 1 orange"), {});
+  assert.deepEqual(one("salt and pepper", "oil and vinegar", ""), {});
+  assert.deepEqual(one("1 tbsp olive oil", "1 tbsp sesame oil"), {});
+  // A more particular kind is a guess too ("Onions" might be the brown ones).
+  assert.deepEqual(one("2 onions", "2 red onions"), {});
+  // A line removed above a reworded one: the places don't line up any more.
+  const oils = { "1 tbsp olive oil": "olive", "2 tbsp vegetable oil": "veg" };
+  assert.deepEqual(carriedLinks(["1 tbsp olive oil", "2 tbsp vegetable oil", "salt"], ["3 tbsp vegetable oil", "salt"], oils), {});
+  const chicken = { "500 g chicken thighs": "thighs", "1 cup chicken stock": "stock" };
+  assert.deepEqual(carriedLinks(["500 g chicken thighs", "1 cup chicken stock"], ["2 cups chicken stock"], chicken), {});
+  // Two lines of the same name (re-check, 2026-11-07): once one goes, the
+  // other can't be told apart, so neither carries.
+  const tins = { "1 can tomatoes, crushed": "crushed", "1 can tomatoes, diced": "diced" };
+  assert.deepEqual(carriedLinks(["1 can tomatoes, crushed", "1 can tomatoes, diced"], ["2 cans tomatoes, diced"], tins), {});
+  assert.deepEqual(
+    carriedLinks(["1 can tomatoes, diced"], ["1 can tomatoes, crushed", "2 cans tomatoes, diced"], { "1 can tomatoes, diced": "diced" }),
+    {}
+  );
+  const flours = { "1 cup flour (plain)": "plain", "1 cup flour (self-raising)": "sr" };
+  assert.deepEqual(carriedLinks(["1 cup flour (plain)", "1 cup flour (self-raising)"], ["2 cups flour (self-raising)"], flours), {});
+  // A line added above: neither line takes the other's link.
+  assert.deepEqual(
+    carriedLinks(["1 cup chicken stock"], ["500 g chicken thighs", "2 cups chicken stock"], { "1 cup chicken stock": "stock" }),
+    {}
+  );
+});
+
+test("unchanged lines keep their links, and gone lines lose theirs", () => {
+  const links = { "2 onions": "onion", "1 cup rice": "rice", "a pinch of salt": "" };
+  // Nothing changed: the same links.
+  const same = ["2 onions", "1 cup rice", "a pinch of salt"];
+  assert.deepEqual(carriedLinks(same, same, links), links);
+  // Rice removed: its key goes, and salt's link doesn't slide onto anything.
+  assert.deepEqual(carriedLinks(same, ["2 onions", "a pinch of salt"], links), { "2 onions": "onion", "a pinch of salt": "" });
+  // Moved about: they follow their own wording.
+  assert.deepEqual(carriedLinks(same, ["a pinch of salt", "2 onions", "1 cup rice"], links), links);
+  // A key left from an old wording is tidied away.
+  assert.deepEqual(carriedLinks(["2 onions"], ["2 onions"], { "2 onions": "onion", "3 onions": "onion" }), {
+    "2 onions": "onion",
+  });
+  assert.deepEqual(carriedLinks(["2 onions"], ["2 onions"], null), {});
+});
+
+test("a line added or removed above a reworded one stops its link moving", () => {
+  const links = { "1 carrot": "carrot", "2 onions": "onion" };
+  // Added on top: the onions line has moved, so it can't be told from a new
+  // line; nothing lands on the new line either.
+  assert.deepEqual(carriedLinks(["1 carrot", "2 onions"], ["1 tsp onion powder", "1 carrot", "3 onions"], links), {
+    "1 carrot": "carrot",
+  });
+  // The carrot removed and the onions reworded: the carrot's link doesn't
+  // land on the onions (a different thing).
+  assert.deepEqual(carriedLinks(["1 carrot", "2 onions"], ["3 onions"], links), {});
+  // Added below a reworded line: it stayed in place, so it keeps its link.
+  assert.deepEqual(carriedLinks(["1 carrot", "2 onions"], ["2 carrots", "2 onions", "1 leek"], links), {
+    "2 carrots": "carrot",
+    "2 onions": "onion",
+  });
+});
+
+test("headings don't count as places or carry links", () => {
+  const links = { "2 onions": "onion", "1 cup rice": "rice" };
+  // A heading added above doesn't move the ingredients.
+  assert.deepEqual(carriedLinks(["2 onions", "1 cup rice"], ["# Base", "3 onions", "# To serve", "2 cups rice"], links), {
+    "3 onions": "onion",
+    "2 cups rice": "rice",
+  });
+  // A heading's key (headings never get links) isn't kept or carried.
+  assert.deepEqual(carriedLinks(["# Onions", "2 onions"], ["# More onions", "2 onions"], { "# onions": "x", ...links }), {
+    "2 onions": "onion",
+  });
+});
+
+test("tells whether the links changed", () => {
+  assert.equal(sameLinks({ a: "1", b: "" }, { b: "", a: "1" }), true);
+  assert.equal(sameLinks({}, null), true);
+  assert.equal(sameLinks({ a: "1" }, { a: "" }), false);
+  assert.equal(sameLinks({ a: "1" }, { a: "1", b: "2" }), false);
 });

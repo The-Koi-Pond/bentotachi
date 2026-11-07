@@ -280,6 +280,14 @@ test("a plain-text recipe can have a Method heading", () => {
   assert.deepEqual(recipe.steps, ["Bake for twenty minutes."]);
 });
 
+test("a plain-text recipe's ingredients can be under \"What you'll need\", curly apostrophe or not", () => {
+  for (const heading of ["What you'll need", "What you’ll need", "You will need"]) {
+    const html = `<article><h2>${heading}</h2><ul><li>2 eggs</li><li>1 cup flour</li></ul>
+      <h2>Method</h2><p>Bake for twenty minutes.</p></article>`;
+    assert.deepEqual(parseRecipe(html, "https://example.com/cake")?.ingredients, ["2 eggs", "1 cup flour"], heading);
+  }
+});
+
 test("doesn't mistake a post that just mentions ingredients for a recipe", () => {
   const story = `<div class="entry-content"><p>Ingredients</p><p>Fresh things matter.</p><p>I went to the market today and bought lots of lovely things.</p></div>`;
   assert.equal(parseRecipe(story, "https://example.com/story"), null);

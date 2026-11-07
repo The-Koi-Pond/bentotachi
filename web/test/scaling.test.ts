@@ -46,6 +46,9 @@ test("unit words follow the amount", () => {
   assert.equal(scaleLine("2 cups rice", 0.5), "1 cup rice");
   assert.equal(scaleLine("1 Tablespoon honey", 3), "3 Tablespoons honey");
   assert.equal(scaleLine("1 tbsp honey", 3), "3 tbsp honey");
+  // They follow the amount as shown: 1.125 cups rounds to "1 cup".
+  assert.equal(scaleLine("3/4 cup sugar", 1.5), "1 cup sugar");
+  assert.equal(scaleLine("Juice of ½ lemon", 2.25), "Juice of 1 lemon");
 });
 
 test("a measured amount later in the line, when none starts it", () => {

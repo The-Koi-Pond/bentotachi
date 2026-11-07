@@ -166,6 +166,27 @@ export async function backUpPhone(): Promise<boolean> {
   return saved;
 }
 
+// Android sometimes closes Bentotachi in the background while the "save as"
+// screen for a backup is open. The fresh start still saves the backup where
+// the person picked (BentoLocalServerPlugin keeps its path), and gets the
+// answer as Capacitor's "appRestoredResult": bentoBrowser.ts hears it, hands
+// it here, and opens Backups, which shows it (takeRestoredBackupNote).
+export type BackupNote = { text: string; isError: boolean };
+let restoredBackupNote: BackupNote | null = null;
+
+export function noteRestoredBackup(saved: boolean, error?: string) {
+  if (saved) write(LAST_BACKUP_KEY, new Date().toISOString());
+  restoredBackupNote = saved
+    ? { text: "Backup saved.", isError: false }
+    : { text: error || "Android closed Bentotachi meanwhile, so the backup wasn't saved. Try again.", isError: true };
+}
+
+export function takeRestoredBackupNote(): BackupNote | null {
+  const note = restoredBackupNote;
+  restoredBackupNote = null;
+  return note;
+}
+
 // When the server won't start: copies Bento's data straight out into a
 // backup file (without the server) and asks where to save it.
 export async function rescuePhone(): Promise<boolean> {

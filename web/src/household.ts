@@ -92,8 +92,17 @@ function loadSettings() {
     });
 }
 
-// A different login (or server) may be a different household.
+// A different login (or server) may be a different household. The login
+// also "changes" when it's renewed or you save your own profile: that's the
+// same person on the same server, so what's loaded stays, or pages would
+// flash back to the defaults and a settings save just then would make a
+// second settings record. (Logging out counts as a change: no one.)
+const whoseHousehold = () => `${pb.baseURL} ${pb.authStore.record?.id ?? ""}`;
+let household = whoseHousehold();
 pb.authStore.onChange(() => {
+  const now = whoseHousehold();
+  if (now === household) return;
+  household = now;
   set(null);
   setSettings(null);
 });

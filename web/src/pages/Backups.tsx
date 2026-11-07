@@ -1,15 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { errorMessage } from "../pb";
-import { backUpPhone, lastBackup, phoneAccount, restorePhone, switchToServer } from "../phoneMode";
+import {
+  backUpPhone,
+  lastBackup,
+  phoneAccount,
+  restorePhone,
+  switchToServer,
+  takeRestoredBackupNote,
+  type BackupNote,
+} from "../phoneMode";
 import { daysAgo } from "../backupReminder";
 import { formatDay, localToday } from "../dates";
 import { BenMood } from "../Brand";
+
+// Restoring reloads the app, so "Restored" is kept across the reload here.
+const JUST_RESTORED_KEY = "bento.justRestored";
+
+function takeJustRestored(): boolean {
+  try {
+    const restored = sessionStorage.getItem(JUST_RESTORED_KEY) === "1";
+    sessionStorage.removeItem(JUST_RESTORED_KEY);
+    return restored;
+  } catch {
+    return false;
+  }
+}
 
 // ⋮ → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
 // this phone, so this is where it's saved somewhere safe, restored, or moved
 // to a real server.
 export default function Backups() {
-  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+  const [status, setStatus] = useState<BackupNote | null>(null);
   const [busy, setBusy] = useState(false);
   // The login is only for moving to a server, so it stays out of sight
   // until asked for (phone-only users never need an account otherwise).
@@ -17,6 +39,24 @@ export default function Backups() {
   const [showPassword, setShowPassword] = useState(false);
   const account = phoneAccount();
   const [last, setLast] = useState(lastBackup);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (takeJustRestored()) setStatus({ text: "Restored from the backup.", isError: false });
+  }, []);
+
+  // A backup saved while Android had closed Bentotachi arrives as
+  // "#/backups?result=1" (see noteRestoredBackup in phoneMode.ts).
+  const result = searchParams.get("result") === "1";
+  useEffect(() => {
+    if (!result) return;
+    setSearchParams({}, { replace: true });
+    const note = takeRestoredBackupNote();
+    if (!note) return;
+    setStatus(note);
+    setLast(lastBackup());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   async function backUp() {
     setBusy(true);
@@ -39,8 +79,14 @@ export default function Backups() {
     setStatus(null);
     try {
       // Start afresh with the restored data (logging in again if needed).
-      if (await restorePhone()) window.location.reload();
-      else setBusy(false);
+      if (await restorePhone()) {
+        try {
+          sessionStorage.setItem(JUST_RESTORED_KEY, "1");
+        } catch {
+          // Restored all the same; just no message after the reload.
+        }
+        window.location.reload();
+      } else setBusy(false);
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
       setBusy(false);

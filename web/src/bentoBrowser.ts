@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { App } from "@capacitor/app";
 import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, pb } from "./pb";
+import { noteRestoredBackup } from "./phoneMode";
 
 type BrowserResult = { saved: boolean; url?: string; html?: string; name?: string };
 type SavedPage = { url: string; html: string };
@@ -54,6 +55,17 @@ function useRestoredSave() {
   useEffect(() => {
     if (!isAndroidApp) return;
     const listening = App.addListener("appRestoredResult", (event) => {
+      // A backup saved while Android had closed Bento (see phoneMode.ts).
+      // Heard here because Capacitor hands a result kept for later only to
+      // the first listener, so this one listener serves both.
+      if (event.pluginId === "BentoLocalServer" && event.methodName === "backup") {
+        const saved = event.success && !!(event.data as { saved?: boolean } | undefined)?.saved;
+        // Saving cancelled: nothing to say.
+        if (event.success && !saved) return;
+        noteRestoredBackup(saved, event.error?.message);
+        navigate("/backups?result=1");
+        return;
+      }
       const data = event.data as BrowserResult | undefined;
       if (event.pluginId !== "BentoBrowser" || !event.success || !data?.saved || !data.url || !data.html) return;
       restoredPage = { url: data.url, html: data.html };

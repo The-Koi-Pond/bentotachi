@@ -18,7 +18,7 @@ import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
 import { CartIcon, LinkIcon, PencilIcon, TimerIcon } from "../icons";
-import { linkFor, linkKey, type IngredientLink } from "../pantryLinks";
+import { carriedLinks, linkFor, linkKey, sameLinks, type IngredientLink } from "../pantryLinks";
 import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
 import { addToShoppingList, addedMessage } from "../shoppingAdd";
@@ -156,6 +156,17 @@ export default function RecipeView() {
       setRecipe(current);
       throw err;
     }
+  }
+
+  // The ingredients, with their pantry links carried over: a reworded line
+  // keeps its link and lines that are gone lose theirs (carriedLinks, as in
+  // the full editor), worked out from the links as saved now so one someone
+  // else picked meanwhile isn't undone.
+  async function saveIngredients(text: string) {
+    const ingredients = textToLines(text);
+    const { ingredient_links: links } = await recipes().getOne(current.id, { fields: "id,ingredient_links" });
+    const carried = carriedLinks(current.ingredients ?? [], ingredients, links);
+    await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried });
   }
 
   // "We cooked this" (or finishing the timer): today, by whoever's logged
@@ -299,7 +310,7 @@ export default function RecipeView() {
             hint={"One per line. Start a line with # for a heading, like “# For the sauce”." + SOFT_HINT}
             initial={linesToText(recipe.ingredients)}
             rows={12}
-            onSave={(text) => save({ ingredients: textToLines(text) })}
+            onSave={saveIngredients}
             onCancel={stopEditing}
           />
         </section>

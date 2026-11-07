@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.net.Uri;
+import android.os.Bundle;
 import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -43,6 +44,7 @@ public class BentoLocalServerPlugin extends Plugin {
 
     // One at a time, off the screen's thread: starting can take a few seconds.
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private static final String PENDING_BACKUP_KEY = "bentoPendingBackup";
     private File pendingBackup;
 
     // The server is built for 64-bit ARM only (see mobile/README.md).
@@ -128,6 +130,24 @@ public class BentoLocalServerPlugin extends Plugin {
         });
     }
 
+    // Android sometimes closes Bentotachi in the background while the "save
+    // as" screen is open. The backup file itself stays (in the app's own
+    // storage), so its path is kept with Capacitor's saved state, and the
+    // fresh start still saves it where the person picked. The answer then
+    // arrives as "appRestoredResult" (see noteRestoredBackup in phoneMode.ts).
+    @Override
+    protected Bundle saveInstanceState() {
+        Bundle state = super.saveInstanceState();
+        if (state != null && pendingBackup != null) state.putString(PENDING_BACKUP_KEY, pendingBackup.getPath());
+        return state;
+    }
+
+    @Override
+    protected void restoreState(Bundle state) {
+        String path = state.getString(PENDING_BACKUP_KEY);
+        if (path != null) pendingBackup = new File(path);
+    }
+
     @ActivityCallback
     private void backupSaved(PluginCall call, ActivityResult result) {
         if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) {
@@ -135,8 +155,14 @@ public class BentoLocalServerPlugin extends Plugin {
             return;
         }
         Uri target = result.getData().getData();
+        File backup = pendingBackup;
+        if (backup == null || !backup.isFile()) {
+            // The saved state didn't come back (or the file is gone).
+            call.reject("Android closed Bentotachi meanwhile, so the backup wasn't saved. Try again.");
+            return;
+        }
         worker.execute(() -> {
-            try (InputStream in = new FileInputStream(pendingBackup);
+            try (InputStream in = new FileInputStream(backup);
                  OutputStream out = getContext().getContentResolver().openOutputStream(target)) {
                 if (out == null) throw new IOException("couldn't open the place you picked");
                 copy(in, out);

@@ -4,7 +4,7 @@ import { errorMessage, pb, shoppingItems, type PantryItem, type ShoppingItem } f
 import { CloseIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
-import { storeLinksOf } from "../pantryItem";
+import { brandBesideName, storeLinksOf } from "../pantryItem";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, isOffline } from "../offline";
 import OfflineNote from "../OfflineNote";
@@ -312,13 +312,16 @@ function ShoppingRow({
   onRemove: (item: ShoppingItem) => void;
 }) {
   const recipe = item.expand?.recipe;
+  // The pantry item's brand, unless it only repeats its name or this line's
+  // ("Nutella" by Nutella).
+  const brand = pantryItem && brandBesideName(pantryItem) && brandBesideName({ name: item.text, brand: pantryItem.brand });
   return (
     <li className={item.checked ? "ticked" : ""}>
       <label>
         <input type="checkbox" checked={item.checked} onChange={() => onToggle(item)} />
         <span>
           <span className="item-text">{item.text}</span>
-          {pantryItem?.brand && <span className="item-brand">{pantryItem.brand}</span>}
+          {brand && <span className="item-brand">{brand}</span>}
           {recipe && (
             <Link to={`/recipes/${recipe.id}`} className="item-source">
               for {recipe.title}

@@ -447,7 +447,11 @@ function findMicrodataRecipe(html) {
 // it reads only the post itself, stops at things like "Related posts", and
 // needs at least two ingredients and a step.
 
-var INGREDIENTS_HEADING = /^(ingredients?|what you('ll| will)? need|you('ll| will)? need)\b[^.]{0,40}$/i;
+// The app's built-in browser only sends a post with no recipe data when it
+// sees one of these headings (READ_PAGE_JS in web/android/.../BrowserActivity.java):
+// change both together.
+// "you'll" with a straight or curly apostrophe (WordPress turns ' into ’).
+var INGREDIENTS_HEADING = /^(ingredients?|what you(['’]ll| will)? need|you(['’]ll| will)? need)\b[^.]{0,40}$/i;
 var STEPS_HEADING = /^(instructions?|directions?|method|preparation|steps|how to make( it)?)\b[^.]{0,30}$/i;
 var END_OF_RECIPE = /^(related posts?|you (may|might) also like|more recipes|subscribe|share (this|on)|sign up|leave a (reply|comment)|\d+ (comments?|responses?)|comments?|posted in|filed under|tags?:)/i;
 

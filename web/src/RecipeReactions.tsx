@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   averageStars,
   displayName,
@@ -22,8 +22,13 @@ export function useRecipeRatings(recipeId: string) {
   const me = useCurrentUser();
   const [ratings, setRatings] = useState<RecipeRating[] | null>(null);
   const [error, setError] = useState("");
+  // Making your row, on a recipe you hadn't rated: kept (once it's made
+  // too), so a quick second tap waits for it and changes that row, rather
+  // than changing a row with no id yet. Forgotten if it fails.
+  const creating = useRef<Promise<RecipeRating> | null>(null);
 
   useEffect(() => {
+    creating.current = null;
     if (!recipeId) return;
     recipeRatings()
       .getFullList({ filter: pb.filter("recipe = {:id}", { id: recipeId }), expand: "user" })
@@ -55,12 +60,22 @@ export function useRecipeRatings(recipeId: string) {
     } as RecipeRating;
     setRatings([...ratings.filter((r) => r.user !== me.id), draft]);
     try {
-      const saved = mine
-        ? await recipeRatings().update(mine.id, patch, { expand: "user" })
-        : await recipeRatings().create(
-            { recipe: recipeId, user: me.id, stars: 0, favorite: false, approved: false, ...patch },
-            { expand: "user" }
-          );
+      // (`mine` may be the shown-straight-away copy, with no id.)
+      const id = creating.current ? (await creating.current).id : mine?.id;
+      let saved: RecipeRating;
+      if (id) {
+        saved = await recipeRatings().update(id, patch, { expand: "user" });
+      } else {
+        const create = recipeRatings().create(
+          { recipe: recipeId, user: me.id, stars: 0, favorite: false, approved: false, ...patch },
+          { expand: "user" }
+        );
+        creating.current = create;
+        create.catch(() => {
+          if (creating.current === create) creating.current = null;
+        });
+        saved = await create;
+      }
       setRatings((current) => [...(current ?? []).filter((r) => r.user !== me.id), saved]);
     } catch (err) {
       setRatings(before);

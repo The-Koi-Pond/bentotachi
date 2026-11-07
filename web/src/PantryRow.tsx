@@ -14,7 +14,7 @@ import { packetLabel } from "./pantryPackets";
 import { CartIcon } from "./icons";
 import { describeExpiry, shortExpiry } from "./expiry";
 import { itemExpiry, norm } from "./pantryGroups";
-import { storeLinksOf } from "./pantryItem";
+import { brandBesideName, storeLinksOf } from "./pantryItem";
 import StoreLink from "./StoreLink";
 
 export type PantryLayout = "simple" | "detailed";
@@ -50,7 +50,7 @@ export default function PantryRow({
   const expiry = itemExpiry(item);
   // Simple only warns: a date weeks away isn't news.
   const showExpiry = expiry && (detailed || expiry !== "later");
-  const brand = item.brand?.trim() ?? "";
+  const brand = brandBesideName(item);
   const note = item.note?.trim() ?? "";
   // The name button's label says everything the name block shows.
   const label = [`Edit ${item.name}`, detailed && brand, detailed && note, showExpiry && describeExpiry(item.expires)]

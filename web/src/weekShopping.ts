@@ -5,6 +5,7 @@
 
 import { headingOf } from "./format.ts";
 import { linkFor } from "./pantryLinks.ts";
+import { withoutSoftMarks } from "./softMarks.ts";
 import type { PantryItem, Recipe } from "./pb";
 
 export interface GatheredRow {
@@ -26,14 +27,17 @@ export function gatherIngredients(dinners: Recipe[], pantry: PantryItem[]): Gath
       if (headingOf(line) !== null || !line.trim()) continue;
       const link = linkFor(line, recipe.ingredient_links, pantry);
       if (link.kind === "notPantry") continue;
-      const key = link.item ? `p:${link.item.id}` : `t:${line.trim().toLowerCase()}`;
+      // Without formatting marks ("*soft*"), as when adding from the recipe
+      // page, so the list's duplicate check sees the same words.
+      const plain = withoutSoftMarks(line).trim();
+      const key = link.item ? `p:${link.item.id}` : `t:${plain.toLowerCase()}`;
       const row = rows.get(key);
       if (row) {
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);
       } else {
         rows.set(key, {
           key,
-          text: link.item ? link.item.name : line.trim(),
+          text: link.item ? link.item.name : plain,
           pantryItem: link.item,
           recipeTitles: [recipe.title],
           recipeId: recipe.id,

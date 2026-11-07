@@ -38,6 +38,11 @@ test("unlinked lines merge only when the wording matches", () => {
   assert.deepEqual(rows.map((r) => r.text), ["Dashi", "2 tsp dashi"]);
 });
 
+test("unlinked lines lose their formatting marks, as from the recipe page", () => {
+  const rows = gatherIngredients([recipe("a", "A", ["2 tsp *soft* dashi"]), recipe("b", "B", ["2 tsp soft **dashi**"])], pantry);
+  assert.deepEqual(rows.map((r) => [r.text, r.recipeTitles.join(" + ")]), [["2 tsp soft dashi", "A + B"]]);
+});
+
 test("starts with everything ticked except what we have", () => {
   const rows = gatherIngredients([recipe("a", "A", ["onion", "eggs", "rice", "dashi"])], pantry);
   assert.deepEqual(rows.map((r) => [r.text, startsTicked(r)]), [

@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  brandBesideName,
   brandsOf,
   cleanStoreLinks,
   MOST_STORE_LINKS,
@@ -128,4 +129,12 @@ test("opened without a once-opened place (or the same place) stays put", () => {
 test("older items' brands are a comma list", () => {
   assert.deepEqual(brandsOf("Coles, White Mill ,"), ["Coles", "White Mill"]);
   assert.deepEqual(brandsOf(""), []);
+});
+
+test("a brand that only repeats the name isn't shown beside it", () => {
+  assert.equal(brandBesideName({ name: "Nutella", brand: "Nutella" }), "");
+  assert.equal(brandBesideName({ name: "Nutella ", brand: " nutella" }), "");
+  assert.equal(brandBesideName({ name: "Hazelnut spread", brand: " Nutella " }), "Nutella");
+  assert.equal(brandBesideName({ name: "Rice", brand: "" }), "");
+  assert.equal(brandBesideName({ name: "Rice" }), "");
 });

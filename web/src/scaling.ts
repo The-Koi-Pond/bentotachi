@@ -111,15 +111,16 @@ function isMixedNumber(low: string, high: string | undefined, unit: string): boo
   return high !== undefined && parseNumber(high, unit) < parseNumber(low, unit) && parseNumber(high, unit) < 1;
 }
 
+// `last` is the (last) amount as shown, read back from the text, so the
+// unit after it agrees: 1.125 cups shows as "1", so "1 cup", not "1 cups".
 function scaledRange(low: string, separator: string | undefined, high: string | undefined, factor: number, unit: string) {
   if (high === undefined || isMixedNumber(low, high, unit)) {
     const amount = high === undefined ? low : String(parseNumber(low, unit) + parseNumber(high, unit));
-    return { text: scaledAmount(amount, factor, unit), last: parseNumber(amount, unit) * factor };
+    const text = scaledAmount(amount, factor, unit);
+    return { text, last: parseNumber(text, unit) };
   }
-  return {
-    text: `${scaledAmount(low, factor, unit)}${separator}${scaledAmount(high, factor, unit)}`,
-    last: parseNumber(high, unit) * factor,
-  };
+  const highText = scaledAmount(high, factor, unit);
+  return { text: `${scaledAmount(low, factor, unit)}${separator}${highText}`, last: parseNumber(highText, unit) };
 }
 
 // "cup" for one, "cups" for more, keeping the unit's capital letter.

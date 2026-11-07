@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
+import { carriedLinks, sameLinks } from "../pantryLinks";
 import TagSuggestions from "../TagSuggestions";
 import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
@@ -116,6 +117,7 @@ export default function RecipeEdit() {
     if (!draft) return;
     setBusy(true);
     setError("");
+    const ingredients = textToLines(draft.ingredients);
     const data: Record<string, unknown> = {
       title: draft.title.trim(),
       description: draft.description.trim(),
@@ -125,7 +127,7 @@ export default function RecipeEdit() {
       cook_minutes: Number(draft.cook_minutes) || 0,
       total_minutes: Number(draft.total_minutes) || 0,
       extra_times: fromRows(draft.extra_times),
-      ingredients: textToLines(draft.ingredients),
+      ingredients,
       steps: textToLines(draft.steps),
       tags: textToTags(draft.tags),
       notes: draft.notes.trim(),
@@ -140,6 +142,15 @@ export default function RecipeEdit() {
       data.image_framing = null;
     } else if (framing) data.image_framing = framing;
     try {
+      // Pantry links are keyed by a line's wording: a reworded line keeps its
+      // link, and lines that are gone lose theirs (carriedLinks). Worked out
+      // from the links as saved now, so one someone else picked while this
+      // was open isn't undone, and only sent when they changed.
+      if (existing) {
+        const { ingredient_links: current } = await recipes().getOne(existing.id, { fields: "id,ingredient_links" });
+        const links = carriedLinks(existing.ingredients ?? [], ingredients, current);
+        if (!sameLinks(links, current)) data.ingredient_links = links;
+      }
       const saved = existing
         ? await recipes().update(existing.id, data)
         : await recipes().create({ ...data, added_by: pb.authStore.record?.id });

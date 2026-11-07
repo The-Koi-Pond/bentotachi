@@ -30,6 +30,13 @@ export function brandsOf(text: string | undefined): string[] {
     .filter(Boolean);
 }
 
+// The brand to show beside an item's name, or "" when it would only repeat
+// the name: a scanned product whose brand is its name ("Nutella").
+export function brandBesideName(item: { name: string; brand?: string }): string {
+  const brand = (item.brand ?? "").trim();
+  return brand.toLowerCase() === item.name.trim().toLowerCase() ? "" : brand;
+}
+
 interface StoreLinked {
   store_url?: string;
   more_store_urls?: unknown;

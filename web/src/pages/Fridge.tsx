@@ -67,9 +67,8 @@ export default function Fridge() {
       {error && <p className="error">{error}</p>}
       {list.items && shown.length === 0 && (
         // A dashed outline where the notes would go, so it doesn't float.
-        <p className="muted fridge-empty">
-          {solo ? "No notes yet. Leave yourself a reminder above." : "Nothing on the fridge yet. Leave a note for everyone above."}
-        </p>
+        // The note box just above says what to do (Xel, 2026-11-07).
+        <p className="muted fridge-empty">Nothing here yet.</p>
       )}
       {shown.length > 0 && (
         <ul className="fridge-notes">

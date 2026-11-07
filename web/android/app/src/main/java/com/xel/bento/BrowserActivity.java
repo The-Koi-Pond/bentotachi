@@ -1,6 +1,5 @@
 package com.xel.bento;
 
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -79,6 +78,8 @@ public class BrowserActivity extends AppCompatActivity {
     // recipe plugins label the visible recipe card instead (itemprop
     // "microdata"); that card is sent too. Failing both, a blog post with
     // an "Ingredients" line is sent for the server's plain-text reader.
+    // That line takes the same headings as the server's INGREDIENTS_HEADING
+    // (server/pb_hooks/recipe_parse.js): keep the two in step.
     private static final String READ_PAGE_JS =
         "(function () {" +
         "  var parts = [], text = '';" +
@@ -102,7 +103,7 @@ public class BrowserActivity extends AppCompatActivity {
         "  var hasRecipe = /\"@type\"\\s*:\\s*(\\[[^\\]]*)?\"(https?:\\/\\/schema\\.org\\/)?Recipe\"/.test(text) || !!card;" +
         // A recipe written as ordinary text in a blog post: send the post.
         "  var post = hasRecipe ? null : document.querySelector('.entry-content, .post-content, .article-content, .post-body, article');" +
-        "  if (post && /(^|\\n)\\s*ingredients?\\b/i.test(post.innerText)) { parts.push(post.outerHTML); hasRecipe = true; }" +
+        "  if (post && /(^|\\n)\\s*(ingredients?|what you(['\\u2019]ll| will)? need|you(['\\u2019]ll| will)? need)\\b/i.test(post.innerText)) { parts.push(post.outerHTML); hasRecipe = true; }" +
         "  return JSON.stringify({ html: '<html><head>' + parts.join('') + '</head></html>', hasRecipe: hasRecipe });" +
         "})()";
 
@@ -253,11 +254,18 @@ public class BrowserActivity extends AppCompatActivity {
                 Uri uri = request.getUrl();
                 String scheme = uri.getScheme();
                 if ("http".equals(scheme) || "https".equals(scheme)) return false;
-                // Links like mailto: or app links go to the phone's other apps.
+                // Links like mailto: or app links go to the phone's other apps,
+                // but only when tapped: a page (like an ad's redirect) mustn't
+                // open the Play Store or another app by itself.
+                if (!request.hasGesture()) return true;
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                // Only apps that say they can be opened from a web link.
+                intent.addCategory(Intent.CATEGORY_BROWSABLE);
                 try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
-                } catch (ActivityNotFoundException ignored) {
-                    // Nothing on the phone handles it; stay put.
+                    startActivity(intent);
+                } catch (RuntimeException ignored) {
+                    // Nothing on the phone handles it (or Android won't allow
+                    // it); stay put.
                 }
                 return true;
             }
