@@ -1288,6 +1288,80 @@ Next step when Xel wants it: a playground with two or three versions of
 the bento export picker (and maybe the hanko stamp), light and dark, at
 phone width; and the voice-pass list as its own short document.
 
+## To consider: talking to Bentotachi while cooking (Xel, 2026-11-07)
+
+Hands covered in flour, phone propped on the counter: "Hey, what does
+step 3 say again?" and Bentotachi reads it out loud. Also "next step",
+"start the timer", "how much garlic?".
+
+There are two ways in, and only one works today:
+
+1. **Inside the app, while a recipe is open (works now, no Google
+   permission needed).** Android has speech recognition and text-to-speech
+   built in, for any app. A "Cook out loud" button on the recipe page
+   starts listening; Bentotachi understands a small fixed set of phrases
+   and answers by voice:
+   - "Step 3" / "read step 3" / "what's step 3?", "next", "back", "again"
+     (repeat the last thing read).
+   - "How much garlic?" (finds the ingredient line, scaled to the chosen
+     servings).
+   - "Start the timer" (the current step's timer: step timers already
+     exist, `stepTimers.ts` and `StepTimerTray.tsx`), "how long left?".
+   - "Stop" / "I'm done" (stops listening).
+   This needs no AI: matching a handful of phrases is ordinary code, and
+   the step and ingredient text already exist. It's a new native plugin
+   (like the scanner's) or a community Capacitor plugin for speech
+   recognition and text-to-speech. The WebView can't do it alone: Android's
+   WebView doesn't support the browser's speech recognition.
+2. **"Hey Google, ask Bentotachi…" from anywhere (not yet).** That's the
+   phone's assistant calling into the app. On Android it now means Gemini
+   (it replaced Google Assistant on phones in September 2026), and the
+   way in is **AppFunctions**: still an experimental preview, with Gemini
+   only calling apps in Google's test programme (see "The reverse" in the
+   AI helper section above; one native layer would serve both). Revisit
+   when Google opens it to all apps.
+
+Worth knowing before deciding:
+
+- **Listening all the time is the hard part.** Android's recognizer
+  listens for one phrase and stops; it isn't made for a wake word ("Hey
+  Bento"), and keeping it running drains the battery and shows the
+  microphone indicator. Realistic options: listen only while "Cook out
+  loud" is on and the recipe is open, restarting after each phrase, with
+  the screen kept awake; or one big tap-to-talk button (a knuckle or elbow
+  works with floury hands). A real wake word needs an extra engine
+  (Picovoice is commercial; openWakeWord is open source but would need
+  bundling); not worth it for a first version.
+- **Offline:** Android 12 and newer can recognize speech on the phone
+  itself (no internet), where the phone has the language downloaded. Use
+  that when available, so recipes aren't sent to Google's servers, and say
+  so in the privacy policy (thekoipond.dev/bentotachi/privacy.html) either
+  way, since the microphone is new data handling.
+- **Permission:** it needs the microphone permission (`RECORD_AUDIO`),
+  asked the first time "Cook out loud" is used, with a plain reason. Google
+  Play's Data safety form would need updating ("audio, processed on the
+  device, not collected").
+- **Kitchen noise:** extractor fans and sizzling pans hurt recognition.
+  Keep the phrases short and forgiving ("three", "step three", "third
+  step"), and always show what it heard on screen.
+- **Reading aloud on its own** (no listening) is the easy half and useful
+  by itself: a speaker button on each step, or "read the steps one by
+  one" with a tap for next. A good first slice.
+- **Languages:** the phrases would start in English; other languages need
+  their own phrase lists.
+
+Suggested order: (1) a speaker button that reads a step out loud; (2)
+"Cook out loud" with the fixed phrases, on-device where possible; (3)
+Gemini through AppFunctions once Google allows it.
+
+Questions for Xel:
+
+1. Is tap-to-talk (one big button) enough to start, or is hands-free
+   listening the point?
+2. Should it read in the phone's default voice, or is a Ben voice a
+   future wish (it would need recorded or generated audio, a much bigger
+   job)?
+
 ## Ideas for later
 
 - Phone notifications when something is about to expire
