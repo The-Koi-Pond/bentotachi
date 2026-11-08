@@ -166,10 +166,10 @@ function ImportRecipes() {
         const twin = existing.some((other) => sameTitle(other.title, recipe.title));
         // Decoded only now: the slow part, and only for recipes being added.
         const { cover: photo, gallery } = paprikaPhotos(raw);
-        let image =
-          photo && photo.bytes.length <= MAX_PHOTO
-            ? new File([new Uint8Array(photo.bytes)], `photo.${photo.type.split("/")[1]}`, { type: photo.type })
-            : undefined;
+        // Too big is checked once shrunk, below.
+        let image: File | undefined = photo
+          ? new File([new Uint8Array(photo.bytes)], `photo.${photo.type.split("/")[1]}`, { type: photo.type })
+          : undefined;
         // Paprika's photo is only a small preview; one saved from a website
         // has the site's full-size photo's address, which the server fetches.
         // The preview stays if that fails.
@@ -199,6 +199,7 @@ function ImportRecipes() {
           sent.push([extra.name, upload]);
         }
         if (image) image = await shrinkPhoto(image, PHOTO_SIDE);
+        if (image && image.size > MAX_PHOTO) image = undefined;
         let created: Recipe;
         try {
           created = await recipes().create({ ...recipe, ...(image && { image }), ...(photos.length && { photos }) });

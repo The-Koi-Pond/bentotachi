@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dishesBySlot, dropSwaps, mealOf, mealsForDay, mealWord, parseSlot, plannedMeals, planTitle, slotKey } from "../src/meals.ts";
+import { dishesBySlot, dropSwaps, mealDrop, mealOf, mealsForDay, mealWord, parseSlot, plannedMeals, planTitle, slotKey } from "../src/meals.ts";
 
 test("entries from before meals existed are dinners", () => {
   assert.equal(mealOf({}), "dinner");
@@ -49,6 +49,14 @@ test("a lone dish dropped on a lone dish swaps; otherwise it joins", () => {
   assert.equal(dropSwaps(1, 0), false);
   assert.equal(dropSwaps(1, 2), false, "a side dragged to a meal with two dishes joins them");
   assert.equal(dropSwaps(2, 1), false, "a side taken from its main joins the other meal");
+});
+
+test("a month cell's picture moves its whole meal; a lone dish onto a lone dish swaps", () => {
+  assert.deepEqual(mealDrop(["curry"], ["pasta"]), { swap: ["curry", "pasta"] });
+  assert.deepEqual(mealDrop(["curry"], []), { move: ["curry"] });
+  // A main and its side go together, onto an empty day or one with a meal.
+  assert.deepEqual(mealDrop(["curry", "rice"], []), { move: ["curry", "rice"] });
+  assert.deepEqual(mealDrop(["curry", "rice"], ["pasta"]), { move: ["curry", "rice"] });
 });
 
 test("the plan's name follows its meals", () => {

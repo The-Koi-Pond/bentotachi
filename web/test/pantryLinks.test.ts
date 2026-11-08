@@ -55,8 +55,12 @@ test("only matches whole words", () => {
 test("a name that only describes something else isn't it", () => {
   assert.equal(guess("200 g risoni (rice-shaped pasta)"), null);
   assert.equal(guess("an egg-sized knob of butter"), null);
-  // A hyphen joining other words still names it.
+  // A hyphen joining other words still names it, and so does a describing
+  // word after a space.
   assert.equal(guess("1 cup rice - rinsed"), "rice");
+  assert.equal(guess("2 eggs, size 7"), "eggs");
+  // A stand-in links to the real thing.
+  assert.equal(guess("2 cups onion-style crispy shallots"), "onion");
 });
 
 test("a chosen link beats a guess; an empty choice means not a pantry item", () => {

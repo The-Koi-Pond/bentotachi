@@ -50,8 +50,9 @@ const PRODUCT_BEFORE = new Set(["coconut", "almond", "oat", "soy", "peanut", "ri
 
 // Words that, joined on with a hyphen, only describe something else by it:
 // "rice-shaped pasta" (risoni) isn't rice, "an egg-sized knob of butter"
-// isn't an egg.
-const DESCRIBED_BY = new Set(["shaped", "style", "like", "sized", "size", "flavoured", "flavored", "scented"]);
+// isn't an egg. On purpose not "-style" or "-like": "parmesan-style cheese"
+// is a stand-in for parmesan, and the parmesan in the pantry would do.
+const DESCRIBED_BY = new Set(["shaped", "sized", "size", "flavoured", "flavored", "scented"]);
 
 // "noodles" -> "noodle", for checking the word lists.
 const singular = (word: string) => (word.length > 3 && word.endsWith("s") && !word.endsWith("ss") ? word.slice(0, -1) : word);

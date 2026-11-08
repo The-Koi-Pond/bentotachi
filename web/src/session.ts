@@ -6,7 +6,7 @@
 // make good changes look refused; only the renewal itself answers 401
 // (server/test/expired-login.check.mjs).
 
-import { pb, users } from "./pb";
+import { pb, users, type User } from "./pb";
 import { forgetOfflineCopy } from "./offline";
 import { isPhoneMode, logInOnPhone } from "./phoneMode";
 import { createLoginGuard, isServerRefusal, type LoginState } from "./loginGuard";
@@ -15,7 +15,14 @@ export type { LoginState };
 
 async function renewLogin(): Promise<LoginState> {
   try {
-    await users().authRefresh();
+    // Sent by hand rather than with authRefresh, which saves whatever comes
+    // back: a public Wi-Fi's sign-in page answering "OK" in the server's
+    // place reads as an empty login, and would sign everyone out.
+    const answer = await pb.send<{ token?: string; record?: User }>(`/api/collections/${users().collectionIdOrName}/auth-refresh`, {
+      method: "POST",
+    });
+    if (!answer?.token || !answer.record) return "unknown";
+    pb.authStore.save(answer.token, answer.record);
     return "ok";
   } catch (err) {
     if (!isServerRefusal(err)) return "unknown";

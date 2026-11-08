@@ -58,6 +58,14 @@ export function dropSwaps(dishesHere: number, dishesThere: number): boolean {
   return dishesHere === 1 && dishesThere === 1;
 }
 
+// A month cell's picture dropped on another day: its whole meal (a main and
+// its sides) moves there, joining what's there, except that a lone dish
+// onto a lone dish swaps, as when dragging one dish (dropSwaps).
+export function mealDrop<T>(here: T[], there: T[]): { swap: [T, T] } | { move: T[] } {
+  if (dropSwaps(here.length, there.length)) return { swap: [here[0], there[0]] };
+  return { move: here };
+}
+
 // "Dinner plan" while it's dinner only, otherwise "Meal plan".
 export function planTitle(meals: Meal[]): string {
   return meals.length === 1 ? `${MEAL_NAMES[meals[0]]} plan` : "Meal plan";

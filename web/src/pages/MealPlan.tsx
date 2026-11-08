@@ -44,6 +44,7 @@ import {
   MEAL_NAMES,
   dishesBySlot,
   dropSwaps,
+  mealDrop,
   mealOf,
   mealWord,
   mealsForDay,
@@ -249,15 +250,13 @@ export default function MealPlan() {
   }
 
   // The month grid shows one picture per day, so dragging it moves its
-  // whole meal (a main and its sides) to that meal on the other day. A lone
-  // dish goes through move, so it still swaps with a lone dish there.
+  // whole meal to that meal on the other day (mealDrop says how).
   async function moveMeal(from: string, to: string) {
-    const dishes = bySlot.get(from) ?? [];
-    if (dishes.length < 2) {
-      if (dishes[0]) await move(dishes[0].id, to);
-      return;
-    }
     if (from === to) return;
+    const drop = mealDrop(bySlot.get(from) ?? [], bySlot.get(to) ?? []);
+    if ("swap" in drop) return move(drop.swap[0].id, to);
+    const dishes = drop.move;
+    if (!dishes.length) return;
     const target = parseSlot(to);
     setError("");
     await undo.settle();

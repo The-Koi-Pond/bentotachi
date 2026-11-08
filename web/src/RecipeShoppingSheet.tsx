@@ -139,7 +139,7 @@ function ChosenRecipe({
         </>
       )}
       <div className="actions">
-        <button className="button primary" disabled={busy || ticks.ticked.length === 0} onClick={() => void add()}>
+        <button className="button primary" disabled={busy || loading || ticks.ticked.length === 0} onClick={() => void add()}>
           {busy ? "Adding…" : ticks.ticked.length ? `Add ${ticks.ticked.length} to the list` : "Add to the list"}
         </button>
       </div>

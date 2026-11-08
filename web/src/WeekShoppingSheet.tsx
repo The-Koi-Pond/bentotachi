@@ -118,7 +118,7 @@ export default function WeekShoppingSheet({
         )}
 
         <div className="actions">
-          <button className="button primary" disabled={busy || ticked.length === 0} onClick={add}>
+          <button className="button primary" disabled={busy || loading || ticked.length === 0} onClick={add}>
             {busy ? "Adding…" : ticked.length ? `Add ${ticked.length} to shopping list` : "Add to shopping list"}
           </button>
         </div>
