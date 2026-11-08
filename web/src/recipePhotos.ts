@@ -115,3 +115,21 @@ export function savedName(sent: string, names: string[] | null | undefined): str
   const base = sent.replace(/\.[^.]*$/, "");
   return (names ?? []).find((name) => name.startsWith(`${base}_`) || name === sent);
 }
+
+// The photo_steps for photos sent under made-up names: `sent` pairs each
+// photo's own name (Paprika's "Step 2") with the name it was sent under,
+// `marks` says which step each own name goes with, and `saved` is what the
+// server stored. Photos with no step, or that didn't arrive, are left out
+// (they're in the gallery).
+export function photoStepsFor(
+  sent: [string, string][],
+  marks: Record<string, string>,
+  saved: string[] | null | undefined
+): Record<string, string> {
+  const steps: Record<string, string> = {};
+  for (const [name, upload] of sent) {
+    const file = savedName(upload, saved);
+    if (marks[name] && file) steps[file] = stepKey(marks[name]);
+  }
+  return steps;
+}

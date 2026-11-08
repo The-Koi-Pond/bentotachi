@@ -25,7 +25,7 @@ import {
   paprikaStepPhotos,
   someNames,
 } from "../paprikaImport";
-import { MAX_PHOTOS, savedName, stepKey, uploadName } from "../recipePhotos";
+import { MAX_PHOTOS, photoStepsFor, uploadName } from "../recipePhotos";
 import { localToday } from "../dates";
 
 // ⋮ → Import & export: bring in recipes from a Paprika file (Paprika,
@@ -200,12 +200,7 @@ function ImportRecipes() {
         }
         // Photos marked in a step ("[photo:Step 3]") show in that step. The
         // recipe is in either way.
-        const marks = paprikaStepPhotos(raw);
-        const photo_steps: Record<string, string> = {};
-        for (const [name, upload] of sent) {
-          const saved = savedName(upload, created.photos);
-          if (marks[name] && saved) photo_steps[saved] = stepKey(marks[name]);
-        }
+        const photo_steps = photoStepsFor(sent, paprikaStepPhotos(raw), created.photos);
         if (Object.keys(photo_steps).length) await recipes().update(created.id, { photo_steps }).catch(() => {});
         // Paprika's rating and favorite are the person's own, so they
         // become the importing person's onigiri and heart. The recipe is in

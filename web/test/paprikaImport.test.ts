@@ -411,15 +411,50 @@ test("Paprika's gallery: the cover, the other photos with their names, and which
   assert.deepEqual(paprikaStepPhotos(raw), { "Step 2": "Bake blind for 15 minutes.", Done: "Fill and bake." });
   // The marks themselves are gone from the steps.
   assert.deepEqual(fromPaprika(raw).steps, ["Make the pastry.", "Bake blind for 15 minutes.", "Fill and bake."]);
-  // Without a photo of its own, the first gallery photo is the cover, and
-  // isn't in the gallery twice.
-  const noCover = paprikaPhotos({ ...raw, photo_data: "" });
-  assert.deepEqual(photoSize(noCover.cover!.bytes), { width: 800, height: 600 });
-  assert.deepEqual(noCover.gallery.map((photo) => photo.name), ["Done"]);
+  // Without a photo of its own, the first gallery photo not shown in a step
+  // is the cover, and isn't in the gallery twice.
+  const plated = { name: "Plated", data: base64(jpegOf(640, 480)) };
+  const noCover = paprikaPhotos({ ...raw, photo_data: "", photos: [...raw.photos, plated] });
+  assert.deepEqual(photoSize(noCover.cover!.bytes), { width: 640, height: 480 });
+  assert.deepEqual(noCover.gallery.map((photo) => photo.name), ["Step 2", "Done"]);
+  // Only step photos: no cover, and each stays in its step.
+  const onlySteps = paprikaPhotos({ ...raw, photo_data: "" });
+  assert.equal(onlySteps.cover, null);
+  assert.deepEqual(onlySteps.gallery.map((photo) => photo.name), ["Step 2", "Done"]);
 });
 
 test("a photo marked on a heading isn't put on a step", () => {
   assert.deepEqual(paprikaStepPhotos({ directions: "For the sauce: [photo:Sauce]\nStir." }), {});
+});
+
+test("a photo marked before the first step goes with the first step", () => {
+  assert.deepEqual(paprikaStepPhotos({ directions: "[photo:Hero]\nMix.\nBake." }), { Hero: "Mix." });
+});
+
+test("a recipe with only step photos comes back without a cover, its photos on their steps", () => {
+  const recipe = {
+    id: "r3",
+    title: "Flatbread",
+    description: "",
+    source_url: "",
+    servings: "",
+    prep_minutes: 0,
+    cook_minutes: 0,
+    total_minutes: 0,
+    ingredients: [],
+    steps: ["Mix the dough.", "Roll it out.", "Cook in a hot pan."],
+    tags: [],
+    notes: "",
+    author_notes: "",
+    created: "",
+    photo_steps: { "a.jpg": "mix the dough.", "b.jpg": "roll it out." },
+  };
+  const out = toPaprika(recipe, "", 0, false, ["a.jpg", "b.jpg"].map((file) => ({ file, data: PNG })));
+  const raw = readPaprikaFile(paprikaFile([out])).recipes[0];
+  const { cover, gallery } = paprikaPhotos(raw);
+  assert.equal(cover, null);
+  assert.deepEqual(gallery.map((photo) => photo.name), ["Step 1", "Step 2"]);
+  assert.deepEqual(paprikaStepPhotos(raw), { "Step 1": "Mix the dough.", "Step 2": "Roll it out." });
 });
 
 test("Bento's step photos go out as Paprika's and come back on the same steps", () => {
@@ -448,6 +483,9 @@ test("Bento's step photos go out as Paprika's and come back on the same steps", 
     out.directions,
     "Sauce:\n\nFry the onions. [photo:Step 1] [photo:Step 1 (2)]\n\nAdd the tomatoes.\n\nEggs:\n\nCrack in the eggs. [photo:Step 1 (3)]"
   );
+  // Every photo has its own file name, the cover's included.
+  const files = [out.photo, ...out.photos.map((photo) => photo.filename)];
+  assert.equal(new Set(files).size, files.length);
   const raw = readPaprikaFile(paprikaFile([out])).recipes[0];
   assert.equal(paprikaPhotos(raw).gallery.length, 4);
   assert.deepEqual(paprikaStepPhotos(raw), {

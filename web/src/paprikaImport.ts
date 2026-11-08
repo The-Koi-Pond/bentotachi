@@ -251,8 +251,15 @@ export function paprikaPhotos(raw: Record<string, unknown>): {
   }
   const own = photoOf(raw.photo_data);
   if (own) return { cover: own, gallery };
-  const [first, ...rest] = gallery;
-  return { cover: first ? { bytes: first.bytes, type: first.type } : null, gallery: rest };
+  // No photo of its own: the first one not shown in a step stands in. A
+  // step's photo stays in its step (a recipe with only step photos, saved
+  // from Bentotachi, came back with step 1's as its cover; review,
+  // 2026-11-08).
+  const marked = paprikaStepPhotos(raw);
+  const at = gallery.findIndex((photo) => !marked[photo.name]);
+  if (at < 0) return { cover: null, gallery };
+  const [first] = gallery.splice(at, 1);
+  return { cover: { bytes: first.bytes, type: first.type }, gallery };
 }
 
 // The site's full-size photo for a recipe Paprika saved from a website

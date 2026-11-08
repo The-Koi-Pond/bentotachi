@@ -5,6 +5,7 @@ import {
   carriedStepPhotos,
   galleryPhotos,
   numberedSteps,
+  photoStepsFor,
   samePhotoSteps,
   savedName,
   stepPhotos,
@@ -107,4 +108,16 @@ test("a sent photo is found among the saved ones by its made-up name", () => {
   assert.equal(savedName(sent, ["other_abc.jpg"]), undefined);
   // A name that only starts the same way isn't it.
   assert.equal(savedName(sent, [`${base}x_a1b2c3d4e5.jpg`, `${base.slice(0, 5)}_a1b2c3d4e5.jpg`]), undefined);
+});
+
+test("imported photos marked on a step are keyed by their saved names and the step's key", () => {
+  const sent: [string, string][] = [
+    ["Step 2", "pstep0002.jpg"],
+    ["Plated", "pplated00.jpg"],
+    ["Lost", "plost0000.jpg"],
+  ];
+  const marks = { "Step 2": "Fry the Onions.", Lost: "Simmer." };
+  const saved = ["pstep0002_a1b2c3d4e5.jpg", "pplated00_f6g7h8i9j0.jpg"];
+  // Plated has no step (gallery); Lost didn't arrive.
+  assert.deepEqual(photoStepsFor(sent, marks, saved), { "pstep0002_a1b2c3d4e5.jpg": "fry the onions." });
 });
