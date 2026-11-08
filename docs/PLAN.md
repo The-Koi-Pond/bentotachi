@@ -1436,13 +1436,53 @@ Suggested order: (1) a speaker button that reads a step out loud; (2)
 "Cook out loud" with the fixed phrases, on-device where possible; (3)
 Gemini through AppFunctions once Google allows it.
 
-Questions for Xel:
+Xel's answers (2026-11-07):
 
-1. Is tap-to-talk (one big button) enough to start, or is hands-free
-   listening the point?
-2. Should it read in the phone's default voice, or is a Ben voice a
-   future wish (it would need recorded or generated audio, a much bigger
-   job)?
+1. Tap-to-talk (one big button) first; hands-free listening later.
+2. The phone's own voice is fine (no Ben voice).
+
+## To consider: ideas from the Paprika comparison (Xel, 2026-11-07)
+
+From research/reports/Paprika compared with Bentotachi.md (local only),
+section "Twenty ideas worth taking". Xel wants all of them in the plan.
+None is scheduled yet. Already done or already planned elsewhere, so not
+repeated here: several photos per recipe and step photos, nutrition facts,
+pasting a recipe as text, carrying Paprika ratings, favourites and photos
+across, reading steps aloud ("talking to Bentotachi" above), social media
+captions and scanning a cookbook page ("more ways to bring recipes in"
+below), exporting everything ("more personality"), and expiry reminders
+("Ideas for later").
+
+1. **Remember aisle corrections** (small to medium): move "tahini" to Tins
+   & jars once and it stays there for the household (aisles.ts guesses
+   from words today). Later, maybe each household's own aisle order.
+2. **Add up quantities** (medium): "2 eggs" and "3 eggs" on the list
+   become one line, "5 eggs". scaling.ts already reads amounts; units
+   that don't match ("1 cup" and "200 g" flour) stay separate.
+3. **Reusable menus** (medium): save a week, or a set like "Taco Tuesday",
+   and drop it onto the plan in one go.
+4. **A Trash for deleted recipes** (small to medium): a deleted recipe
+   waits a while before it's really gone, since one person's delete
+   reaches the whole household. Undo already exists for the list, the
+   plan and packets; recipes only ask first.
+5. **"Last cooked" sort** on the Recipes page (small): "what haven't we
+   had in ages?". The cooked log already has the dates (also noted as an
+   idea in the 1.9.0 notes).
+6. **"We have it" on recipe cards** (small): the pantry match the dinner
+   chooser already shows, on the Recipes page too.
+7. **Home-screen widget** (medium, native Android): the shopping list or
+   tonight's dinner, at a glance. AnyList's widget not updating until the
+   app is opened is the warning.
+8. **Calendar feed of the plan** (small to medium, a server route): a link
+   a calendar app subscribes to, so dinners show beside appointments.
+   Needs a plain warning that anyone with the link can read it, and
+   Google Calendar can't reach a Pi that's only on Tailscale.
+9. **Links from one recipe to another** (small to medium): "make the
+   [Pizza dough]" in a step opens that recipe. Paprika files already use
+   `[recipe:Name]` marks, so import and export could carry them.
+10. **Several shopping lists** (medium): say, the supermarket and the
+   hardware store. For a household of three, only if someone asks.
+11. **Wear OS shopping list** (big): tick things off from a watch.
 
 ## To consider: more ways to bring recipes in, and more photos (Xel, 2026-11-07)
 
