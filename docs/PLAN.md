@@ -1622,6 +1622,12 @@ gone); unticking takes it back off. On the server (pantry.pb.js), so it
 works from any phone and from older apps; one packet per tick ("2 tins"
 on the list still adds one). Tried on a copy of the Pi's data: the 11
 items with sized packets got the right usual packet.
+After the review (2026-11-08): unticking takes the packet back only for an
+hour after the tick (an old "Got it" row put back on the list leaves the
+bag that's really there). Xel's pick: adding a packet by hand (scanning,
+"+ 1 packet", a counter's +) within a few hours of a tick having added
+one to that item asks first: "The shopping list already added a White
+Mill 1 kg an hour ago." That's the one / Add another.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 

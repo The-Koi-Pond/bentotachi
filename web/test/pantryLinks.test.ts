@@ -92,6 +92,37 @@ test("kinds of one thing: a line naming just the group takes any kind, as one gr
   assert.equal(linkTarget(linkFor("500 g pasta", null, pastas)), "kind:pasta");
 });
 
+test("kinds of one thing: 'any' is read through the ways recipes write amounts", () => {
+  const beans = [kind("bb", "Black beans", "Beans"), kind("kb", "Kidney beans", "Beans")];
+  for (const line of ["500g pasta", "1kg pasta", "8oz pasta", "1 lb. pasta", "500g/1lb pasta", "8 ounces (225g) pasta", "500 g **pasta**", "1 box pasta", "2 x 500g pasta"]) {
+    assert.equal(linkFor(line, null, pastas).family?.name, "Pasta", line);
+  }
+  for (const line of ["1 can beans, drained", "2 x 400g tins beans", "400g tin beans"]) {
+    assert.equal(linkFor(line, null, beans).family?.name, "Beans", line);
+  }
+  // Still not "any" with a kind's name before the group's, or with only
+  // punctuation between them.
+  for (const line of ["500g bucatini pasta", "300 g orzo (pasta)", "bucatini/pasta"]) {
+    assert.equal(linkFor(line, null, pastas).kind, "unmatched", line);
+  }
+});
+
+test("kinds of one thing: an item named as its own group stands for the group", () => {
+  const withOdds = [...pastas, kind("odd", "Pasta", "Pasta", "out")];
+  const link = linkFor("500 g pasta", null, withOdds);
+  assert.equal(link.family?.name, "Pasta");
+  assert.equal(linkStatus(link), "have");
+});
+
+test("kinds of one thing: the dinner chooser counts a group line, and every kind out makes it out", () => {
+  const recipe = { ingredients: ["500 g pasta", "2 onions"], ingredient_links: null };
+  const allOut = [kind("lin", "Linguine", "Pasta", "out"), kind("pen", "Penne", "Pasta", "out")];
+  const check = pantryCheck(recipe, allOut);
+  assert.equal(check.linked, 1);
+  assert.deepEqual(check.out.map((i) => (i as { id: string }).id).sort(), ["lin", "pen"]);
+  assert.deepEqual(pantryCheck(recipe, pastas).out, []);
+});
+
 test("kinds of one thing: 'any of these' can be chosen for a line, and is kept while a kind is left", () => {
   const line = "400 g linguine";
   const chosen = linkFor(line, { [linkKey(line)]: familyLinkValue("Pasta") }, pastas);

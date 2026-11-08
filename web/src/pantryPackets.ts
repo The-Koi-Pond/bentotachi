@@ -6,6 +6,7 @@
 import type { PantryItem, PantryPacket } from "./pb";
 import { norm } from "./pantryGroups.ts";
 import { brandsOf } from "./pantryItem.ts";
+import { storedTime } from "./dates.ts";
 
 export interface PacketDetails {
   brand: string;
@@ -38,6 +39,16 @@ export function packetGroups<T extends Pick<PantryPacket, "brand" | "size">>(
     groups.set(key, group);
   }
   return [...groups.values()];
+}
+
+// A packet the shopping list added (ticking it bought) in the last few
+// hours, newest first, or null: adding one by hand now is likely the same
+// bag, so the page asks first.
+export const JUST_BOUGHT_HOURS = 6;
+export function justBought<T extends Pick<PantryPacket, "bought_with" | "created">>(packets: T[], now = new Date()): T | null {
+  const since = now.getTime() - JUST_BOUGHT_HOURS * 60 * 60 * 1000;
+  const bought = packets.filter((packet) => packet.bought_with && storedTime(packet.created).getTime() >= since);
+  return bought.sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
 }
 
 // What "+ 1 packet" adds: one like the item's usual packet (the last one

@@ -18,8 +18,9 @@ export default function PantryCard({
   onEditAll,
 }: {
   item: PantryItem;
-  // Its packets in stock, oldest first.
-  packets: PantryPacket[];
+  // Its packets in stock, oldest first; null on a server from before
+  // packets, which then aren't offered.
+  packets: PantryPacket[] | null;
   onMore: (details: PacketDetails) => void;
   onUsed: (packet: PantryPacket) => void;
   onStatus: (status: PantryStatus) => void;
@@ -32,10 +33,10 @@ export default function PantryCard({
   useEffect(() => {
     ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, []);
-  const next = nextPacket(item, packets);
+  const next = nextPacket(item, packets ?? []);
   const place = placeOf(item);
   // What's in stock is said here too, as the Simple layout's row hides it.
-  const inStock = packetGroups(packets, item.brand)
+  const inStock = packetGroups(packets ?? [], item.brand)
     .map((group) => (group.count > 1 ? `${group.count} × ${group.label}` : group.label))
     .join(", ");
   const about = [
@@ -49,11 +50,13 @@ export default function PantryCard({
   return (
     <div ref={ref} className="pantry-card" role="group" aria-label={`${item.name}: quick changes`}>
       <div className="pantry-card-quick">
-        <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more packet${next.size ? `, ${next.size}` : ""}`}>
-          + 1 packet
-          {next.size && <span className="pantry-card-size">{next.size}</span>}
-        </button>
-        {packets.length > 0 && (
+        {packets && (
+          <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more packet${next.size ? `, ${next.size}` : ""}`}>
+            + 1 packet
+            {next.size && <span className="pantry-card-size">{next.size}</span>}
+          </button>
+        )}
+        {packets && packets.length > 0 && (
           <button className="button" onClick={() => onUsed(packets[0])}>
             Used one
           </button>

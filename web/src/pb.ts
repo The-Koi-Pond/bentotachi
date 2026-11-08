@@ -162,6 +162,9 @@ export interface PantryPacket extends RecordModel {
   brand: string;
   size: string;
   barcode: string;
+  // The shopping item whose tick added it, or "" (pantry_usual_packet
+  // migration).
+  bought_with?: string;
   created: string;
 }
 

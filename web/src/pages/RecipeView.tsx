@@ -18,8 +18,7 @@ import {
   type PantryPacket,
   type Recipe,
 } from "../pb";
-import { packetsOf } from "../pantryPackets";
-import { coverNote, coverOf, stillToBuy, type Cover } from "../pantryStock";
+import { coverNote, coversFor, stillToBuy, type Cover } from "../pantryStock";
 import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
@@ -892,22 +891,22 @@ function IngredientsSection({
   // size (pantryStock.ts).
   const packets = useLiveRecords<PantryPacket>("pantry_packets");
   const linesByTarget = new Map<string, number[]>();
-  const itemsByTarget = new Map<string, PantryItem[]>();
+  const linkByTarget = new Map<string, IngredientLink>();
   for (const i of pickable) {
     const link = linkOf(lines[i]);
     const target = linkTarget(link);
     if (!target) continue;
     linesByTarget.set(target, [...(linesByTarget.get(target) ?? []), i]);
-    itemsByTarget.set(target, linkedItems(link));
+    linkByTarget.set(target, link);
   }
-  const covers = new Map(
-    [...linesByTarget].map(([target, indexes]) => [
-      target,
-      coverOf(
-        indexes.map((i) => ({ line: scaleLine(lines[i], scale), measures: hints.measures })),
-        (itemsByTarget.get(target) ?? []).flatMap((item) => packetsOf(packets.items ?? [], item.id))
-      ),
-    ])
+  const covers = coversFor(
+    [...linesByTarget].map(([target, indexes]) => ({
+      key: target,
+      items: linkedItems(linkByTarget.get(target)!),
+      needs: indexes.map((i) => ({ line: scaleLine(lines[i], scale), measures: hints.measures })),
+      anyKind: !!linkByTarget.get(target)?.family,
+    })),
+    packets.items ?? []
   );
   const coverOfLine = (i: number): Cover => covers.get(linkTarget(linkOf(lines[i]))) ?? { kind: "unknown" };
   const onlyLineFor = (i: number) => linesByTarget.get(linkTarget(linkOf(lines[i])))?.length === 1;

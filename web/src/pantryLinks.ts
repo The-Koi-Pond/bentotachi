@@ -18,6 +18,7 @@ import type { PantryItem, PantryStatus, Recipe } from "./pb";
 import { findMention, mentions, stem } from "./wordMatch.ts";
 import { otherNames } from "./regionalNames.ts";
 import { worthBuying, type Cover } from "./pantryStock.ts";
+import { withoutSoftMarks } from "./softMarks.ts";
 
 // A group of kinds: its name as people typed it, and the items in it.
 export interface Family {
@@ -80,15 +81,24 @@ export function linkTarget(link: IngredientLink): string {
 const ANY_KIND_BEFORE = new Set(
   "a an of your any some dried fresh cooked uncooked short long small large medium favourite favorite leftover extra".split(" ") // not on screen
 );
-const AMOUNT_BEFORE = /^(\d+([.,/]\d+)?|[½¼¾⅓⅔⅛]|g|grams?|kg|kilos?|oz|ounces?|lbs?|pounds?|cups?|packets?|packs?|bags?|boxes?|x|×)$/;
+// An amount or its unit, beyond AMOUNT_WORDS: one written together ("500g",
+// "1.5kg", "8oz"), a count ("2 x"), and packaging.
+const AMOUNT_BEFORE = /^(\d+([.,]\d+)?(g|kg|ml|l|oz|lbs?)|x|×|kilos?|pounds?|packs?|bags?|box(es)?|jars?|bottles?)$/;
 
-// The group a line names, when no kind or other item is named in it.
+// The group a line names, when no kind or other item is named in it: at
+// the start of the line (formatting marks aside), or after an amount or a
+// describing word. That word is read without punctuation ("(225g)", "lb.")
+// and after a "/" ("500g/1lb"); a word that's all punctuation ("orzo
+// (pasta)", "bucatini/pasta") isn't one, so the line isn't taken as "any".
 function guessFamily(line: string, items: PantryItem[]): Family | null {
+  const text = withoutSoftMarks(line);
   for (const family of familiesOf(items).values()) {
-    const at = findMention(line, family.name);
+    const at = findMention(text, family.name);
     if (!at) continue;
-    const before = line.slice(0, at.start).trim().toLowerCase().split(/\s+/).pop() ?? "";
-    if (!before || ANY_KIND_BEFORE.has(before) || AMOUNT_BEFORE.test(before)) return family;
+    const ahead = text.slice(0, at.start).trim().toLowerCase();
+    if (!ahead) return family;
+    const before = (ahead.split(/[\s/]+/).pop() ?? "").replace(/^[^\p{L}\d½¼¾⅓⅔⅛]+|[^\p{L}\d½¼¾⅓⅔⅛]+$/gu, "");
+    if (before && (ANY_KIND_BEFORE.has(before) || AMOUNT_WORDS.test(before) || AMOUNT_BEFORE.test(before))) return family;
   }
   return null;
 }
@@ -105,6 +115,9 @@ export function guessPantryItem(line: string, items: PantryItem[]): PantryItem |
   let best: PantryItem | null = null;
   let bestLength = 0;
   for (const item of items) {
+    // An item named as its own group ("Pasta", a kind of Pasta) stands for
+    // the whole group, which guessFamily finds.
+    if (item.kind_of && norm(item.kind_of) === norm(item.name)) continue;
     const length = stem(item.name).length;
     if (!length || length <= bestLength) continue;
     if (![item.name, ...otherNames(item.name)].some((name) => mentions(line, name))) continue;

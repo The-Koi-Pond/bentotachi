@@ -185,6 +185,20 @@ test("any kind will do: the group is one row, counting every kind's packets, and
     // 700 g needed, 700 g in (Penne's and Linguine's packets together).
     [["Pasta", null, "Pasta", "enough", false]]
   );
+  // With no packets, the group's level decides: Penne is in, so not ticked.
+  const noPackets = gatherIngredients([recipe("a", "Bake", ["500 g pasta"])], kinds, []);
+  assert.deepEqual(noPackets.map((r) => [r.cover.kind, startsTicked(r)]), [["unknown", false]]);
+  // One bag isn't counted for both a spaghetti recipe and an "any pasta" one.
+  const spaghetti = [{ id: "spa", name: "Spaghetti", status: "have", kind_of: "Pasta" }] as never[];
+  const week = gatherIngredients(
+    [recipe("a", "Bolognese", ["500 g spaghetti"]), recipe("b", "Bake", ["500 g dried pasta"])],
+    spaghetti,
+    [packet("s1", "spa", "500 g")]
+  );
+  assert.deepEqual(week.map((r) => [r.text, r.cover.kind, startsTicked(r)]), [
+    ["500 g spaghetti", "enough", false],
+    ["500 g dried pasta", "short", true],
+  ]);
   // A kind named on its own is only that kind: Linguine is out.
   const only = gatherIngredients([recipe("c", "Vongole", ["400 g linguine"])], kinds, []);
   assert.deepEqual(only.map((r) => [r.pantryItem?.id, startsTicked(r)]), [["lin", true]]);

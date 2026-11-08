@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { coverNote, coverOf, stillToBuy, worthBuying } from "../src/pantryStock.ts";
+import { coverNote, coverOf, coversFor, stillToBuy, worthBuying } from "../src/pantryStock.ts";
 import { lineMeasure } from "../src/scaling.ts";
 
 const sizes = (...list: string[]) => list.map((size) => ({ size }));
@@ -132,6 +132,44 @@ test("a line whose one amount isn't all of it can't tell", () => {
   // The same amount given another way still reads.
   assert.equal(coverOf(need("250 g/8 oz butter"), sizes("250 g")).kind, "enough");
   assert.equal(coverOf(need("1 cup (250 ml) milk"), sizes("1 L")).kind, "enough");
+});
+
+test("one bag isn't counted twice: a line asking for the kind uses it first, then 'any pasta' gets what's left", () => {
+  const packets = [{ id: "1", item: "spa", brand: "", size: "500 g", created: "1" }];
+  const covers = coversFor(
+    [
+      { key: "spa", items: [{ id: "spa" }], needs: need("500 g spaghetti"), anyKind: false },
+      { key: "kind:pasta", items: [{ id: "spa" }, { id: "pen" }], needs: need("500 g dried pasta"), anyKind: true },
+    ],
+    packets
+  );
+  assert.deepEqual(covers.get("spa"), { kind: "enough", have: "500 g" });
+  assert.deepEqual(covers.get("kind:pasta"), { kind: "short", have: "none spare", still: 1 });
+  // With more in, the group says what's spare.
+  const more = coversFor(
+    [
+      { key: "spa", items: [{ id: "spa" }], needs: need("300 g spaghetti"), anyKind: false },
+      { key: "kind:pasta", items: [{ id: "spa" }], needs: need("200 g pasta"), anyKind: true },
+    ],
+    [{ id: "1", item: "spa", brand: "", size: "1 kg", created: "1" }]
+  );
+  assert.deepEqual(more.get("kind:pasta"), { kind: "enough", have: "700 g spare" });
+  assert.equal(coverNote({ kind: "short", have: "none spare", still: 1 }), "None spare");
+});
+
+test("a kind only takes from its own packets: none when it has none, at most what they hold", () => {
+  const groups = (spaghettiLine: string) => [
+    { key: "spa", items: [{ id: "spa" }], needs: need(spaghettiLine), anyKind: false },
+    { key: "kind:pasta", items: [{ id: "spa" }, { id: "pen" }], needs: need("500 g dried pasta"), anyKind: true },
+  ];
+  const penne = { id: "p", item: "pen", brand: "", size: "500 g", created: "1" };
+  const spaghetti = { id: "s", item: "spa", brand: "", size: "500 g", created: "1" };
+  // Spaghetti has no packets (marked Have by hand): Penne's bag is all the group's.
+  assert.deepEqual(coversFor(groups("500 g spaghetti"), [penne]).get("kind:pasta"), { kind: "enough", have: "500 g" });
+  // Spaghetti needs 1 kg but has 500 g: it takes its 500 g, and Penne's stays spare.
+  assert.deepEqual(coversFor(groups("1 kg spaghetti"), [penne, spaghetti]).get("kind:pasta"), { kind: "enough", have: "500 g spare" });
+  // A spaghetti line that can't be measured takes all of Spaghetti's packets, not the group's answer.
+  assert.deepEqual(coversFor(groups("1 packet spaghetti"), [penne, spaghetti]).get("kind:pasta"), { kind: "enough", have: "500 g spare" });
 });
 
 test("a line's measure is read where scaling reads it", () => {

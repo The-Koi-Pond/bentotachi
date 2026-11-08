@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   brandsToPickFrom,
   detailsFor,
+  justBought,
   knowsBarcode,
   nextPacket,
   packetGroups,
@@ -31,6 +32,18 @@ test("packets show as one counter per brand and size, without the favourite bran
     ]
   );
   assert.deepEqual(packetGroups([{ brand: "", size: "" }]).map((g) => g.label), ["Packet"]);
+});
+
+test("a packet the shopping list added in the last few hours is found, so adding one by hand asks first", () => {
+  const now = new Date("2026-11-08T12:00:00Z");
+  const packets = [
+    { id: "old", bought_with: "s1", created: "2026-11-08 02:00:00.000Z" },
+    { id: "hand", bought_with: "", created: "2026-11-08 11:30:00.000Z" },
+    { id: "new", bought_with: "s2", created: "2026-11-08 11:00:00.000Z" },
+  ];
+  assert.equal(justBought(packets, now)?.id, "new");
+  // Older than that, or added by hand: nothing to ask about.
+  assert.equal(justBought(packets.filter((p) => p.id !== "new"), now), null);
 });
 
 test("+ 1 packet adds one like the usual packet, else the newest, else just the favourite brand", () => {

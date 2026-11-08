@@ -27,6 +27,7 @@ export default function PantryRow({
   packets = [],
   onFinishPacket,
   onAddPacket,
+  expanded,
   onEdit,
   onStatus,
   onOpened,
@@ -40,7 +41,9 @@ export default function PantryRow({
   onFinishPacket: (packet: PantryPacket) => void;
   onAddPacket: (details: PacketDetails) => void;
   // Tapping the name: the pantry page opens its card (PantryCard.tsx), a
-  // scan result its full form.
+  // scan result its full form. `expanded`: its card is open (said to screen
+  // readers).
+  expanded?: boolean;
   onEdit: () => void;
   onStatus: (status: PantryStatus) => void;
   onOpened: (opened: boolean) => void;
@@ -61,7 +64,7 @@ export default function PantryRow({
     .join(", ");
 
   const name = (
-    <button className="pantry-name" onClick={onEdit} aria-label={label}>
+    <button className="pantry-name" onClick={onEdit} aria-label={label} aria-expanded={expanded}>
       <span className="pantry-name-line">
         <span className="pantry-name-text">{item.name}</span>
         {showExpiry && (

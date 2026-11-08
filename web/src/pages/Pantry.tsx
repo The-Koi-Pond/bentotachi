@@ -17,7 +17,8 @@ import {
 } from "../pb";
 import { useUndo } from "../undo";
 import { UNDO_SECONDS } from "../pendingDelete";
-import { detailsFor, knowsBarcode, packetLabel, packetsOf, tidySize, withDetails, type PacketDetails } from "../pantryPackets";
+import { detailsFor, justBought, knowsBarcode, packetLabel, packetsOf, tidySize, withDetails, type PacketDetails } from "../pantryPackets";
+import { noteAge } from "../fridgeDoor";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
 import { forEveryone, useSingleUser } from "../household";
@@ -249,9 +250,23 @@ export default function Pantry() {
 
   // A packet bought or found: on the item, which is then in stock if it was
   // out. Its barcode's brand and size are remembered for next time. Whether
-  // the packet was added.
+  // the packet was added. Within a few hours of the shopping list adding one
+  // to it (ticked bought), this is likely the same bag being put away, so
+  // it asks first.
   async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<boolean> {
     setError("");
+    const remember = !!barcode && !knowsBarcode(item, barcode) && !!(details.brand.trim() || details.size.trim());
+    const bought = justBought(packetsOf(packets.items ?? [], item.id, undo.hidden));
+    if (
+      bought &&
+      !window.confirm(
+        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Add another one too?`
+      )
+    ) {
+      // The same bag: nothing added, but a scanned barcode is still learned.
+      if (remember) await save(item, { barcode_details: withDetails(item, barcode, details) }, "");
+      return false;
+    }
     try {
       packets.upsert(
         await pantryPackets().create(packetFields({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
@@ -260,7 +275,6 @@ export default function Pantry() {
       setError(errorMessage(err));
       return false;
     }
-    const remember = !!barcode && !knowsBarcode(item, barcode) && !!(details.brand.trim() || details.size.trim());
     if (item.status === "out" || remember) {
       await save(item, {
         ...(item.status === "out" && { status: "have" as const }),
@@ -676,6 +690,7 @@ export default function Pantry() {
                             packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
                             onFinishPacket={(packet) => finishPacket(item, packet)}
                             onAddPacket={(details) => void addPacket(item, details)}
+                            expanded={cardId === item.id}
                             onEdit={() => setCardId((open) => (open === item.id ? null : item.id))}
                             onStatus={(status) => setStatus(item, status)}
                             onOpened={(opened) => setOpened(item, opened)}
@@ -684,7 +699,7 @@ export default function Pantry() {
                           {cardId === item.id && (
                             <PantryCard
                               item={item}
-                              packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
+                              packets={packets.items && packetsOf(packets.items, item.id, undo.hidden)}
                               onMore={(details) => void addPacket(item, details)}
                               onUsed={(packet) => finishPacket(item, packet)}
                               onStatus={(status) => setStatus(item, status)}

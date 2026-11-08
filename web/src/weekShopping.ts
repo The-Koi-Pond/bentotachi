@@ -5,8 +5,7 @@
 
 import { headingOf } from "./format.ts";
 import { familyStatus, linkFor, linkTarget, type Family } from "./pantryLinks.ts";
-import { packetsOf } from "./pantryPackets.ts";
-import { coverOf, stillToBuy, worthBuying, type Cover } from "./pantryStock.ts";
+import { coversFor, stillToBuy, worthBuying, type Cover } from "./pantryStock.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 import { recipeMeasures, type RecipeMeasures } from "./volumes.ts";
 import type { PantryItem, PantryPacket, PantryStatus, Recipe } from "./pb";
@@ -159,12 +158,19 @@ export function gatherIngredients(
       }
     }
   }
-  for (const row of rows.values()) {
-    const items = row.pantryItem ? [row.pantryItem] : (row.family?.items ?? []);
-    if (!items.length) continue;
-    const lines = needs.get(row.key) ?? [];
-    row.cover = coverOf(lines, items.flatMap((item) => packetsOf(packets, item.id)));
-    if (lines.length === 1) row.text = stillToBuy(row.text, row.cover);
+  const linked = [...rows.values()].filter((row) => row.pantryItem || row.family);
+  const covers = coversFor(
+    linked.map((row) => ({
+      key: row.key,
+      items: row.pantryItem ? [row.pantryItem] : (row.family?.items ?? []),
+      needs: needs.get(row.key) ?? [],
+      anyKind: !!row.family,
+    })),
+    packets
+  );
+  for (const row of linked) {
+    row.cover = covers.get(row.key) ?? row.cover;
+    if ((needs.get(row.key) ?? []).length === 1) row.text = stillToBuy(row.text, row.cover);
   }
   return [...rows.values()];
 }

@@ -56,6 +56,17 @@ await tick(row, false);
 const left = await packetsOf(flour.id);
 check("...and unticking leaves the packet that was already there", left.length === 1 && left[0].brand === "Coles" && !left[0].bought_with);
 
+// A tick sent again (the offline queue after a lost reply), or a ticked row
+// edited, adds nothing more.
+const oil = await item("Restock oil");
+await api(token, "POST", "/collections/pantry_packets/records", { item: oil.id, brand: "Cobram", size: "750 ml" });
+await api(token, "PATCH", `/collections/pantry_items/records/${oil.id}`, { status: "out", ask_about_list: true });
+const oilRow = await onList(oil, "Olive oil");
+await tick(oilRow, true);
+await tick(oilRow, true);
+await api(token, "PATCH", `/collections/shopping_items/records/${oilRow.id}`, { text: "Olive oil, big bottle" });
+check("a tick sent twice, or a ticked row edited, adds one packet", (await packetsOf(oil.id)).length === 1);
+
 // Items that don't use packets never get any.
 const salt = await item("Restock salt", "low");
 const saltRow = await onList(salt, "Salt");

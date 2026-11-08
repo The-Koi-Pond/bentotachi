@@ -60,7 +60,7 @@ onRecordUpdateRequest((e) => {
 // For an item that uses packets (it has a usual one, see the
 // pantry_usual_packet migration), ticking also adds a packet like the last
 // one, so the count stays right without anyone adding it by hand; unticking
-// takes that packet back off. One packet per tick: "2 tins" can't be read
+// within the hour takes that packet back off. One packet per tick: "2 tins" can't be read
 // reliably, and a count off by one is easy to fix.
 onRecordAfterUpdateSuccess((e) => {
   const pantryId = e.record.get("pantry_item");
@@ -94,7 +94,14 @@ onRecordAfterUpdateSuccess((e) => {
           e.app.save(packet);
         }
       } else {
-        const added = e.app.findRecordsByFilter("pantry_packets", "bought_with = {:id}", "", 0, 0, { id: e.record.id });
+        // Only a tick from the last hour is taken back (a mis-tap): an old
+        // "Got it" row put back on the list days later was really bought,
+        // and its bag may well still be in the cupboard.
+        const since = new Date(Date.now() - 60 * 60 * 1000).toISOString().replace("T", " ");
+        const added = e.app.findRecordsByFilter("pantry_packets", "bought_with = {:id} && created >= {:since}", "", 0, 0, {
+          id: e.record.id,
+          since: since,
+        });
         for (let i = 0; i < added.length; i++) e.app.delete(added[i]);
       }
     } catch (err) {

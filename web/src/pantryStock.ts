@@ -7,6 +7,7 @@
 import type { PantryItem, PantryPacket } from "./pb";
 import type { RecipeMeasures } from "./volumes.ts";
 import { lineMeasure, scaleLine } from "./scaling.ts";
+import { packetsOf } from "./pantryPackets.ts";
 
 type Kind = "mass" | "volume";
 interface Quantity {
@@ -65,36 +66,85 @@ function stockOf(packets: Pick<PantryPacket, "size">[]): Quantity | null {
 
 const twoDecimals = (n: number) => String(Math.round(n * 100) / 100);
 
+// An amount as people would say it: "750 ml", "1.25 kg".
+function amountLabel({ kind, amount }: Quantity): string {
+  const [small, big] = kind === "mass" ? ["g", "kg"] : ["ml", "L"];
+  return amount >= 1000 ? `${twoDecimals(amount / 1000)} ${big}` : `${Math.round(amount)} ${small}`;
+}
+
 // What's in stock, as people would say it: "500 g", "2 × 500 g", or the
 // total when the packets differ ("1.25 kg", "750 ml").
 function stockLabel(packets: Pick<PantryPacket, "size">[], stock: Quantity): string {
   const sizes = packets.map((packet) => (packet.size ?? "").trim());
   if (sizes.every((size) => size === sizes[0])) return sizes.length > 1 ? `${sizes.length} × ${sizes[0]}` : sizes[0];
-  const [small, big] = stock.kind === "mass" ? ["g", "kg"] : ["ml", "L"];
-  return stock.amount >= 1000 ? `${twoDecimals(stock.amount / 1000)} ${big}` : `${Math.round(stock.amount)} ${small}`;
+  return amountLabel(stock);
+}
+
+type Need = { line: string; measures?: RecipeMeasures };
+
+// The total of some lines in grams or millilitres, or null if any can't be
+// read in that kind of measure.
+function totalOf(needs: Need[], kind: Kind): number | null {
+  let total = 0;
+  for (const { line, measures } of needs) {
+    const quantity = quantityOf(line, measures ?? US_MEASURES);
+    if (!quantity || quantity.kind !== kind) return null;
+    total += quantity.amount;
+  }
+  return total;
 }
 
 // How a pantry item's packets cover what some recipe lines need of it (each
 // line with its recipe's measures). Unknown unless every line and packet
-// can be read in the same kind of measure.
-export function coverOf(
-  needs: { line: string; measures?: RecipeMeasures }[],
-  packets: Pick<PantryPacket, "size">[]
-): Cover {
+// can be read in the same kind of measure. `setAside`: what other lines use
+// of these packets first (a recipe asking for linguine, before one where
+// any pasta will do); then only what's left counts ("300 g spare").
+export function coverOf(needs: Need[], packets: Pick<PantryPacket, "size">[], { setAside = [] as Quantity[] } = {}): Cover {
   const stock = stockOf(packets);
   if (!stock || !needs.length) return UNKNOWN;
-  let needed = 0;
-  for (const { line, measures } of needs) {
-    const quantity = quantityOf(line, measures ?? US_MEASURES);
-    if (!quantity || quantity.kind !== stock.kind) return UNKNOWN;
-    needed += quantity.amount;
-  }
-  const have = stockLabel(packets, stock);
+  const needed = totalOf(needs, stock.kind);
+  if (needed === null || setAside.some((part) => part.kind !== stock.kind)) return UNKNOWN;
+  const used = setAside.reduce((sum, part) => sum + part.amount, 0);
+  const left = Math.max(0, stock.amount - used);
+  const have = used > 0 ? (left > 0 ? `${amountLabel({ kind: stock.kind, amount: left })} spare` : "none spare") : stockLabel(packets, stock);
   // On purpose: a few percent short counts as enough. Labels and units
   // differ that much (a 32 fl oz carton is 946 ml, 4 cups 960 ml), and
   // "⅛ cup broth" or "0 L stock" on the list helps nobody.
-  if (stock.amount >= needed * (1 - NEAR_ENOUGH)) return { kind: "enough", have };
-  return { kind: "short", have, still: (needed - stock.amount) / needed };
+  if (left >= needed * (1 - NEAR_ENOUGH)) return { kind: "enough", have };
+  return { kind: "short", have, still: (needed - left) / needed };
+}
+
+// Covers for everything a recipe or a week's plan needs from the pantry,
+// by key: a specific item's lines count against its own packets first; a
+// group's ("any pasta") against all its kinds' packets, less what the lines
+// asking for one of those kinds take from that kind's own packets, so one
+// bag isn't counted twice. A kind takes at most what its packets hold (none
+// when it has none), or all of them when its lines can't be measured.
+export function coversFor(
+  groups: { key: string; items: Pick<PantryItem, "id">[]; needs: Need[]; anyKind: boolean }[],
+  packets: Pick<PantryPacket, "id" | "item" | "brand" | "size" | "created">[]
+): Map<string, Cover> {
+  const covers = new Map<string, Cover>();
+  const packetsFor = (items: Pick<PantryItem, "id">[]) => items.flatMap((item) => packetsOf(packets, item.id));
+  const takes = (other: { items: Pick<PantryItem, "id">[]; needs: Need[] }): Quantity | null => {
+    const own = stockOf(packetsFor(other.items));
+    if (!own) return null;
+    const need = totalOf(other.needs, own.kind);
+    return { kind: own.kind, amount: need === null ? own.amount : Math.min(need, own.amount) };
+  };
+  for (const group of groups) {
+    if (group.anyKind) {
+      const kinds = new Set(group.items.map((item) => item.id));
+      const setAside = groups
+        .filter((other) => !other.anyKind && other.items.some((item) => kinds.has(item.id)))
+        .map(takes)
+        .filter((part): part is Quantity => part !== null);
+      covers.set(group.key, coverOf(group.needs, packetsFor(group.items), { setAside }));
+    } else {
+      covers.set(group.key, coverOf(group.needs, packetsFor(group.items)));
+    }
+  }
+  return covers;
 }
 
 const NEAR_ENOUGH = 0.05;
@@ -127,6 +177,6 @@ export function stillToBuy(line: string, cover: Cover): string {
 // tell.
 export function coverNote(cover: Cover, item?: Pick<PantryItem, "status"> | null): string {
   if (cover.kind === "enough") return `Enough: ${cover.have}${item?.status === "low" ? ", but marked Low" : ""}`;
-  if (cover.kind === "short") return `Have ${cover.have}`;
+  if (cover.kind === "short") return cover.have === "none spare" ? "None spare" : `Have ${cover.have}`;
   return "";
 }
