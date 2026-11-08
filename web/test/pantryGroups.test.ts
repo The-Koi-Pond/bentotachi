@@ -39,6 +39,21 @@ test("items go in drawers by place and subcategory, A to Z, ignoring capitals", 
   assert.equal(groups[1].subgroups[1].key, "fridge/dairy");
 });
 
+test("kinds of one thing sit together under the group's name, wherever their subcategory says", () => {
+  const groups = groupItems([
+    item("Penne", "Cupboard", "Dry goods", { kind_of: "Pasta" }),
+    item("Linguine", "Cupboard", "", { kind_of: "pasta" }),
+    item("Flour", "Cupboard", "Baking"),
+  ]);
+  assert.deepEqual(
+    groups[0].subgroups.map((s) => [s.label, s.items.map((i) => i.name)]),
+    [
+      ["Baking", ["Flour"]],
+      ["Pasta", ["Linguine", "Penne"]],
+    ],
+  );
+});
+
 test("items with no place go last, under Other", () => {
   const groups = groupItems([item("Mystery", " "), item("Rice", "Cupboard")]);
   assert.deepEqual(groups.map((g) => g.label), ["Cupboard", "Other"]);

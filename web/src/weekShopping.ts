@@ -4,20 +4,24 @@
 // out, and each row says whether it's worth buying.
 
 import { headingOf } from "./format.ts";
-import { linkFor } from "./pantryLinks.ts";
+import { familyStatus, linkFor, linkTarget, type Family } from "./pantryLinks.ts";
 import { packetsOf } from "./pantryPackets.ts";
 import { coverOf, stillToBuy, worthBuying, type Cover } from "./pantryStock.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 import { recipeMeasures, type RecipeMeasures } from "./volumes.ts";
-import type { PantryItem, PantryPacket, Recipe } from "./pb";
+import type { PantryItem, PantryPacket, PantryStatus, Recipe } from "./pb";
 
 export interface GatheredRow {
-  // Unique per row: "p:<pantry id>" or "t:<line in lowercase>".
+  // Unique per row: "p:<pantry id>", "p:kind:<group>" or "t:<line in
+  // lowercase>".
   key: string;
   // What goes on the shopping list: the recipe's words (listWording), or
   // the pantry's name when several recipes need it in different words.
   text: string;
   pantryItem: PantryItem | null;
+  // The group when any kind of it will do ("Pasta"; pantryLinks.ts). Such
+  // a row goes on the list unlinked: buying it can't say which kind.
+  family: Family | null;
   // The dinners that need it, in plan order, without repeats.
   recipeTitles: string[];
   // The first recipe that needs it, for the shopping item's "for" note.
@@ -131,20 +135,23 @@ export function gatherIngredients(
       // As when adding from the recipe page (listWording), so the list's
       // duplicate check sees the same words.
       const plain = listWording(line);
-      const key = link.item ? `p:${link.item.id}` : `t:${plain.toLowerCase()}`;
+      const target = linkTarget(link);
+      const key = target ? `p:${target}` : `t:${plain.toLowerCase()}`;
       needs.set(key, [...(needs.get(key) ?? []), { line: plain, measures }]);
       const row = rows.get(key);
       if (row) {
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);
         // Needed more than once (two recipes, or twice in one): one row, by
-        // the pantry's name ("Onion"), as one line's amount would be too
-        // little.
-        if (link.item) row.text = link.item.name;
+        // the pantry's name ("Onion", or "Pasta" for any kind), as one
+        // line's amount would be too little.
+        const name = link.item?.name ?? link.family?.name;
+        if (name) row.text = name;
       } else {
         rows.set(key, {
           key,
           text: plain,
           pantryItem: link.item,
+          family: link.family,
           recipeTitles: [recipe.title],
           recipeId: recipe.id,
           cover: { kind: "unknown" },
@@ -153,16 +160,24 @@ export function gatherIngredients(
     }
   }
   for (const row of rows.values()) {
-    if (!row.pantryItem) continue;
+    const items = row.pantryItem ? [row.pantryItem] : (row.family?.items ?? []);
+    if (!items.length) continue;
     const lines = needs.get(row.key) ?? [];
-    row.cover = coverOf(lines, packetsOf(packets, row.pantryItem.id));
+    row.cover = coverOf(lines, items.flatMap((item) => packetsOf(packets, item.id)));
     if (lines.length === 1) row.text = stillToBuy(row.text, row.cover);
   }
   return [...rows.values()];
 }
 
+// A row's level: its pantry item's, or its group's (any kind will do), or
+// null when it isn't in the pantry.
+export function rowStatus(row: Pick<GatheredRow, "pantryItem" | "family">): PantryStatus | null {
+  return row.pantryItem?.status ?? (row.family ? familyStatus(row.family.items) : null);
+}
+
 // Ticked to start with: what's worth buying (worthBuying). Lines not in the
 // pantry are ticked too, since Bentotachi can't tell.
 export function startsTicked(row: GatheredRow): boolean {
-  return worthBuying(row.pantryItem, row.cover);
+  const status = rowStatus(row);
+  return worthBuying(status ? { status } : null, row.cover);
 }

@@ -3,9 +3,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   carriedLinks,
+  familyLinkValue,
+  familyStatus,
   guessPantryItem,
+  linkedItems,
   linkFor,
   linkKey,
+  linkStatus,
+  linkTarget,
   missingFromPantry,
   pantryCheck,
   sameLinks,
@@ -49,15 +54,61 @@ test("only matches whole words", () => {
 
 test("a chosen link beats a guess; an empty choice means not a pantry item", () => {
   const line = "2 onions, diced";
-  assert.deepEqual(linkFor(line, null, pantry), { kind: "guessed", item: pantry[0] });
-  assert.deepEqual(linkFor(line, { [linkKey(line)]: "rice" }, pantry), { kind: "chosen", item: pantry[6] });
-  assert.deepEqual(linkFor(line, { [linkKey(line)]: "" }, pantry), { kind: "notPantry", item: null });
-  assert.deepEqual(linkFor("water", null, pantry), { kind: "unmatched", item: null });
+  assert.deepEqual(linkFor(line, null, pantry), { kind: "guessed", item: pantry[0], family: null });
+  assert.deepEqual(linkFor(line, { [linkKey(line)]: "rice" }, pantry), { kind: "chosen", item: pantry[6], family: null });
+  assert.deepEqual(linkFor(line, { [linkKey(line)]: "" }, pantry), { kind: "notPantry", item: null, family: null });
+  assert.deepEqual(linkFor("water", null, pantry), { kind: "unmatched", item: null, family: null });
 });
 
 test("falls back to a guess when the chosen item was deleted", () => {
   const line = "2 onions, diced";
-  assert.deepEqual(linkFor(line, { [linkKey(line)]: "gone" }, pantry), { kind: "guessed", item: pantry[0] });
+  assert.deepEqual(linkFor(line, { [linkKey(line)]: "gone" }, pantry), { kind: "guessed", item: pantry[0], family: null });
+});
+
+const kind = (id: string, name: string, of: string, status = "have") => ({ id, name, status, kind_of: of }) as never;
+const pastas = [kind("lin", "Linguine", "Pasta"), kind("pen", "Penne", "Pasta", "low"), kind("spa", "Spaghetti", "pasta", "out")];
+
+test("kinds of one thing: a line naming a kind links to that kind only", () => {
+  const link = linkFor("400 g linguine", null, pastas);
+  assert.equal(link.item?.name, "Linguine");
+  // Naming the group too doesn't widen it.
+  assert.equal(linkFor("12 oz linguine pasta", null, pastas).item?.name, "Linguine");
+});
+
+test("kinds of one thing: a kind that isn't in the pantry isn't covered by another", () => {
+  assert.equal(linkFor("300 g orzo", null, pastas).kind, "unmatched");
+  // An unknown kind before the group's name isn't "any pasta" either.
+  assert.equal(linkFor("500 g bucatini pasta", null, pastas).kind, "unmatched");
+});
+
+test("kinds of one thing: a line naming just the group takes any kind, as one group", () => {
+  for (const line of ["500 g pasta", "1 lb dried pasta", "a packet of pasta", "Pasta, to serve"]) {
+    const link = linkFor(line, null, pastas);
+    assert.equal(link.family?.name, "Pasta", line);
+    // "pasta" and "Pasta" are the same group.
+    assert.deepEqual(link.family?.items.map((i) => (i as { id: string }).id), ["lin", "pen", "spa"], line);
+  }
+  assert.equal(linkStatus(linkFor("500 g pasta", null, pastas)), "have");
+  assert.equal(linkTarget(linkFor("500 g pasta", null, pastas)), "kind:pasta");
+});
+
+test("kinds of one thing: 'any of these' can be chosen for a line, and is kept while a kind is left", () => {
+  const line = "400 g linguine";
+  const chosen = linkFor(line, { [linkKey(line)]: familyLinkValue("Pasta") }, pastas);
+  assert.equal(chosen.kind, "chosen");
+  assert.equal(chosen.family?.name, "Pasta");
+  assert.deepEqual(linkedItems(chosen).length, 3);
+  // No kinds of it left: back to a guess.
+  assert.equal(linkFor(line, { [linkKey(line)]: familyLinkValue("Pasta") }, [kind("lin", "Linguine", "")]).item?.name, "Linguine");
+});
+
+test("a group's level: Have if any kind is had, else Low if any is low, else Out", () => {
+  assert.equal(familyStatus([{ status: "out" }, { status: "have" }]), "have");
+  assert.equal(familyStatus([{ status: "out" }, { status: "low" }]), "low");
+  assert.equal(familyStatus([{ status: "out" }]), "out");
+  // "Missing from pantry" for "any pasta" asks the group.
+  assert.equal(missingFromPantry(linkFor("500 g pasta", null, pastas)), false);
+  assert.equal(missingFromPantry(linkFor("500 g pasta", null, [kind("spa", "Spaghetti", "Pasta", "out")])), true);
 });
 
 test("suggests a name for a new pantry item", () => {

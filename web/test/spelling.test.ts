@@ -19,7 +19,8 @@ test("everywhere else sees the text as written, and only whole words change", ()
 // Every line of the app that shows one of the listed words goes through
 // spell() (household.ts's useSpell), so a US household never sees a
 // stray Australian one. A line whose text is spelled elsewhere says so
-// with "// shown through spell()".
+// with "// shown through spell()"; one that isn't text on screen at all
+// (words read from recipes) with "// not on screen".
 test("every listed word on screen goes through spell()", () => {
   const words = new RegExp(`\\b(${Object.keys(US_SPELLING).join("|")})\\b`, "i");
   const src = join(import.meta.dirname, "..", "src");
@@ -34,7 +35,7 @@ test("every listed word on screen goes through spell()", () => {
           .forEach((line, i) => {
             const code = line.replace(/(^|\s)\/\/.*$/, "");
             if (/^\s*(\*|\/\*|\{\/\*)/.test(line) || !words.test(code)) return;
-            if (!/spell\(/.test(code) && !/\/\/ shown through spell\(\)/.test(line)) missed.push(`${entry.name}:${i + 1}: ${line.trim()}`);
+            if (!/spell\(/.test(code) && !/\/\/ (shown through spell\(\)|not on screen)/.test(line)) missed.push(`${entry.name}:${i + 1}: ${line.trim()}`);
           });
       }
     }

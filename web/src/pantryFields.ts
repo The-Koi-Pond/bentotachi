@@ -24,11 +24,22 @@ export interface Fields {
   note: string;
   // Where it goes once opened, or "" for nowhere else.
   openedLocation: string;
+  // The group it's a kind of ("Pasta" for Linguine), or "".
+  kindOf: string;
 }
 
 type Saved = Pick<
   PantryItem,
-  "name" | "location" | "subcategory" | "expires" | "store_url" | "more_store_urls" | "brand" | "note" | "opened_location"
+  | "name"
+  | "location"
+  | "subcategory"
+  | "expires"
+  | "store_url"
+  | "more_store_urls"
+  | "brand"
+  | "note"
+  | "opened_location"
+  | "kind_of"
 >;
 
 // What the fields save, shared by adding and editing (each adds its own
@@ -49,6 +60,7 @@ export function fieldsOf(item?: Partial<Saved>): Fields {
     brand: item?.brand ?? "",
     note: item?.note ?? "",
     openedLocation: item?.opened_location ?? "",
+    kindOf: item?.kind_of ?? "",
   };
 }
 
@@ -66,6 +78,7 @@ export function recordFrom(fields: Fields): ItemRecord | null {
     brand: fields.brand.trim(),
     note: fields.note.trim(),
     opened_location: fields.openedLocation.trim(),
+    kind_of: fields.kindOf.trim(),
   };
 }
 

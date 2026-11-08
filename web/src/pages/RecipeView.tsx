@@ -24,7 +24,17 @@ import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
 import { CartIcon, LinkIcon, PencilIcon, TimerIcon } from "../icons";
-import { carriedLinks, linkFor, linkKey, missingFromPantry, sameLinks, type IngredientLink } from "../pantryLinks";
+import {
+  carriedLinks,
+  linkedItems,
+  linkFor,
+  linkKey,
+  linkStatus,
+  linkTarget,
+  missingFromPantry,
+  sameLinks,
+  type IngredientLink,
+} from "../pantryLinks";
 import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
 import { addToShoppingList, addedMessage } from "../shoppingAdd";
@@ -877,30 +887,36 @@ function IngredientsSection({
   const [linking, setLinking] = useState<string | null>(null);
 
   const linkOf = (line: string) => linkFor(line, recipe.ingredient_links, pantryList);
-  // What the pantry's packets cover of each linked item, over all of this
-  // recipe's lines for it at its size (pantryStock.ts).
+  // What the pantry's packets cover of each thing linked to (an item, or
+  // every kind in a group), over all of this recipe's lines for it at its
+  // size (pantryStock.ts).
   const packets = useLiveRecords<PantryPacket>("pantry_packets");
-  const linesByItem = new Map<string, number[]>();
+  const linesByTarget = new Map<string, number[]>();
+  const itemsByTarget = new Map<string, PantryItem[]>();
   for (const i of pickable) {
-    const item = linkOf(lines[i]).item;
-    if (item) linesByItem.set(item.id, [...(linesByItem.get(item.id) ?? []), i]);
+    const link = linkOf(lines[i]);
+    const target = linkTarget(link);
+    if (!target) continue;
+    linesByTarget.set(target, [...(linesByTarget.get(target) ?? []), i]);
+    itemsByTarget.set(target, linkedItems(link));
   }
   const covers = new Map(
-    [...linesByItem].map(([itemId, indexes]) => [
-      itemId,
+    [...linesByTarget].map(([target, indexes]) => [
+      target,
       coverOf(
         indexes.map((i) => ({ line: scaleLine(lines[i], scale), measures: hints.measures })),
-        packetsOf(packets.items ?? [], itemId)
+        (itemsByTarget.get(target) ?? []).flatMap((item) => packetsOf(packets.items ?? [], item.id))
       ),
     ])
   );
-  const coverOfLine = (i: number): Cover => covers.get(linkOf(lines[i]).item?.id ?? "") ?? { kind: "unknown" };
-  const onlyLineFor = (i: number) => linesByItem.get(linkOf(lines[i]).item?.id ?? "")?.length === 1;
+  const coverOfLine = (i: number): Cover => covers.get(linkTarget(linkOf(lines[i]))) ?? { kind: "unknown" };
+  const onlyLineFor = (i: number) => linesByTarget.get(linkTarget(linkOf(lines[i])))?.length === 1;
   // Beside a line while choosing: "Enough: 2 × 500 g", or "Have 200 g: adds
   // the rest" when only the shortfall goes on the list.
   const pickNote = (i: number) => {
     const cover = coverOfLine(i);
-    const note = coverNote(cover, linkOf(lines[i]).item);
+    const status = linkStatus(linkOf(lines[i]));
+    const note = coverNote(cover, status ? { status } : null);
     return cover.kind === "short" && onlyLineFor(i) ? `${note}: adds the rest` : note;
   };
   // Lines the pantry doesn't have enough of, or at all (not water and the
@@ -1106,7 +1122,8 @@ const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 // dotted outline means Bento guessed the link); or a faint link button when
 // it isn't linked. Tapping either changes the link.
 function PantryChip({ line, link, onClick }: { line: string; link: IngredientLink; onClick: () => void }) {
-  if (!link.item) {
+  const status = linkStatus(link);
+  if (!status) {
     return (
       <button
         className="pantry-link-button"
@@ -1118,8 +1135,10 @@ function PantryChip({ line, link, onClick }: { line: string; link: IngredientLin
       </button>
     );
   }
-  const status = link.item.status;
-  const description = `${link.item.name}: ${STATUS_WORDS[status]}${link.kind === "guessed" ? " (guessed)" : ""}. Tap to change.`;
+  // A group says which kinds are in: "Any pasta: Have (Penne, Linguine)".
+  const name = link.item ? link.item.name : `Any ${link.family?.name.toLowerCase()}`;
+  const kindsIn = link.family?.items.filter((item) => item.status !== "out").map((item) => item.name) ?? [];
+  const description = `${name}: ${STATUS_WORDS[status]}${kindsIn.length ? ` (${kindsIn.join(", ")})` : ""}${link.kind === "guessed" ? " (guessed)" : ""}. Tap to change.`;
   return (
     <button
       className={`pantry-chip status-${status} ${link.kind === "guessed" ? "guessed" : ""}`}

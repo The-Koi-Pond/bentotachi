@@ -16,6 +16,7 @@ test("a new item's form starts blank, with one empty store link box", () => {
     brand: "",
     note: "",
     openedLocation: "",
+    kindOf: "",
   });
 });
 
@@ -30,6 +31,7 @@ test("an item's form holds what it has saved, and saves it back unchanged", () =
     brand: "Lea & Perrins",
     note: "Big bottle",
     opened_location: "Fridge",
+    kind_of: "Sauce",
   };
   const fields = fieldsOf(saved);
   assert.equal(fields.expires, "2027-03-01");

@@ -103,7 +103,10 @@ they say otherwise.
   shown by `<SoftText>`, typed with `<FormatTextarea>` / `toggleMark`
   (`textFormat.ts`).
 - Pantry names: `sameName` (`pantryFields.ts`); ingredient links:
-  `pantryLinks.ts`.
+  `pantryLinks.ts` (`linkFor`). A link can be an item or a group of kinds
+  ("any pasta"): read it through `linkStatus`, `linkedItems` and
+  `linkTarget`, not `link.item` alone; groups from `familiesOf`, a group's
+  level from `familyStatus`, a sheet row's from `rowStatus` (`weekShopping.ts`).
 - A site's name from its address: `siteHost` (`recipeSites.ts`; pass `""`
   as its second argument for blank instead of the address); store:
   `storeFor` / `storeName` (`stores.ts`).

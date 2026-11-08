@@ -1270,6 +1270,39 @@ main {
   background: var(--accent-soft);
 }
 
+/* "Linguine only" or "Any pasta will do", at the top of the link sheet. */
+.link-kind-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.link-kind-choice button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.link-kind-choice button[aria-pressed="true"] {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.link-kind-choice button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .chooser-list button:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: -3px;
@@ -2204,6 +2237,22 @@ main {
 
 .lines-field > span > label {
   display: inline;
+}
+
+/* A pantry item's "A kind of" box, with its "?" beside the label. */
+.kind-of-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.kind-of-field > span > label {
+  display: inline;
+}
+
+.kind-of-field input {
+  font-weight: 400;
 }
 
 .help-button[aria-expanded="true"] {

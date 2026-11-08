@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ShoppingItem } from "./pb";
-import { startsTicked, type GatheredRow } from "./weekShopping";
+import { rowStatus, startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
 import { sameThing } from "./shoppingMatch";
 import { coverNote } from "./pantryStock";
@@ -48,10 +48,10 @@ export function GatheredList({
     <ul className="checklist week-list">
       {rows.map((row) => {
         const already = ticks.onList(row);
-        const status = row.pantryItem?.status;
+        const status = rowStatus(row) ?? undefined;
         // "Enough: 2 × 500 g" or "Have 200 g" when the packets can tell,
         // instead of Have / Low / Out.
-        const note = coverNote(row.cover, row.pantryItem);
+        const note = coverNote(row.cover, status ? { status } : null);
         const noteStatus = row.cover.kind === "enough" && status !== "low" ? "have" : "low";
         return (
           <li key={row.key}>

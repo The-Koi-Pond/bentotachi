@@ -13,7 +13,8 @@ import { useUnsavedChanges } from "./unsavedChanges";
 import { barcodesOf, normaliseBarcode, withBarcode } from "./barcodes";
 import { canScan, scanBarcode, type BarcodeProduct } from "./scanner";
 import { brandsOf, cleanStoreLinks, MOST_STORE_LINKS, PHOTO_REMOVED, photoSources, withPickedLink } from "./pantryItem";
-import { norm, placeOptions, subcategoryOptions } from "./pantryGroups";
+import { norm, placeOptions, subcategoryOptions, uniqueLabels } from "./pantryGroups";
+import { HelpBox, HelpButton, useHelp } from "./Help";
 import { editChanges, fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
 import { brandsToPickFrom, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
@@ -122,6 +123,10 @@ function ItemFields({
   const spell = useSpell();
   const places = placeOptions(existing);
   const subs = subcategoryOptions(existing, fields.location);
+  // The groups already used, to pick from ("Pasta").
+  const kinds = uniqueLabels(existing.map((item) => item.kind_of ?? ""));
+  const kindHelp = useHelp();
+  const kindId = useId();
   // Keep a value that isn't in the lists yet (one just typed in) selectable.
   const withCurrent = (options: string[], value: string) =>
     value.trim() && !options.some((o) => norm(o) === norm(value)) ? [...options, value.trim()] : options;
@@ -138,6 +143,33 @@ function ItemFields({
           required
         />
       </label>
+      <div className="kind-of-field">
+        <span>
+          <label htmlFor={kindId} className="label-text">
+            A kind of <span className="optional">(optional)</span>
+          </label>
+          <HelpButton help={kindHelp} label="What a kind of is for" />
+        </span>
+        <HelpBox help={kindHelp}>
+          <p>
+            Like Pasta for Linguine, Penne and Spaghetti. Kinds of the same thing sit together in the pantry. A recipe
+            asking for linguine only counts Linguine; one that just says pasta can use any of them.
+          </p>
+        </HelpBox>
+        <input
+          id={kindId}
+          value={fields.kindOf}
+          onChange={(e) => onChange({ kindOf: e.target.value })}
+          maxLength={60}
+          placeholder="e.g. Pasta"
+          list={`${kindId}-list`}
+        />
+        <datalist id={`${kindId}-list`}>
+          {kinds.map((kind) => (
+            <option key={kind} value={kind} />
+          ))}
+        </datalist>
+      </div>
       <label>
         <span className="label-text">
           Note <span className="optional">(optional)</span>

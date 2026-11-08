@@ -169,6 +169,27 @@ test("packets in stock: a merged row keeps the pantry's name and adds up what bo
   assert.deepEqual(rows.map((r) => [r.text, r.cover.kind, startsTicked(r)]), [["Rice", "short", true]]);
 });
 
+test("any kind will do: the group is one row, counting every kind's packets, and goes on the list unlinked", () => {
+  const kinds = [
+    { id: "lin", name: "Linguine", status: "out", kind_of: "Pasta" },
+    { id: "pen", name: "Penne", status: "have", kind_of: "Pasta" },
+  ] as never[];
+  const pasta = [packet("p1", "pen", "500 g"), packet("p2", "lin", "200 g")];
+  const rows = gatherIngredients(
+    [recipe("a", "Bake", ["500 g pasta"]), recipe("b", "Salad", ["200 g short pasta"])],
+    kinds,
+    pasta
+  );
+  assert.deepEqual(
+    rows.map((r) => [r.text, r.pantryItem, r.family?.name, r.cover.kind, startsTicked(r)]),
+    // 700 g needed, 700 g in (Penne's and Linguine's packets together).
+    [["Pasta", null, "Pasta", "enough", false]]
+  );
+  // A kind named on its own is only that kind: Linguine is out.
+  const only = gatherIngredients([recipe("c", "Vongole", ["400 g linguine"])], kinds, []);
+  assert.deepEqual(only.map((r) => [r.pantryItem?.id, startsTicked(r)]), [["lin", true]]);
+});
+
 test("packets in stock: each recipe's spoons are its own site's, and marked Low still starts ticked", () => {
   const more = [...packets, packet("4", "soy", "200 ml"), packet("5", "oats", "1 kg")];
   const au = { ...(recipe("a", "Stir-fry", ["12 tbsp soy sauce", "200 g oats"]) as object), source_url: "https://www.taste.com.au/x" };

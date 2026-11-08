@@ -7,16 +7,91 @@
 // ("Chicken stock" beats "Chicken"). People can override a guess for a
 // recipe; those choices are stored on the recipe as ingredient_links, keyed
 // by the line's text, and always win over guesses.
+//
+// Kinds of one thing (Linguine, Penne: each "a kind of Pasta", kind_of on
+// the item; docs/PLAN.md): a line naming a kind links to that kind only; a
+// line naming just the group ("500 g pasta") links to the group, and any
+// kind in it will do. Stored as "kind:Pasta" in ingredient_links.
 
 import { headingOf } from "./format.ts";
-import type { PantryItem, Recipe } from "./pb";
-import { mentions, stem } from "./wordMatch.ts";
+import type { PantryItem, PantryStatus, Recipe } from "./pb";
+import { findMention, mentions, stem } from "./wordMatch.ts";
 import { otherNames } from "./regionalNames.ts";
 import { worthBuying, type Cover } from "./pantryStock.ts";
 
+// A group of kinds: its name as people typed it, and the items in it.
+export interface Family {
+  name: string;
+  items: PantryItem[];
+}
+
 export type IngredientLink =
-  | { kind: "chosen" | "guessed"; item: PantryItem }
-  | { kind: "notPantry" | "unmatched"; item: null };
+  | { kind: "chosen" | "guessed"; item: PantryItem; family: null }
+  | { kind: "chosen" | "guessed"; item: null; family: Family }
+  | { kind: "notPantry" | "unmatched"; item: null; family: null };
+
+const FAMILY_LINK = "kind:";
+
+// What ingredient_links stores for "any kind of this will do".
+export const familyLinkValue = (name: string) => `${FAMILY_LINK}${name.trim()}`;
+
+// The groups the pantry's items form, by their kind_of, keyed in lower case.
+export function familiesOf(items: PantryItem[]): Map<string, Family> {
+  const families = new Map<string, Family>();
+  for (const item of items) {
+    const name = (item.kind_of ?? "").trim();
+    if (!name) continue;
+    const family = families.get(name.toLowerCase()) ?? { name, items: [] };
+    family.items.push(item);
+    families.set(name.toLowerCase(), family);
+  }
+  return families;
+}
+
+// A group's level, as one: Have if any kind is had, else Low if any is low,
+// else Out.
+export function familyStatus(items: Pick<PantryItem, "status">[]): PantryStatus {
+  if (items.some((item) => item.status === "have")) return "have";
+  return items.some((item) => item.status === "low") ? "low" : "out";
+}
+
+// The level of what a line is linked to, or null when it isn't linked.
+export function linkStatus(link: IngredientLink): PantryStatus | null {
+  if (link.item) return link.item.status;
+  return link.family ? familyStatus(link.family.items) : null;
+}
+
+// The pantry items a link covers: its item, or every kind in its group.
+export function linkedItems(link: IngredientLink): PantryItem[] {
+  return link.item ? [link.item] : (link.family?.items ?? []);
+}
+
+// One key per thing linked to (an item's id, or "kind:pasta"), so lines
+// linked to the same thing can be gathered together.
+export function linkTarget(link: IngredientLink): string {
+  if (link.item) return link.item.id;
+  return link.family ? familyLinkValue(link.family.name.toLowerCase()) : "";
+}
+
+// Words that may come right before a group's name in a line that means
+// "any kind" ("500 g dried pasta", "a packet of pasta"). Any other word
+// there is likely a kind ("bucatini pasta", "basmati rice"), so the line
+// isn't taken as "any".
+const ANY_KIND_BEFORE = new Set(
+  "a an of your any some dried fresh cooked uncooked short long small large medium favourite favorite leftover extra".split(" ") // not on screen
+);
+const AMOUNT_BEFORE = /^(\d+([.,/]\d+)?|[½¼¾⅓⅔⅛]|g|grams?|kg|kilos?|oz|ounces?|lbs?|pounds?|cups?|packets?|packs?|bags?|boxes?|x|×)$/;
+
+// The group a line names, when no kind or other item is named in it.
+function guessFamily(line: string, items: PantryItem[]): Family | null {
+  for (const family of familiesOf(items).values()) {
+    const at = findMention(line, family.name);
+    if (!at) continue;
+    const before = line.slice(0, at.start).trim().toLowerCase().split(/\s+/).pop() ?? "";
+    if (!before || ANY_KIND_BEFORE.has(before) || AMOUNT_BEFORE.test(before)) return family;
+  }
+  return null;
+}
 
 const norm = (text: string) => text.trim().toLowerCase();
 
@@ -42,7 +117,8 @@ export function guessPantryItem(line: string, items: PantryItem[]): PantryItem |
 // Whether a recipe line is worth buying (worthBuying, pantryStock.ts), for
 // "Missing from pantry". Never lines marked "not a pantry item" (water).
 export function missingFromPantry(link: IngredientLink, cover: Cover = { kind: "unknown" }): boolean {
-  return link.kind !== "notPantry" && worthBuying(link.item, cover);
+  const status = linkStatus(link);
+  return link.kind !== "notPantry" && worthBuying(status ? { status } : null, cover);
 }
 
 // What a line is linked to: someone's choice for this recipe, else a guess.
@@ -54,13 +130,21 @@ export function linkFor(
   const key = linkKey(line);
   if (links && key in links) {
     const id = links[key];
-    if (!id) return { kind: "notPantry", item: null };
-    const item = items.find((i) => i.id === id);
-    if (item) return { kind: "chosen", item };
-    // The chosen item has been deleted from the pantry: fall back to a guess.
+    if (!id) return { kind: "notPantry", item: null, family: null };
+    if (id.startsWith(FAMILY_LINK)) {
+      const family = familiesOf(items).get(id.slice(FAMILY_LINK.length).toLowerCase());
+      if (family) return { kind: "chosen", item: null, family };
+      // No kinds of it left in the pantry: fall back to a guess.
+    } else {
+      const item = items.find((i) => i.id === id);
+      if (item) return { kind: "chosen", item, family: null };
+      // The chosen item has been deleted from the pantry: fall back to a guess.
+    }
   }
   const guess = guessPantryItem(line, items);
-  return guess ? { kind: "guessed", item: guess } : { kind: "unmatched", item: null };
+  if (guess) return { kind: "guessed", item: guess, family: null };
+  const family = guessFamily(line, items);
+  return family ? { kind: "guessed", item: null, family } : { kind: "unmatched", item: null, family: null };
 }
 
 // The recipe's ingredient_links after its ingredients were edited from
@@ -168,10 +252,11 @@ export function pantryCheck(
   const out = new Map<string, PantryItem>();
   for (const line of recipe.ingredients ?? []) {
     if (headingOf(line) !== null) continue;
-    const { item } = linkFor(line, recipe.ingredient_links, items);
-    if (!item) continue;
+    const link = linkFor(line, recipe.ingredient_links, items);
+    const status = linkStatus(link);
+    if (!status) continue;
     linked += 1;
-    if (item.status === "out") out.set(item.id, item);
+    if (status === "out") for (const item of linkedItems(link)) out.set(item.id, item);
   }
   return { linked, out: [...out.values()] };
 }

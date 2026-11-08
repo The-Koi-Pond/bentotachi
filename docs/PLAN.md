@@ -1605,7 +1605,15 @@ when a recipe uses most of it? probably nothing).
 
 Built 2026-11-08: 2 and 3 (PacketCounters.tsx, PantryCard.tsx), in the
 row, the card and the edit form. The card also says what's in stock, as
-the Simple layout's row doesn't. Next: 1 and 4 (kinds), then 5.
+the Simple layout's row doesn't. Then 1 and 4: kind_of on pantry items
+("A kind of", with a "?" saying what it's for), kinds under their group's
+name in the pantry, links to "kind:Pasta" for any kind (pantryLinks.ts),
+and "Linguine only" / "Any pasta will do" plus "Any pasta" in the link
+sheet's list. A line names "any" only when nothing but an amount or a
+describing word ("dried", "short") comes before the group's name, so
+"bucatini pasta" isn't taken as any pasta. Not built: splitting an old
+umbrella item ("Pasta") into kinds; renaming it to one kind and setting
+"A kind of" does it by hand. Next: 5.
 
 **Ticking bought things adds a packet** (agreed and built 2026-11-08):
 only for items that already use packets, in the size and brand of the

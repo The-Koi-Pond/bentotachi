@@ -130,6 +130,9 @@ export interface PantryItem extends RecordModel {
   // What each barcode's packet is, once known: {"9300633603161": {"brand":
   // "White Mill", "size": "1 kg"}} (see pantryPackets.ts).
   barcode_details?: Record<string, { brand?: string; size?: string }> | null;
+  // The group it's a kind of ("Pasta" for Linguine), or "" (see
+  // pantryLinks.ts and the pantry_kind_of migration).
+  kind_of?: string;
   // The last packet added's brand and size, kept after the packets are
   // gone: what buying it again adds (pantry_usual_packet migration).
   usual_packet?: { brand?: string; size?: string } | null;

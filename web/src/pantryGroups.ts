@@ -74,16 +74,19 @@ export interface Group<T> {
   subgroups: Subgroup<T>[];
 }
 
-type Groupable = Pick<PantryItem, "name" | "location" | "subcategory" | "opened_location" | "opened">;
+type Groupable = Pick<PantryItem, "name" | "location" | "subcategory" | "opened_location" | "opened" | "kind_of">;
 
 // Place -> subcategory -> items. Spelling differences in case ("fridge" vs
 // "Fridge") land in the same group. Items with no place go last under
 // "Other"; items with no subcategory go first within their place. Opened
-// items go in their once-opened place (see placeOf).
+// items go in their once-opened place (see placeOf). Kinds of one thing
+// (Linguine, Penne: kind_of "Pasta") sit together under that name instead
+// of their subcategory.
 export function groupItems<T extends Groupable>(items: T[]): Group<T>[] {
   const places = new Map<string, { label: string; subs: Map<string, { label: string; items: T[] }> }>();
   for (const item of items) {
-    const { location, subcategory } = placeOf(item);
+    const { location, subcategory: place } = placeOf(item);
+    const subcategory = item.kind_of?.trim() || place;
     const placeKey = norm(location);
     if (!places.has(placeKey)) places.set(placeKey, { label: location.trim() || "Other", subs: new Map() });
     const subs = places.get(placeKey)!.subs;
