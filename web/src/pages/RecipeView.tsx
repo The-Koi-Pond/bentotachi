@@ -749,29 +749,33 @@ export default function RecipeView() {
       )}
 
       {(recipe.source_url || (recipe.expand?.added_by && !singleUser)) && (
+        // One line, "From ica.se · Added by Sam" (Xel, 2026-11-08).
         <footer className="muted small-print">
-          {recipe.source_url && (
-            <p>
-              From{" "}
-              <a href={recipe.source_url} target="_blank" rel="noreferrer">
-                {new URL(recipe.source_url).hostname.replace(/^www\./, "")}
-              </a>
-            </p>
-          )}
-          {recipe.expand?.added_by && !singleUser && (
-            <p>
-              Added by{" "}
-              {/* Opens the recipe list showing everything they added. */}
-              <Link
-                to={`/?by=${recipe.added_by}`}
-                className="person-name"
-                style={personStyle(recipe.expand.added_by)}
-                aria-label={`Recipes added by ${displayName(recipe.expand.added_by)}`}
-              >
-                {displayName(recipe.expand.added_by)}
-              </Link>
-            </p>
-          )}
+          <p>
+            {recipe.source_url && (
+              <>
+                From{" "}
+                <a href={recipe.source_url} target="_blank" rel="noreferrer">
+                  {siteHost(recipe.source_url)}
+                </a>
+              </>
+            )}
+            {recipe.source_url && recipe.expand?.added_by && !singleUser && <span aria-hidden="true"> · </span>}
+            {recipe.expand?.added_by && !singleUser && (
+              <>
+                Added by{" "}
+                {/* Opens the recipe list showing everything they added. */}
+                <Link
+                  to={`/?by=${recipe.added_by}`}
+                  className="person-name"
+                  style={personStyle(recipe.expand.added_by)}
+                  aria-label={`Recipes added by ${displayName(recipe.expand.added_by)}`}
+                >
+                  {displayName(recipe.expand.added_by)}
+                </Link>
+              </>
+            )}
+          </p>
         </footer>
       )}
 
