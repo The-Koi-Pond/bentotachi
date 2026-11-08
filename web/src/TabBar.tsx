@@ -18,19 +18,26 @@ const RECIPE_PAGES = ["/recipes", "/add", "/new", "/shelves"];
 // pages light it up; the rest (the fridge door, profile, household,
 // backups, import and export, opened from the title or the ⋮ menu) belong
 // to no tab.
+// Where you last were in the Recipes tab (a recipe, or the list with its
+// filters), so leaving for Shopping and tapping Recipes again goes back
+// there (Xel, 2026-11-08). Tapping Recipes while in it goes to the list.
+let lastRecipesPlace = "/";
+
 export default function TabBar() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const current =
     pathname === "/" || RECIPE_PAGES.some((page) => pathname.startsWith(page))
       ? "/"
       : (TABS.find((tab) => tab.to !== "/" && pathname.startsWith(tab.to))?.to ?? "");
+  if (current === "/") lastRecipesPlace = pathname + search;
+  const target = (tab: string) => (tab === "/" && current !== "/" ? lastRecipesPlace : tab);
 
   return (
     <nav className="tabbar" aria-label="Sections">
       {TABS.map((tab) => (
         <Link
           key={tab.to}
-          to={tab.to}
+          to={target(tab.to)}
           className={current === tab.to ? "active" : ""}
           aria-current={current === tab.to ? "page" : undefined}
         >
