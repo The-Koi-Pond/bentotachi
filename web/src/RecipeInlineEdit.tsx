@@ -4,6 +4,8 @@ import { PencilIcon } from "./icons";
 import ExtraTimesEditor, { fromRows, toRows } from "./ExtraTimesEditor";
 import FormatTextarea from "./FormatTextarea";
 import { confirmDiscard, useUnsavedChanges } from "./unsavedChanges";
+import { HelpBox, HelpButton, useHelp } from "./Help";
+import FormattingTips from "./FormattingTips";
 
 // Editing one part of a recipe right on its page, instead of the Edit page:
 // a ✎ beside the part's heading opens a box for just that part, with Save
@@ -54,6 +56,7 @@ function SaveButtons({ busy, error, onCancel }: { busy: boolean; error: string; 
 export function TextEditor({
   label,
   hint,
+  tips,
   initial,
   rows,
   onSave,
@@ -61,6 +64,8 @@ export function TextEditor({
 }: {
   label: string;
   hint?: string;
+  // A "?" after the hint for the headings and formatting this part takes.
+  tips?: "ingredients" | "steps";
   initial: string;
   rows: number;
   onSave: (text: string) => Promise<void>;
@@ -70,9 +75,20 @@ export function TextEditor({
   const dirty = text !== initial;
   useUnsavedChanges(dirty);
   const { busy, error, submit } = useSaving(() => onSave(text));
+  const help = useHelp();
   return (
     <form className="stack inline-editor" onSubmit={submit}>
-      {hint && <p className="hint">{hint}</p>}
+      {(hint || tips) && (
+        <p className="hint">
+          {hint}
+          {tips && <HelpButton help={help} label="Headings and formatting" />}
+        </p>
+      )}
+      {tips && (
+        <HelpBox help={help}>
+          <FormattingTips part={tips} />
+        </HelpBox>
+      )}
       <FormatTextarea
         rows={rows}
         value={text}

@@ -27,6 +27,7 @@ import {
 } from "../paprikaImport";
 import { MAX_PHOTOS, photoStepsFor, uploadName } from "../recipePhotos";
 import { localToday } from "../dates";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 
 // ⋮ → Import & export: bring in recipes from a Paprika file (Paprika,
 // Mealie, Tandoor or another Bento make them), and save every recipe as one.
@@ -63,6 +64,7 @@ async function recipePhoto(url: string): Promise<Blob | null> {
 // photos, skipping any already here (alreadyHave: Bentotachi's own export
 // of it, or the same name and the same link or ingredients).
 function ImportRecipes() {
+  const help = useHelp();
   const [progress, setProgress] = useState("");
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const busy = progress !== "";
@@ -253,16 +255,21 @@ function ImportRecipes() {
 
   return (
     <section className="card stack">
-      <h2>Import recipes</h2>
+      <h2>
+        Import recipes
+        <HelpButton help={help} label="What comes across" />
+      </h2>
       <p>
         Adds recipes from a Paprika file (<code>.paprikarecipes</code>), with their photos. Paprika, Mealie, Tandoor and
         Bentotachi itself can export one. Recipes already here are skipped, so importing the same file twice is fine.
       </p>
-      <p className="muted small-note">
-        Categories become tags, and each recipe's rating becomes your own onigiri (and a favorite your heart, where the
-        file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and difficulty go into its notes. Meal plans don't come
-        across.
-      </p>
+      <HelpBox help={help}>
+        <p>
+          Categories become tags, and each recipe's rating becomes your own onigiri (and a favourite your heart, where the
+          file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and
+          difficulty go into its notes. Meal plans don't come across.
+        </p>
+      </HelpBox>
       {opened && !busy && (
         <div className="opened-file stack" role="status">
           <p>
@@ -305,6 +312,7 @@ function ImportRecipes() {
 // Every recipe, with its photo, as a Paprika file (see paprikaExport.ts),
 // to move to another app or keep a copy.
 function ExportRecipes() {
+  const help = useHelp();
   const [progress, setProgress] = useState("");
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const busy = progress !== "";
@@ -369,7 +377,10 @@ function ExportRecipes() {
 
   return (
     <section className="card stack">
-      <h2>Export recipes</h2>
+      <h2>
+        Export recipes
+        <HelpButton help={help} label="What goes in the file" />
+      </h2>
       <p>
         Saves recipes, with their photos, as one Paprika file (<code>.paprikarecipes</code>). Paprika, Mealie, Tandoor
         and Bentotachi can import it, so you can move your recipes to another app, share a shelf with a friend, or just
@@ -387,11 +398,13 @@ function ExportRecipes() {
           ))}
         </select>
       </label>
-      <p className="muted small-note">
-        Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
-        rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favorites. The meal
-        plan, shopping list, pantry and cooking history aren't included.
-      </p>
+      <HelpBox help={help}>
+        <p>
+          Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
+          rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favourites. The
+          meal plan, shopping list, pantry and cooking history aren't included.
+        </p>
+      </HelpBox>
       <div className="actions">
         <button className="button" onClick={() => void exportAll()} disabled={busy}>
           {busy ? progress : "Export recipes"}

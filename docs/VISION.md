@@ -78,6 +78,11 @@ Cheeky and silly wherever it can afford to be, while staying clear.
 - **No digs at named competitors.** "No subscriptions" says it; naming and
   shaming another app invites trouble, and Play's listing rules forbid it.
 - Plain English underneath: short sentences, no jargon, spell things out.
+- **Tips live behind a "?"** (decided 2026-11-08): how to use something
+  (formatting codes, dragging, what an import carries, "not sure? count
+  the teaspoons") opens from a small ? beside what it explains, right
+  underneath it (web/src/Help.tsx). What a box needs, what just happened
+  and a mode's banner stay visible.
 - **The tagline** (decided 2026-11-04): "Because dinner insists on
   happening every day.", under the title in the app's first screen and on
   the website. A real sentence in normal case. **No eyebrow taglines:** an

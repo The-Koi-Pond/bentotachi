@@ -16,6 +16,8 @@ import { useUnsavedChanges } from "../unsavedChanges";
 import { usePreviewUrl } from "../pantryPhoto";
 import { canTakePhoto } from "../PantryPhotoField";
 import { siteHost } from "../recipeSites";
+import { HelpBox, HelpButton, useHelp } from "../Help";
+import FormattingTips from "../FormattingTips";
 
 interface Draft {
   title: string;
@@ -116,6 +118,8 @@ export default function RecipeEdit() {
   const pasted = (useLocation().state as { pasted?: PastedRecipe } | null)?.pasted;
   const startDraft: Draft = { ...blankDraft, source_url: searchParams.get("source") ?? "" };
   const [draft, setDraft] = useState<Draft | null>(id ? null : pasted ? fromPasted(pasted) : startDraft);
+  const ingredientsHelp = useHelp();
+  const stepsHelp = useHelp();
   const [photo, setPhoto] = useState<File | null>(null);
   // The chosen photo, shown before it's saved.
   const photoPreview = usePreviewUrl(photo);
@@ -247,19 +251,25 @@ export default function RecipeEdit() {
       <ExtraTimesEditor rows={draft.extra_times} onChange={(extra_times) => setDraft({ ...draft, extra_times })} />
 
       <label>
-        Ingredients
-        <span className="hint">
-          One per line. Start a line with # for a heading, like “# For the sauce”. Select words and press B, I or U to
-          make them bold, soft grey italics or underlined.
+        <span>
+          Ingredients
+          <HelpButton help={ingredientsHelp} label="Headings and formatting" />
         </span>
+        <span className="hint">One per line.</span>
+        <HelpBox help={ingredientsHelp}>
+          <FormattingTips part="ingredients" />
+        </HelpBox>
         <FormatTextarea rows={10} {...field("ingredients")} />
       </label>
       <label>
-        Method
-        <span className="hint">
-          One step per line. A # heading starts the step numbers again at 1 (a separate part, like a sauce); a ##
-          heading carries on counting. B, I and U work here too.
+        <span>
+          Method
+          <HelpButton help={stepsHelp} label="Headings and formatting" />
         </span>
+        <span className="hint">One step per line.</span>
+        <HelpBox help={stepsHelp}>
+          <FormattingTips part="steps" />
+        </HelpBox>
         <FormatTextarea rows={10} {...field("steps")} />
       </label>
       <div className="stack tag-field">

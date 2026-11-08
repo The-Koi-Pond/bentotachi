@@ -33,6 +33,7 @@ import {
 } from "../dates";
 import { CartIcon, CloseIcon, GripIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
@@ -105,6 +106,7 @@ export default function MealPlan() {
   const [error, setError] = useState("");
   // Removing a night shows "Undo" for a moment before it really happens.
   const undo = useUndo();
+  const help = useHelp();
 
   function changeView(next: View) {
     setView(next);
@@ -302,7 +304,10 @@ export default function MealPlan() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        <h1>{planTitle(meals)}</h1>
+        <h1>
+          {planTitle(meals)}
+          <HelpButton help={help} label="How the plan works" />
+        </h1>
         <div className="view-switch" role="group" aria-label="View">
           <button aria-pressed={isList} onClick={() => changeView("list")}>
             List
@@ -312,6 +317,18 @@ export default function MealPlan() {
           </button>
         </div>
       </div>
+      <HelpBox help={help}>
+        {isList ? (
+          <>
+            <p>
+              Drag <GripIcon /> to move a {word} to another day or meal, or onto another one to swap them.
+            </p>
+            <p>“+ {MEAL_NAMES[meals[meals.length - 1]]}” under a day adds another recipe to it, like a side.</p>
+          </>
+        ) : (
+          <p>Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Drag a picture to move it to another day.</p>
+        )}
+      </HelpBox>
 
       <div className={`plan-toolbar ${isList ? "centred" : ""}`}>
         {!isList && <strong className="plan-range">{monthLabel}</strong>}
@@ -386,21 +403,6 @@ export default function MealPlan() {
               onRemove={remove}
             />
           </>
-        )}
-        {/* How to move things, once there's something planned to move: one
-            short line after the plan, so the top stays clear (2026-11-06). */}
-        {(shown.length > 0 || !isList) && (
-          <p className="muted plan-hint">
-            {isList ? (
-              <>
-                Drag <GripIcon /> to move a {word}, or onto another to swap.
-              </>
-            ) : shown.length > 0 ? (
-              `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}. Drag a picture to move it.`
-            ) : (
-              `Tap a day to see or add its ${meals.length === 1 ? word : "meals"}.`
-            )}
-          </p>
         )}
         {/* The copy of a dinner that follows your finger while dragging. */}
         <DragOverlay>

@@ -9,6 +9,7 @@ import { COUNTRIES, OTHER_COUNTRY } from "../country";
 import { storesIn } from "../stores";
 import StoreLogo from "../StoreLogo";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 
 const users = () => pb.collection<User>("users");
 
@@ -141,6 +142,7 @@ function CountrySetting() {
 // (Australian sites use 20 ml, nearly everyone else 15 ml) get a hint in
 // these spoons (see volumes.ts). Saves as soon as it's changed.
 function TablespoonSetting() {
+  const help = useHelp();
   const [tablespoon, setTablespoon] = useTablespoon();
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -156,12 +158,15 @@ function TablespoonSetting() {
 
   return (
     <section className="card stack">
-      <h2>Our tablespoon</h2>
+      <h2>
+        Our tablespoon
+        <HelpButton help={help} label="Not sure which?" />
+      </h2>
+      <HelpBox help={help}>
+        <p>Count how many teaspoons fill your tablespoon: 3 means 15 ml, 4 means 20 ml.</p>
+      </HelpBox>
       <label>
-        <span className="hint">
-          Not sure? Count how many teaspoons fill it: 3 means 15 ml, 4 means 20 ml. Recipes written for the other size
-          get a hint, like “2 tbsp (your 1 tbsp + 2 tsp)”.
-        </span>
+        <span className="hint">Recipes written for the other size get a hint, like “2 tbsp (your 1 tbsp + 2 tsp)”.</span>
         <select value={tablespoon} onChange={(e) => void change(Number(e.target.value))} aria-label="Our tablespoon">
           <option value={15}>15 ml (most spoons)</option>
           <option value={20}>20 ml (the Australian standard)</option>

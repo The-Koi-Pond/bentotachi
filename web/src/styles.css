@@ -896,12 +896,7 @@ main {
   justify-content: center;
 }
 
-.plan-hint {
-  margin: 0;
-  font-size: 0.88rem;
-}
-
-.plan-hint svg {
+.help-box svg {
   width: 14px;
   height: 14px;
   vertical-align: -2px;
@@ -2166,6 +2161,55 @@ main {
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 400;
+}
+
+/* The "?" beside a heading or box (Help.tsx), and the tip it opens right
+   underneath. */
+.help-button {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  vertical-align: middle;
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.help-button[aria-expanded="true"] {
+  color: var(--accent);
+}
+
+.help-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.help-box {
+  margin: 6px 0 2px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
+.help-box p {
+  margin: 0;
+}
+
+.help-box p + p {
+  margin-top: 6px;
 }
 
 /* Forms */

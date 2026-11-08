@@ -99,9 +99,6 @@ const withHints = (line: string, { country, measures, tablespoon }: Hints) =>
     country,
   );
 
-// Shown with the ingredient and method boxes.
-const SOFT_HINT = " Select words and press B, I or U to make them bold, soft grey italics or underlined.";
-
 // The parts of a recipe that can be changed right on its page.
 type Part = "details" | "ingredients" | "steps" | "author_notes" | "notes" | "nutrition";
 
@@ -588,7 +585,8 @@ export default function RecipeView() {
           <h2>Ingredients</h2>
           <TextEditor
             label="Ingredients"
-            hint={"One per line. Start a line with # for a heading, like “# For the sauce”." + SOFT_HINT}
+            hint="One per line."
+            tips="ingredients"
             initial={linesToText(recipe.ingredients)}
             rows={12}
             onSave={saveIngredients}
@@ -617,10 +615,8 @@ export default function RecipeView() {
         {editing === "steps" ? (
           <TextEditor
             label="Method"
-            hint={
-              "One step per line. A # heading starts the step numbers again at 1 (a separate part, like a sauce); a ## heading carries on counting." +
-              SOFT_HINT
-            }
+            hint="One step per line."
+            tips="steps"
             initial={linesToText(recipe.steps)}
             rows={12}
             onSave={saveSteps}

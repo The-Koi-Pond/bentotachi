@@ -53,6 +53,7 @@ import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
 import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
 import { useShelfDrawers } from "../shelfDrawers";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSingleUser } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
@@ -147,6 +148,7 @@ export default function RecipeList() {
   const [tagsOpen, setTagsOpen] = useState(false);
   // The View panel: the cards' size, the order, shelves or one list, Edit.
   const [viewOpen, setViewOpen] = useState(false);
+  const shelfHelp = useHelp();
   const navigate = useNavigate();
   // What tapping a tag in the panel does: show only recipes with it, or
   // hide the ones with it.
@@ -908,10 +910,15 @@ export default function RecipeList() {
             </Shelf>
           ))}
           {!editing && emptyShelves.length > 0 && (
-            <p className="muted shelf-empty-line">
-              Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}. To fill one, tap Edit, pick some recipes,
-              then Put on a shelf.
-            </p>
+            <>
+              <p className="muted shelf-empty-line">
+                Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}
+                <HelpButton help={shelfHelp} label="How to fill a shelf" />
+              </p>
+              <HelpBox help={shelfHelp}>
+                <p>Tap View, then Edit recipes, pick some recipes, then Put on a shelf.</p>
+              </HelpBox>
+            </>
           )}
           {editing && (
             <Link to="/shelves?new=1" className="button small new-shelf">
