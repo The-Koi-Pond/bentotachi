@@ -107,7 +107,6 @@ function toFields(draft: Draft): Record<string, unknown> {
   };
 }
 
-// Used for both "add by hand" (/new) and editing (/recipes/:id/edit).
 // The Ingredients or Method box. Its "?" sits outside the <label>: a button
 // inside would become what the label names, leaving the box unnamed and
 // turning a tap on the word into opening the tip.
@@ -136,6 +135,7 @@ function LinesField({
   );
 }
 
+// Used for both "add by hand" (/new) and editing (/recipes/:id/edit).
 export default function RecipeEdit() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();

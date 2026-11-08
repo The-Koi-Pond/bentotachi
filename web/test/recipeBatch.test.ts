@@ -33,6 +33,10 @@ test("all failing: the site's reason, and the app's browser where there is one, 
   assert.match(summary.text, /error 403/);
   assert.match(summary.text, /Bentotachi's browser/);
   assert.doesNotMatch(summary.text, /on its own/);
+  // Some were already here, so the site isn't blocking: the link on its own is the advice.
+  const partly = batchSummary(outcome({ already: 2, failed: ["Pho"], firstError: refused }));
+  assert.match(partly.text, /on its own/);
+  assert.equal(partly.isError, false);
   // In a web browser there's no app browser to suggest.
   assert.doesNotMatch(batchSummary(outcome({ failed: ["Pho"], firstError: refused })).text, /Bentotachi's browser/);
 });

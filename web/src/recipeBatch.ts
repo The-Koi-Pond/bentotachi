@@ -30,5 +30,6 @@ export function batchSummary(outcome: BatchOutcome): { text: string; isError: bo
       parts.push(failed.length === 1 ? "Try its link on its own." : "Try their links on their own.");
     }
   }
-  return { text: parts.join(" "), isError: failed.length > 0 && added === 0 };
+  // Red only when nothing worked: some already here is a success too.
+  return { text: parts.join(" "), isError: failed.length > 0 && added === 0 && already === 0 };
 }

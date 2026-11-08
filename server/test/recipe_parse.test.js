@@ -70,6 +70,21 @@ test("a recipe page's comments aren't a list: each 'Reply' is the page itself", 
     `<article id="div-comment-${n}" class="comment-body"><p>Lovely!</p>` +
     `<a class="comment-reply-link" href="https://www.site.example/laksa/?replytocom=${n}#respond">Reply</a></article>`;
   assert.equal(recipeLinks(categoryPage([comment(1), comment(2), comment(3)]), "https://www.site.example/laksa/"), null);
+  // Comments that link to the site's other recipes still aren't the list.
+  const mention = (slug) => `<article class="comment-body"><p>Also try <a href="/${slug}/">this</a></p></article>`;
+  assert.equal(recipeLinks(categoryPage([mention("pho"), mention("ramen")]), "https://www.site.example/laksa/"), null);
+  // Nor are "Reply" links in a theme whose comments carry no "comment" name.
+  const plainReply = (n) => `<article><a href="/laksa/?replytocom=${n}">Reply to this</a></article>`;
+  assert.equal(recipeLinks(categoryPage([plainReply(1), plainReply(2)]), "https://www.site.example/laksa/"), null);
+});
+
+test("sites whose addresses differ only after the ? (/?p=12) still list their recipes", () => {
+  const post = (n) => `<article><h2><a href="/?p=${n}">Recipe ${n}</a></h2></article>`;
+  const list = recipeLinks(categoryPage([post(1), post(2), post(3)]), "https://blog.example/?cat=5");
+  assert.deepEqual(
+    list.recipes.map((r) => r.url),
+    ["https://blog.example/?p=1", "https://blog.example/?p=2", "https://blog.example/?p=3"]
+  );
 });
 
 test("titles: an h1 heading counts, and a one-word badge on the photo isn't the name", () => {

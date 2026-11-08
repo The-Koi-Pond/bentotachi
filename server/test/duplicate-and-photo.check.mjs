@@ -92,6 +92,14 @@ const withCards = await call(token, "POST", "/cookbook/import", {
   html: html("Ramen with cards").replace("</html>", `<body>${related}</body></html>`),
 });
 check("a recipe page with related-recipe cards saves the recipe", withCards.status === 200 && !!withCards.data?.id, `(${withCards.status})`);
+// Even when only its ingredients could be read (no steps).
+const ingredientsOnly = `<html><head><script type="application/ld+json">${JSON.stringify({
+  "@type": "Recipe",
+  name: "Ingredients only",
+  recipeIngredient: ["1 egg"],
+})}</script></head><body>${related}</body></html>`;
+const halfRead = await call(token, "POST", "/cookbook/import", { url: "https://www.example.org/ingredients-only/", html: ingredientsOnly });
+check("a recipe with ingredients but no steps, plus cards, still saves", halfRead.status === 200 && !!halfRead.data?.id, `(${halfRead.status})`);
 // A collection labelled as a recipe with nothing in it (BBC Good Food's way)
 // is a list, and isn't saved as an empty recipe.
 const labelled = `<script type="application/ld+json">${JSON.stringify({ "@type": "Recipe", name: "Quick recipes" })}</script>`;

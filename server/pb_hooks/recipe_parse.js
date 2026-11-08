@@ -989,15 +989,19 @@ function itemListEntries(node, depth, out) {
 // its JSON-LD ItemList. Only links on the page's own site count.
 function recipeLinks(html, pageUrl) {
   var site = siteOf(pageUrl);
-  var pageKey = linkKey(pageUrl);
-  var pathOf = function (url) {
-    return url.replace(/^https?:\/\/[^\/]+/i, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
+  // A comment's "Reply" is the page again plus ?replytocom=, so that's
+  // left out when comparing with the page. The rest of the query stays:
+  // "/?p=12" and "/?cat=5" are different pages.
+  var keyOf = function (url) {
+    return linkKey(url).replace(/([?&])replytocom=[^&]*(&|$)/i, function (all, lead, tail) {
+      return tail ? lead : "";
+    });
   };
-  var pagePath = pathOf(pageUrl);
+  var pageKey = keyOf(pageUrl);
   // A link that could be a recipe: on this site, not one of its lists, and
-  // not this page again (a comment's "Reply" is the page plus ?replytocom=).
+  // not this page again.
   var mayBeRecipe = function (url) {
-    return !!url && siteOf(url) === site && !NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, "")) && pathOf(url) !== pagePath;
+    return !!url && siteOf(url) === site && !NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, "")) && keyOf(url) !== pageKey;
   };
   var recipes = [];
   var seen = {};
