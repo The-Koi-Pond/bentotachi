@@ -90,27 +90,43 @@ export function coverOf(
     needed += quantity.amount;
   }
   const have = stockLabel(packets, stock);
-  if (stock.amount >= needed) return { kind: "enough", have };
+  // On purpose: a few percent short counts as enough. Labels and units
+  // differ that much (a 32 fl oz carton is 946 ml, 4 cups 960 ml), and
+  // "⅛ cup broth" or "0 L stock" on the list helps nobody.
+  if (stock.amount >= needed * (1 - NEAR_ENOUGH)) return { kind: "enough", have };
   return { kind: "short", have, still: (needed - stock.amount) / needed };
 }
 
+const NEAR_ENOUGH = 0.05;
+
 // Whether it's worth buying: the packets are short, or (when they can't
 // tell) the pantry is low on it, out of it, or doesn't have it at all.
+// On purpose, marked Low beats packets that look like enough: one of them
+// may be nearly empty, as packets don't say how much is left.
 export function worthBuying(item: Pick<PantryItem, "status"> | null, cover: Cover): boolean {
-  if (cover.kind !== "unknown") return cover.kind === "short";
+  if (cover.kind === "short") return true;
+  if (cover.kind === "enough") return item?.status === "low";
   return item?.status !== "have";
 }
 
 // A line as it goes on the list: only what's still to buy when the pantry
-// is short ("1.5 kg linguine" with 200 g in -> "1.3 kg linguine").
+// is short ("1.5 kg linguine" with 200 g in -> "1.3 kg linguine"), rounded
+// up rather than to the nearest ("1 lb" with 200 g in is "⅔ lb", not "½").
 export function stillToBuy(line: string, cover: Cover): string {
-  return cover.kind === "short" ? scaleLine(line, cover.still) : line;
+  if (cover.kind !== "short") return line;
+  const target = (lineMeasure(line)?.amount ?? 0) * cover.still;
+  for (let factor = cover.still; factor < 1; factor *= 1.02) {
+    const scaled = scaleLine(line, factor);
+    if ((lineMeasure(scaled)?.amount ?? Infinity) >= target * 0.999) return scaled;
+  }
+  return line;
 }
 
 // The note beside a line in the add choices: "Enough: 2 × 500 g",
-// "Have 200 g", or nothing when it can't tell.
-export function coverNote(cover: Cover): string {
-  if (cover.kind === "enough") return `Enough: ${cover.have}`;
+// "Enough: 500 g, but marked Low", "Have 200 g", or nothing when it can't
+// tell.
+export function coverNote(cover: Cover, item?: Pick<PantryItem, "status"> | null): string {
+  if (cover.kind === "enough") return `Enough: ${cover.have}${item?.status === "low" ? ", but marked Low" : ""}`;
   if (cover.kind === "short") return `Have ${cover.have}`;
   return "";
 }

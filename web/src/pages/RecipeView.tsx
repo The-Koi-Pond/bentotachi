@@ -900,7 +900,8 @@ function IngredientsSection({
   // the rest" when only the shortfall goes on the list.
   const pickNote = (i: number) => {
     const cover = coverOfLine(i);
-    return cover.kind === "short" && onlyLineFor(i) ? `${coverNote(cover)}: adds the rest` : coverNote(cover);
+    const note = coverNote(cover, linkOf(lines[i]).item);
+    return cover.kind === "short" && onlyLineFor(i) ? `${note}: adds the rest` : note;
   };
   // Lines the pantry doesn't have enough of, or at all (not water and the
   // like): "Missing from pantry", and "Select what we need" when choosing
@@ -954,7 +955,9 @@ function IngredientsSection({
     }
   }
 
-  async function addPicked(indexes: Iterable<number> = picked) {
+  // fullAmounts: "All" adds the recipe's amounts as they are, for when the
+  // pantry isn't trusted; the other ways take off what's in stock.
+  async function addPicked(indexes: Iterable<number> = picked, { fullAmounts = false } = {}) {
     setBusy(true);
     setStatus(null);
     try {
@@ -967,8 +970,9 @@ function IngredientsSection({
           .sort((a, b) => a - b)
           .map((index) => {
             const scaled = scaleLine(lines[index], scale);
+            const takeOff = !fullAmounts && onlyLineFor(index);
             return {
-              text: onlyLineFor(index) ? stillToBuy(scaled, coverOfLine(index)) : scaled,
+              text: takeOff ? stillToBuy(scaled, coverOfLine(index)) : scaled,
               pantryItem: linkOf(lines[index]).item,
             };
           })
@@ -1044,7 +1048,7 @@ function IngredientsSection({
       )}
       {choosing && (
         <div className="add-choices" role="group" aria-label="Add to the shopping list">
-          <button className="button" disabled={busy || buyable.length === 0} onClick={() => void addPicked(buyable)}>
+          <button className="button" disabled={busy || buyable.length === 0} onClick={() => void addPicked(buyable, { fullAmounts: true })}>
             All ({buyable.length})
           </button>
           <button className="button" disabled={busy || missing.length === 0} onClick={() => void addPicked(missing)}>

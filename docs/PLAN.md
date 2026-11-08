@@ -1526,6 +1526,10 @@ litres, spoons and cups (at the recipe's own spoon size) compare; counts
 ("2 onions") and packets with no size fall back to Have / Low / Out. An
 item two recipes need is compared against both amounts together, but its
 row still says just the pantry's name, with no reduced amount.
+Xel's choices after the review (2026-11-08): an item marked Low still
+counts as worth buying even when its packets look like enough (one may be
+nearly empty); the note says so. "All" on the recipe page adds the
+recipe's full amounts; "Missing from pantry" and Choose… take stock off.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 

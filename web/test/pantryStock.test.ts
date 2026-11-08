@@ -39,6 +39,10 @@ test("spoons and cups count against bottles, with the recipe's own spoon size", 
   // Twelve 20 ml spoons is 240 ml: more than a 200 ml bottle.
   assert.equal(coverOf([{ line: "12 tbsp soy sauce", measures: AU }], sizes("200 ml")).kind, "short");
   assert.equal(coverOf(need("12 tbsp soy sauce"), sizes("200 ml")).kind, "enough");
+  // Two Australian 250 ml cups are 500 ml, more than 470 ml; two US 240 ml
+  // cups are within a few percent of it.
+  assert.equal(coverOf([{ line: "2 cups stock", measures: AU }], sizes("470 ml")).kind, "short");
+  assert.equal(coverOf(need("2 cups stock"), sizes("470 ml")).kind, "enough");
 });
 
 test("pounds and ounces against grams", () => {
@@ -65,11 +69,69 @@ test("it can't tell, so it says nothing, when", () => {
 });
 
 test("worth buying: the packets decide when they can tell, else Have / Low / Out", () => {
-  assert.equal(worthBuying({ status: "low" }, { kind: "enough", have: "1 kg" }), false);
+  assert.equal(worthBuying({ status: "have" }, { kind: "enough", have: "1 kg" }), false);
   assert.equal(worthBuying({ status: "have" }, { kind: "short", have: "200 g", still: 0.5 }), true);
   assert.equal(worthBuying({ status: "have" }, { kind: "unknown" }), false);
   assert.equal(worthBuying({ status: "low" }, { kind: "unknown" }), true);
   assert.equal(worthBuying(null, { kind: "unknown" }), true);
+});
+
+test("marked Low beats packets that look like enough (one may be nearly empty), and the note says so", () => {
+  const enough = { kind: "enough", have: "500 g" } as const;
+  assert.equal(worthBuying({ status: "low" }, enough), true);
+  assert.equal(coverNote(enough, { status: "low" }), "Enough: 500 g, but marked Low");
+  assert.equal(coverNote(enough, { status: "have" }), "Enough: 500 g");
+});
+
+test("exactly enough is enough", () => {
+  assert.equal(coverOf(need("500 g penne"), sizes("500 g")).kind, "enough");
+  assert.equal(coverOf([{ line: "1 cup cream", measures: AU }], sizes("250 ml")).kind, "enough");
+  assert.equal(coverOf(need("1 L stock"), sizes("1000 ml")).kind, "enough");
+});
+
+test("a few percent short counts as enough, so nothing silly goes on the list", () => {
+  // A 32 fl oz carton is 946 ml; 4 US cups are 960 ml.
+  assert.equal(coverOf(need("4 cups chicken broth"), sizes("32 fl oz")).kind, "enough");
+  assert.equal(coverOf(need("1 kg mince"), sizes("999 g")).kind, "enough");
+  assert.equal(coverOf(need("400 g chickpeas"), sizes("398 g")).kind, "enough");
+  // More than that short is short.
+  assert.equal(coverOf(need("1 kg mince"), sizes("900 g")).kind, "short");
+});
+
+test("what's still to buy is rounded up, not down", () => {
+  // 1 lb is 454 g; with 200 g in, 254 g is short: ½ lb (227 g) would be too
+  // little, ⅔ lb (302 g) is the next fraction up.
+  assert.equal(stillToBuy("1 lb pasta", coverOf(need("1 lb pasta"), sizes("200 g"))), "⅔ lb pasta");
+  // Metric stays exact.
+  assert.equal(stillToBuy("1,5 kg flour", coverOf(need("1,5 kg flour"), sizes("200 g"))), "1,3 kg flour");
+});
+
+test("ounces weigh, fluid ounces pour", () => {
+  assert.equal(coverOf(need("12 oz cheddar"), sizes("250 g")).kind, "short");
+  assert.equal(coverOf(need("8 oz cheddar"), sizes("250 g")).kind, "enough");
+  assert.equal(coverOf(need("8 fl oz milk"), sizes("250 ml")).kind, "enough");
+  assert.equal(coverOf(need("8 fl. oz. milk"), sizes("250 g")).kind, "unknown");
+});
+
+test("packets in grams and in millilitres together can't be added up", () => {
+  assert.deepEqual(coverOf(need("1.2 kg yoghurt"), sizes("500 g", "1 L")), { kind: "unknown" });
+});
+
+test("a line whose one amount isn't all of it can't tell", () => {
+  // Several of it,
+  assert.deepEqual(coverOf(need("Chopped tomatoes, 2 x 400 g cans"), sizes("400 g")), { kind: "unknown" });
+  assert.deepEqual(coverOf(need("Tomatoes (2 × 400 g tins)"), sizes("400 g")), { kind: "unknown" });
+  assert.deepEqual(coverOf(need("Chickpeas, 2 (400 g) cans"), sizes("400 g")), { kind: "unknown" });
+  assert.deepEqual(coverOf(need("Tomatoes, 2 cans (400 g each)"), sizes("400 g")), { kind: "unknown" });
+  // A bracket with no count before it is just the amount.
+  assert.equal(coverOf(need("Butter (250 g), softened"), sizes("250 g")).kind, "enough");
+  // or more added on.
+  assert.deepEqual(coverOf(need("1 lb 8 oz beef mince"), sizes("500 g")), { kind: "unknown" });
+  assert.deepEqual(coverOf(need("1 cup plus 2 tablespoons milk"), sizes("250 ml")), { kind: "unknown" });
+  assert.deepEqual(coverOf(need("½ cup + 2 tbsp milk"), sizes("100 ml")), { kind: "unknown" });
+  // The same amount given another way still reads.
+  assert.equal(coverOf(need("250 g/8 oz butter"), sizes("250 g")).kind, "enough");
+  assert.equal(coverOf(need("1 cup (250 ml) milk"), sizes("1 L")).kind, "enough");
 });
 
 test("a line's measure is read where scaling reads it", () => {

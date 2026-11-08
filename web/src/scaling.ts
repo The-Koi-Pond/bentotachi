@@ -41,6 +41,11 @@ const FRUIT_PART = new RegExp(
 // (The empty group stands where LEADING's prefix is, so both read alike.)
 const MEASURED = new RegExp(String.raw`(?<!\d)(?<!\d[.,])()${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
 const LEADING_MEASURED = new RegExp(String.raw`^([\s*_•·-]*)${RANGE}(\s*-?\s*)(${UNITS})(?![a-z])`, "i");
+// Right before a measure: a count of it ("2 x ", "(2 × ", "2 (", "2 cans (").
+// Right after it: more of it added on ("8 oz", " + 2 tbsp", " plus 2
+// tablespoons").
+const SEVERAL_OF = new RegExp(String.raw`${NUMBER}\s*(?:[x×]|\(|[a-z]+\s*\()\s*$`, "i");
+const ADDED_ON = new RegExp(String.raw`^\s*(?:,\s*)?(?:\+|plus\s|and\s)?\s*${NUMBER}\s*-?\s*(?:${UNITS})(?![a-z])`, "i");
 
 const METRIC = /^(?:kgs?|kilos?|kilograms?|grams?|gr|g|ml|millilit(?:re|er)s?|dl|cl|l|lit(?:re|er)s?)$/i;
 const BIG_METRIC = /^(?:kgs?|kilos?|kilograms?|l|lit(?:re|er)s?)$/i;
@@ -212,13 +217,19 @@ function scaleAmounts(line: string, factor: number): string {
 // The measured amount scaleLine changes first ("1.5 kg linguine", "Butter,
 // 250 g"), read the same way: its unit, and how much (the top of a range,
 // so there's enough). null for a count ("2 onions", "1 (400 g) can") or a
-// fruit part ("juice of 1 lemon"), which measure nothing.
+// fruit part ("juice of 1 lemon"), which measure nothing, and when the one
+// amount isn't all of it: several of it ("Tomatoes, 2 x 400 g cans") or
+// more added on ("1 lb 8 oz", "1 cup plus 2 tbsp"). The same amount given
+// another way ("250 g/8 oz", "1 cup (250 ml)") still reads.
 export function lineMeasure(line: string): { amount: number; unit: string } | null {
   if (FRUIT_PART.test(line)) return null;
   const lead = line.match(LEADING);
   if (lead && !UNIT_AFTER.test(line.slice(lead[0].length))) return null;
   const match = line.match(lead ? LEADING_MEASURED : MEASURED);
   if (!match) return null;
+  const before = line.slice(0, match.index);
+  const after = line.slice((match.index ?? 0) + match[0].length);
+  if (SEVERAL_OF.test(before) || ADDED_ON.test(after)) return null;
   const [, , low, , high, , unit] = match;
   const amount =
     high === undefined

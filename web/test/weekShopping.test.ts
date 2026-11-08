@@ -132,7 +132,13 @@ test("starts with everything ticked except what we have", () => {
 });
 
 const packet = (id: string, itemId: string, size: string) => ({ id, item: itemId, brand: "", size, created: id });
-const stocked = [item("pasta", "Linguine", "have"), item("rice", "Rice", "low"), item("flour", "Flour", "have")];
+const stocked = [
+  item("pasta", "Linguine", "have"),
+  item("rice", "Rice", "have"),
+  item("flour", "Flour", "have"),
+  item("soy", "Soy sauce", "have"),
+  item("oats", "Oats", "low"),
+];
 const packets = [packet("1", "pasta", "200 g"), packet("2", "rice", "1 kg"), packet("3", "rice", "1 kg")];
 
 test("packets in stock: a short line asks for the rest, a covered one starts unticked", () => {
@@ -146,7 +152,7 @@ test("packets in stock: a short line asks for the rest, a covered one starts unt
     [
       // Have, but only 200 g of 1.5 kg: ticked, for the 1.3 kg still needed.
       ["1.3 kg linguine", "short", true],
-      // Low, but 2 kg in: enough, so unticked.
+      // 2 kg in: enough, so unticked.
       ["500 g rice", "enough", false],
       // No packets: Have / Low / Out decides, as before.
       ["2 cups flour", "unknown", false],
@@ -161,4 +167,21 @@ test("packets in stock: a merged row keeps the pantry's name and adds up what bo
     packets
   );
   assert.deepEqual(rows.map((r) => [r.text, r.cover.kind, startsTicked(r)]), [["Rice", "short", true]]);
+});
+
+test("packets in stock: each recipe's spoons are its own site's, and marked Low still starts ticked", () => {
+  const more = [...packets, packet("4", "soy", "200 ml"), packet("5", "oats", "1 kg")];
+  const au = { ...(recipe("a", "Stir-fry", ["12 tbsp soy sauce", "200 g oats"]) as object), source_url: "https://www.taste.com.au/x" };
+  const us = { ...(recipe("b", "Glaze", ["12 tbsp soy sauce"]) as object), source_url: "https://www.allrecipes.com/x" };
+  // Twelve Australian 20 ml spoons are 240 ml: more than the 200 ml bottle.
+  assert.deepEqual(
+    gatherIngredients([au as never], stocked, more).map((r) => [r.text, r.cover.kind, startsTicked(r)]),
+    [
+      ["2 tbsp soy sauce", "short", true],
+      // 1 kg covers 200 g, but someone marked it Low.
+      ["200 g oats", "enough", true],
+    ]
+  );
+  // Twelve US 15 ml spoons are 180 ml: the bottle covers it.
+  assert.deepEqual(gatherIngredients([us as never], stocked, more).map((r) => r.cover.kind), ["enough"]);
 });

@@ -225,3 +225,13 @@ test("missing from the pantry: low, out, or not in it; not what we have or water
   assert.equal(missing("1 lime"), true, "not in the pantry at all");
   assert.equal(missing("2 cups water", { [linkKey("2 cups water")]: "" }), false, "marked not a pantry item");
 });
+
+test("missing from the pantry: packets that are short count, and ones that cover it don't (unless marked Low)", () => {
+  const stocked = [item("onion", "Onion"), { id: "eggs", name: "Eggs", status: "low" } as never];
+  const enough = { kind: "enough", have: "1 kg" } as const;
+  const short = { kind: "short", have: "200 g", still: 0.5 } as const;
+  assert.equal(missingFromPantry(linkFor("2 onions", null, stocked), short), true, "Have, but short");
+  assert.equal(missingFromPantry(linkFor("2 onions", null, stocked), enough), false);
+  assert.equal(missingFromPantry(linkFor("3 eggs", null, stocked), enough), true, "marked Low");
+  assert.equal(missingFromPantry(linkFor("2 cups water", { [linkKey("2 cups water")]: "" }, stocked), short), false, "water never");
+});

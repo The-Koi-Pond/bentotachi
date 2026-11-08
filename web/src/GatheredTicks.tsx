@@ -51,7 +51,8 @@ export function GatheredList({
         const status = row.pantryItem?.status;
         // "Enough: 2 × 500 g" or "Have 200 g" when the packets can tell,
         // instead of Have / Low / Out.
-        const note = coverNote(row.cover);
+        const note = coverNote(row.cover, row.pantryItem);
+        const noteStatus = row.cover.kind === "enough" && status !== "low" ? "have" : "low";
         return (
           <li key={row.key}>
             <label className={already ? "done" : ""}>
@@ -63,8 +64,8 @@ export function GatheredList({
               {already ? (
                 <span className="muted week-row-state">On the list</span>
               ) : note ? (
-                <span className={`week-row-state status-${row.cover.kind === "enough" ? "have" : "low"}`}>
-                  <span className={`status-dot status-${row.cover.kind === "enough" ? "have" : "low"}`} aria-hidden="true" />
+                <span className={`week-row-state status-${noteStatus}`}>
+                  <span className={`status-dot status-${noteStatus}`} aria-hidden="true" />
                   {note}
                 </span>
               ) : (
