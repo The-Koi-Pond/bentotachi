@@ -700,7 +700,12 @@ export default function RecipeView() {
             />
           ) : (
             <>
-              <p className="muted nutrition-note">Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}.</p>
+              {/* Where the numbers are from, as Bentotachi doesn't work them
+                  out (a tester asked, 2026-11-08). */}
+              <p className="muted nutrition-note">
+                Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}
+                {siteHost(recipe.source_url) ? `, as ${siteHost(recipe.source_url)} gives it` : ""}.
+              </p>
               <dl className="nutrition-list">
                 {(recipe.nutrition ?? []).map((line, i) => {
                   const at = line.indexOf(":");
