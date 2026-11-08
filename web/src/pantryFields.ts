@@ -5,6 +5,8 @@ import type { PantryItem } from "./pb";
 import { expiryDate, toStoredDate } from "./expiry.ts";
 import { cleanStoreLinks, storeLinkFields, storeLinksOf } from "./pantryItem.ts";
 import { norm } from "./pantryGroups.ts";
+import { barcodesOf } from "./barcodes.ts";
+import { changedFields } from "./changedFields.ts";
 
 export interface Fields {
   name: string;
@@ -65,6 +67,22 @@ export function recordFrom(fields: Fields): ItemRecord | null {
     note: fields.note.trim(),
     opened_location: fields.openedLocation.trim(),
   };
+}
+
+// What saving the Edit form sends: only what was changed in it, compared
+// with the item as the form opened, so a housemate's change made meanwhile
+// (a new expiry, a scanned barcode) isn't put back.
+export function editChanges(
+  start: Partial<Saved> & Pick<PantryItem, "barcodes" | "opened">,
+  record: ItemRecord,
+  barcodes: string[]
+): Record<string, unknown> {
+  const before = recordFrom(fieldsOf(start)) ?? {};
+  return changedFields(
+    // Nowhere else to keep it once opened: it's just in its place.
+    { ...record, barcodes, opened: record.opened_location ? !!start.opened : false },
+    { ...before, barcodes: barcodesOf(start), opened: !!start.opened }
+  );
 }
 
 // Another item already called this (ignoring capitals and spaces), if any.

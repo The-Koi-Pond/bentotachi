@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ShoppingItem } from "./pb";
 import { startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
+import { sameThing } from "./shoppingMatch";
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 
@@ -16,11 +17,7 @@ export function useGatheredTicks(rows: GatheredRow[]) {
 
   const waiting = (shopping.items ?? []).filter((item) => !item.checked);
   const onList = (row: GatheredRow) =>
-    waiting.some(
-      (item) =>
-        (row.pantryItem && item.pantry_item === row.pantryItem.id) ||
-        item.text.trim().toLowerCase() === row.text.toLowerCase()
-    );
+    waiting.some((item) => sameThing({ text: row.text, pantryItem: row.pantryItem?.id ?? "" }, item));
   const isTicked = (row: GatheredRow) => !onList(row) && (ticks.get(row.key) ?? startsTicked(row));
 
   return {

@@ -15,6 +15,7 @@ import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQu
 import { aisleOf, byAisle } from "../aisles";
 import { BenMood } from "../Brand";
 import RecipeShoppingSheet from "../RecipeShoppingSheet";
+import { sameThing } from "../shoppingMatch";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
 // simply in the order it was added. Remembered on this device.
@@ -112,7 +113,7 @@ export default function ShoppingList() {
     setNotice("");
     // Already on the list: don't add it twice. Already bought (ticked):
     // put that one back instead.
-    const same = shown.find((item) => item.text.trim().toLowerCase() === value.toLowerCase());
+    const same = shown.find((item) => sameThing({ text: value, pantryItem: "" }, item));
     if (same && !same.checked) return setNotice(`“${same.text}” is already on the list.`);
     if (same) {
       setNotice(`“${same.text}” is back on the list.`);

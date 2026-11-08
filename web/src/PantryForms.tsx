@@ -14,7 +14,7 @@ import { barcodesOf, normaliseBarcode, withBarcode } from "./barcodes";
 import { canScan, scanBarcode, type BarcodeProduct } from "./scanner";
 import { brandsOf, cleanStoreLinks, MOST_STORE_LINKS, PHOTO_REMOVED, photoSources, withPickedLink } from "./pantryItem";
 import { norm, placeOptions, subcategoryOptions } from "./pantryGroups";
-import { fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
+import { editChanges, fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
 import { brandsToPickFrom, packetLabel, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
 
@@ -668,6 +668,8 @@ export function EditPantryItem({
   onCancel: () => void;
   onDelete: () => void;
 }) {
+  // The item as the form opened: saving sends only what differs from it.
+  const [start] = useState(item);
   const [fields, setFields] = useState<Fields>(() => fieldsOf(item));
   const [barcodes, setBarcodes] = useState(() => barcodesOf(item));
   const [photo, setPhoto] = useState<PhotoChoice>(undefined);
@@ -705,10 +707,7 @@ export function EditPantryItem({
     setError("");
     try {
       const saved = await pantryItems().update(item.id, {
-        ...record,
-        barcodes,
-        // Nowhere else to keep it once opened: it's just in its place.
-        opened: record.opened_location ? !!item.opened : false,
+        ...editChanges(start, record, barcodes),
         // A photo chosen here: these barcodes and links count as tried. No
         // photo: never looked up by itself again, so a removed photo stays
         // removed (wantsOnlinePhoto).

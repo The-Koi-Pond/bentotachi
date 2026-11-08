@@ -5,7 +5,8 @@
 
 // Marked "out" -> put it on the shopping list. If it's already there (linked,
 // or typed by hand with the same name), don't add it twice; link the
-// hand-typed one instead so ticking it updates the pantry.
+// hand-typed one instead so ticking it updates the pantry. "Already there"
+// is the app's rule too (sameThing, web/src/shoppingMatch.ts): keep them alike.
 // Apps from 2026-11-02 on ask first ("Put it on the shopping list?": it may
 // not be wanted again for a while) and send "ask_about_list": true, so then
 // it isn't added here; a hand-typed one is still linked. Older apps don't

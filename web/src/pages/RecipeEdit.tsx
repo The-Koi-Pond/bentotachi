@@ -5,7 +5,7 @@ import { errorMessage, pb, recipes, type Recipe } from "../pb";
 import { linesToText, textToLines, textToTags } from "../format";
 import { carriedLinks, sameLinks } from "../pantryLinks";
 import { changedFields } from "../changedFields";
-import { carriedStepPhotos, samePhotoSteps } from "../recipePhotos";
+import { carriedStepPhotos, PHOTO_SIDE, samePhotoSteps } from "../recipePhotos";
 import TagSuggestions from "../TagSuggestions";
 import RecipePhoto from "../RecipePhoto";
 import PhotoFramer from "../PhotoFramer";
@@ -13,7 +13,7 @@ import type { Framing } from "../photoFraming";
 import ExtraTimesEditor, { fromRows, toRows, type ExtraTimeRow } from "../ExtraTimesEditor";
 import FormatTextarea from "../FormatTextarea";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { usePreviewUrl } from "../pantryPhoto";
+import { shrinkPhoto, usePreviewUrl } from "../pantryPhoto";
 import { canTakePhoto } from "../PantryPhotoField";
 import { siteHost } from "../recipeSites";
 import { HelpBox, HelpButton, useHelp } from "../Help";
@@ -198,7 +198,7 @@ export default function RecipeEdit() {
     const data = existing ? changedFields(toFields(draft), toFields(JSON.parse(original))) : toFields(draft);
     // A new photo starts centred; otherwise any framing chosen here.
     if (photo) {
-      data.image = photo;
+      data.image = await shrinkPhoto(photo, PHOTO_SIDE);
       data.image_framing = null;
     } else if (removePhoto) {
       data.image = null;

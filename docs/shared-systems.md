@@ -41,11 +41,13 @@ they say otherwise.
   an expired login looks like an empty list, not an error).
 - Saving an edit: send only the changed fields, `changedFields`
   (`changedFields.ts`), so a housemate's change meanwhile isn't put back.
+  Pantry items: `editChanges` (`pantryFields.ts`).
 - Offline copies of lists: `read` / `write` and the `*_KEY` names
   (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
   `useShoppingQueue` (`shoppingQueue.ts`).
 - Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
-  what's already waiting).
+  what's already waiting). "Is it already on the list?": `sameThing`
+  (`shoppingMatch.ts`; `server/pb_hooks/pantry.pb.js` follows the same rule).
 - Delete with Undo: `useUndo` (`undo.tsx`, rules in `pendingDelete.ts`).
   Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
   the question from `deleteQuestion`, `deleteWarning.ts`).
