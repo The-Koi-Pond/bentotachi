@@ -43,6 +43,7 @@ import SoftText from "../SoftText";
 import { withoutSoftMarks } from "../softMarks";
 import { linesToBuy } from "../weekShopping";
 import { planStepAmounts, withStepAmounts } from "../stepAmounts";
+import { looksDifferent, reimportChanges, type SiteRecipe } from "../reimport";
 import { useStepAmounts } from "../stepAmountsSetting";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
@@ -186,23 +187,11 @@ export default function RecipeView() {
     const site = siteHost(recipe.source_url);
     if (
       !window.confirm(
-        `Re-import “${recipe.title}” from ${site}? Its ingredients, method, servings, times, description and the writer's notes become the website's current version. The name, your notes, ratings, photos and tags stay.`
+        `Re-import “${recipe.title}” from ${site}? Its ingredients, method, servings, times, description, the writer's notes and nutrition become the website's current version, replacing any changes made here. The name, your notes, ratings, photos and tags stay; pantry links and step photos follow the new wording where they can.`
       )
     )
       return "";
-    let fresh: {
-      description: string;
-      servings: string;
-      prepMinutes: number;
-      cookMinutes: number;
-      totalMinutes: number;
-      ingredients: string[];
-      steps: string[];
-      tags: string[];
-      authorNotes: string;
-      nutrition?: string[];
-      siteRating?: { value: number; count: number } | null;
-    } | null = null;
+    let fresh: SiteRecipe | null = null;
     try {
       fresh = (await pb.send("/api/cookbook/import", { method: "POST", body: { url: recipe.source_url, preview: true } })).recipe ?? null;
     } catch (err) {
@@ -210,30 +199,15 @@ export default function RecipeView() {
       if ((err as { status?: number }).status !== 409) throw err;
     }
     if (!fresh) return "This Bentotachi server can't re-import yet: it needs updating first.";
+    // The link may lead to a different recipe now (a site that moved or
+    // merged its pages): ask before replacing this one with it.
+    if (
+      looksDifferent(recipe.title, fresh.title) &&
+      !window.confirm(`The website's recipe is now called “${fresh.title}”. Replace “${recipe.title}” with it anyway?`)
+    )
+      return "";
     const now = await recipes().getOne(recipe.id, { fields: "id,ingredients,steps,ingredient_links,photo_steps,photos,tags" });
-    // What the site no longer gives (no description now, say) stays as it was.
-    const lines = (list: string[] | undefined) => (list && list.length ? list : undefined);
-    const ingredients = lines(fresh.ingredients) ?? now.ingredients ?? [];
-    const steps = lines(fresh.steps) ?? now.steps ?? [];
-    const data: Record<string, unknown> = {
-      ingredients,
-      steps,
-      ingredient_links: carriedLinks(now.ingredients ?? [], ingredients, now.ingredient_links),
-      tags: [...new Set([...(now.tags ?? []), ...(fresh.tags ?? [])])],
-    };
-    if (now.photo_steps !== undefined) data.photo_steps = carriedStepPhotos(now.steps, steps, now.photo_steps, now.photos);
-    if (fresh.description) data.description = fresh.description;
-    if (fresh.servings) data.servings = fresh.servings;
-    if (fresh.prepMinutes) data.prep_minutes = fresh.prepMinutes;
-    if (fresh.cookMinutes) data.cook_minutes = fresh.cookMinutes;
-    if (fresh.totalMinutes) data.total_minutes = fresh.totalMinutes;
-    if (fresh.authorNotes) data.author_notes = fresh.authorNotes;
-    if (lines(fresh.nutrition)) data.nutrition = fresh.nutrition;
-    if (fresh.siteRating) {
-      data.site_rating = fresh.siteRating.value;
-      data.site_rating_count = fresh.siteRating.count;
-    }
-    const saved = await recipes().update(recipe.id, data, { expand: "added_by" });
+    const saved = await recipes().update(recipe.id, reimportChanges(now, fresh), { expand: "added_by" });
     setRecipe(saved);
     saveRecipe(saved);
     return `Re-imported from ${site}.`;
