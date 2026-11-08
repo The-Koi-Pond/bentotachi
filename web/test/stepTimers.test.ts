@@ -64,6 +64,8 @@ test("the tray beeps unless Android's notification already rang it a while ago",
   assert.equal(beepsInApp(JUST_ENDED_MS, true), true);
   // Ended while locked, opened later: only if the notification hasn't rung.
   assert.equal(beepsInApp(JUST_ENDED_MS + 1, true), false);
+  // "Just ended" stays short: a minute later is already "a while ago".
+  assert.equal(beepsInApp(60_000, true), false);
   assert.equal(beepsInApp(5 * 60_000, false), true);
   // Paused, its notification is taken back, so it isn't counted on.
   const timer = startStepTimer("r1", "Soup", 2, { label: "10 min", seconds: 600 }, 0);
