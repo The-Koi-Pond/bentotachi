@@ -1531,6 +1531,64 @@ counts as worth buying even when its packets look like enough (one may be
 nearly empty); the note says so. "All" on the recipe page adds the
 recipe's full amounts; "Missing from pantry" and Choose… take stock off.
 
+## Next: pantry polish, and kinds of one thing (Xel, 2026-11-08)
+
+Xel: the pantry is promising but clunky. Agreed after going through it
+on a phone-sized screen (2026-11-08), most important first:
+
+1. Packets drift: ticking something bought on the shopping list marks the
+   item Have (pantry.pb.js) but adds no packet, so counts go stale and
+   "buy only what's short" gets worse. Idea: ticking adds a packet in the
+   item's usual size, with Undo.
+2. Adding or using up a packet is buried at the bottom of the full edit
+   form, which opens on any tap. Idea: a light item card with quick
+   buttons (+1 packet, used one, Low, Out) and Edit for the rest.
+3. Packet chips: ✕ reads as delete but means "used it up"; identical
+   packets repeat ("400 g ✕ 400 g ✕ 400 g ✕"); the brand shows twice.
+   Idea: "3 × 400 g" with a "used one" step.
+4. Have / Low / Out and packets can disagree (Have with 200 g, Low with
+   2 kg); Low stays a judgement, but the row could hint at a clash.
+5. Smaller: letter squares take width without a photo ("Chicken thi…");
+   the dashed cart icon and "3 to check" don't explain themselves; Simple
+   hides packets entirely.
+
+**Kinds of one thing** (pasta, rice, flour, cheese, noodles, vinegar):
+a recipe asking for linguine mustn't count as covered because some other
+pasta is in. Today a line is matched to the pantry item with the longest
+name in it, so "linguine pasta" matches an item called "Pasta". Xel's
+pick (2026-11-08): **each kind is its own item** (Linguine, Penne,
+Spaghetti, each with its own Have / Low / Out, packets and photo),
+**grouped under the umbrella** ("Pasta"). A line naming a kind matches
+only that kind, and says "not in the pantry" when there's none; a line
+that only says "pasta" (or one marked "any pasta will do") takes any kind
+in the group. Chosen over one "Pasta" item with kinds on its packets,
+which would leave Have / Low / Out covering all pasta at once. To design
+next: the group itself (the subcategory, or its own "kind of" field), how
+an existing umbrella item like "Pasta" gets split, and the recipe link
+sheet's "any kind will do". Mock up before building. Xel (2026-11-08) is
+fine with "a kind of Pasta" as its own small field, not the sub-headings,
+"we'll see how it goes".
+
+**Using things up when a meal is cooked** (Xel, 2026-11-08): pressing "We
+cooked this" should take from the pantry what makes sense, so it needs
+less managing by hand. Open, for the mock-up: packets count as full and
+don't record what's left (decided earlier, as tracking it by hand was
+too much work), so a recipe using 400 g of a 500 g bag either finishes
+the bag (wrong: 100 g is left) or leaves it (wrong next time: counted as
+500 g). Cooking could record what's left by itself ("about 100 g left"),
+which reverses that decision without asking anyone to count. Also: ask
+first ("Used up: 1 bag of linguine, 2 of 3 eggs. Change?") or just do it
+with Undo; and what happens to items without packets (maybe Have -> Low
+when a recipe uses most of it? probably nothing).
+
+**Ticking bought things adds a packet** (agreed and built 2026-11-08):
+only for items that already use packets, in the size and brand of the
+last packet added (the item's usual_packet, kept after its packets are
+gone); unticking takes it back off. On the server (pantry.pb.js), so it
+works from any phone and from older apps; one packet per tick ("2 tins"
+on the list still adds one). Tried on a copy of the Pi's data: the 11
+items with sized packets got the right usual packet.
+
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 
 Built 2026-11-08 (on main since then, not released yet):

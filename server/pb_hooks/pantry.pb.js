@@ -57,6 +57,11 @@ onRecordUpdateRequest((e) => {
 // stays: that older stock is still there and goes off first.
 // Unticked again -> it's still needed, so "low" (we can't know if it was
 // low or out before).
+// For an item that uses packets (it has a usual one, see the
+// pantry_usual_packet migration), ticking also adds a packet like the last
+// one, so the count stays right without anyone adding it by hand; unticking
+// takes that packet back off. One packet per tick: "2 tins" can't be read
+// reliably, and a count off by one is easy to fix.
 onRecordAfterUpdateSuccess((e) => {
   const pantryId = e.record.get("pantry_item");
   const checked = e.record.get("checked");
@@ -72,9 +77,54 @@ onRecordAfterUpdateSuccess((e) => {
         pantryItem.set("status", "low");
         e.app.save(pantryItem);
       }
+
+      if (checked) {
+        let usual = null;
+        try {
+          usual = JSON.parse(pantryItem.getString("usual_packet") || "null");
+        } catch (err) {
+          // Not readable JSON: treat it as no usual packet.
+        }
+        if (usual && (usual.brand || usual.size)) {
+          const packet = new Record(e.app.findCollectionByNameOrId("pantry_packets"));
+          packet.set("item", pantryId);
+          packet.set("brand", String(usual.brand || ""));
+          packet.set("size", String(usual.size || ""));
+          packet.set("bought_with", e.record.id);
+          e.app.save(packet);
+        }
+      } else {
+        const added = e.app.findRecordsByFilter("pantry_packets", "bought_with = {:id}", "", 0, 0, { id: e.record.id });
+        for (let i = 0; i < added.length; i++) e.app.delete(added[i]);
+      }
     } catch (err) {
       e.app.logger().warn("Couldn't update pantry from shopping list", "error", String(err));
     }
   }
   e.next();
 }, "shopping_items");
+
+// A packet added with a brand or size becomes its item's usual packet: what
+// ticking it off the shopping list adds next time (see above).
+onRecordAfterCreateSuccess((e) => {
+  const brand = e.record.getString("brand");
+  const size = e.record.getString("size");
+  if (brand || size) {
+    try {
+      const item = e.app.findRecordById("pantry_items", e.record.get("item"));
+      let usual = null;
+      try {
+        usual = JSON.parse(item.getString("usual_packet") || "null");
+      } catch (err) {
+        // Not readable JSON: replaced below.
+      }
+      if (!usual || usual.brand !== brand || usual.size !== size) {
+        item.set("usual_packet", { brand: brand, size: size });
+        e.app.save(item);
+      }
+    } catch (err) {
+      e.app.logger().warn("Couldn't remember the usual packet", "error", String(err));
+    }
+  }
+  e.next();
+}, "pantry_packets");
