@@ -17,6 +17,8 @@ test("reads an ingredient's amount and name", () => {
   });
   assert.deepEqual(readIngredient("2 tbsp ghee or butter")?.choices, [["ghee"], ["butter"]]);
   assert.deepEqual(readIngredient("3/4 cup heavy / thickened cream")?.choices, [["heavy", "cream"], ["thickened", "cream"]]);
+  // A describing word ("melted") doesn't make it two names to borrow from.
+  assert.deepEqual(readIngredient("2 tbsp/ 30g melted ghee or butter")?.choices, [["melted", "ghee"], ["butter"]]);
   assert.deepEqual(
     shown(["Heat a heavy pan.", "Double the recipe if you like.", "Stir in the cream."], ["3/4 cup heavy / thickened cream", "300 g pasta"]),
     ["Heat a heavy pan.", "Double the recipe if you like.", "Stir in the cream (3/4 cup)."]

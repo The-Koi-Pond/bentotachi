@@ -33,6 +33,7 @@ const DESCRIBING = new Set(
     "fresh dried ground large small medium chopped minced sliced diced grated crushed red green white black " +
     "yellow brown extra virgin plain unsalted salted whole raw cooked boneless skinless lean low fat full " +
     "light dark hot cold warm finely roughly thinly baby young ripe frozen canned tinned free range organic " +
+    "melted softened beaten toasted " +
     "and or of with for the a to into in on"
   ).split(" ")
 );
@@ -94,9 +95,14 @@ export function readIngredient(line: string): Ingredient | null {
   // "heavy / thickened cream" is heavy cream or thickened cream: a one-word
   // choice beside a longer one takes the longer one's last word, so "heavy"
   // alone (as in "a heavy pan") doesn't name it.
+  // "melted ghee or butter" is ghee or butter: only words that aren't
+  // describing ("melted") count towards the longer one.
   const kept = choices.filter((choice) => choice.length);
-  const longest = kept.reduce((a, b) => (b.length > a.length ? b : a), [] as string[]);
-  const named = kept.map((choice) => (choice.length === 1 && longest.length > 1 ? [...choice, longest[longest.length - 1]] : choice));
+  const core = (choice: string[]) => choice.filter((word) => !DESCRIBING.has(word));
+  const longest = kept.reduce((a, b) => (core(b).length > core(a).length ? b : a), [] as string[]);
+  const named = kept.map((choice) =>
+    choice.length === 1 && core(longest).length > 1 ? [...choice, longest[longest.length - 1]] : choice
+  );
   return {
     amount,
     words,
