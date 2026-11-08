@@ -2166,7 +2166,9 @@ main {
 
 /* The "?" beside a heading or box (Help.tsx), and the tip it opens right
    underneath. */
+/* A 22 px circle with a bigger area to tap (::before). */
 .help-button {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 22px;
@@ -2183,6 +2185,25 @@ main {
   border: 1.5px solid currentColor;
   border-radius: 50%;
   cursor: pointer;
+}
+
+.help-button::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+
+/* Ingredients and Method on the Edit page (RecipeEdit's LinesField): laid
+   out like a label around its box. */
+.lines-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.lines-field > span > label {
+  display: inline;
 }
 
 .help-button[aria-expanded="true"] {

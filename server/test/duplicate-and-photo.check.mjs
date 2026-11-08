@@ -85,6 +85,23 @@ check(
 check("a category page saves nothing", (await count()) === beforeList);
 const listPreview = await call(token, "POST", "/cookbook/import", { url: "https://www.example.org/category/soups/", html: listPage, preview: true });
 check("a preview of a category page sends the list too", listPreview.status === 400 && listPreview.data?.list?.recipes?.length === 2, `(${listPreview.status})`);
+// A real recipe with "you might also like" cards is still a recipe.
+const related = `${listCard("pho-related", "Pho")}${listCard("laksa-related", "Laksa")}`;
+const withCards = await call(token, "POST", "/cookbook/import", {
+  url: "https://www.example.org/ramen-with-cards/",
+  html: html("Ramen with cards").replace("</html>", `<body>${related}</body></html>`),
+});
+check("a recipe page with related-recipe cards saves the recipe", withCards.status === 200 && !!withCards.data?.id, `(${withCards.status})`);
+// A collection labelled as a recipe with nothing in it (BBC Good Food's way)
+// is a list, and isn't saved as an empty recipe.
+const labelled = `<script type="application/ld+json">${JSON.stringify({ "@type": "Recipe", name: "Quick recipes" })}</script>`;
+const beforeLabelled = await count();
+const labelledList = await call(token, "POST", "/cookbook/import", {
+  url: "https://www.example.org/collection/quick/",
+  html: listPage.replace("</head>", `${labelled}</head>`),
+});
+check("a collection labelled as an empty recipe gives the list", labelledList.status === 400 && labelledList.data?.list?.recipes?.length === 2, `(${labelledList.status})`);
+check("and saves no empty recipe", (await count()) === beforeLabelled);
 const noAuth = await call("", "POST", "/cookbook/import", { url: "https://www.example.org/dupe-soup/", html: html("x") });
 check("no 409 (or recipe name) for someone not logged in", noAuth.status === 401, `(${noAuth.status})`);
 

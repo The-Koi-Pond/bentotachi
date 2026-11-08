@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useState, type ChangeEvent, type ComponentProps, type FormEvent } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import type { PastedRecipe } from "../pastedRecipe";
 import { errorMessage, pb, recipes, type Recipe } from "../pb";
@@ -108,6 +108,34 @@ function toFields(draft: Draft): Record<string, unknown> {
 }
 
 // Used for both "add by hand" (/new) and editing (/recipes/:id/edit).
+// The Ingredients or Method box. Its "?" sits outside the <label>: a button
+// inside would become what the label names, leaving the box unnamed and
+// turning a tap on the word into opening the tip.
+function LinesField({
+  label,
+  hint,
+  tips,
+  ...box
+}: { label: string; hint: string; tips: "ingredients" | "steps" } & ComponentProps<"textarea">) {
+  const help = useHelp();
+  const id = useId();
+  return (
+    <div className="lines-field">
+      <span>
+        <label htmlFor={id}>{label}</label>
+        <HelpButton help={help} label="Headings and formatting" />
+      </span>
+      <span className="hint" id={`${id}-hint`}>
+        {hint}
+      </span>
+      <HelpBox help={help}>
+        <FormattingTips part={tips} />
+      </HelpBox>
+      <FormatTextarea id={id} aria-describedby={`${id}-hint`} rows={10} {...box} />
+    </div>
+  );
+}
+
 export default function RecipeEdit() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -118,8 +146,6 @@ export default function RecipeEdit() {
   const pasted = (useLocation().state as { pasted?: PastedRecipe } | null)?.pasted;
   const startDraft: Draft = { ...blankDraft, source_url: searchParams.get("source") ?? "" };
   const [draft, setDraft] = useState<Draft | null>(id ? null : pasted ? fromPasted(pasted) : startDraft);
-  const ingredientsHelp = useHelp();
-  const stepsHelp = useHelp();
   const [photo, setPhoto] = useState<File | null>(null);
   // The chosen photo, shown before it's saved.
   const photoPreview = usePreviewUrl(photo);
@@ -250,28 +276,8 @@ export default function RecipeEdit() {
       </div>
       <ExtraTimesEditor rows={draft.extra_times} onChange={(extra_times) => setDraft({ ...draft, extra_times })} />
 
-      <label>
-        <span>
-          Ingredients
-          <HelpButton help={ingredientsHelp} label="Headings and formatting" />
-        </span>
-        <span className="hint">One per line.</span>
-        <HelpBox help={ingredientsHelp}>
-          <FormattingTips part="ingredients" />
-        </HelpBox>
-        <FormatTextarea rows={10} {...field("ingredients")} />
-      </label>
-      <label>
-        <span>
-          Method
-          <HelpButton help={stepsHelp} label="Headings and formatting" />
-        </span>
-        <span className="hint">One step per line.</span>
-        <HelpBox help={stepsHelp}>
-          <FormattingTips part="steps" />
-        </HelpBox>
-        <FormatTextarea rows={10} {...field("steps")} />
-      </label>
+      <LinesField label="Ingredients" hint="One per line." tips="ingredients" {...field("ingredients")} />
+      <LinesField label="Method" hint="One step per line." tips="steps" {...field("steps")} />
       <div className="stack tag-field">
         <label>
           Tags

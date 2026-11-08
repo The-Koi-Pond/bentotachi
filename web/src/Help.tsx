@@ -2,7 +2,8 @@ import { useId, useState, type ReactNode } from "react";
 
 // Tips on how to use something sit behind a small "?" beside what they
 // explain, opening right underneath it (docs/VISION.md, Voice). What a box
-// needs and what just happened stay visible instead.
+// needs and what just happened stay visible instead. Keep the button out of
+// a <label>: the label would name the button instead of its box.
 export function useHelp() {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -20,11 +21,7 @@ export function HelpButton({ help, label }: { help: HelpState; label: string }) 
       aria-controls={help.id}
       aria-label={label}
       title={label}
-      onClick={(event) => {
-        // Inside a label, a tap would otherwise also focus its box.
-        event.preventDefault();
-        help.toggle();
-      }}
+      onClick={help.toggle}
     >
       ?
     </button>

@@ -935,7 +935,12 @@ function cardImage(html) {
 // gives only addresses.
 function slugTitle(url) {
   var slug = String(url).replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop() || "";
-  var words = decodeURIComponent(slug).replace(/\.html?$/i, "").replace(/[-_]+/g, " ").trim();
+  try {
+    slug = decodeURIComponent(slug);
+  } catch (err) {
+    // A stray "%" ("100%-rye-bread"): the address as it's written still reads fine.
+  }
+  var words = slug.replace(/\.html?$/i, "").replace(/[-_]+/g, " ").trim();
   return words ? words[0].toUpperCase() + words.slice(1) : "";
 }
 
@@ -985,11 +990,20 @@ function itemListEntries(node, depth, out) {
 function recipeLinks(html, pageUrl) {
   var site = siteOf(pageUrl);
   var pageKey = linkKey(pageUrl);
+  var pathOf = function (url) {
+    return url.replace(/^https?:\/\/[^\/]+/i, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
+  };
+  var pagePath = pathOf(pageUrl);
+  // A link that could be a recipe: on this site, not one of its lists, and
+  // not this page again (a comment's "Reply" is the page plus ?replytocom=).
+  var mayBeRecipe = function (url) {
+    return !!url && siteOf(url) === site && !NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, "")) && pathOf(url) !== pagePath;
+  };
   var recipes = [];
   var seen = {};
   function add(href, title, image) {
     var url = resolveUrl(href, pageUrl);
-    if (!url || siteOf(url) !== site || NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, ""))) return;
+    if (!mayBeRecipe(url)) return;
     var key = linkKey(url);
     var name = cleanText(title).replace(/^view\s+/i, "") || slugTitle(url);
     if (!key || key === pageKey || seen[key] || !name || recipes.length >= 100) return;
@@ -1001,19 +1015,23 @@ function recipeLinks(html, pageUrl) {
   var m;
   while ((m = re.exec(html)) !== null) {
     var card = elementAt(html, m.index);
-    // An <article> wrapping the cards isn't one of them.
+    // An <article> wrapping the cards isn't one of them, and WordPress
+    // wraps each comment in one too.
     if (!card || /<article\b/i.test(card.inner)) continue;
+    if (/comment/i.test(attribute(card.openTag, "class") + " " + attribute(card.openTag, "id"))) continue;
     var links = card.inner.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || [];
-    var heading = card.inner.match(/<h[2-5]\b[^>]*>([\s\S]*?)<\/h[2-5]>/i);
+    var heading = card.inner.match(/<h([1-5])\b[^>]*>([\s\S]*?)<\/h\1>/i);
     for (var i = 0; i < links.length; i++) {
-      var href = attribute(links[i].match(/^<a\b[^>]*>/i)[0], "href");
-      var url = resolveUrl(href, pageUrl);
-      if (!url || siteOf(url) !== site || NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, ""))) continue;
+      var url = resolveUrl(attribute(links[i].match(/^<a\b[^>]*>/i)[0], "href"), pageUrl);
+      if (!mayBeRecipe(url)) continue;
+      // A link's text of one word is a badge on the photo ("Recipe"), not
+      // the name; the address then reads better.
+      var linkText = cleanText(links[i]);
       var title =
-        (heading && cleanText(heading[1])) ||
+        (heading && cleanText(heading[2])) ||
         attribute(card.openTag, "data-item-name") ||
         attribute(card.openTag, "aria-label") ||
-        cleanText(links[i]);
+        (/\s/.test(linkText) ? linkText : "");
       add(url, title, cardImage(card.inner));
       break;
     }
@@ -1038,11 +1056,12 @@ function recipeLinks(html, pageUrl) {
 // When most links sit in one folder (BBC Good Food's "/recipes/…"), the
 // rest are the site's other cards (a subscription offer, a podcast).
 // Sites with recipes at the top level ("/butter-chicken/") have no such
-// folder, so nothing is dropped there.
+// folder, so nothing is dropped there, and nor are dated addresses
+// ("/2024/05/soup/"): a year isn't a folder of the site's other cards.
 function inMainFolder(recipes) {
   var folderOf = function (recipe) {
     var parts = recipe.url.replace(/^https?:\/\/[^\/]+/i, "").replace(/[?#].*$/, "").split("/").filter(Boolean);
-    return parts.length > 1 ? parts[0] : "";
+    return parts.length > 1 && !/^\d+$/.test(parts[0]) ? parts[0] : "";
   };
   var counts = {};
   var top = "";

@@ -65,6 +65,68 @@ test("a page without cards can still list recipes through its JSON-LD ItemList",
   ]);
 });
 
+test("a recipe page's comments aren't a list: each 'Reply' is the page itself", () => {
+  const comment = (n) =>
+    `<article id="div-comment-${n}" class="comment-body"><p>Lovely!</p>` +
+    `<a class="comment-reply-link" href="https://www.site.example/laksa/?replytocom=${n}#respond">Reply</a></article>`;
+  assert.equal(recipeLinks(categoryPage([comment(1), comment(2), comment(3)]), "https://www.site.example/laksa/"), null);
+});
+
+test("titles: an h1 heading counts, and a one-word badge on the photo isn't the name", () => {
+  const badged = (slug, title) =>
+    `<article class="post"><a href="/2024/05/${slug}/"><img src="/${slug}.jpg"><span>Recipe</span></a>` +
+    `<h1 class="entry-title"><a href="/2024/05/${slug}/">${title}</a></h1></article>`;
+  const list = recipeLinks(categoryPage([badged("pho", "beef pho"), badged("laksa", "chicken laksa")]), "https://sk.example/recipes/quick/");
+  assert.deepEqual(
+    list.recipes.map((r) => r.title),
+    ["beef pho", "chicken laksa"]
+  );
+  // With no heading at all, the address names it, not the badge.
+  const bare = (slug) => `<article><a href="/${slug}/"><img src="/${slug}.jpg"><span>Recipe</span></a></article>`;
+  assert.deepEqual(
+    recipeLinks(categoryPage([bare("beef-pho"), bare("chicken-laksa")]), "https://sk.example/").recipes.map((r) => r.title),
+    ["Beef pho", "Chicken laksa"]
+  );
+});
+
+test("dated addresses (/2024/05/…) aren't a folder, so older recipes stay", () => {
+  const dated = (year, slug) => `<article><h2><a href="/${year}/05/${slug}/">${slug}</a></h2></article>`;
+  const cards = [dated(2024, "a"), dated(2024, "b"), dated(2024, "c"), dated(2023, "d"), dated(2023, "e")];
+  assert.equal(recipeLinks(categoryPage(cards), "https://sk.example/recipes/quick/").recipes.length, 5);
+});
+
+test("a card's category label before its recipe link is passed over", () => {
+  const labelFirst = (slug, title) =>
+    `<article><a href="/category/dinner/">Dinner</a><h2><a href="/${slug}/">${title}</a></h2></article>`;
+  assert.deepEqual(
+    recipeLinks(categoryPage([labelFirst("pho", "Pho"), labelFirst("laksa", "Laksa")]), "https://www.site.example/").recipes.map((r) => r.title),
+    ["Pho", "Laksa"]
+  );
+});
+
+test("a wrapper <article> with its own heading still isn't a card", () => {
+  const wrapped = `<article class="page"><h2>Our soups</h2>${card("pho", "Pho")}${card("laksa", "Laksa")}</article>`;
+  assert.deepEqual(
+    recipeLinks(categoryPage([wrapped]), "https://www.site.example/category/soups/").recipes.map((r) => r.title),
+    ["Pho", "Laksa"]
+  );
+});
+
+test("a stray % in an address doesn't break the list", () => {
+  const imageOnly = (slug) => `<article><a href="/${slug}/"><img src="/x.jpg"></a></article>`;
+  const list = recipeLinks(categoryPage([imageOnly("100%-rye-bread"), imageOnly("seeded-loaf")]), "https://www.site.example/");
+  assert.deepEqual(
+    list.recipes.map((r) => r.title),
+    ["100% rye bread", "Seeded loaf"]
+  );
+});
+
+test("WordPress's own 'next page' button counts when there's no rel=next", () => {
+  const nav = `<nav><a class="next page-numbers" href="/category/quick/page/2/">Next</a></nav>`;
+  const list = recipeLinks(categoryPage([card("pho", "Pho"), card("laksa", "Laksa"), nav]), "https://www.site.example/category/quick/");
+  assert.equal(list.next, "https://www.site.example/category/quick/page/2/");
+});
+
 test("a recipe page with one related-recipe card isn't a list", () => {
   assert.equal(recipeLinks(categoryPage([card("pho", "Pho")]), "https://www.site.example/laksa/"), null);
   assert.equal(recipeLinks("<html><body><p>Just words.</p></body></html>", "https://www.site.example/"), null);

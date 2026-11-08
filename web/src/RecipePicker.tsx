@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { errorMessage } from "./pb";
 import { importRecipe, nextRecipeList, type RecipeList } from "./recipeImport";
-import { someNames } from "./paprikaImport";
+import { batchSummary } from "./recipeBatch";
+import { hasBuiltInBrowser } from "./bentoBrowser";
 
 // A page listing recipes (a site's category), to tick the ones wanted and
 // add them all: each is imported like a pasted link, one after another so
@@ -13,19 +14,23 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
   // Added in this visit, so they show as here without asking the server.
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState("");
-  const [status, setStatus] = useState<{
-    text: string;
-    isError: boolean;
-  } | null>(null);
+  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const stopped = useRef(false);
+  // Leaving the page (or importing another link, which replaces this list)
+  // stops the batch after the recipe in hand, like Stop: otherwise it would
+  // carry on unseen, and adding the same list again would save copies.
+  useEffect(
+    () => () => {
+      stopped.current = true;
+    },
+    []
+  );
 
-  const isHere = (url: string) =>
-    added.has(url) ||
-    list.recipes.some((recipe) => recipe.url === url && recipe.have);
+  const isHere = (url: string) => added.has(url) || list.recipes.some((recipe) => recipe.url === url && recipe.have);
   const pickable = list.recipes.filter((recipe) => !isHere(recipe.url));
-  const allPicked =
-    pickable.length > 0 && pickable.every((recipe) => picked.has(recipe.url));
+  const allPicked = pickable.length > 0 && pickable.every((recipe) => picked.has(recipe.url));
   const adding = progress !== "";
 
   function toggle(url: string) {
@@ -38,55 +43,45 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
   }
 
   async function addPicked() {
-    const chosen = list.recipes.filter(
-      (recipe) => picked.has(recipe.url) && !isHere(recipe.url),
-    );
+    const chosen = list.recipes.filter((recipe) => picked.has(recipe.url) && !isHere(recipe.url));
     stopped.current = false;
+    setStopping(false);
     setStatus(null);
     let count = 0;
     let already = 0;
     const failed: string[] = [];
+    let firstError = "";
     for (const [i, recipe] of chosen.entries()) {
       if (stopped.current) break;
       setProgress(`Adding ${i + 1} of ${chosen.length}…`);
       try {
         const result = await importRecipe({ url: recipe.url });
-        if ("id" in result) count += 1;
-        else if ("duplicate" in result) already += 1;
-        else failed.push(recipe.title);
-        if (!("list" in result)) {
-          setAdded((previous) => new Set(previous).add(recipe.url));
-          setPicked((previous) => {
-            const next = new Set(previous);
-            next.delete(recipe.url);
-            return next;
-          });
+        if ("list" in result) {
+          failed.push(recipe.title);
+          firstError ||= "That one is a list of recipes itself.";
+          continue;
         }
+        if ("id" in result) count += 1;
+        else already += 1;
+        setAdded((previous) => new Set(previous).add(recipe.url));
+        setPicked((previous) => {
+          const next = new Set(previous);
+          next.delete(recipe.url);
+          return next;
+        });
       } catch (err) {
         // Kept going: one site refusing one page shouldn't stop the rest.
-        console.warn(
-          "Importing from a list failed",
-          recipe.url,
-          errorMessage(err),
-        );
+        const message = errorMessage(err);
+        console.warn("Importing from a list failed", recipe.url, message);
         failed.push(recipe.title);
+        firstError ||= message;
       }
     }
     setProgress("");
-    const parts = [count === 1 ? "Added 1 recipe." : `Added ${count} recipes.`];
-    if (already)
-      parts.push(
-        already === 1 ? "1 was already here." : `${already} were already here.`,
-      );
-    if (stopped.current) parts.push("Stopped before the rest.");
-    if (failed.length)
-      parts.push(
-        `Couldn't add ${someNames(failed)}: try ${failed.length === 1 ? "its" : "their"} link on its own.`,
-      );
-    setStatus({
-      text: parts.join(" "),
-      isError: failed.length > 0 && count === 0,
-    });
+    setStopping(false);
+    setStatus(
+      batchSummary({ added: count, already, failed, firstError, stopped: stopped.current, hasBuiltInBrowser })
+    );
   }
 
   async function loadMore() {
@@ -99,14 +94,7 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
         return;
       }
       const known = new Set(list.recipes.map((recipe) => recipe.url));
-      setList({
-        ...list,
-        recipes: [
-          ...list.recipes,
-          ...more.recipes.filter((recipe) => !known.has(recipe.url)),
-        ],
-        next: more.next,
-      });
+      setList({ ...list, recipes: [...list.recipes, ...more.recipes.filter((recipe) => !known.has(recipe.url))], next: more.next });
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
@@ -118,22 +106,14 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
     <section className="card stack recipe-picker">
       <div>
         <h2>{list.title || "Recipes on this page"}</h2>
-        <p className="muted">
-          {list.recipes.length} recipes found. Tick the ones you want.
-        </p>
+        <p className="muted">{list.recipes.length} recipes found. Tick the ones you want.</p>
       </div>
       {pickable.length > 0 && (
         <button
           type="button"
           className="button small ghost picker-all"
           disabled={adding}
-          onClick={() =>
-            setPicked(
-              allPicked
-                ? new Set()
-                : new Set(pickable.map((recipe) => recipe.url)),
-            )
-          }
+          onClick={() => setPicked(allPicked ? new Set() : new Set(pickable.map((recipe) => recipe.url)))}
         >
           {allPicked ? "Untick all" : "Tick all"}
         </button>
@@ -151,13 +131,7 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
                   onChange={() => toggle(recipe.url)}
                 />
                 {recipe.image ? (
-                  <img
-                    className="picker-photo"
-                    src={recipe.image}
-                    alt=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                  />
+                  <img className="picker-photo" src={recipe.image} alt="" loading="lazy" referrerPolicy="no-referrer" />
                 ) : (
                   <span className="picker-photo" aria-hidden="true" />
                 )}
@@ -169,12 +143,7 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
         })}
       </ul>
       {list.next && (
-        <button
-          type="button"
-          className="button small"
-          onClick={() => void loadMore()}
-          disabled={loadingMore || adding}
-        >
+        <button type="button" className="button small" onClick={() => void loadMore()} disabled={loadingMore || adding}>
           {loadingMore ? "Loading…" : "More from this page"}
         </button>
       )}
@@ -182,15 +151,12 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
       <div className="picker-bar stack">
         {progress && (
           <p className="muted" role="status">
-            {progress}
+            {stopping ? "Stopping after this one…" : progress}
           </p>
         )}
         {status && (
           <p className={status.isError ? "error" : "success"} role="status">
-            {status.text}{" "}
-            {!status.isError && added.size > 0 && (
-              <Link to="/">See them in Recipes</Link>
-            )}
+            {status.text} {!status.isError && added.size > 0 && <Link to="/">See them in Recipes</Link>}
           </p>
         )}
         <div className="actions">
@@ -198,20 +164,17 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
             <button
               type="button"
               className="button"
-              onClick={() => (stopped.current = true)}
+              disabled={stopping}
+              onClick={() => {
+                stopped.current = true;
+                setStopping(true);
+              }}
             >
               Stop
             </button>
           ) : (
-            <button
-              type="button"
-              className="button primary"
-              disabled={!picked.size}
-              onClick={() => void addPicked()}
-            >
-              {picked.size
-                ? `Add ${picked.size} ${picked.size === 1 ? "recipe" : "recipes"}`
-                : "Add recipes"}
+            <button type="button" className="button primary" disabled={!picked.size} onClick={() => void addPicked()}>
+              {picked.size ? `Add ${picked.size} ${picked.size === 1 ? "recipe" : "recipes"}` : "Add recipes"}
             </button>
           )}
         </div>

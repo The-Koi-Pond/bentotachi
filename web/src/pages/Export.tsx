@@ -265,7 +265,7 @@ function ImportRecipes() {
       </p>
       <HelpBox help={help}>
         <p>
-          Categories become tags, and each recipe's rating becomes your own onigiri (and a favourite your heart, where the
+          Categories become tags, and each recipe's rating becomes your own onigiri (and a favorite your heart, where the
           file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and
           difficulty go into its notes. Meal plans don't come across.
         </p>
@@ -401,7 +401,7 @@ function ExportRecipes() {
       <HelpBox help={help}>
         <p>
           Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
-          rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favourites. The
+          rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favorites. The
           meal plan, shopping list, pantry and cooking history aren't included.
         </p>
       </HelpBox>
