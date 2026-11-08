@@ -9,7 +9,7 @@
 import { pb, users } from "./pb";
 import { forgetOfflineCopy } from "./offline";
 import { isPhoneMode, logInOnPhone } from "./phoneMode";
-import { createLoginGuard, type LoginState } from "./loginGuard";
+import { createLoginGuard, isServerRefusal, type LoginState } from "./loginGuard";
 
 export type { LoginState };
 
@@ -18,8 +18,7 @@ async function renewLogin(): Promise<LoginState> {
     await users().authRefresh();
     return "ok";
   } catch (err) {
-    const status = (err as { status?: number })?.status;
-    if (status !== 401 && status !== 403) return "unknown";
+    if (!isServerRefusal(err)) return "unknown";
     // On a phone-only Bento, just log back in with the phone's account.
     if (isPhoneMode() && (await logInOnPhone())) return "ok";
     // No longer good: the login screen shows. Shopping changes made offline

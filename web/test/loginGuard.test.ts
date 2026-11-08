@@ -1,7 +1,20 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createLoginGuard, type LoginState } from "../src/loginGuard.ts";
+import { createLoginGuard, isServerRefusal, type LoginState } from "../src/loginGuard.ts";
+
+test("only PocketBase's own refusal signs out, not a public Wi-Fi's page", () => {
+  // PocketBase's answer: its JSON names the status.
+  assert.equal(isServerRefusal({ status: 401, response: { status: 401, message: "The request requires valid record authorization token.", data: {} } }), true);
+  assert.equal(isServerRefusal({ status: 403, response: { status: 403, message: "Forbidden.", data: {} } }), true);
+  // A captive portal's HTML "forbidden" page: the client has no JSON to show.
+  assert.equal(isServerRefusal({ status: 403, response: {} }), false);
+  assert.equal(isServerRefusal({ status: 401 }), false);
+  // Offline, or the server in trouble.
+  assert.equal(isServerRefusal({ status: 0, response: {} }), false);
+  assert.equal(isServerRefusal({ status: 500, response: { status: 500 } }), false);
+  assert.equal(isServerRefusal(null), false);
+});
 
 function setup(answers: LoginState[]) {
   let time = 0;

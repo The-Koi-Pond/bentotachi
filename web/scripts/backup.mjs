@@ -9,7 +9,7 @@
 // too.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { onPi, piConfig, SCP } from "./piConfig.mjs";
@@ -32,6 +32,10 @@ mkdirSync(target, { recursive: true });
 const missing = zips.filter((name) => !existsSync(join(target, name)));
 for (const name of missing) {
   console.log(`Copying ${name}…`);
-  execFileSync(SCP, [...pi.sshOptions, "-q", `${pi.ssh}:${REMOTE}/${name}`, join(target, name)], { stdio: "inherit" });
+  // Under a .part name until it's all here: a copy cut off partway would
+  // otherwise count as already copied next time, and stay broken.
+  const part = join(target, `${name}.part`);
+  execFileSync(SCP, [...pi.sshOptions, "-q", `${pi.ssh}:${REMOTE}/${name}`, part], { stdio: "inherit" });
+  renameSync(part, join(target, name));
 }
 console.log(`\n${missing.length} new, ${zips.length - missing.length} already here. Backups are in ${target}`);

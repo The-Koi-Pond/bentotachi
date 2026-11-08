@@ -118,7 +118,9 @@ function ChosenRecipe({
     }
   }
 
-  const loading = !pantry || ticks.loading;
+  // Packets too, or an Add in the first instant would take full amounts.
+  // Packets that can't load fall back to Have / Low / Out.
+  const loading = !pantry || ticks.loading || (!packets.items && !packets.loadError);
   return (
     <>
       <button className="link-button recipe-pick-back" onClick={onBack}>

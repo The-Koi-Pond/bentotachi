@@ -248,15 +248,39 @@ export default function MealPlan() {
     setDragging(shown.find((entry) => entry.id === String(event.active.id)) ?? null);
   }
 
+  // The month grid shows one picture per day, so dragging it moves its
+  // whole meal (a main and its sides) to that meal on the other day. A lone
+  // dish goes through move, so it still swaps with a lone dish there.
+  async function moveMeal(from: string, to: string) {
+    const dishes = bySlot.get(from) ?? [];
+    if (dishes.length < 2) {
+      if (dishes[0]) await move(dishes[0].id, to);
+      return;
+    }
+    if (from === to) return;
+    const target = parseSlot(to);
+    setError("");
+    await undo.settle();
+    for (const dish of dishes) plan.upsert({ ...dish, date: toStoredDate(target.date), meal: target.meal });
+    try {
+      for (const dish of dishes) await mealPlan().update(dish.id, { date: toStoredDate(target.date), meal: target.meal });
+    } catch (err) {
+      setError(errorMessage(err));
+      plan.reload();
+    }
+  }
+
   // The list's places are meals ("2026-11-02|lunch"); the month grid's are
-  // days, where a dish stays the same meal ("2026-11-02").
+  // days, where a meal stays the same meal ("2026-11-02").
   function onDragEnd(event: DragEndEvent) {
     setDragging(null);
     if (!event.over) return;
     const id = String(event.active.id);
     const entry = shown.find((e) => e.id === id);
     const over = String(event.over.id);
-    if (entry) void move(id, over.includes("|") ? over : slotKey(over, mealOf(entry)));
+    if (!entry) return;
+    if (over.includes("|")) void move(id, over);
+    else void moveMeal(slotKey(datePart(entry.date), mealOf(entry)), slotKey(over, mealOf(entry)));
   }
 
   const isList = view === "list";

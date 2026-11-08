@@ -160,6 +160,12 @@ test("packets in stock: a short line asks for the rest, a covered one starts unt
   );
 });
 
+test("packets in stock: the amount after the comma counts, as on the recipe page", () => {
+  const parmesan = [item("par", "Parmesan", "have")];
+  const [row] = gatherIngredients([recipe("a", "Pasta", ["Parmesan, finely grated (about 50 g)"])], parmesan, [packet("9", "par", "200 g")]);
+  assert.deepEqual([row.text, row.cover.kind, startsTicked(row)], ["Parmesan", "enough", false]);
+});
+
 test("packets in stock: a merged row keeps the pantry's name and adds up what both recipes need", () => {
   const rows = gatherIngredients(
     [recipe("a", "Curry", ["1.5 kg rice"]), recipe("b", "Fried rice", ["800 g rice"])],

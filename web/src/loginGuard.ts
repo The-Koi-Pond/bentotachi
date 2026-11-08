@@ -8,6 +8,15 @@
 // trouble), so carry on carefully. "signedOut": the login is no longer good.
 export type LoginState = "ok" | "unknown" | "signedOut";
 
+// Whether a failed renewal is PocketBase itself refusing the login (401 or
+// 403 with its own JSON answer, which names the status), not a public
+// Wi-Fi's sign-in or "forbidden" page answering in its place: only that
+// signs anyone out. `err` is the PocketBase client's error.
+export function isServerRefusal(err: unknown): boolean {
+  const { status, response } = (err ?? {}) as { status?: number; response?: { status?: unknown } };
+  return (status === 401 || status === 403) && response?.status === status;
+}
+
 // freshFor: how long a confirmed login counts as good for loading things (a
 // minute: a login revoked on another phone shows up quickly). Before
 // changing anything, ask with maxAge 0, so it's always checked fresh.

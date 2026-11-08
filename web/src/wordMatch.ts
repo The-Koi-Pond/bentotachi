@@ -48,6 +48,11 @@ const PRODUCT_AFTER = new Set([
 // name: "coconut milk", "peanut butter", "sour cream", "almond flour".
 const PRODUCT_BEFORE = new Set(["coconut", "almond", "oat", "soy", "peanut", "rice", "sour", "ice", "cream", "corn"]);
 
+// Words that, joined on with a hyphen, only describe something else by it:
+// "rice-shaped pasta" (risoni) isn't rice, "an egg-sized knob of butter"
+// isn't an egg.
+const DESCRIBED_BY = new Set(["shaped", "style", "like", "sized", "size", "flavoured", "flavored", "scented"]);
+
 // "noodles" -> "noodle", for checking the word lists.
 const singular = (word: string) => (word.length > 3 && word.endsWith("s") && !word.endsWith("ss") ? word.slice(0, -1) : word);
 
@@ -66,7 +71,9 @@ export function findMention(line: string, name: string): { start: number; end: n
     const end = start + match[2].length;
     const after = text.slice(end).match(/^[\s-]+([a-z]+)/)?.[1] ?? "";
     const before = text.slice(0, start).match(/([a-z]+)[\s-]+$/)?.[1] ?? "";
-    if (!PRODUCT_AFTER.has(singular(after)) && !PRODUCT_BEFORE.has(before)) return { start, end };
+    // The line as given: folding has turned its hyphens into spaces.
+    const describes = DESCRIBED_BY.has(line.slice(end).toLowerCase().match(/^-([a-z]+)/)?.[1] ?? "");
+    if (!PRODUCT_AFTER.has(singular(after)) && !PRODUCT_BEFORE.has(before) && !describes) return { start, end };
   }
   return null;
 }

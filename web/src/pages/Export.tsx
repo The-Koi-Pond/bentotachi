@@ -25,7 +25,8 @@ import {
   paprikaStepPhotos,
   someNames,
 } from "../paprikaImport";
-import { MAX_PHOTOS, photoStepsFor, uploadName } from "../recipePhotos";
+import { MAX_PHOTOS, PHOTO_SIDE, photoStepsFor, uploadName } from "../recipePhotos";
+import { shrinkPhoto } from "../pantryPhoto";
 import { localToday } from "../dates";
 import { sameTitle } from "../recipeTwins";
 import { HelpBox, HelpButton, useHelp } from "../Help";
@@ -188,11 +189,16 @@ function ImportRecipes() {
         const sent: [string, string][] = [];
         const photos: File[] = [];
         for (const extra of gallery) {
-          if (photos.length >= MAX_PHOTOS || extra.bytes.length > MAX_PHOTO) continue;
+          if (photos.length >= MAX_PHOTOS) break;
+          // Shrunk like a photo added in the app, so a big collection's
+          // galleries don't fill a phone and its backups.
+          const shrunk = await shrinkPhoto(new Blob([new Uint8Array(extra.bytes)], { type: extra.type }), PHOTO_SIDE);
+          if (shrunk.size > MAX_PHOTO) continue;
           const upload = uploadName();
-          photos.push(new File([new Uint8Array(extra.bytes)], upload, { type: extra.type }));
+          photos.push(new File([shrunk], upload, { type: shrunk.type }));
           sent.push([extra.name, upload]);
         }
+        if (image) image = await shrinkPhoto(image, PHOTO_SIDE);
         let created: Recipe;
         try {
           created = await recipes().create({ ...recipe, ...(image && { image }), ...(photos.length && { photos }) });

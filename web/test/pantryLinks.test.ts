@@ -52,6 +52,13 @@ test("only matches whole words", () => {
   assert.equal(guess("water"), null);
 });
 
+test("a name that only describes something else isn't it", () => {
+  assert.equal(guess("200 g risoni (rice-shaped pasta)"), null);
+  assert.equal(guess("an egg-sized knob of butter"), null);
+  // A hyphen joining other words still names it.
+  assert.equal(guess("1 cup rice - rinsed"), "rice");
+});
+
 test("a chosen link beats a guess; an empty choice means not a pantry item", () => {
   const line = "2 onions, diced";
   assert.deepEqual(linkFor(line, null, pantry), { kind: "guessed", item: pantry[0], family: null });

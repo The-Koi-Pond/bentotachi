@@ -70,7 +70,9 @@ export default function WeekShoppingSheet({
     }
   }
 
-  const loading = !pantry.items || ticks.loading;
+  // Packets too, or an Add in the first instant would take full amounts.
+  // Packets that can't load fall back to Have / Low / Out.
+  const loading = !pantry.items || ticks.loading || (!packets.items && !packets.loadError);
 
   return (
     <dialog

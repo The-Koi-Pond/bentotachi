@@ -2,7 +2,7 @@
 // store links, favourite brand, note, photo, barcodes, and the packets in
 // stock). The fields' rules are in pantryFields.ts, the packets' in
 // pantryPackets.ts.
-import { useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from "react";
 import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
 import { useSpell, useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
@@ -386,6 +386,7 @@ export function AddPantryItem({
   onScanAgain,
   onScan,
   onClose,
+  onStartedTyping,
 }: {
   existing: PantryItem[];
   // A store product page to start from, if any.
@@ -403,6 +404,8 @@ export function AddPantryItem({
   // (with its 📷) isn't shown yet (a tester couldn't find the scanner).
   onScan?: () => void;
   onClose?: () => void;
+  // Someone has started filling it in, so it should stay on screen.
+  onStartedTyping?: () => void;
 }) {
   const product = fromBarcode?.product ?? null;
   const [fields, setFields] = useState<Fields>(() => ({
@@ -445,7 +448,11 @@ export function AddPantryItem({
   const ownTyping = (f: Fields) =>
     JSON.stringify([f.name.trim(), f.brand.trim(), f.note.trim(), f.expires, f.storeUrls.filter((url) => url.trim())]);
   const [started, setStarted] = useState(() => ownTyping(fields));
-  useUnsavedChanges(ownTyping(fields) !== started || !!photo);
+  const typing = ownTyping(fields) !== started || !!photo;
+  useUnsavedChanges(typing);
+  useEffect(() => {
+    if (typing) onStartedTyping?.();
+  }, [typing, onStartedTyping]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();

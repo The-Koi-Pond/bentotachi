@@ -136,7 +136,9 @@ export function gatherIngredients(
       const plain = listWording(line);
       const target = linkTarget(link);
       const key = target ? `p:${target}` : `t:${plain.toLowerCase()}`;
-      needs.set(key, [...(needs.get(key) ?? []), { line: plain, measures }]);
+      // Measured on the whole line, as the recipe page does: "Parmesan,
+      // finely grated (about 50 g)" says how much only after the comma.
+      needs.set(key, [...(needs.get(key) ?? []), { line, measures }]);
       const row = rows.get(key);
       if (row) {
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);

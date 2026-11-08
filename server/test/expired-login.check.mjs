@@ -31,6 +31,10 @@ const tick = await call(bad, "PATCH", `/collections/shopping_items/records/${ite
 check("a bad login's tick is answered 404, as if logged out", tick.status === 404, `(${tick.status})`);
 const refresh = await call(bad, "POST", "/collections/users/auth-refresh");
 check("renewing a bad login is answered 401", refresh.status === 401, `(${refresh.status})`);
+// The app only signs out on PocketBase's own refusal, told apart from a
+// public Wi-Fi's "forbidden" page by its JSON answer (loginGuard.ts
+// isServerRefusal).
+check("its answer is PocketBase's JSON, saying 401", refresh.data?.status === 401 && typeof refresh.data?.message === "string", JSON.stringify(refresh.data));
 const good = await call(token, "POST", "/collections/users/auth-refresh");
 check("renewing a good login works", good.status === 200, `(${good.status})`);
 const after = (await call(token, "GET", `/collections/shopping_items/records/${item.id}`)).data;

@@ -2,7 +2,7 @@
 // or Detailed rows). The rows, forms and scanning screens are their own
 // files (PantryRow, PantryForms, PantryScan); the sorting rules are in
 // pantryGroups.ts.
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import {
   errorMessage,
@@ -88,6 +88,7 @@ export default function Pantry() {
   // new item if Add is tapped.
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
+  const startAdding = useCallback(() => setAdding(true), []);
   // The name the add form starts with (what was typed in the find box).
   const [startName, setStartName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -558,6 +559,9 @@ export default function Pantry() {
             pantry.upsert(item);
             setFromStore(null);
           }}
+          // An empty pantry shows the form by itself; once it's being filled
+          // in, it stays even if a housemate's first item arrives meanwhile.
+          onStartedTyping={startAdding}
           onClose={
             items.length > 0
               ? () => {
