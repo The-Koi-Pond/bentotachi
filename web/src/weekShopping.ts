@@ -32,14 +32,24 @@ const PREPARATION = new Set(
     "diced chopped sliced minced grated shredded crushed peeled cubed halved quartered julienned trimmed " +
     "rinsed drained beaten whisked softened melted cooled chilled divided optional juiced zested seeded " +
     "deseeded cored pitted toasted roasted cooked uncooked thawed defrosted torn picked washed separated " +
-    "mashed squeezed stemmed sifted packed heaped scrubbed finely roughly thinly coarsely freshly " +
-    "lightly very well and or then"
+    "mashed squeezed stemmed sifted packed heaped scrubbed deveined patted dry finely roughly thinly " +
+    "coarsely freshly lightly very well and or then cut into chunks pieces rounds rings strips wedges " +
+    "cubes slices halves thin thick small large bite-sized"
   ).split(" ")
 );
 const LEADS = new Set("to for plus at if such cut preferably ideally".split(" "));
 
+// Asides in brackets ("diced (about 1 cup)", "chopped (optional)") and a
+// closing full stop don't make preparation into something to buy.
 function isPreparation(part: string): boolean {
-  const words = part.trim().toLowerCase().split(/\s+/);
+  const words = part
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, " ")
+    .replace(/[.;:!]+\s*$/, "")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return false;
   return LEADS.has(words[0]) || words.every((word) => PREPARATION.has(word));
 }
 

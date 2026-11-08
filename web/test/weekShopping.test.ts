@@ -63,6 +63,15 @@ test("nothing to buy is cut off: lists of things, and commas in brackets", () =>
   assert.equal(listWording("100 g butter, at room temperature"), "100 g butter");
   assert.equal(listWording("Salt, pepper, to taste"), "Salt, pepper");
   assert.equal(listWording("Sour cream, chopped chives, to serve"), "Sour cream, chopped chives");
+  // Asides in brackets, a full stop, and longer preparation still go.
+  assert.equal(listWording("1 onion, diced (about 1 cup)"), "1 onion");
+  assert.equal(listWording("Parsley, chopped (optional)"), "Parsley");
+  assert.equal(listWording("2 onions, diced."), "2 onions");
+  assert.equal(listWording("2 potatoes, peeled and cut into chunks"), "2 potatoes");
+  assert.equal(listWording("1 lb shrimp, peeled and deveined"), "1 lb shrimp");
+  assert.equal(listWording("2 chicken breasts, patted dry"), "2 chicken breasts");
+  // But not when there's a thing to buy in it.
+  assert.equal(listWording("Salt, small potatoes"), "Salt, small potatoes");
   // The first part is the thing itself, even when it starts like preparation.
   assert.equal(listWording("Chopped parsley, to serve"), "Chopped parsley");
   // A comma inside brackets never cuts, even before a preparation word.
