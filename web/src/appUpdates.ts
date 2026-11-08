@@ -99,7 +99,6 @@ export async function checkForUpdate() {
     return;
   }
   if (state.status === "installing" || !canSelfUpdate) return;
-  if (!canSelfUpdate) return;
   setState({ status: "checking" });
   let installed = "";
   try {
@@ -127,7 +126,14 @@ export async function installUpdate() {
     try {
       // A fresh answer first: it may also say the update already
       // downloaded (then the banner offers "Restart to update").
-      if ((await askPlay()) !== "available") return;
+      const fresh = await askPlay();
+      // Play unreachable just now: keep the banner, with the reason, so
+      // Update can be tapped again.
+      if (fresh === null) {
+        setState({ status: "error", message: "Couldn't reach Google Play. Try again later.", installed, latest });
+        return;
+      }
+      if (fresh !== "available") return;
       setState({ status: "installing", installed, latest });
       // Play asks the person first; once they agree it downloads in the
       // background, and its progress arrives through the listener in
@@ -179,7 +185,10 @@ export function startUpdateChecks() {
       }
       const { installed, latest } = current;
       if (installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) setState({ status: "downloaded", installed, latest });
-      else if (installStatus === FlexibleUpdateInstallStatus.FAILED) {
+      // A check that ran just as the download began may have said "available".
+      else if (installStatus === FlexibleUpdateInstallStatus.PENDING || installStatus === FlexibleUpdateInstallStatus.DOWNLOADING) {
+        if (current.status !== "installing") setState({ status: "installing", installed, latest });
+      } else if (installStatus === FlexibleUpdateInstallStatus.FAILED) {
         // After "Restart to update" it's the install that failed.
         const what = current.status === "downloaded" ? "install" : "download";
         setState({ status: "error", message: `The update didn't ${what}. Try again later.`, installed, latest });
