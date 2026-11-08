@@ -2677,11 +2677,12 @@ legend {
   gap: 6px;
 }
 
+/* A settings list, like the ⋮ menu: one row per setting, its name on the
+   left and its control on the right, a line between rows. */
 .view-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
+  padding: 0 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -2689,57 +2690,77 @@ legend {
 
 .view-panel-row {
   display: flex;
+  /* Sort's row is a <label>, which the app otherwise stacks. */
   flex-direction: row;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  font-weight: 400;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 0;
+  font-weight: 600;
+}
+
+.view-panel-row + .view-panel-row {
+  border-top: 1px solid var(--border);
 }
 
 .view-panel-label {
-  width: 3.8rem;
-  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.view-panel-row select {
-  width: auto;
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.88rem;
+.view-panel-detail {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .view-panel .view-switch button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 2px 10px;
 }
 
-/* Narrow phones: each name above its control, so all three line up. */
-@media (max-width: 420px) {
-  .view-panel-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+/* Sort as a pill like the switches beside it, not a plain box. */
+.view-panel-select {
+  width: auto;
+  min-height: 38px;
+  padding: 4px 30px 4px 14px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  background-color: var(--border);
+  border: none;
+  border-radius: 999px;
+}
+
+/* Edit recipes (and Make shelves): the whole row is the button. */
+.view-panel-link {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.view-panel-link svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* Small phones: the switches' icons go, so each row stays one line. */
+@media (max-width: 380px) {
+  .view-panel .view-switch button svg {
+    display: none;
   }
-
-  .view-panel-label {
-    width: auto;
-  }
-}
-
-.view-panel-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.view-panel-actions:empty {
-  display: none;
-}
-
-.view-panel-actions .button {
-  gap: 6px;
 }
 
 /* Recipe page */

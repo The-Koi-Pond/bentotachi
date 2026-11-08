@@ -33,6 +33,7 @@ import QuickTime from "../QuickTime";
 import {
   BigCardsIcon,
   CheckIcon,
+  ChevronIcon,
   GripIcon,
   HeartIcon,
   ListIcon,
@@ -715,8 +716,10 @@ export default function RecipeList() {
       </div>
       {viewOpen && (
         <div id="view-panel" className="view-panel" role="group" aria-label="View">
+          {/* A settings list: each row's name on the left, its control on
+              the right, lines between (Xel: the first try looked sloppy). */}
           <div className="view-panel-row">
-            <span className="muted view-panel-label">Show as</span>
+            <span className="view-panel-label">Show as</span>
             <span className="view-switch" role="group" aria-label="Show recipes as">
               {LAYOUTS.map((option) => (
                 <button key={option.value} aria-pressed={layout === option.value} onClick={() => changeLayout(option.value)}>
@@ -727,8 +730,8 @@ export default function RecipeList() {
             </span>
           </div>
           <label className="view-panel-row">
-            <span className="muted view-panel-label">Sort</span>
-            <select value={sort} onChange={(e) => changeSort(e.target.value as SortOrder)}>
+            <span className="view-panel-label">Sort</span>
+            <select className="view-panel-select" value={sort} onChange={(e) => changeSort(e.target.value as SortOrder)}>
               {SORTS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -738,7 +741,7 @@ export default function RecipeList() {
           </label>
           {!!categories?.length && !offline && (
             <div className="view-panel-row">
-              <span className="muted view-panel-label">Shelves</span>
+              <span className="view-panel-label">Shelves</span>
               <span className="view-switch" role="group" aria-label="Shelves or one list">
                 <button aria-pressed={!listChosen} onClick={() => listChosen && showShelvesAgain()}>
                   Shelves
@@ -752,24 +755,30 @@ export default function RecipeList() {
               </span>
             </div>
           )}
-          <div className="view-panel-actions">
-            {categories?.length === 0 && (
-              <Link to="/shelves?new=1" className="button small">
+          {categories?.length === 0 && (
+            <Link to="/shelves?new=1" className="view-panel-row view-panel-link">
+              <span className="view-panel-label">
                 Make shelves
-              </Link>
-            )}
-            {!editing && !offline && (
-              <button
-                className="button small"
-                onClick={() => {
-                  setViewOpen(false);
-                  setEditing(true);
-                }}
-              >
-                <PencilIcon /> Edit recipes
-              </button>
-            )}
-          </div>
+                <span className="view-panel-detail">Group recipes, like “Mains” or “Baking”</span>
+              </span>
+              <ChevronIcon />
+            </Link>
+          )}
+          {!editing && !offline && (
+            <button
+              className="view-panel-row view-panel-link"
+              onClick={() => {
+                setViewOpen(false);
+                setEditing(true);
+              }}
+            >
+              <span className="view-panel-label">
+                Edit recipes
+                <span className="view-panel-detail">Pick some to put on a shelf or delete</span>
+              </span>
+              <ChevronIcon />
+            </button>
+          )}
         </div>
       )}
 
