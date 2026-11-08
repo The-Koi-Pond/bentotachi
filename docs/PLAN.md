@@ -195,6 +195,21 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+Not released yet:
+
+- Websites' ingredient sections ("Marinade", "Sauce") come in with the
+  recipe; "Re-import from the website" in a recipe's ⋯ menu.
+- "Amounts in the method" (⋮ menu, off unless turned on).
+- Tips behind a "?" (recipe formatting, the plan, Import and Export, the
+  tablespoon, filling a shelf).
+- A site's category page (a tester's idea, 2026-11-08): pasting
+  one, or saving one in the app's browser, lists its recipes to tick and
+  add at once, with "More from this page" for the next lot. Their second
+  idea, site buttons on Browse with the site's categories in the app, is
+  covered for now by the site's own menu in the app's browser (Browse
+  opens it there); in-app category lists per site would need keeping up
+  as sites change, so they wait for Xel's call.
+
 Released in 1.19.0 (2026-11-08, deployed the same day):
 
 - Recipe photos: up to 20 besides the cover, step photos shown in their

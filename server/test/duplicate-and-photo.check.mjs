@@ -65,6 +65,26 @@ check(
   `(${preview.status} ${JSON.stringify(preview.data).slice(0, 120)})`
 );
 check("a preview saves nothing", (await count()) === beforePreview);
+// A page listing recipes: the list back (as a 400, so older apps show the
+// message), each marked if it's already here, and nothing saved.
+const listCard = (slug, title) => `<article><h2><a href="https://www.example.org/${slug}/">${title}</a></h2></article>`;
+const listPage = `<html><head><title>Soups</title></head><body>${listCard("dupe-soup", "Dupe soup")}${listCard("brand-new-soup", "Brand new soup")}</body></html>`;
+const beforeList = await count();
+const listed = await call(token, "POST", "/cookbook/import", { url: "https://www.example.org/category/soups/", html: listPage });
+const listedRecipes = listed.data?.list?.recipes ?? [];
+check(
+  "a category page sends back its recipes to pick from",
+  listed.status === 400 && listedRecipes.length === 2 && /page of recipes/.test(listed.data?.message ?? ""),
+  `(${listed.status} ${JSON.stringify(listed.data).slice(0, 160)})`
+);
+check(
+  "the list marks a recipe already here",
+  listedRecipes[0]?.have === true && listedRecipes[1]?.have === false,
+  `(${JSON.stringify(listedRecipes.map((r) => r.have))})`
+);
+check("a category page saves nothing", (await count()) === beforeList);
+const listPreview = await call(token, "POST", "/cookbook/import", { url: "https://www.example.org/category/soups/", html: listPage, preview: true });
+check("a preview of a category page sends the list too", listPreview.status === 400 && listPreview.data?.list?.recipes?.length === 2, `(${listPreview.status})`);
 const noAuth = await call("", "POST", "/cookbook/import", { url: "https://www.example.org/dupe-soup/", html: html("x") });
 check("no 409 (or recipe name) for someone not logged in", noAuth.status === 401, `(${noAuth.status})`);
 

@@ -78,6 +78,8 @@ export default function Browse() {
       const saved = await browseAndSave(url);
       if (!saved) return;
       if ("id" in saved.result) navigate(`/recipes/${saved.result.id}`);
+      // A category page saved from the browser: pick its recipes on Add.
+      else if ("list" in saved.result) navigate("/add", { state: { list: saved.result.list } });
       else setDuplicate({ ...saved.result.duplicate, page: saved.page });
     } catch (err) {
       setError(errorMessage(err));

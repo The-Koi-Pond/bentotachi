@@ -2136,7 +2136,8 @@ main {
   overflow-wrap: anywhere;
 }
 
-.pantry-edit > .actions {
+.pantry-edit > .actions,
+.picker-bar {
   position: sticky;
   bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px));
   z-index: 5;
@@ -3488,6 +3489,40 @@ legend {
   font-weight: 400;
   padding: 6px 0;
   cursor: pointer;
+}
+
+/* A site's category page, to tick which recipes to add (RecipePicker). */
+.recipe-picker h2 {
+  margin: 0;
+}
+
+.picker-all {
+  align-self: flex-start;
+}
+
+.picker-list label {
+  align-items: center;
+  padding: 4px 0;
+}
+
+.picker-photo {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--accent-soft);
+}
+
+.picker-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-state {
+  flex: none;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 /* An ingredient with its pantry status on the right. */

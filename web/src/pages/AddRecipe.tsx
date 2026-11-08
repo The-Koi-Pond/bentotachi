@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { errorMessage } from "../pb";
 import { browseAndSave, hasBuiltInBrowser, importBrowsedPage, takeRestoredPage } from "../bentoBrowser";
-import { importRecipe, type ImportResult } from "../recipeImport";
+import { importRecipe, type ImportResult, type RecipeList } from "../recipeImport";
 import AlreadyHere from "../AlreadyHere";
+import RecipePicker from "../RecipePicker";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 import { readPastedRecipe } from "../pastedRecipe";
 import { CloseIcon } from "../icons";
 import { savedPageLink, trimSavedPage } from "../savedPage";
@@ -48,14 +50,21 @@ export default function AddRecipe() {
   // A recipe from that page already here: offered instead of a second copy,
   // with how to add one anyway (AlreadyHere).
   const [duplicate, setDuplicate] = useState<{ id: string; title: string; again: () => void } | null>(null);
+  // A page listing recipes, to pick some from (RecipePicker); Browse sends
+  // one saved in the app's browser here too.
+  const location = useLocation();
+  const linkHelp = useHelp();
+  const [list, setList] = useState<RecipeList | null>((location.state as { list?: RecipeList } | null)?.list ?? null);
 
-  // The import's result: open the new recipe, or offer the one already here.
+  // The import's result: open the new recipe, offer the one already here,
+  // or show the page's recipes to pick from.
   function landed(result: ImportResult, again: () => void, replace = false) {
     if ("id" in result) {
       navigate(`/recipes/${result.id}`, { replace });
       return;
     }
-    setDuplicate({ ...result.duplicate, again });
+    if ("list" in result) setList(result.list);
+    else setDuplicate({ ...result.duplicate, again });
     setBusy(false);
   }
 
@@ -63,6 +72,7 @@ export default function AddRecipe() {
     setBusy(true);
     setError("");
     setDuplicate(null);
+    setList(null);
     try {
       landed(await importRecipe({ url: link.trim(), again }), () => void importLink(link, replace, true), replace);
     } catch (err) {
@@ -105,6 +115,7 @@ export default function AddRecipe() {
     setBusy(true);
     setError("");
     setDuplicate(null);
+    setList(null);
     try {
       landed(await importBrowsedPage(page, again), () => void importPage(page, replace, true), replace);
     } catch (err) {
@@ -119,6 +130,7 @@ export default function AddRecipe() {
     setBusy(true);
     setError("");
     setDuplicate(null);
+    setList(null);
     try {
       const saved = await browseAndSave(url.trim());
       if (saved) landed(saved.result, () => void importPage(saved.page, false, true));
@@ -182,7 +194,17 @@ export default function AddRecipe() {
   return (
     <div className="stack narrow">
       <form className="card stack" onSubmit={submit}>
-        <h2>Import from a link</h2>
+        <h2>
+          Import from a link
+          <HelpButton help={linkHelp} label="What links work" />
+        </h2>
+        <HelpBox help={linkHelp}>
+          <p>A recipe's page on any recipe website.</p>
+          <p>
+            A site's category or collection page works too, like RecipeTin Eats' “Quick and easy”: you get its recipes
+            to tick, then add them all at once.
+          </p>
+        </HelpBox>
         {sharedWithoutLink && !url && (
           <p className="muted">That share didn’t include a link. Paste the recipe’s link here instead.</p>
         )}
@@ -229,6 +251,7 @@ export default function AddRecipe() {
         </button>
       </form>
       {duplicate && <AlreadyHere duplicate={duplicate} busy={busy} onAgain={duplicate.again} />}
+      {list && <RecipePicker key={list.recipes[0]?.url} list={list} />}
 
       {!hasBuiltInBrowser && (
         <div className="card stack">

@@ -900,8 +900,167 @@ function fitRecipe(recipe) {
   return fitted;
 }
 
+// Addresses on a list page that lead to more lists or the site's own pages,
+// not to a recipe: categories, tags, authors, further pages, searches.
+var NOT_RECIPE_PATH =
+  /\/(category|categories|tag|tags|topic|topics|author|authors|page|collection|collections|search|about|contact|shop|privacy|cookbook)(\/|$)|[?&](s|page)=/i;
+
+// "www.recipetineats.com" and "recipetineats.com" are the same site.
+function siteOf(url) {
+  var m = String(url || "").match(/^https?:\/\/(?:www\.)?([^\/?#:]+)/i);
+  return m ? m[1].toLowerCase() : "";
+}
+
+// A card's photo: the first picture with a real address (lazy-loading pages
+// put a blank placeholder in src and the photo in data-src or srcset).
+function cardImage(html) {
+  var re = /<(?:img|source)\b[^>]*>/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    var srcset = attribute(m[0], "data-srcset") || attribute(m[0], "srcset");
+    var options = [
+      attribute(m[0], "src"),
+      attribute(m[0], "data-src"),
+      attribute(m[0], "data-lazy-src"),
+      srcset.trim().split(/\s+/)[0],
+    ];
+    for (var i = 0; i < options.length; i++) {
+      if (options[i] && !/^data:/i.test(options[i])) return options[i];
+    }
+  }
+  return "";
+}
+
+// "one-pan-butter-chicken" as "One pan butter chicken", for a list that
+// gives only addresses.
+function slugTitle(url) {
+  var slug = String(url).replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop() || "";
+  var words = decodeURIComponent(slug).replace(/\.html?$/i, "").replace(/[-_]+/g, " ").trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : "";
+}
+
+// The page's "next page" link (rel="next", or a pagination "next" button),
+// on the same site, or "".
+function nextPageLink(html, pageUrl) {
+  var re = /<(?:link|a)\b[^>]*>/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    var rel = attribute(m[0], "rel");
+    var cls = attribute(m[0], "class");
+    var isNext = /(^|\s)next(\s|$)/i.test(rel) || (/\bnext\b/i.test(cls) && /page|pagination/i.test(cls));
+    if (!isNext) continue;
+    var url = resolveUrl(attribute(m[0], "href"), pageUrl);
+    if (url && siteOf(url) === siteOf(pageUrl) && linkKey(url) !== linkKey(pageUrl)) return url;
+  }
+  return "";
+}
+
+// Recipe lists in the page's JSON-LD (an ItemList, as some sites give for a
+// category page), as { url, title, image }.
+function itemListEntries(node, depth, out) {
+  if (!node || typeof node !== "object" || depth > 6) return;
+  if (Array.isArray(node)) {
+    for (var i = 0; i < node.length; i++) itemListEntries(node[i], depth + 1, out);
+    return;
+  }
+  if (isType(node, "ItemList") && Array.isArray(node.itemListElement)) {
+    node.itemListElement.forEach(function (entry) {
+      if (!entry || typeof entry !== "object") return;
+      var item = entry.item && typeof entry.item === "object" ? entry.item : {};
+      var url = entry.url || (typeof entry.item === "string" ? entry.item : item.url || item["@id"]);
+      if (typeof url === "string") out.push({ url: url, title: entry.name || item.name || "", image: pickImage(entry.image || item.image) });
+    });
+    return;
+  }
+  for (var key in node) {
+    if (Object.prototype.hasOwnProperty.call(node, key)) itemListEntries(node[key], depth + 1, out);
+  }
+}
+
+// A page that lists recipes rather than being one (a site's category, like
+// RecipeTin Eats' "Quick and easy"): { title, recipes: [{ url, title, image }],
+// next: the next page's link or "" }, or null when it lists fewer than two.
+// Cards are the page's <article>s (WordPress and most recipe sites), else
+// its JSON-LD ItemList. Only links on the page's own site count.
+function recipeLinks(html, pageUrl) {
+  var site = siteOf(pageUrl);
+  var pageKey = linkKey(pageUrl);
+  var recipes = [];
+  var seen = {};
+  function add(href, title, image) {
+    var url = resolveUrl(href, pageUrl);
+    if (!url || siteOf(url) !== site || NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, ""))) return;
+    var key = linkKey(url);
+    var name = cleanText(title).replace(/^view\s+/i, "") || slugTitle(url);
+    if (!key || key === pageKey || seen[key] || !name || recipes.length >= 100) return;
+    seen[key] = true;
+    recipes.push({ url: url, title: fitText(name, LIMITS.title), image: resolveUrl(image, pageUrl) });
+  }
+
+  var re = /<article\b/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    var card = elementAt(html, m.index);
+    // An <article> wrapping the cards isn't one of them.
+    if (!card || /<article\b/i.test(card.inner)) continue;
+    var links = card.inner.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || [];
+    var heading = card.inner.match(/<h[2-5]\b[^>]*>([\s\S]*?)<\/h[2-5]>/i);
+    for (var i = 0; i < links.length; i++) {
+      var href = attribute(links[i].match(/^<a\b[^>]*>/i)[0], "href");
+      var url = resolveUrl(href, pageUrl);
+      if (!url || siteOf(url) !== site || NOT_RECIPE_PATH.test(url.replace(/^https?:\/\/[^\/]+/i, ""))) continue;
+      var title =
+        (heading && cleanText(heading[1])) ||
+        attribute(card.openTag, "data-item-name") ||
+        attribute(card.openTag, "aria-label") ||
+        cleanText(links[i]);
+      add(url, title, cardImage(card.inner));
+      break;
+    }
+  }
+
+  if (recipes.length < 2) {
+    var entries = [];
+    itemListEntries(findJsonLdBlocks(html), 0, entries);
+    entries.forEach(function (entry) {
+      add(entry.url, entry.title, entry.image);
+    });
+  }
+  recipes = inMainFolder(recipes);
+  if (recipes.length < 2) return null;
+  // "Quick and Easy Archives - RecipeTin Eats" is "Quick and Easy".
+  var title = pageTitle(html)
+    .replace(/\s+[-–|]\s+[^-–|]{1,30}$/, "")
+    .replace(/\s+Archives$/i, "");
+  return { title: title, recipes: recipes, next: nextPageLink(html, pageUrl) };
+}
+
+// When most links sit in one folder (BBC Good Food's "/recipes/…"), the
+// rest are the site's other cards (a subscription offer, a podcast).
+// Sites with recipes at the top level ("/butter-chicken/") have no such
+// folder, so nothing is dropped there.
+function inMainFolder(recipes) {
+  var folderOf = function (recipe) {
+    var parts = recipe.url.replace(/^https?:\/\/[^\/]+/i, "").replace(/[?#].*$/, "").split("/").filter(Boolean);
+    return parts.length > 1 ? parts[0] : "";
+  };
+  var counts = {};
+  var top = "";
+  recipes.forEach(function (recipe) {
+    var folder = folderOf(recipe);
+    if (!folder) return;
+    counts[folder] = (counts[folder] || 0) + 1;
+    if (!top || counts[folder] > counts[top]) top = folder;
+  });
+  if (!top || counts[top] < recipes.length * 0.6) return recipes;
+  return recipes.filter(function (recipe) {
+    return folderOf(recipe) === top;
+  });
+}
+
 module.exports = {
   BROWSER_USER_AGENT: BROWSER_USER_AGENT,
+  recipeLinks: recipeLinks,
   LIMITS: LIMITS,
   fitRecipe: fitRecipe,
   linkKey: linkKey,

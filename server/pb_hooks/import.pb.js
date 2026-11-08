@@ -2,7 +2,8 @@
 
 // POST /api/cookbook/import  { "url": "https://...", "html": "<optional>" }
 // Reads the recipe from the page, saves it (with its photo) and returns the
-// new recipe's id.
+// new recipe's id. A page listing recipes instead sends back the list (see
+// "list" below), to pick some and import each.
 //
 // Normally the server downloads the page itself, because browsers aren't
 // allowed to read other websites' pages. The Android app's built-in browser
@@ -26,32 +27,36 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   // it into the recipe in the app.
   const preview = body.preview === true;
 
+  // The recipe saved from this link, or null.
+  const sameRecipe = (link) => {
+    const key = parser.linkKey(link);
+    if (!key) return null;
+    // Narrowed by the site and the last part of the address ("chasseur",
+    // "p=123"), so a site with hundreds of recipes still finds an old one;
+    // linkKey then decides.
+    const host = key.split(/[/?]/)[0];
+    const tail = key.slice(host.length).split(/[/?&]/).filter(Boolean).pop() || "";
+    const filter = tail ? "source_url ~ {:host} && source_url ~ {:tail}" : "source_url ~ {:host}";
+    // A "%" in the value would make PocketBase's "~" match from the start
+    // instead of anywhere (accented addresses arrive as %C3%A8…), so it's
+    // escaped.
+    const candidates = e.app.findRecordsByFilter("recipes", filter, "-created", 500, 0, {
+      host: host,
+      tail: tail.replace(/%/g, "\\%"),
+    });
+    return candidates.find((record) => parser.linkKey(record.getString("source_url")) === key) || null;
+  };
+
   // A recipe from this page already here: say so (409, with its id and
   // name, for "Open it" and "Add another copy"), unless asked for another
   // copy ("again"). Older apps just show the message.
   if (body.again !== true && !preview) {
-    const key = parser.linkKey(url);
-    // Narrowed by the site and the last part of the address ("chasseur",
-    // "p=123"), so a site with hundreds of recipes still finds an old one
-    // (found in review); linkKey then decides.
-    const host = key.split(/[/?]/)[0];
-    const tail = key.slice(host.length).split(/[/?&]/).filter(Boolean).pop() || "";
-    if (key) {
-      const filter = tail ? "source_url ~ {:host} && source_url ~ {:tail}" : "source_url ~ {:host}";
-      // A "%" in the value would make PocketBase's "~" match from the start
-      // instead of anywhere (accented addresses arrive as %C3%A8…), so it's
-      // escaped (found in review).
-      const candidates = e.app.findRecordsByFilter("recipes", filter, "-created", 500, 0, {
-        host: host,
-        tail: tail.replace(/%/g, "\\%"),
-      });
-      const same = candidates.find((record) => parser.linkKey(record.getString("source_url")) === key);
-      // Sent as it is (not an ApiError, whose extra data PocketBase blanks
-      // out): PocketBase's own error shape, so older apps show the message.
-      if (same) {
-        const title = same.getString("title");
-        return e.json(409, { status: 409, message: `You already have “${title}” from that link.`, data: {}, id: same.id, title: title });
-      }
+    const same = sameRecipe(url);
+    // Sent as it is (not an ApiError, whose extra data PocketBase blanks
+    // out): PocketBase's own error shape, so older apps show the message.
+    if (same) {
+      const title = same.getString("title");
+      return e.json(409, { status: 409, message: `You already have “${title}” from that link.`, data: {}, id: same.id, title: title });
     }
   }
 
@@ -85,6 +90,25 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   }
 
   const parsed = parser.parseRecipe(html, url);
+  // A page listing recipes (a site's category) rather than being one: its
+  // recipes, each marked if it's already here, for the app to pick from
+  // ("list"). Some sites label the list itself a recipe with no
+  // ingredients or steps (BBC Good Food's collections). Sent in
+  // PocketBase's error shape, so older apps show the message instead.
+  if (!parsed || (!parsed.ingredients.length && !parsed.steps.length)) {
+    const list = parser.recipeLinks(html, url);
+    if (list) {
+      list.recipes.forEach((recipe) => {
+        recipe.have = !!sameRecipe(recipe.url);
+      });
+      return e.json(400, {
+        status: 400,
+        message: "That's a page of recipes, not one recipe. Open the one you want, then import its link.",
+        data: {},
+        list: list,
+      });
+    }
+  }
   if (!parsed) {
     throw new BadRequestError("Couldn't find a recipe on that page. You can still add it by hand.");
   }

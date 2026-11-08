@@ -1,7 +1,74 @@
 // Run from the project folder with: node --test "server/test/*.test.js"
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseRecipe, durationToMinutes, linkKey } = require("../pb_hooks/recipe_parse.js");
+const { parseRecipe, durationToMinutes, linkKey, recipeLinks } = require("../pb_hooks/recipe_parse.js");
+
+// A WordPress-style category page: one <article> card per recipe.
+const card = (slug, title, extra = "") =>
+  `<article class="post entry" aria-label="${title}"><a class="entry-image-link" href="https://www.site.example/${slug}/">` +
+  `<img src="data:image/gif;base64,R0lGOD" data-src="/photos/${slug}.jpg" alt="${title}"></a>` +
+  `<h2 class="entry-title"><a href="https://www.site.example/${slug}/">${title}</a></h2>` +
+  `<a href="https://www.site.example/category/dinner/">Dinner</a>${extra}</article>`;
+const categoryPage = (cards, head = "") =>
+  `<html><head><title>Quick and Easy Archives - Site</title>${head}</head><body><main>${cards.join("")}</main></body></html>`;
+
+test("a category page gives its recipes: link, name, photo and the next page", () => {
+  const list = recipeLinks(
+    categoryPage(
+      [card("butter-chicken", "Butter Chicken"), card("aglio-e-olio", "Aglio e Olio &amp; Chilli"), card("butter-chicken", "Butter Chicken")],
+      `<link rel="next" href="https://www.site.example/category/quick/page/2/" />`
+    ),
+    "https://site.example/category/quick/"
+  );
+  assert.equal(list.title, "Quick and Easy");
+  assert.deepEqual(list.recipes, [
+    { url: "https://www.site.example/butter-chicken/", title: "Butter Chicken", image: "https://site.example/photos/butter-chicken.jpg" },
+    { url: "https://www.site.example/aglio-e-olio/", title: "Aglio e Olio & Chilli", image: "https://site.example/photos/aglio-e-olio.jpg" },
+  ]);
+  assert.equal(list.next, "https://www.site.example/category/quick/page/2/");
+});
+
+test("a category page leaves out other sites, the site's own lists, and wrapper articles", () => {
+  const offSite = `<article><h2><a href="https://elsewhere.example/soup/">Soup</a></h2></article>`;
+  const onlyCategory = `<article><h2><a href="https://www.site.example/tag/easy/">Easy</a></h2></article>`;
+  const wrapped = `<article class="page">${card("pho", "Pho")}${card("laksa", "Laksa")}</article>`;
+  const list = recipeLinks(categoryPage([offSite, onlyCategory, wrapped]), "https://www.site.example/category/soups/");
+  assert.deepEqual(
+    list.recipes.map((recipe) => recipe.title),
+    ["Pho", "Laksa"]
+  );
+});
+
+test("when most recipes share a folder, cards outside it (a subscription offer) are dropped", () => {
+  const recipe = (slug) => `<article><h2><a href="/recipes/${slug}">${slug}</a></h2></article>`;
+  const offer = `<article><h2><a href="/subscribe/?utm_source=x">Subscribe</a></h2></article>`;
+  const list = recipeLinks(categoryPage([recipe("pasta"), recipe("ramen"), offer, recipe("dhal")]), "https://food.example/recipes/collection/quick");
+  assert.deepEqual(
+    list.recipes.map((r) => r.title),
+    ["pasta", "ramen", "dhal"]
+  );
+});
+
+test("a page without cards can still list recipes through its JSON-LD ItemList", () => {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, url: "https://tasty.example/recipe/chicken-veggie-stir-fry" },
+      { "@type": "ListItem", position: 2, item: { url: "https://tasty.example/recipe/noodle-soup", name: "Noodle soup", image: "https://img.example/soup.jpg" } },
+    ],
+  };
+  const list = recipeLinks(categoryPage([], `<script type="application/ld+json">${JSON.stringify(data)}</script>`), "https://tasty.example/topic/easy");
+  assert.deepEqual(list.recipes, [
+    { url: "https://tasty.example/recipe/chicken-veggie-stir-fry", title: "Chicken veggie stir fry", image: "" },
+    { url: "https://tasty.example/recipe/noodle-soup", title: "Noodle soup", image: "https://img.example/soup.jpg" },
+  ]);
+});
+
+test("a recipe page with one related-recipe card isn't a list", () => {
+  assert.equal(recipeLinks(categoryPage([card("pho", "Pho")]), "https://www.site.example/laksa/"), null);
+  assert.equal(recipeLinks("<html><body><p>Just words.</p></body></html>", "https://www.site.example/"), null);
+});
 
 test("the same recipe page counts as the same link, however it's written", () => {
   const key = linkKey("https://www.recipetineats.com/chicken-chasseur/");
