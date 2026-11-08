@@ -39,7 +39,7 @@ import { useUndo } from "../undo";
 import { useCountry, usePlanMeals } from "../household";
 import { MEALS, MEAL_NAMES, mealOf, mealWord, mealsForDay, parseSlot, planTitle, slotKey, type Meal } from "../meals";
 
-// How many days are shown at once: this week and next.
+// How many days are shown at once: two weeks, from yesterday.
 const DAYS_SHOWN = 14;
 
 // One meal on one day.
@@ -78,10 +78,12 @@ export default function MealPlan() {
   const firstDay = firstDayFor(useCountry()[0]);
   const today = localToday();
   const [view, setView] = useState<View>(savedView);
-  // The list's first day, or null for this week's (which follows firstDay
-  // once the household's country has loaded).
+  // The list's first day, or null for yesterday: the list opens with today
+  // near the top, yesterday just above it (Xel, 2026-11-08; it used to open
+  // at the week's first day and scroll to today, which late in the week
+  // looked like the bottom of the page to a tester).
   const [chosenStart, setStart] = useState<string | null>(null);
-  const start = chosenStart ?? weekStart(today, firstDay);
+  const start = chosenStart ?? addDays(today, -1);
   const [month, setMonth] = useState(() => monthStart(today));
   // Month view: the day whose details show under the grid.
   const [selected, setSelected] = useState(today);
@@ -109,20 +111,15 @@ export default function MealPlan() {
     useSensor(KeyboardSensor)
   );
 
-  // The list opens at today rather than at the week's first day, with
-  // yesterday just showing above it (Xel, 2026-11-06); so does "Today".
-  // Once per opening, so it never jumps while you're scrolling.
-  const showToday = useRef(true);
+  // Opens at the top, title and all, with today second in the list (a page
+  // scrolled down before would otherwise leave it scrolled); so does
+  // "Today". Once per opening, so it never jumps while you're scrolling.
+  const showTop = useRef(true);
   const loaded = !!plan.items;
   useEffect(() => {
-    if (!loaded || view !== "list" || !showToday.current) return;
-    showToday.current = false;
-    const todayRow = document.querySelector<HTMLElement>(".plan-day.today");
-    const yesterday = todayRow?.previousElementSibling;
-    // Early in the week, today is near the top already.
-    if (!todayRow || !yesterday?.classList.contains("plan-day")) return;
-    const topBar = document.querySelector(".topbar")?.getBoundingClientRect().height ?? 0;
-    window.scrollTo({ top: yesterday.getBoundingClientRect().top + window.scrollY - topBar - 8 });
+    if (!loaded || !showTop.current) return;
+    showTop.current = false;
+    window.scrollTo({ top: 0 });
   });
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
@@ -242,7 +239,7 @@ export default function MealPlan() {
 
   const isList = view === "list";
   const thisWeek = weekStart(today, firstDay);
-  const atToday = isList ? start === thisWeek : month === monthStart(today);
+  const atToday = isList ? chosenStart === null : month === monthStart(today);
   // The month view says which month; the list needs no label, as its week
   // headings say which weeks they are (Xel, 2026-11-06).
   const monthLabel = formatDay(month, { month: "long", year: "numeric" });
@@ -267,7 +264,7 @@ export default function MealPlan() {
     setStart(null);
     setMonth(monthStart(today));
     setSelected(today);
-    showToday.current = true;
+    showTop.current = true;
   }
 
   return (
@@ -315,10 +312,12 @@ export default function MealPlan() {
           <ol className="plan-days">
             {days.map((date, i) => (
               <Fragment key={date}>
-                {/* "This week", "Next week": which week each half is. */}
-                {i % 7 === 0 && (
+                {/* "This week", "Next week": over the first day shown and
+                    each week's first day (the list starts at yesterday, so
+                    rarely on one). */}
+                {(i === 0 || date === weekStart(date, firstDay)) && (
                   <li className="plan-week">
-                    <h2>{weekLabel(date)}</h2>
+                    <h2>{weekLabel(weekStart(date, firstDay))}</h2>
                   </li>
                 )}
                 <DayRow

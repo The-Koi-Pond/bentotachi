@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createHashRouter, Link, Navigate, Route, RouterProvider, Routes, useParams } from "react-router";
+import { createHashRouter, Link, Navigate, Route, RouterProvider, Routes, useLocation, useParams } from "react-router";
 import { pb, useCurrentUser } from "./pb";
 import Login from "./pages/Login";
 import RecipeList from "./pages/RecipeList";
@@ -57,11 +57,17 @@ function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
   return <Page key={id} />;
 }
 
-// The top bar's plum book-with-a-plus: adds a recipe, from any page (Xel,
-// 2026-11-07). It used to add to the page you were on, but Pantry and the
-// shopping list have their own add box at the top, and one button meaning
-// three things was harder to trust than one that always means "recipe".
+// The top bar's plum book-with-a-plus: adds a recipe. It used to add to the
+// page you were on, but Pantry and the shopping list have their own add box
+// at the top, and one button meaning three things was harder to trust than
+// one that always means "recipe" (Xel, 2026-11-07). Only on the Recipes
+// and Browse pages, though: a tester expected it to add a pantry item on
+// the Pantry page (Xel, 2026-11-08).
+const ADD_RECIPE_PAGES = ["/", "/browse"];
+
 function AddRecipeButton() {
+  const { pathname } = useLocation();
+  if (!ADD_RECIPE_PAGES.includes(pathname)) return null;
   return (
     <Link to="/add" className="icon-button primary" aria-label="Add recipe" title="Add recipe">
       <BookPlusIcon />
