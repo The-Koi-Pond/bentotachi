@@ -1508,6 +1508,24 @@ pantry's packets to say how much is left (pantry_packets has sizes like
 "2 onions" against a packet count is harder). Where it can't tell, add the
 whole amount as now. Xel: build it next time.
 
+## Next: tell Play users when an update is out (Xel, 2026-11-08)
+
+The Play version has no update banner, because Play forbids an app
+installing its own updates (`canSelfUpdate` in appUpdates.ts), so people
+wait for Play's background auto-update. Google's own in-app updates
+(Play Core's app-update library; a Capacitor plugin like
+@capawesome/capacitor-app-update wraps it) are allowed: the app asks Play
+whether a newer version is out and shows Play's prompt, and Play downloads
+and installs it. Use the "flexible" kind (download in the background while
+the app's in use, then a restart), shown in the same spot as the
+household's banner ("Bentotachi 1.20 is ready", Later / Update), Play
+version only. Works for testers on the testing tracks too; only an
+install from Play can use it. Xel chose this over a plain notice linking
+to the Play listing.
+
+Goes with an idea still to decide: a one-time "What's new in 1.20" note
+after updating (both versions), linking to the website's changelog.
+
 ## To consider: spelling that follows the household's region (Xel, 2026-11-08)
 
 Text people see is in Australian spelling (colour, favourite, organise),
