@@ -19,6 +19,7 @@ import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon, HeartIcon, OnigiriIcon, ZapIcon } from "./icons";
 import RecipePhoto from "./RecipePhoto";
 import { MEAL_NAMES, type Meal } from "./meals";
+import { useSpell } from "./household";
 
 // Slides up from the bottom to choose a meal for one day: search names,
 // tags and ingredients, narrow to favorites or quick recipes, and see what's
@@ -56,6 +57,7 @@ export default function RecipeChooser({
   const [ratings, setRatings] = useState<RecipeRating[]>([]);
   const [search, setSearch] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const spell = useSpell();
   const [quickOnly, setQuickOnly] = useState(false);
   const [haveOnly, setHaveOnly] = useState(false);
   // "Surprise me": the recipe Bento picked, shown above the list.
@@ -181,7 +183,7 @@ export default function RecipeChooser({
       <span className="chooser-title">
         {recipe.title}
         {isFavorite(recipe) && (
-          <span className="chooser-heart" aria-label="(a favourite)">
+          <span className="chooser-heart" aria-label={spell("(a favourite)")}>
             <HeartIcon filled size={12} />
           </span>
         )}
@@ -251,7 +253,7 @@ export default function RecipeChooser({
             />
             <div className="filter-chips">
               <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-                <HeartIcon filled={favoritesOnly} size={14} /> Favourites
+                <HeartIcon filled={favoritesOnly} size={14} /> {spell("Favourites")}
               </button>
               <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
                 <ZapIcon filled={quickOnly} size={14} /> Quick

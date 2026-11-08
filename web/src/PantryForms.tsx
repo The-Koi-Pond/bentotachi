@@ -4,7 +4,7 @@
 // pantryPackets.ts.
 import { useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from "react";
 import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
-import { useStores } from "./household";
+import { useSpell, useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
 import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
 import StoreLogo from "./StoreLogo";
@@ -118,6 +118,7 @@ function ItemFields({
   onChange: (patch: Partial<Fields>) => void;
   nameRef?: Ref<HTMLInputElement>;
 }) {
+  const spell = useSpell();
   const places = placeOptions(existing);
   const subs = subcategoryOptions(existing, fields.location);
   // Keep a value that isn't in the lists yet (one just typed in) selectable.
@@ -149,7 +150,7 @@ function ItemFields({
       </label>
       <label>
         <span className="label-text">
-          Favourite brand <span className="optional">(optional)</span>
+          {spell("Favourite brand")} <span className="optional">(optional)</span>
         </span>
         <input
           value={fields.brand}
@@ -545,12 +546,12 @@ export function AddPantryItem({
 // is its own record), not on Save: Add puts one in, ✕ finishes one.
 function PacketsField({
   packets,
-  favourite,
+  favouriteBrand,
   onAdd,
   onFinish,
 }: {
   packets: PantryPacket[];
-  favourite: string;
+  favouriteBrand: string;
   // Whether it was added.
   onAdd: (details: PacketDetails) => Promise<boolean>;
   onFinish: (packet: PantryPacket) => void;
@@ -607,7 +608,7 @@ function PacketsField({
             onChange={(e) => setDetails({ ...details, brand: e.target.value })}
             onKeyDown={enterAdds}
             maxLength={120}
-            placeholder={favourite || "Brand"}
+            placeholder={favouriteBrand || "Brand"}
             aria-label="The packet's brand"
           />
           <input
@@ -631,7 +632,7 @@ function PacketsField({
             type="button"
             className="button ghost small"
             onClick={() => {
-              setDetails({ brand: favourite, size: "" });
+              setDetails({ brand: favouriteBrand, size: "" });
               setAdding(true);
             }}
           >
@@ -779,7 +780,7 @@ export function EditPantryItem({
       {packets && onAddPacket && onFinishPacket && (
         <PacketsField
           packets={packets}
-          favourite={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
+          favouriteBrand={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
           onAdd={onAddPacket}
           onFinish={onFinishPacket}
         />

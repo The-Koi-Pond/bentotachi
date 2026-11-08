@@ -200,6 +200,8 @@ Not released yet:
 - Websites' ingredient sections ("Marinade", "Sauce") come in with the
   recipe; "Re-import from the website" in a recipe's ⋯ menu.
 - "Amounts in the method" (⋮ menu, off unless turned on).
+- Australian spelling throughout (favourites, colour), and American
+  spelling for households set to the United States.
 - Tips behind a "?" (recipe formatting, the plan, Import and Export, the
   tablespoon, filling a shelf).
 - A site's category page (a tester's idea, 2026-11-08): pasting
@@ -1526,16 +1528,18 @@ to the Play listing.
 Goes with an idea still to decide: a one-time "What's new in 1.20" note
 after updating (both versions), linking to the website's changelog.
 
-## To consider: spelling that follows the household's region (Xel, 2026-11-08)
+## Spelling that follows the household's region (Xel, 2026-11-08; built the same day)
 
-Text people see is in Australian spelling (colour, favourite, organise),
-Xel's choice for their projects. American households could get American
-spelling and words instead (color, favorite), following the same household
-country that already picks regional ingredient names (regionalNames.ts,
-"bell pepper (capsicum)"). Not built: it means keeping the app's text in
-one place with both spellings. The app's own text is all Australian
-since 2026-11-08 (favourite, colour); code names and stored values
-(`favorite`, `color`) stay as they are.
+Text people see is written in Australian spelling (colour, favourite,
+grey), Xel's choice for their projects. A household whose Country is the
+United States sees American spelling instead (color, favorite, gray):
+`useSpell()` in household.ts and the word list in spelling.ts. Everywhere
+else keeps the Australian spelling, which suits the UK, New Zealand and
+others. Code names and stored values (`favorite`, `color`) stay as they
+are. New text with a listed word goes through `spell()`;
+web/test/spelling.test.ts fails on one that doesn't. A word that differs
+but isn't listed yet (organise, centre) gets added to the list when it
+first appears on screen.
 
 ## To consider: ideas from the Paprika comparison (Xel, 2026-11-07)
 

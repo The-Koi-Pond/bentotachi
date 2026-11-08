@@ -4,7 +4,7 @@ import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUse
 import { useWakeLock } from "./useWakeLock";
 import { useShelfDrawers } from "./shelfDrawers";
 import { useStepAmounts } from "./stepAmountsSetting";
-import { useSingleUser } from "./household";
+import { useSingleUser, useSpell } from "./household";
 import Avatar from "./Avatar";
 import { ChevronIcon, MoreIcon } from "./icons";
 import { forgetOfflineCopy } from "./offline";
@@ -39,6 +39,7 @@ export default function SettingsMenu() {
   const drawers = useShelfDrawers();
   const [stepAmounts, setStepAmounts] = useStepAmounts();
   const singleUser = useSingleUser();
+  const spell = useSpell();
   const update = useUpdateState();
   const quickMinutes = useQuickMinutes();
   const phone = isPhoneMode();
@@ -82,7 +83,9 @@ export default function SettingsMenu() {
                 <span className="person-name" style={personStyle(user)}>
                   {displayName(user)}
                 </span>
-                <span className="menu-item-detail">{phone ? "Name, picture and colour" : "Profile, colour and password"}</span>
+                <span className="menu-item-detail">
+                  {spell(phone ? "Name, picture and colour" : "Profile, colour and password")}
+                </span>
               </span>
               <ChevronIcon />
             </Link>

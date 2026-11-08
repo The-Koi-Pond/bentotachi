@@ -1,6 +1,9 @@
 // What the "?" beside a recipe's Ingredients or Method box explains: the
 // headings and formatting its lines can have (formatting marks: softMarks.ts).
+import { useSpell } from "./household";
+
 export default function FormattingTips({ part }: { part: "ingredients" | "steps" }) {
+  const spell = useSpell();
   return (
     <>
       {part === "ingredients" ? (
@@ -11,7 +14,7 @@ export default function FormattingTips({ part }: { part: "ingredients" | "steps"
           carries on counting.
         </p>
       )}
-      <p>Select words and press B, I or U to make them bold, soft grey italics or underlined.</p>
+      <p>{spell("Select words and press B, I or U to make them bold, soft grey italics or underlined.")}</p>
     </>
   );
 }

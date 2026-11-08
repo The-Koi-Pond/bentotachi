@@ -11,7 +11,7 @@ import {
 } from "./pb";
 import { CloseIcon, HeartIcon, OnigiriIcon, PlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons";
 import { addReasons, MAX_REASON_LENGTH, MAX_REASONS, suggestedReasons } from "./dislikeReasons";
-import { useSingleUser } from "./household";
+import { useSingleUser, useSpell } from "./household";
 
 type Mine = Pick<RecipeRating, "stars" | "favorite" | "approved" | "disliked" | "dislike_reasons">;
 
@@ -91,14 +91,15 @@ export type RecipeRatingsState = ReturnType<typeof useRecipeRatings>;
 // The favorite heart: outline when off, filled pink when on. `onPhoto` gives
 // it a round backdrop so it shows up over a picture.
 export function FavoriteHeart({ state, onPhoto = false }: { state: RecipeRatingsState; onPhoto?: boolean }) {
+  const spell = useSpell();
   const on = state.mine?.favorite ?? false;
   if (!state.ratings) return null;
   return (
     <button
       className={`heart-toggle ${onPhoto ? "on-photo" : ""}`}
       aria-pressed={on}
-      aria-label="Favourite"
-      title={on ? "One of your favourites" : "Add to your favourites"}
+      aria-label={spell("Favourite")}
+      title={spell(on ? "One of your favourites" : "Add to your favourites")}
       onClick={() => void state.saveMine({ favorite: !on })}
     >
       <HeartIcon filled={on} size={24} />

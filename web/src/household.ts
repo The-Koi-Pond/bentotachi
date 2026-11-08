@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { pb } from "./pb";
 import { browserCountry } from "./country";
+import { spelled } from "./spelling";
 import { storesIn, type Store } from "./stores";
 import { plannedMeals, type Meal } from "./meals";
 
@@ -115,6 +116,12 @@ export function useCountry(): [string, (country: string) => Promise<void>] {
     if (current === null) loadSettings();
   }, [current]);
   return [current?.country ?? browserCountry(), (country) => saveSettings(current, { country })];
+}
+
+// spell("My favourites"): text in the household's spelling (spelling.ts).
+export function useSpell(): (text: string) => string {
+  const [country] = useCountry();
+  return (text) => spelled(text, country);
 }
 
 // What the household's tablespoon holds, in ml: 15 (most spoons, and until

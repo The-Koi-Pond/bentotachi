@@ -6,6 +6,7 @@ import { useUnsavedChanges } from "../unsavedChanges";
 import { erasePhone, isPhoneMode } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
+import { useSpell } from "../household";
 
 const users = () => pb.collection<User>("users");
 
@@ -232,6 +233,7 @@ function NameSection({ user, showUsername }: { user: User; showUsername: boolean
 // My color: marks your name and thumbs up around the app. Tap the chosen one
 // again for Bentotachi's usual plum (the accent).
 function ColorSection({ user }: { user: User }) {
+  const spell = useSpell();
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const current = PERSON_COLORS.find((color) => color.value === user.color);
 
@@ -245,12 +247,12 @@ function ColorSection({ user }: { user: User }) {
   }
 
   return (
-    <Section title="My colour">
+    <Section title={spell("My colour")}>
       <div className="stack profile-color">
         <span className="muted">
           {current?.name ?? "None (the app's plum)"}. It marks your name and thumbs up around the app.
         </span>
-        <div className="swatches" role="group" aria-label="Choose my colour">
+        <div className="swatches" role="group" aria-label={spell("Choose my colour")}>
           {PERSON_COLORS.map((color) => (
             <button
               key={color.value}

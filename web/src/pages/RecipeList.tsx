@@ -54,7 +54,7 @@ import DrawerToggle from "../DrawerToggle";
 import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
 import { useShelfDrawers } from "../shelfDrawers";
 import { HelpBox, HelpButton, useHelp } from "../Help";
-import { useSingleUser } from "../household";
+import { useSingleUser, useSpell } from "../household";
 import RecipePhoto from "../RecipePhoto";
 import { saveCategoryOrder } from "../categoryOrder";
 import { sourceLines } from "../recipeTwins";
@@ -149,6 +149,7 @@ export default function RecipeList() {
   // The View panel: the cards' size, the order, shelves or one list, Edit.
   const [viewOpen, setViewOpen] = useState(false);
   const shelfHelp = useHelp();
+  const spell = useSpell();
   const navigate = useNavigate();
   // What tapping a tag in the panel does: show only recipes with it, or
   // hide the ones with it.
@@ -542,7 +543,7 @@ export default function RecipeList() {
             button. A row of empty hearts was clutter; favouriting is on the
             recipe's own page. */}
         {isMyFavorite(recipe) && (
-          <span className="favorite-badge" role="img" aria-label="Your favourite" title="Your favourite">
+          <span className="favorite-badge" role="img" aria-label={spell("Your favourite")} title={spell("Your favourite")}>
             <HeartIcon filled size={14} />
           </span>
         )}
@@ -599,8 +600,8 @@ export default function RecipeList() {
         <button
           className={`button favorites-button ${favoritesOnly ? "primary" : ""}`}
           aria-pressed={favoritesOnly}
-          aria-label="Show only my favourites"
-          title="Show only my favourites"
+          aria-label={spell("Show only my favourites")}
+          title={spell("Show only my favourites")}
           onClick={() => toggleParam("fav")}
         >
           <HeartIcon filled={favoritesOnly} />
@@ -868,7 +869,7 @@ export default function RecipeList() {
       {shown.length === 0 && (
         <p className="muted">
           {favoritesOnly && !quickOnly && !search.trim() && !filtering
-            ? "No favourites yet. Open a recipe and tap its ♥ to add it here."
+            ? spell("No favourites yet. Open a recipe and tap its ♥ to add it here.")
             : quickOnly && !favoritesOnly && !search.trim() && !filtering
               ? `No recipes take ${quickMinutes} minutes or less. You can change what counts as quick in the ⋮ menu.`
               : search.trim()

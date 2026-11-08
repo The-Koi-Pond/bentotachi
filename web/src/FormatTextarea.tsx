@@ -1,6 +1,7 @@
 import { useRef, type ComponentProps, type KeyboardEvent } from "react";
 import { toggleMark } from "./textFormat";
 import type { Mark } from "./softMarks";
+import { useSpell } from "./household";
 
 // A recipe text box with B / I / U buttons above it (and Ctrl+B / I / U):
 // select some words and press one to mark them (see textFormat.ts). Used
@@ -9,12 +10,13 @@ import type { Mark } from "./softMarks";
 
 const BUTTONS: { mark: Mark; key: string; label: string; text: string }[] = [
   { mark: "bold", key: "b", label: "Bold", text: "B" },
-  { mark: "soft", key: "i", label: "Soft italics (greyed out)", text: "I" },
+  { mark: "soft", key: "i", label: "Soft italics (greyed out)", text: "I" }, // shown through spell()
   { mark: "underline", key: "u", label: "Underline", text: "U" },
 ];
 
 export default function FormatTextarea({ onKeyDown, ...props }: ComponentProps<"textarea">) {
   const box = useRef<HTMLTextAreaElement>(null);
+  const spell = useSpell();
 
   function apply(mark: Mark) {
     const el = box.current;
@@ -52,8 +54,8 @@ export default function FormatTextarea({ onKeyDown, ...props }: ComponentProps<"
             key={button.mark}
             type="button"
             className={`format-button format-${button.mark}`}
-            aria-label={button.label}
-            title={`${button.label} (Ctrl+${button.key.toUpperCase()})`}
+            aria-label={spell(button.label)}
+            title={`${spell(button.label)} (Ctrl+${button.key.toUpperCase()})`}
             // Keeps the words selected in the box while the button is pressed.
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => apply(button.mark)}
