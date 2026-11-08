@@ -91,10 +91,16 @@ export function readIngredient(line: string): Ingredient | null {
   // Water is in too many steps ("boiled water", "a pot of water") to be
   // sure it's this water.
   if (!words.length || words.includes("water")) return null;
+  // "heavy / thickened cream" is heavy cream or thickened cream: a one-word
+  // choice beside a longer one takes the longer one's last word, so "heavy"
+  // alone (as in "a heavy pan") doesn't name it.
+  const kept = choices.filter((choice) => choice.length);
+  const longest = kept.reduce((a, b) => (b.length > a.length ? b : a), [] as string[]);
+  const named = kept.map((choice) => (choice.length === 1 && longest.length > 1 ? [...choice, longest[longest.length - 1]] : choice));
   return {
     amount,
     words,
-    choices: choices.filter((choice) => choice.length),
+    choices: named,
     partly: /\bdivided\b|\bplus (?:extra|more)\b|\bto taste\b/i.test(plain),
   };
 }

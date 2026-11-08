@@ -16,6 +16,11 @@ test("reads an ingredient's amount and name", () => {
     partly: false,
   });
   assert.deepEqual(readIngredient("2 tbsp ghee or butter")?.choices, [["ghee"], ["butter"]]);
+  assert.deepEqual(readIngredient("3/4 cup heavy / thickened cream")?.choices, [["heavy", "cream"], ["thickened", "cream"]]);
+  assert.deepEqual(
+    shown(["Heat a heavy pan.", "Double the recipe if you like.", "Stir in the cream."], ["3/4 cup heavy / thickened cream", "300 g pasta"]),
+    ["Heat a heavy pan.", "Double the recipe if you like.", "Stir in the cream (3/4 cup)."]
+  );
   assert.equal(readIngredient("2 cloves garlic")?.amount, "2 cloves");
   assert.equal(readIngredient("1 1/2 cups stock")?.amount, "1 1/2 cups");
   assert.equal(readIngredient("2 × 400 g tins chopped tomatoes")?.amount, "2 × 400 g tins");
