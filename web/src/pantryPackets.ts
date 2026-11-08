@@ -43,6 +43,14 @@ export function packetGroups<T extends Pick<PantryPacket, "brand" | "size" | "le
   return [...groups.values()];
 }
 
+// Whether a packet the shopping list added was added within the last hour,
+// while unticking its row still takes it back (pantry.pb.js). A packet put
+// back by Out's Undo keeps that link only then: an older one would look
+// freshly bought.
+export function untickCanTakeBack(packet: Pick<PantryPacket, "bought_with" | "created">, now = new Date()): boolean {
+  return !!packet.bought_with && now.getTime() - storedTime(packet.created).getTime() < 60 * 60 * 1000;
+}
+
 // A packet the shopping list added (ticking it bought) in the last few
 // hours, newest first, or null: adding one by hand now is likely the same
 // bag, so the page asks first.

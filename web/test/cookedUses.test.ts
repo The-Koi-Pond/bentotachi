@@ -5,8 +5,13 @@ import { cookedUses } from "../src/cookedUses.ts";
 
 const item = (id: string, name: string, status = "have", extra = {}) => ({ id, name, status, ...extra }) as never;
 let n = 0;
-const packet = (itemId: string, size: string, left = "") =>
-  ({ id: `p${++n}`, item: itemId, brand: "", size, left, created: `2026-11-0${n} 00:00:00.000Z` }) as never;
+// Each packet a minute newer than the last, so oldest first is well defined.
+const packet = (itemId: string, size: string, left = "") => {
+  n += 1;
+  const minute = String(n % 60).padStart(2, "0");
+  const hour = String(Math.floor(n / 60)).padStart(2, "0");
+  return { id: `p${n}`, item: itemId, brand: "", size, left, created: `2026-11-01 ${hour}:${minute}:00.000Z` } as never;
+};
 const ids = (list: { id: string }[]) => list.map((p) => p.id);
 
 test("part of a packet used leaves 'about … left' on it", () => {
@@ -29,6 +34,9 @@ test("a recipe cooked bigger uses more; its chosen links still count; headings a
   const [use] = cookedUses(["# Pasta", "400 g pasta"], links, [pasta], bags, { scale: 2 });
   assert.equal(use.title, "Linguine: 1 packet and some of another");
   assert.equal(use.leave?.left, "200 g");
+  // Some is still left, so it isn't Out.
+  assert.equal(use.status, null);
+  assert.equal(use.note, "About 200 g left in the open one");
 });
 
 test("a count of tins or cans uses up that many packets, oldest first", () => {
@@ -67,12 +75,52 @@ test("a crumb left counts as used up", () => {
   assert.equal(use.leave, null);
 });
 
-test("an item with no packets is only offered as Low, unticked", () => {
-  const parmesan = item("par", "Parmesan");
-  const [use] = cookedUses(["50 g parmesan"], null, [parmesan], []);
-  assert.deepEqual([use.title, use.note, use.ticked, use.status], ["Parmesan", "No packets counted: mark it Low?", false, "low"]);
-  // Already Low or Out: nothing to offer.
-  assert.deepEqual(cookedUses(["50 g parmesan"], null, [item("par", "Parmesan", "low")], []), []);
+test("an item with no packets rides along as 'mark it Low?', unticked, when something with packets was used", () => {
+  const pasta = item("lin", "Linguine");
+  const bag = packet("lin", "500 g");
+  const uses = cookedUses(["400 g linguine", "50 g parmesan"], null, [pasta, item("par", "Parmesan")], [bag]);
+  const parmesan = uses.find((use) => use.item.name === "Parmesan")!;
+  assert.deepEqual([parmesan.title, parmesan.note, parmesan.ticked, parmesan.status], ["Parmesan", "No packets counted: mark it Low?", false, "low"]);
+  // Already Low or Out: nothing to offer for it.
+  for (const status of ["low", "out"]) {
+    const others = cookedUses(["400 g linguine", "50 g parmesan"], null, [pasta, item("par", "Parmesan", status)], [bag]);
+    assert.deepEqual(others.map((use) => use.item.name), ["Linguine"], status);
+  }
+});
+
+test("a household that doesn't count packets is never asked", () => {
+  assert.deepEqual(cookedUses(["50 g parmesan", "2 onions", "1 tbsp oil"], null, [item("par", "Parmesan"), item("on", "Onion"), item("oil", "Oil")], []), []);
+});
+
+test("a part of a packet already part-used leaves the right amount", () => {
+  const flour = item("fl", "Flour");
+  const [use] = cookedUses(["50 g flour"], null, [flour], [packet("fl", "1 kg", "200 g")]);
+  assert.equal(use.leave?.left, "150 g");
+  assert.equal(use.title, "Flour: 50 g of the 1 kg packet");
+});
+
+test("a heading naming an item is skipped, not read as an unmeasured line", () => {
+  const rice = item("rice", "Rice");
+  const [use] = cookedUses(["# Rice", "200 g rice"], null, [rice], [packet("rice", "1 kg")]);
+  assert.equal(use.leave?.left, "800 g");
+});
+
+test("a count and a measure for the same thing can't tell, without breaking", () => {
+  const chickpeas = item("chk", "Chickpeas");
+  assert.deepEqual(cookedUses(["1 tin chickpeas", "100 g chickpeas"], null, [chickpeas], [packet("chk", "400 g")]), []);
+});
+
+test("spoons are the recipe's own size", () => {
+  const oil = item("oil", "Olive oil");
+  const AU = { tablespoon: 20, cup: 250, fluidOunce: 29.57, pint: 473 };
+  assert.equal(cookedUses(["4 tbsp olive oil"], null, [oil], [packet("oil", "250 ml")], { measures: AU })[0].leave?.left, "170 ml");
+  assert.equal(cookedUses(["4 tbsp olive oil"], null, [oil], [packet("oil", "250 ml")])[0].leave?.left, "190 ml");
+});
+
+test("only under 5% left counts as used up", () => {
+  const sugar = item("su", "Sugar");
+  // 30 g of 500 g is 6% left: kept.
+  assert.equal(cookedUses(["470 g sugar"], null, [sugar], [packet("su", "500 g")])[0].leave?.left, "30 g");
 });
 
 test("nothing is offered when it can't tell: counts of things, unreadable packets, any kind of a group", () => {

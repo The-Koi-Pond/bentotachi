@@ -11,6 +11,7 @@ import {
   packetLabel,
   packetsOf,
   tidySize,
+  untickCanTakeBack,
   withDetails,
 } from "../src/pantryPackets.ts";
 
@@ -32,6 +33,28 @@ test("packets show as one counter per brand and size, without the favourite bran
     ]
   );
   assert.deepEqual(packetGroups([{ brand: "", size: "" }]).map((g) => g.label), ["Packet"]);
+});
+
+test("a partly used packet is its own counter, saying what's left", () => {
+  const groups = packetGroups([
+    { id: "1", brand: "", size: "500 g", left: "" },
+    { id: "2", brand: "", size: "500 g", left: "100 g" },
+    { id: "3", brand: "", size: "500 g", left: "" },
+  ]);
+  assert.deepEqual(
+    groups.map((g) => [g.label, g.count]),
+    [
+      ["500 g", 2],
+      ["500 g, about 100 g left", 1],
+    ]
+  );
+});
+
+test("Out's Undo keeps a packet's shopping row only while unticking could still take it back (an hour)", () => {
+  const now = new Date("2026-11-08T12:00:00Z");
+  assert.equal(untickCanTakeBack({ bought_with: "s1", created: "2026-11-08 11:30:00.000Z" }, now), true);
+  assert.equal(untickCanTakeBack({ bought_with: "s1", created: "2026-11-05 11:30:00.000Z" }, now), false);
+  assert.equal(untickCanTakeBack({ bought_with: "", created: "2026-11-08 11:30:00.000Z" }, now), false);
 });
 
 test("a packet the shopping list added in the last few hours is found, so adding one by hand asks first", () => {

@@ -17,7 +17,17 @@ import {
 } from "../pb";
 import { useUndo } from "../undo";
 import { UNDO_SECONDS } from "../pendingDelete";
-import { detailsFor, justBought, knowsBarcode, packetLabel, packetsOf, tidySize, withDetails, type PacketDetails } from "../pantryPackets";
+import {
+  detailsFor,
+  justBought,
+  knowsBarcode,
+  packetLabel,
+  packetsOf,
+  tidySize,
+  untickCanTakeBack,
+  withDetails,
+  type PacketDetails,
+} from "../pantryPackets";
 import { noteAge } from "../fridgeDoor";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
@@ -241,15 +251,17 @@ export default function Pantry() {
   }
 
   // A packet as it's saved (for adding one, or putting one back).
-  // One put back (Out's Undo) keeps what's left of it and the shopping row
-  // that bought it, so unticking that row still takes it back.
-  const packetFields = (packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left" | "bought_with">) => ({
+  // One put back (Out's Undo) keeps what's left of it, and the shopping row
+  // that bought it while unticking that row could still take it back.
+  const packetFields = (
+    packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left"> & Partial<Pick<PantryPacket, "bought_with" | "created">>
+  ) => ({
     item: packet.item,
     brand: packet.brand,
     size: packet.size,
     barcode: packet.barcode,
     ...(packet.left && { left: packet.left }),
-    ...(packet.bought_with && { bought_with: packet.bought_with }),
+    ...(packet.created && untickCanTakeBack({ bought_with: packet.bought_with, created: packet.created }) && { bought_with: packet.bought_with }),
   });
 
   // A packet bought or found: on the item, which is then in stock if it was

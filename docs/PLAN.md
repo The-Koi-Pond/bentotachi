@@ -1624,6 +1624,13 @@ packet; using the last packet marks the item Out (not put on the list).
 An item with no packets is offered as "mark it Low?", unticked. Left out:
 "any pasta" lines (which kind is unknown) and anything it can't measure.
 The sheet only opens when there's something to offer.
+Xel's choices after the review (2026-11-08): the sheet opens only when
+something with packets was used ("mark it Low?" lines then ride along for
+the rest), so households that don't count packets never see it. Cooked
+again the same day (Finished twice, or the timer's too): it opens with
+nothing ticked, saying "Already marked cooked today: tick anything used
+again." Taking off never marks an item Out if a packet has appeared on it
+since the sheet opened (a housemate's purchase).
 
 **Ticking bought things adds a packet** (agreed and built 2026-11-08):
 only for items that already use packets, in the size and brand of the

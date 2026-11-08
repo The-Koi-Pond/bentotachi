@@ -134,8 +134,9 @@ export default function RecipeView() {
   const cooked = useLiveRecords<CookedEntry>("cooked");
   const [cookError, setCookError] = useState("");
   // "Used anything up?" open after cooking (UsedUpSheet).
-  const [usedUp, setUsedUp] = useState(false);
-  const closeUsedUp = useCallback(() => setUsedUp(false), []);
+  // `again`: it was already marked cooked today when this opened.
+  const [usedUp, setUsedUp] = useState<{ again: boolean } | null>(null);
+  const closeUsedUp = useCallback(() => setUsedUp(null), []);
   const quickMinutes = useQuickMinutes();
   // Showing the phone's saved copy because the server can't be reached.
   const [offline, setOffline] = useState(false);
@@ -429,7 +430,8 @@ export default function RecipeView() {
   // anything up?" (UsedUpSheet, which only opens when there's something to
   // offer).
   async function finishCooking() {
-    if (await markCooked()) setUsedUp(true);
+    const again = cookedToday;
+    if (await markCooked()) setUsedUp({ again });
   }
   async function undoCooked(entries: CookedEntry[]) {
     setCookError("");
@@ -722,7 +724,7 @@ export default function RecipeView() {
           </div>
         )}
       </section>
-      {usedUp && <UsedUpSheet recipe={recipe} scale={scale} measures={hints.measures} onClose={closeUsedUp} />}
+      {usedUp && <UsedUpSheet recipe={recipe} scale={scale} measures={hints.measures} again={usedUp.again} onClose={closeUsedUp} />}
 
       {(recipe.author_notes || recipe.notes || editing === "author_notes" || editing === "notes") && (
       <div id="jump-notes" className="stack">

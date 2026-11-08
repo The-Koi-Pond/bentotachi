@@ -172,6 +172,13 @@ test("a kind only takes from its own packets: none when it has none, at most wha
   assert.deepEqual(coversFor(groups("1 packet spaghetti"), [penne, spaghetti]).get("kind:pasta"), { kind: "enough", have: "500 g spare" });
 });
 
+test("a partly used packet counts as what's left in it, not its size", () => {
+  const open = { size: "500 g", left: "100 g" };
+  assert.deepEqual(coverOf(need("400 g linguine"), [open]), { kind: "short", have: "100 g", still: 0.75 });
+  // With a full one beside it, the total is said, not "2 × 500 g".
+  assert.deepEqual(coverOf(need("400 g linguine"), [open, { size: "500 g", left: "" }]), { kind: "enough", have: "600 g" });
+});
+
 test("a line's measure is read where scaling reads it", () => {
   assert.deepEqual(lineMeasure("1.5 kg linguine"), { amount: 1.5, unit: "kg" });
   assert.deepEqual(lineMeasure("Butter, 250 g"), { amount: 250, unit: "g" });

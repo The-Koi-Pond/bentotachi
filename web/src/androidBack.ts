@@ -10,8 +10,11 @@ export function setUpBackGesture() {
   if (!isAndroidApp) return;
   void App.addListener("backButton", ({ canGoBack }) => {
     const openDialog = document.querySelector<HTMLDialogElement>("dialog[open]");
-    if (openDialog) openDialog.close();
-    else if (canGoBack) window.history.back();
+    // As Escape does: the pop-up hears "cancel" first and may refuse (one
+    // that's still saving, like "Used anything up?").
+    if (openDialog) {
+      if (openDialog.dispatchEvent(new Event("cancel", { cancelable: true }))) openDialog.close();
+    } else if (canGoBack) window.history.back();
     else void App.minimizeApp();
   });
 }

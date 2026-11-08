@@ -63,7 +63,10 @@ export function cookedUses(
     else if (!ordered.length && item.status === "have")
       uses.push({ item, title: item.name, note: "No packets counted: mark it Low?", ticked: false, finish: [], leave: null, status: "low" });
   }
-  return uses;
+  // On purpose: only when something with packets was used. A household that
+  // doesn't count packets is never asked (docs/VISION.md); the "mark it
+  // Low?" lines only ride along.
+  return uses.some((use) => use.finish.length || use.leave) ? uses : [];
 }
 
 function usePackets(item: PantryItem, lines: string[], ordered: PantryPacket[], measures?: RecipeMeasures): Use | null {
