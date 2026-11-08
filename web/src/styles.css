@@ -2621,9 +2621,10 @@ legend {
   align-items: center;
 }
 
+/* A little bigger than first built (Lilly, 2026-11-08). */
 .recipe-grid.list .card-photo {
   flex: none;
-  width: 76px;
+  width: 96px;
 }
 
 .recipe-grid.list .recipe-card img,
@@ -2661,7 +2662,7 @@ legend {
   }
 
   .recipe-grid.list .card-photo {
-    width: 64px;
+    width: 84px;
   }
 
   .recipe-grid.list .recipe-card-text {
