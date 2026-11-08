@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router";
 import { CloseIcon } from "./icons";
-import { dropAlert, holdAlert } from "./timerAlerts";
+import { alertShown, dropAlert, holdAlert } from "./timerAlerts";
 import {
+  JUST_ENDED_MS,
   beepsInApp,
   countdown,
   pausedTimer,
@@ -15,11 +16,11 @@ import {
 
 // The countdowns started from recipe steps (stepTimers.ts), in a small tray
 // above the tab bar on every page, so they carry on while you look at
-// something else. Kept on this device. When one reaches zero, the Android
-// app's notification rings it, locked phone or not (timerAlerts.ts). Without
-// one (a browser, or notifications not allowed) it beeps and buzzes while
-// Bentotachi is open, or when it's opened again; ⋮ → Keep screen on helps
-// there.
+// something else. Kept on this device. When one reaches zero with
+// Bentotachi on screen, it beeps and buzzes here. In the background or with
+// the phone locked, the Android app's notification rings it
+// (timerAlerts.ts); without one (a browser, or notifications not allowed)
+// it beeps when Bentotachi is opened again, and ⋮ → Keep screen on helps.
 
 const KEY = "bento.stepTimers";
 
@@ -156,16 +157,27 @@ export default function StepTimerTray() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  // Each timer rings once when it reaches zero. One Android rings on time
-  // is left to its notification; the rest beep here once Bentotachi is on
-  // screen, and a notification still waiting to come late is taken back.
+  // Each timer rings once when it reaches zero. In the background, one
+  // Android rings on time is left to its notification; the rest wait for
+  // Bentotachi to be on screen. On screen, the tray beeps (beepsInApp says
+  // when), and the timer's notification is taken back: it has rung, or
+  // would ring a second time.
   useEffect(() => {
     const visible = document.visibilityState === "visible";
     const due = list.filter((timer) => !timer.rang && remaining(timer, now) === 0 && (visible || timer.alert === "exact"));
     if (!due.length) return;
-    if (due.some((timer) => beepsInApp(timer, visible))) ring();
-    for (const timer of due) if (timer.alert === "inexact") queue(() => dropAlert(timer));
     set(timers.map((timer) => (due.some((d) => d.id === timer.id) ? { ...timer, rang: true } : timer)));
+    if (!visible) return;
+    void (async () => {
+      let beep = false;
+      for (const timer of due) {
+        const since = Date.now() - (timer.endsAt ?? Date.now());
+        const shown = !!timer.alert && since > JUST_ENDED_MS && (await alertShown(timer));
+        if (beepsInApp(since, shown)) beep = true;
+        if (timer.alert) queue(() => dropAlert(timer));
+      }
+      if (beep) ring();
+    })();
   }, [list, now]);
 
   // Room for the tray: toasts float above it and the page can scroll past it.

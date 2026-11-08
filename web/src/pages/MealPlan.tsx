@@ -255,8 +255,13 @@ export default function MealPlan() {
 
   function step(direction: 1 | -1) {
     setPicking(null);
-    if (isList) setStart(addDays(start, 7 * direction));
-    else setMonth(addMonths(month, direction));
+    if (isList) {
+      // Back where it opens: "Today" again (so the Today button rests).
+      const next = addDays(start, 7 * direction);
+      setStart(next === addDays(today, -1) ? null : next);
+    } else {
+      setMonth(addMonths(month, direction));
+    }
   }
 
   function goToToday() {

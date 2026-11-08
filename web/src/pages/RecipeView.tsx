@@ -701,10 +701,11 @@ export default function RecipeView() {
           ) : (
             <>
               {/* Where the numbers are from, as Bentotachi doesn't work them
-                  out (a tester asked, 2026-11-08). */}
+                  out (a tester asked, 2026-11-08). Not the site's name: they
+                  may have been typed in (review, 2026-11-08). */}
               <p className="muted nutrition-note">
-                Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}
-                {siteHost(recipe.source_url) ? `, as ${siteHost(recipe.source_url)} gives it` : ""}.
+                Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}, as the recipe gives it (Bentotachi doesn't
+                work it out).
               </p>
               <dl className="nutrition-list">
                 {(recipe.nutrition ?? []).map((line, i) => {

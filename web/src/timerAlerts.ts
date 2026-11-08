@@ -1,5 +1,6 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { isAndroidApp } from "./pb";
+import { localToday } from "./dates";
 import type { StepTimer, TimerAlert } from "./stepTimers";
 
 // Step timers that ring with the phone locked or Bentotachi in the
@@ -9,12 +10,15 @@ import type { StepTimer, TimerAlert } from "./stepTimers";
 // Android app; in a browser the tray's own beep is all there is.
 //
 // On time needs Android's "Alarms & reminders" permission, which Android
-// 14 and newer don't give by themselves. Bentotachi asks once, at the first
-// timer, and otherwise settles for "roughly on time" (Android may hold the
-// notification back for a while to save battery).
+// 14 and newer don't give by themselves. Bentotachi asks at the first timer
+// of a day until it's allowed (at most once a day, so a "no" isn't asked
+// again straight away, nor forever final: review, 2026-11-08), and
+// otherwise settles for "roughly on time" (Android may hold the
+// notification back a long while to save battery).
 
 const CHANNEL = "step-timers";
-const ASKED_KEY = "bento.timerAlarmsAsked";
+// The day it last asked, like "2026-11-08".
+const ASKED_KEY = "bento.timerAlarmsAskedOn";
 
 // Notifications are numbered; a timer's id is text ("1762560000000-k3x9a").
 function notificationId(timer: Pick<StepTimer, "id">): number {
@@ -39,9 +43,9 @@ function timersChannel(): Promise<void> {
   return channel;
 }
 
-function askedBefore(): boolean {
+function askedToday(): boolean {
   try {
-    return localStorage.getItem(ASKED_KEY) === "1";
+    return localStorage.getItem(ASKED_KEY) === localToday();
   } catch {
     return false;
   }
@@ -49,7 +53,7 @@ function askedBefore(): boolean {
 
 function rememberAsked() {
   try {
-    localStorage.setItem(ASKED_KEY, "1");
+    localStorage.setItem(ASKED_KEY, localToday());
   } catch {
     // Asked again next time, which is only a little annoying.
   }
@@ -67,7 +71,7 @@ export async function holdAlert(timer: StepTimer, ask: boolean): Promise<TimerAl
     if (allowed !== "granted") return undefined;
 
     let exact = (await LocalNotifications.checkExactNotificationSetting()).exact_alarm === "granted";
-    if (!exact && ask && !askedBefore()) {
+    if (!exact && ask && !askedToday()) {
       rememberAsked();
       if (
         window.confirm(
@@ -98,6 +102,18 @@ export async function holdAlert(timer: StepTimer, ask: boolean): Promise<TimerAl
   } catch {
     // No notification: the tray still beeps while Bentotachi is open.
     return undefined;
+  }
+}
+
+// Whether the timer's notification has already shown (rung), so the tray
+// needn't beep as well. False when it can't tell.
+export async function alertShown(timer: Pick<StepTimer, "id">): Promise<boolean> {
+  if (!isAndroidApp) return false;
+  try {
+    const { notifications } = await LocalNotifications.getDeliveredNotifications();
+    return notifications.some((n) => n.id === notificationId(timer));
+  } catch {
+    return false;
   }
 }
 

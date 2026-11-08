@@ -94,11 +94,19 @@ export interface StepTimer {
 
 export type TimerAlert = "exact" | "inexact";
 
-// Whether the tray should beep for a timer that reached zero. Not when
-// Android's notification rings it on time (it already did, or does now:
-// both would ring twice), and not unless Bentotachi is on screen.
-export function beepsInApp(timer: StepTimer, visible: boolean): boolean {
-  return visible && timer.alert !== "exact";
+// A timer that reached zero this long ago or less did so with Bentotachi on
+// screen (the tray ticks every second); longer ago, it was in the
+// background or the phone was locked.
+export const JUST_ENDED_MS = 10_000;
+
+// Whether the tray beeps for a timer that reached zero, now that Bentotachi
+// is on screen. Always when it just ended: the tray's beep plays at media
+// volume, while Android's notification is silent on a phone set to silent
+// or Do Not Disturb (review, 2026-11-08); the notification is taken back
+// straight after. Ended a while ago, only if Android's notification hasn't
+// already rung it (a late one would otherwise ring twice).
+export function beepsInApp(msSinceEnd: number, notificationShown: boolean): boolean {
+  return msSinceEnd <= JUST_ENDED_MS || !notificationShown;
 }
 
 export function startStepTimer(recipeId: string, recipeTitle: string, step: number, time: StepTime, now: number): StepTimer {

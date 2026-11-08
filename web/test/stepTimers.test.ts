@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { beepsInApp, countdown, formatDuration, pausedTimer, remaining, resumedTimer, startStepTimer, stepTimes } from "../src/stepTimers.ts";
+import { JUST_ENDED_MS, beepsInApp, countdown, formatDuration, pausedTimer, remaining, resumedTimer, startStepTimer, stepTimes } from "../src/stepTimers.ts";
 
 const labels = (step: string) => stepTimes(step).map((t) => `${t.label}=${t.seconds}`);
 
@@ -57,15 +57,15 @@ test("a countdown pauses and carries on", () => {
   assert.equal(remaining(resumed, 10_000_000), 0);
 });
 
-test("Android's notification rings an on-time timer, the tray the rest", () => {
-  const timer = startStepTimer("r1", "Soup", 2, { label: "10 min", seconds: 600 }, 0);
-  // No notification (a browser, notifications not allowed): beeps once on screen.
-  assert.equal(beepsInApp(timer, true), true);
-  assert.equal(beepsInApp(timer, false), false);
-  // On time: the notification rings, so the tray doesn't as well.
-  assert.equal(beepsInApp({ ...timer, alert: "exact" }, true), false);
-  // Roughly on time: the tray beeps when it's on screen at zero.
-  assert.equal(beepsInApp({ ...timer, alert: "inexact" }, true), true);
+test("the tray beeps unless Android's notification already rang it a while ago", () => {
+  // Reached zero with Bentotachi on screen: always (a silent phone mutes
+  // the notification, not the tray), even if the notification shows too.
+  assert.equal(beepsInApp(0, true), true);
+  assert.equal(beepsInApp(JUST_ENDED_MS, true), true);
+  // Ended while locked, opened later: only if the notification hasn't rung.
+  assert.equal(beepsInApp(JUST_ENDED_MS + 1, true), false);
+  assert.equal(beepsInApp(5 * 60_000, false), true);
   // Paused, its notification is taken back, so it isn't counted on.
+  const timer = startStepTimer("r1", "Soup", 2, { label: "10 min", seconds: 600 }, 0);
   assert.equal(pausedTimer({ ...timer, alert: "exact" }, 60_000).alert, undefined);
 });
