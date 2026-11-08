@@ -202,7 +202,9 @@ Not released yet:
   recipe page, and wait for packets before Add; the month view moves a
   whole meal, sides too; Paprika imports shrink their photos; a public
   Wi-Fi's sign-in page can't sign anyone out; a new pantry's first add
-  form stays while it's being filled in.
+  form stays while it's being filled in; two quick choices on a recipe
+  page (linking two ingredients, putting two photos with steps) no longer
+  undo each other.
 
 Released in 1.20.0 (2026-11-08, deployed the same day):
 
