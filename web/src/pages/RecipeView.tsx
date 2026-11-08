@@ -61,6 +61,7 @@ import RecipeTimer from "../RecipeTimer";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
 import { scaleLine } from "../scaling";
+import { saveScale, savedScale } from "../recipeScale";
 import { stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
 import RecipeJumpBar from "../RecipeJumpBar";
@@ -128,13 +129,17 @@ export default function RecipeView() {
   // cover, or null.
   const [viewing, setViewing] = useState<string | null>(null);
   // How much bigger or smaller the ingredients are shown (1 = as written),
-  // only while this recipe is open.
-  const [scale, setScale] = useState(1);
+  // as it was last made on this device (recipeScale.ts).
+  const [scale, setScale] = useState(() => savedScale(id));
+  function changeScale(factor: number) {
+    setScale(factor);
+    saveScale(id, factor);
+  }
   // Countdowns started from steps (StepTimerTray.tsx), to show which run.
   const timers = useStepTimers();
 
   useEffect(() => {
-    setScale(1);
+    setScale(savedScale(id));
     recipes()
       .getOne(id, { expand: "added_by" })
       .then((found) => {
@@ -550,7 +555,7 @@ export default function RecipeView() {
           onRecipeChange={setRecipe}
           editButton={editButton("ingredients", "Change the ingredients")}
           scale={scale}
-          onScale={setScale}
+          onScale={changeScale}
         />
       )}
       </div>
