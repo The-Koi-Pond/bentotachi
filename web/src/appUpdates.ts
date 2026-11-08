@@ -1,13 +1,9 @@
 import { App } from "@capacitor/app";
 import { registerPlugin } from "@capacitor/core";
-import {
-  AppUpdate,
-  AppUpdateAvailability,
-  AppUpdateResultCode,
-  FlexibleUpdateInstallStatus,
-} from "@capawesome/capacitor-app-update";
+import { AppUpdate, AppUpdateResultCode, FlexibleUpdateInstallStatus } from "@capawesome/capacitor-app-update";
 import { useSyncExternalStore } from "react";
 import { errorMessage, isAndroidApp, pb } from "./pb";
+import { playUpdateStatus, type PlayUpdateStatus } from "./playUpdates";
 
 // Updates for the Android app, two ways. The household's own app updates
 // itself: the server says which version is the newest (published by "npm
@@ -63,29 +59,46 @@ export function useUpdateState(): UpdateState {
 export const canSelfUpdate = isAndroidApp && import.meta.env.VITE_BENTO_PLAY !== "1";
 export const updatesFromPlay = isAndroidApp && import.meta.env.VITE_BENTO_PLAY === "1";
 
-async function checkWithPlay() {
-  setState({ status: "checking" });
+// While Play's "Update?" dialog is open, a check (the app resumes when it
+// closes) would race its answer.
+let playDialogOpen = false;
+
+// Asks Play afresh and shows its answer, which is "available" or not. Each
+// answer can start an update only once (the plugin forgets it after an
+// attempt), so every attempt asks again.
+async function askPlay(): Promise<PlayUpdateStatus | null> {
+  // The banner stays as it is while a download runs or waits, rather than
+  // flickering to "checking" on every return to the app.
+  if (state.status !== "installing" && state.status !== "downloaded") setState({ status: "checking" });
   let installed = "";
   try {
     installed = (await App.getInfo()).version;
     const info = await AppUpdate.getAppUpdateInfo();
     const latest = { versionCode: Number(info.availableVersionCode) || 0, versionName: "", notes: "" };
-    if (info.installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) setState({ status: "downloaded", installed, latest });
-    else if (info.updateAvailability === AppUpdateAvailability.UPDATE_IN_PROGRESS) setState({ status: "installing", installed, latest });
-    else if (info.updateAvailability === AppUpdateAvailability.UPDATE_AVAILABLE && info.flexibleUpdateAllowed)
-      setState({ status: "available", installed, latest });
-    else setState({ status: "current", installed });
+    const status = playUpdateStatus(info);
+    setState(status === "current" ? { status, installed } : { status, installed, latest });
+    return status;
   } catch (err) {
     // Play's own reasons read like "Install Error(-10)", and a copy not
-    // installed from Play always gets one, so it's logged, not shown.
+    // installed from Play always gets one, so the reason is logged and
+    // only the ⋮ menu's small line says it failed (the banner needs an
+    // update to show).
     console.warn("Asking Google Play about updates failed", errorMessage(err));
     setState({ status: "error", message: "Couldn't ask Google Play about updates. Try again later.", installed });
+    return null;
   }
 }
 
 export async function checkForUpdate() {
-  if (state.status === "checking" || state.status === "installing") return;
-  if (updatesFromPlay) return checkWithPlay();
+  if (state.status === "checking") return;
+  if (updatesFromPlay) {
+    // A download Play runs is checked on every return to the app (Google's
+    // advice: the "downloaded" news can be missed in the background, and a
+    // reopened app never hears it), so only the dialog holds a check back.
+    if (!playDialogOpen) await askPlay();
+    return;
+  }
+  if (state.status === "installing" || !canSelfUpdate) return;
   if (!canSelfUpdate) return;
   setState({ status: "checking" });
   let installed = "";
@@ -110,7 +123,12 @@ export async function installUpdate() {
   const { installed, latest } = state as { installed: string; latest: Release };
   setState({ status: "installing", installed, latest });
   if (updatesFromPlay) {
+    playDialogOpen = true;
     try {
+      // A fresh answer first: it may also say the update already
+      // downloaded (then the banner offers "Restart to update").
+      if ((await askPlay()) !== "available") return;
+      setState({ status: "installing", installed, latest });
       // Play asks the person first; once they agree it downloads in the
       // background, and its progress arrives through the listener in
       // startUpdateChecks.
@@ -120,6 +138,8 @@ export async function installUpdate() {
     } catch (err) {
       console.warn("Starting the Play update failed", errorMessage(err));
       setState({ status: "error", message: "Google Play couldn't start the update. Try again later.", installed, latest });
+    } finally {
+      playDialogOpen = false;
     }
     return;
   }
@@ -152,12 +172,18 @@ export function startUpdateChecks() {
   if (updatesFromPlay) {
     void AppUpdate.addListener("onFlexibleUpdateStateChange", ({ installStatus }) => {
       const current = state;
-      if (!("latest" in current) || !current.latest || !current.installed) return;
+      // Mid-check there's no update in hand yet: ask again for the news.
+      if (!("latest" in current) || !current.latest || !current.installed) {
+        if (installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) void checkForUpdate();
+        return;
+      }
       const { installed, latest } = current;
       if (installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) setState({ status: "downloaded", installed, latest });
-      else if (installStatus === FlexibleUpdateInstallStatus.FAILED)
-        setState({ status: "error", message: "The update didn't download. Try again later.", installed, latest });
-      else if (installStatus === FlexibleUpdateInstallStatus.CANCELED) setState({ status: "available", installed, latest });
+      else if (installStatus === FlexibleUpdateInstallStatus.FAILED) {
+        // After "Restart to update" it's the install that failed.
+        const what = current.status === "downloaded" ? "install" : "download";
+        setState({ status: "error", message: `The update didn't ${what}. Try again later.`, installed, latest });
+      } else if (installStatus === FlexibleUpdateInstallStatus.CANCELED) setState({ status: "available", installed, latest });
     });
   }
   void checkForUpdate();
