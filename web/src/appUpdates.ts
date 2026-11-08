@@ -178,7 +178,10 @@ export function startUpdateChecks() {
   if (updatesFromPlay) {
     void AppUpdate.addListener("onFlexibleUpdateStateChange", ({ installStatus }) => {
       const current = state;
-      // Mid-check there's no update in hand yet: ask again for the news.
+      // No update in hand (none found yet, or a failed check): ask again for
+      // the news. A check already running is left to finish; if it read
+      // Play just before the download finished, the next return to the app
+      // brings "Restart to update".
       if (!("latest" in current) || !current.latest || !current.installed) {
         if (installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) void checkForUpdate();
         return;

@@ -9,6 +9,7 @@ const cases = [
   ["newer, and the background kind is allowed", { updateAvailability: 2, installStatus: 0, flexibleUpdateAllowed: true }, "available"],
   ["newer, but only the full-screen kind is allowed", { updateAvailability: 2, installStatus: 0, flexibleUpdateAllowed: false }, "current"],
   ["a finished download wins", { updateAvailability: 2, installStatus: 11, flexibleUpdateAllowed: true }, "downloaded"],
+  ["a finished download wins over 'in progress'", { updateAvailability: 3, installStatus: 11, flexibleUpdateAllowed: false }, "downloaded"],
   ["reopened mid-download", { updateAvailability: 2, installStatus: 2, flexibleUpdateAllowed: true }, "installing"],
   ["queued to download", { updateAvailability: 2, installStatus: 1, flexibleUpdateAllowed: true }, "installing"],
   ["Play says in progress", { updateAvailability: 3, installStatus: 0, flexibleUpdateAllowed: false }, "installing"],
