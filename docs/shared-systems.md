@@ -1,0 +1,119 @@
+# Shared pieces: use these, don't write another
+
+Many sessions build Bentotachi without remembering each other, so a helper
+written twice drifts apart. Before writing a helper or component, find its
+job here and use (or extend) what's listed, with its tests. A new shared
+piece gets a line here. Riskiest first. Paths are under `web/src/` unless
+they say otherwise.
+
+## Who can see and change what
+
+- Every collection is open to any logged-in household member, except the
+  `users` list (each sees only themselves) and `recipe_ratings` (each changes
+  only their own): set in `server/pb_migrations/`, never in the app.
+- "Added by" / "Cooked by": the server sets them to whoever is logged in
+  (`server/pb_hooks/who_added.pb.js`). That only runs on record requests; a
+  custom route that saves records sets it itself, as `import.pb.js` does.
+- The server fetching a web address for someone: `isPublicUrl`
+  (`server/pb_hooks/safe_url.js`) first, always, so nobody can reach the
+  home network through it.
+- New server routes: end with `$apis.requireAuth()`, as every route does
+  except first-time setup and app updates, which are public on purpose.
+- Single-user mode (one account hides the "other people" parts):
+  `useSingleUser`, and `forEveryone(singleUser)` for " for everyone" in
+  questions (`household.ts`).
+- Household settings (country, tablespoon, meals on the plan): `useCountry`,
+  `useTablespoon`, `usePlanMeals`, `useStores` (`household.ts`).
+- The logged-in person: `useCurrentUser`, their name `displayName`, their
+  colour `personStyle`, picture `avatarUrl` / `<Avatar>` (`pb.ts`, `Avatar.tsx`).
+- Logging out or switching servers: `forgetOfflineCopy` (`offline.ts`) wipes
+  the phone's copies. A new offline copy's key goes in its list, or the next
+  person on the phone sees it.
+
+## Saved data and syncing
+
+- Talking to a collection: the typed helpers in `pb.ts` (`recipes()`,
+  `pantryItems()`, `shoppingItems()`, ...), not `pb.collection("...")`
+  (only logins, `users`, `household_settings` and `useLiveRecords` use that).
+- A shared list on screen: `useLiveRecords` (load, live updates, reload on
+  return, offline copy with `offlineKey`).
+- Before loading or sending: `ensureLogin` / `ensureLoginNow` (`session.ts`;
+  an expired login looks like an empty list, not an error).
+- Saving an edit: send only the changed fields, `changedFields`
+  (`changedFields.ts`), so a housemate's change meanwhile isn't put back.
+- Offline copies of lists: `read` / `write` and the `*_KEY` names
+  (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
+  `useShoppingQueue` (`shoppingQueue.ts`).
+- Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
+  what's already waiting).
+- Delete with Undo: `useUndo` (`undo.tsx`, rules in `pendingDelete.ts`).
+  Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
+  the question from `deleteQuestion`, `deleteWarning.ts`).
+- Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
+  (`unsavedChanges.ts`).
+- Error text for people: `errorMessage` (`pb.ts`); "is it offline?":
+  `isOffline` (`offline.ts`); `<OfflineNote>` to say so.
+- Import size limits: `LIMITS` / `fitRecipe` (`server/pb_hooks/recipe_parse.js`),
+  mirrored as `IMPORT_LIMITS` / `fitImported` (`paprikaImport.ts`; a test
+  keeps the limits equal).
+
+## Dates and times
+
+- Calendar dates ("2026-11-02"): `dates.ts`. Today is `localToday` (never
+  `toISOString().slice(0, 10)`, which is UTC), stored form `toStoredDate` /
+  `datePart`, maths `dayNumber` / `addDays` / `weekStart`, showing
+  `formatDay`, "3 days ago" `timeAgo`.
+- Expiry: `expiry.ts` (`daysUntil`, `describeExpiry`, `shortExpiry`).
+- Minutes: `formatMinutes`, `totalMinutes`, `isQuick` (`format.ts`); times
+  in text ("10 minutes") `stepTimes`, `formatDuration` (`stepTimers.ts`).
+
+## Numbers, amounts and units
+
+- Reading a number in recipe text: `NUMBER`, `parseNumber`, `amountRange`
+  (`weights.ts`). Showing one in kitchen fractions: `kitchenFraction`
+  (`scaling.ts`).
+- Scaling: `scaleLine`, `servingsCount` (`scaling.ts`); remembered size:
+  `recipeScale.ts`.
+- Unit hints: `withWeightHint`, `withVolumeHint` (+ `recipeMeasures`),
+  `withTemperatureHint`, `withLengthHint`, `withRegionalHint` (their own files).
+
+## Text and matching
+
+- An ingredient's name in a line (whole words, plurals, accents):
+  `findMention`, `mentions`, `stem`, `foldText` (`wordMatch.ts`).
+- Recipe search: `searchWords` + `matchesSearch` (`recipeSearch.ts`). Pantry
+  search: `matchesSearch` (`pantryGroups.ts`).
+- Ingredient/step lines and tags: `textToLines`, `linesToText`, `headingOf`,
+  `textToTags` (`format.ts`); the tag box: `tagText.ts`; shelves:
+  `normaliseTag`, `inCategory` (`recipeCategories.ts`).
+- Soft and bold marks: `softParts` / `withoutSoftMarks` (`softMarks.ts`),
+  shown by `<SoftText>`, typed with `<FormatTextarea>` / `toggleMark`.
+- Pantry names: `sameName` (`pantryFields.ts`); ingredient links:
+  `pantryLinks.ts`.
+- A site's name from its address: `siteHost` (`recipeSites.ts`); store:
+  `storeFor` / `storeName` (`stores.ts`).
+- Recipes sharing a name: `twinLabels` (`recipeTwins.ts`); "already
+  imported": `alreadyHave` (`paprikaImport.ts`).
+- Words on screen the US spells differently (favourite, colour, grey):
+  `useSpell()` (`household.ts`), the word list in `spelling.ts`.
+
+## Photos and files
+
+- Shrinking any photo before upload: `shrinkPhoto` (`pantryPhoto.ts`; pass
+  `PHOTO_SIDE` from `recipePhotos.ts` for recipes). Profile pictures:
+  `squarePicture` (`avatarImage.ts`).
+- Photo addresses: `recipeImageUrl`, `recipePhotoUrl`, `pantryPhotoUrl` (`pb.ts`).
+- Saving a file (download, or Android's "save as"): `startFile`
+  (`saveFile.ts`); Paprika exports `savePaprikaFile` (`paprikaSave.ts`).
+
+## Screen pieces
+
+- `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`). Icons:
+  `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
+  `PhotoViewer.tsx`. Screen stays on: `useWakeLock`.
+
+## Scripts (`web/scripts/`)
+
+- The Pi's address and key: `piConfig` (`piConfig.mjs`). Only committed code
+  goes out: `refuseUncommittedCode` (`committed.mjs`). All checks before
+  sending: `runTests` (`tests.mjs`).
