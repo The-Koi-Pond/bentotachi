@@ -1054,6 +1054,20 @@ main {
   border-color: var(--accent);
 }
 
+/* A meal's second recipe (and more), just under the first. */
+.dinner-slot + .dinner-slot {
+  margin-top: 6px;
+}
+
+/* "+ Add another" under a planned meal: a small chip, not a second row. */
+.plan-add.another {
+  width: auto;
+  min-height: 32px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+}
+
 /* A planned meal is one card (Xel's pick, 2026-11-06): its drag handle a
    slim soft-jade tab down the left edge, so it's clearly what moves it,
    then the photo, the name and ×. */

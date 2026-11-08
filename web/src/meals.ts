@@ -35,6 +35,29 @@ export function parseSlot(key: string): { date: string; meal: Meal } {
   return { date, meal: mealOf({ meal }) };
 }
 
+// A meal can hold several dishes (a main and its sides; Lilly, 2026-11-08).
+// Each place's entries ("2026-11-02|lunch"), in the order they were added.
+export function dishesBySlot<T extends { id: string; date: string; meal?: string; created?: string }>(
+  entries: T[]
+): Map<string, T[]> {
+  const slots = new Map<string, T[]>();
+  const ordered = [...entries].sort(
+    (a, b) => (a.created ?? "").localeCompare(b.created ?? "") || a.id.localeCompare(b.id)
+  );
+  for (const entry of ordered) {
+    const key = slotKey(entry.date.slice(0, 10), mealOf(entry));
+    slots.set(key, [...(slots.get(key) ?? []), entry]);
+  }
+  return slots;
+}
+
+// A dish dragged onto another place: a lone dish onto a place with one other
+// trades places with it, as before several dishes were possible; otherwise
+// it joins whatever's there (a side dragged next to its main).
+export function dropSwaps(dishesHere: number, dishesThere: number): boolean {
+  return dishesHere === 1 && dishesThere === 1;
+}
+
 // "Dinner plan" while it's dinner only, otherwise "Meal plan".
 export function planTitle(meals: Meal[]): string {
   return meals.length === 1 ? `${MEAL_NAMES[meals[0]]} plan` : "Meal plan";

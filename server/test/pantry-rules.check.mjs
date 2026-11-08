@@ -167,13 +167,18 @@ await api("DELETE", `/collections/recipes/records/${soup.id}`);
 const leftover = await api("GET", "/collections/recipe_ratings/records?filter=" + encodeURIComponent(`recipe = "${soup.id}"`));
 check("deleting a recipe removes its ratings", leftover.items.length === 0, `(${leftover.items.length})`);
 
-// Dinner plan: one dinner per night, and deleting a recipe takes it off the plan.
+// Dinner plan: a night's dinner can have more than one recipe (a side with
+// the main, since 2026-11-08), and deleting a recipe takes it off the plan.
 const curry = await api("POST", "/collections/recipes/records", { title: "Curry" });
+const rice = await api("POST", "/collections/recipes/records", { title: "Rice" });
 const night = await api("POST", "/collections/meal_plan/records", { date: "2026-11-05 00:00:00.000Z", recipe: curry.id });
 check("a dinner can be planned", night.recipe === curry.id);
-try { await api("POST", "/collections/meal_plan/records", { date: "2026-11-05 00:00:00.000Z", recipe: curry.id }); check("only one dinner per night", false); }
-catch (e) { check("only one dinner per night", e.status === 400); }
+const side = await api("POST", "/collections/meal_plan/records", { date: "2026-11-05 00:00:00.000Z", recipe: rice.id });
+check("a second recipe can go with the same dinner", side.recipe === rice.id);
 await api("DELETE", `/collections/recipes/records/${curry.id}`);
+const sideAfter = await api("GET", "/collections/meal_plan/records?filter=" + encodeURIComponent(`id = "${side.id}"`));
+check("deleting the main recipe leaves its side on the plan", sideAfter.items.length === 1, `(${sideAfter.items.length})`);
+await api("DELETE", `/collections/recipes/records/${rice.id}`);
 const nightAfter = await api("GET", "/collections/meal_plan/records?filter=" + encodeURIComponent(`id = "${night.id}"`));
 check("deleting a recipe takes it off the plan", nightAfter.items.length === 0, `(${nightAfter.items.length})`);
 const noteNight = await api("POST", "/collections/meal_plan/records", { date: "2026-11-06 00:00:00.000Z", note: "Take-away night" });

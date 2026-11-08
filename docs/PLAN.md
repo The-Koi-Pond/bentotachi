@@ -369,7 +369,11 @@ Released in 1.17.0 (2026-11-07, deployed the same day):
   week headings where weeks start): scrolled to today late in the week, it
   looked like the bottom of the page to a tester (Xel chose this). Also
   since then, the top bar's Add recipe shows only on Recipes and Browse (a
-  tester expected it to add a pantry item on Pantry). A planned meal is one
+  tester expected it to add a pantry item on Pantry). Also since then a
+  meal can hold more than one recipe (a side with the main; Lilly): "+ Add
+  another" under it, the recipe page's Plan adds alongside instead of
+  replacing, and a lone dish dragged onto a lone dish still swaps
+  (migration 1764806400; older apps show one per meal). A planned meal is one
   bordered card with its drag handle as a slim soft-jade tab down the left
   edge (Xel's pick of two mockups), so it's clearly what moves it.
 - Shopping list (2026-11-06): tighter rows (about 46px instead of 60,

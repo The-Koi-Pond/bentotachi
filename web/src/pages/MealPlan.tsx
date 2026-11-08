@@ -37,7 +37,19 @@ import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
 import { useCountry, usePlanMeals } from "../household";
-import { MEALS, MEAL_NAMES, mealOf, mealWord, mealsForDay, parseSlot, planTitle, slotKey, type Meal } from "../meals";
+import {
+  MEALS,
+  MEAL_NAMES,
+  dishesBySlot,
+  dropSwaps,
+  mealOf,
+  mealWord,
+  mealsForDay,
+  parseSlot,
+  planTitle,
+  slotKey,
+  type Meal,
+} from "../meals";
 
 // How many days are shown at once: two weeks, from yesterday.
 const DAYS_SHOWN = 14;
@@ -124,17 +136,19 @@ export default function MealPlan() {
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
 
-  // Each planned meal by its place ("2026-11-02|lunch"), and each day's
-  // meals in plan order (for the month grid).
+  // Each place's dishes ("2026-11-02|lunch": a main and its sides, in the
+  // order added), and each day's in plan order (for the month grid).
   const shown = plan.items.filter((entry) => !undo.hidden.has(entry.id));
-  const bySlot = new Map(shown.map((entry) => [slotKey(datePart(entry.date), mealOf(entry)), entry]));
+  const bySlot = dishesBySlot(shown);
   const byDate = new Map<string, MealPlanEntry[]>();
-  for (const entry of [...shown].sort((a, b) => MEALS.indexOf(mealOf(a)) - MEALS.indexOf(mealOf(b)))) {
-    const date = datePart(entry.date);
-    byDate.set(date, [...(byDate.get(date) ?? []), entry]);
+  for (const meal of MEALS) {
+    for (const [key, dishes] of bySlot) {
+      const place = parseSlot(key);
+      if (place.meal === meal) byDate.set(place.date, [...(byDate.get(place.date) ?? []), ...dishes]);
+    }
   }
   const mealsOn = (date: string) => mealsForDay(meals, (meal) => bySlot.has(slotKey(date, meal)));
-  const entryAt = (date: string, meal: Meal) => bySlot.get(slotKey(date, meal));
+  const dishesAt = (date: string, meal: Meal) => bySlot.get(slotKey(date, meal)) ?? [];
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(start, i));
   const word = mealWord(meals);
 
@@ -153,7 +167,7 @@ export default function MealPlan() {
     setPicking(null);
     setError("");
     try {
-      // A place holds one meal: one just removed must be gone first.
+      // A dish just removed goes first, so Undo can't bring it back beside.
       await undo.settle();
       plan.upsert(
         await mealPlan().create(
@@ -168,7 +182,14 @@ export default function MealPlan() {
         )
       );
     } catch (err) {
-      setError(errorMessage(err));
+      // A server from before several dishes per meal refuses a second one.
+      const fields = (err as { response?: { data?: Record<string, { code?: string }> } }).response?.data ?? {};
+      const notUnique = Object.values(fields).some((field) => field?.code === "validation_not_unique");
+      setError(
+        notUnique
+          ? `This Bentotachi server holds one dish per ${meal}. Once it's updated, sides can go with the main.`
+          : errorMessage(err)
+      );
     }
   }
 
@@ -186,13 +207,17 @@ export default function MealPlan() {
     });
   }
 
-  // Moves a meal to another place (another day, or another meal), swapping
-  // with whatever is there. A swap trades the two places' contents (recipe
-  // and note), so each place keeps its own entry.
-  async function move(from: string, to: string) {
-    const moving = bySlot.get(from);
-    if (!moving || from === to) return;
-    const there = bySlot.get(to);
+  // Moves a dish to another place (another day, or another meal). A lone
+  // dish onto a place with one other swaps with it (dropSwaps in meals.ts):
+  // a swap trades the two entries' contents (recipe and note), so each
+  // place keeps its own entry. Otherwise it joins the dishes there.
+  async function move(entryId: string, to: string) {
+    const moving = shown.find((entry) => entry.id === entryId);
+    if (!moving) return;
+    const from = slotKey(datePart(moving.date), mealOf(moving));
+    if (from === to) return;
+    const others = bySlot.get(to) ?? [];
+    const there = dropSwaps((bySlot.get(from) ?? []).length, others.length) ? others[0] : undefined;
     const target = parseSlot(to);
     setError("");
     // Onto a place whose meal was just removed: that one goes first.
@@ -223,18 +248,20 @@ export default function MealPlan() {
     }
   }
 
+  // What's dragged is a dish (its entry's id).
   function onDragStart(event: DragStartEvent) {
-    setDragging(bySlot.get(String(event.active.id)) ?? null);
+    setDragging(shown.find((entry) => entry.id === String(event.active.id)) ?? null);
   }
 
   // The list's places are meals ("2026-11-02|lunch"); the month grid's are
-  // days, where a meal stays the same meal ("2026-11-02").
+  // days, where a dish stays the same meal ("2026-11-02").
   function onDragEnd(event: DragEndEvent) {
     setDragging(null);
     if (!event.over) return;
-    const from = String(event.active.id);
+    const id = String(event.active.id);
+    const entry = shown.find((e) => e.id === id);
     const over = String(event.over.id);
-    void move(from, over.includes("|") ? over : slotKey(over, parseSlot(from).meal));
+    if (entry) void move(id, over.includes("|") ? over : slotKey(over, mealOf(entry)));
   }
 
   const isList = view === "list";
@@ -330,7 +357,7 @@ export default function MealPlan() {
                   today={today}
                   meals={mealsOn(date)}
                   labelled={meals.length > 1}
-                  entryAt={(meal) => entryAt(date, meal)}
+                  dishesAt={(meal) => dishesAt(date, meal)}
                   onAdd={(meal) => setPicking({ date, meal })}
                   onRemove={remove}
                 />
@@ -354,7 +381,7 @@ export default function MealPlan() {
               date={selected}
               meals={mealsOn(selected)}
               labelled={meals.length > 1}
-              entryAt={(meal) => entryAt(selected, meal)}
+              dishesAt={(meal) => dishesAt(selected, meal)}
               onAdd={(meal) => setPicking({ date: selected, meal })}
               onRemove={remove}
             />
@@ -500,7 +527,7 @@ function MonthCell({
 // A meal's picture in a month cell; dragging it moves the meal. (A tap
 // still selects the day, because a drag only starts after moving a little.)
 function DraggableThumb({ entry }: { entry: MealPlanEntry }) {
-  const { setNodeRef, listeners, isDragging } = useDraggable({ id: slotKey(datePart(entry.date), mealOf(entry)) });
+  const { setNodeRef, listeners, isDragging } = useDraggable({ id: entry.id });
   return (
     <span ref={setNodeRef} className={`cell-thumb-wrap ${isDragging ? "dragging" : ""}`} {...listeners}>
       <CellThumb entry={entry} />
@@ -527,23 +554,25 @@ interface DayProps {
   date: string;
   meals: Meal[];
   labelled: boolean;
-  entryAt: (meal: Meal) => MealPlanEntry | undefined;
+  // A meal's recipes (or notes), in the order added: it can hold more than
+  // one (Lilly, 2026-11-08).
+  dishesAt: (meal: Meal) => MealPlanEntry[];
   onAdd: (meal: Meal) => void;
   onRemove: (entry: MealPlanEntry) => void;
 }
 
 // Under the month grid: the chosen day's meals, or a way to add each.
-function SelectedDay({ date, meals, labelled, entryAt, onAdd, onRemove }: DayProps) {
+function SelectedDay({ date, meals, labelled, dishesAt, onAdd, onRemove }: DayProps) {
   return (
     <section className="selected-day" aria-label={`${labelled ? "Meals" : MEAL_NAMES[meals[0]]} on ${formatDay(date)}`}>
       <h2>{formatDay(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
       {meals.map((meal) => {
-        const entry = entryAt(meal);
+        const dishes = dishesAt(meal);
         return (
           <div key={meal} className="plan-meal">
             {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
-            {entry ? (
-              <div className="dinner-slot">
+            {dishes.map((entry) => (
+              <div key={entry.id} className="dinner-slot">
                 <DinnerCard entry={entry} />
                 <button
                   className="icon-button small"
@@ -553,15 +582,21 @@ function SelectedDay({ date, meals, labelled, entryAt, onAdd, onRemove }: DayPro
                   <CloseIcon />
                 </button>
               </div>
-            ) : (
-              <button className="plan-add" onClick={() => onAdd(meal)}>
-                + Add {meal}
-              </button>
-            )}
+            ))}
+            <AddButton meal={meal} another={dishes.length > 0} onAdd={onAdd} />
           </div>
         );
       })}
     </section>
+  );
+}
+
+// "+ Add dinner", or "+ Add another" under what's planned.
+function AddButton({ meal, another, onAdd }: { meal: Meal; another: boolean; onAdd: (meal: Meal) => void }) {
+  return (
+    <button className={`plan-add ${another ? "another" : ""}`} onClick={() => onAdd(meal)}>
+      {another ? "+ Add another" : `+ Add ${meal}`}
+    </button>
   );
 }
 
@@ -571,7 +606,7 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
   // Planning several meals a day: the planned ones as cards, the empty ones
   // as small "+ Breakfast" chips in one row, so a week of mostly empty
   // breakfasts and lunches doesn't take several screens (2026-11-06).
-  const empty = day.labelled ? day.meals.filter((meal) => !day.entryAt(meal)) : [];
+  const empty = day.labelled ? day.meals.filter((meal) => day.dishesAt(meal).length === 0) : [];
   const full = day.meals.filter((meal) => !empty.includes(meal));
   return (
     <li className={`plan-day ${when}`}>
@@ -598,9 +633,9 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
 // One meal's place in a day row: a dinner (or breakfast, or lunch) that can
 // be dragged, or "+ Add" (a small chip when compact). Meals dragged here
 // land in it.
-function MealPlace({ date, meal, labelled, entryAt, onAdd, onRemove, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
+function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
-  const entry = entryAt(meal);
+  const dishes = dishesAt(meal);
   if (compact) {
     return (
       <div ref={setNodeRef} className={`plan-meal compact ${isOver ? "drop-here" : ""}`}>
@@ -613,20 +648,16 @@ function MealPlace({ date, meal, labelled, entryAt, onAdd, onRemove, compact = f
   return (
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
-      {entry ? (
-        <DraggableDinner entry={entry} onRemove={onRemove} />
-      ) : (
-        <button className="plan-add" onClick={() => onAdd(meal)}>
-          + Add {meal}
-        </button>
-      )}
+      {dishes.map((entry) => (
+        <DraggableDinner key={entry.id} entry={entry} onRemove={onRemove} />
+      ))}
+      <AddButton meal={meal} another={dishes.length > 0} onAdd={onAdd} />
     </div>
   );
 }
 
 function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: (entry: MealPlanEntry) => void }) {
-  const id = slotKey(datePart(entry.date), mealOf(entry));
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id });
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id });
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
       <button

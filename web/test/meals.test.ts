@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mealOf, mealsForDay, mealWord, parseSlot, plannedMeals, planTitle, slotKey } from "../src/meals.ts";
+import { dishesBySlot, dropSwaps, mealOf, mealsForDay, mealWord, parseSlot, plannedMeals, planTitle, slotKey } from "../src/meals.ts";
 
 test("entries from before meals existed are dinners", () => {
   assert.equal(mealOf({}), "dinner");
@@ -27,6 +27,27 @@ test("slots as drag ids", () => {
   assert.equal(slotKey("2026-11-02", "lunch"), "2026-11-02|lunch");
   assert.deepEqual(parseSlot("2026-11-02|lunch"), { date: "2026-11-02", meal: "lunch" });
   assert.deepEqual(parseSlot("2026-11-02"), { date: "2026-11-02", meal: "dinner" });
+});
+
+test("a meal's dishes, in the order they were added", () => {
+  const at = (id: string, date: string, created: string, meal?: string) => ({ id, date: `${date} 00:00:00.000Z`, created, meal });
+  const slots = dishesBySlot([
+    at("rice", "2026-11-02", "2026-11-01 10:00:02"),
+    at("curry", "2026-11-02", "2026-11-01 10:00:01"),
+    at("soup", "2026-11-02", "2026-11-01 09:00:00", "lunch"),
+    // From before meals: a dinner.
+    at("old", "2026-11-03", "2026-10-01 09:00:00"),
+  ]);
+  assert.deepEqual(slots.get("2026-11-02|dinner")?.map((e) => e.id), ["curry", "rice"]);
+  assert.deepEqual(slots.get("2026-11-02|lunch")?.map((e) => e.id), ["soup"]);
+  assert.deepEqual(slots.get("2026-11-03|dinner")?.map((e) => e.id), ["old"]);
+});
+
+test("a lone dish dropped on a lone dish swaps; otherwise it joins", () => {
+  assert.equal(dropSwaps(1, 1), true);
+  assert.equal(dropSwaps(1, 0), false);
+  assert.equal(dropSwaps(1, 2), false, "a side dragged to a meal with two dishes joins them");
+  assert.equal(dropSwaps(2, 1), false, "a side taken from its main joins the other meal");
 });
 
 test("the plan's name follows its meals", () => {

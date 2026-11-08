@@ -32,12 +32,9 @@ const lunch = await api(token, "POST", "/collections/meal_plan/records", { date,
 check("lunch on the same day as dinner", lunch.meal === "lunch");
 const breakfast = await api(token, "POST", "/collections/meal_plan/records", { date, meal: "breakfast", note: "Porridge" });
 check("breakfast too", breakfast.meal === "breakfast");
-try {
-  await api(token, "POST", "/collections/meal_plan/records", { date, meal: "lunch", note: "Another lunch" });
-  check("one lunch a day", false);
-} catch (e) {
-  check("one lunch a day", e.status === 400);
-}
+// A meal can hold more than one recipe or note (since 2026-11-08).
+const secondLunch = await api(token, "POST", "/collections/meal_plan/records", { date, meal: "lunch", note: "Fruit" });
+check("a second thing for the same lunch", secondLunch.meal === "lunch" && secondLunch.id !== lunch.id);
 try {
   await api(token, "POST", "/collections/meal_plan/records", { date, meal: "supper", note: "?" });
   check("only breakfast, lunch and dinner", false);

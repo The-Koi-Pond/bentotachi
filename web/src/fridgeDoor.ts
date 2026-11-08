@@ -63,10 +63,15 @@ function startOfDay(date: Date): number {
 // the household plans.
 export function planSummary(entries: { date: string; meal?: string }[], today: string, meals: Meal[]): string {
   const end = addDays(today, 7);
-  const planned = entries.filter((entry) => {
-    const date = datePart(entry.date);
-    return date >= today && date < end && meals.includes(mealOf(entry));
-  }).length;
+  // Places planned, not dishes: a dinner with two sides is one dinner.
+  const planned = new Set(
+    entries
+      .filter((entry) => {
+        const date = datePart(entry.date);
+        return date >= today && date < end && meals.includes(mealOf(entry));
+      })
+      .map((entry) => `${datePart(entry.date)}|${mealOf(entry)}`)
+  ).size;
   const total = 7 * meals.length;
   const word = mealWord(meals);
   if (planned === 0) return `Nothing planned for the next 7 days yet.`;

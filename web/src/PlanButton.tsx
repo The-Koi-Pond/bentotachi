@@ -26,24 +26,16 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
     setBusy(true);
     setError("");
     try {
-      const existing = await mealPlan()
-        .getFirstListItem(pb.filter("date = {:date} && meal = {:meal}", { date: toStoredDate(date), meal }), {
-          expand: "recipe",
-        })
+      // Already planned there: nothing to do. Something else planned there:
+      // this goes alongside it, as a meal can hold more than one recipe
+      // (Lilly, 2026-11-08; it used to ask to replace it).
+      const already = await mealPlan()
+        .getFirstListItem(pb.filter("date = {:date} && meal = {:meal} && recipe = {:recipe}", { date: toStoredDate(date), meal, recipe: recipe.id }))
         .catch((err) => {
           if ((err as { status?: number }).status === 404) return null;
           throw err;
         });
-      if (existing && existing.recipe !== recipe.id) {
-        const current = existing.expand?.recipe?.title || existing.note || `another ${meal}`;
-        const what = meals.length > 1 ? `${formatDay(date)}'s ${meal}` : formatDay(date);
-        if (!window.confirm(`${what} is already “${current}”. Replace it with this?`)) {
-          setBusy(false);
-          return;
-        }
-        // A note ("Take-away") becomes this recipe's place.
-        await mealPlan().update(existing.id, { recipe: recipe.id, note: "" });
-      } else if (!existing) {
+      if (!already) {
         await mealPlan().create({ date: toStoredDate(date), meal, recipe: recipe.id, added_by: pb.authStore.record?.id });
       }
       setPlanned({ date, meal });
