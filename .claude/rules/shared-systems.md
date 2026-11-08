@@ -14,6 +14,7 @@ paths:
 - If one fits, use it, or extend it and its tests. Don't write a second copy,
   even a small one.
 - When you make a new shared piece, add a line to `docs/shared-systems.md`
-  ("for this job, use X (file)"), riskiest section first.
+  ("for this job, use X (file)") in the section it belongs to; the map is
+  ordered riskiest first.
 - A copy you notice but aren't asked to fix goes in `TODO.md` under
   "Cleanup (only when Xel asks)": where, what's duplicated, which copy wins.

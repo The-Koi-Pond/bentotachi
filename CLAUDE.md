@@ -12,15 +12,16 @@ the `/api/cookbook/...` routes keep the older "cookbook" name. The folder
 is `C:\Projects\TheKoiPond\bentotachi` (it was `C:\Projects\Cookbook`, then
 `...\TheKoiPond\bento`), next to The Koi Pond's other projects: see
 `C:\Projects\TheKoiPond\README.md`.
-Xel has minimal hands-on coding experience: write the code, explain choices
-plainly, and give copy-pasteable steps. Roadmap and status: `docs/PLAN.md`.
+Roadmap and status: `docs/PLAN.md`.
 What's already done or still open before offering Bentotachi to people
 outside the household (Google Play, phone-only mode, privacy, account
 deletion): `docs/REVIEW.md`, the 2026-10-31 check-up, ticked off as things
 get done. Check it before saying something for Play is missing.
 What Bentotachi is, its promises, voice (cheeky, but the joke never
 replaces the information) and look: `docs/VISION.md`. Check new screens,
-wording and features against it.
+wording and features against it. For app text, its voice wins over the
+global writing rules (`~/.claude/rules/writing.md`) where they differ.
+Shared helpers and components, riskiest first: `docs/shared-systems.md`.
 How to run: `README.md`.
 
 ## Layout
@@ -120,6 +121,12 @@ How to run: `README.md`.
   so `npm run release` first when there's something new. A test copy of the
   Play version: `VITE_BENTO_PLAY=1 npm run android`, then
   `gradlew assembleDebug -PbentoTest -PbentoPlay`.
+  For Xel to look around on a phone screen: `node scripts/emulator.mjs`
+  (desktop shortcuts "Bentotachi Emulator" and "Bentotachi phone size")
+  builds the newest commit's Play test copy in its own worktree
+  (`%LOCALAPPDATA%\Bentotachi emulator\copy`; don't work in it) and opens it
+  in the "Bentotachi" emulator (a virtual Pixel 7 Pro). `size big|small|tiny`
+  and `text big|normal` change its screen and text size while it runs.
   `npm run play -- upload internal,alpha "notes"` also uploads it to those
   testing tracks (alpha is closed testing) through Play's upload robot
   (web/scripts/playUpload.mjs; a Google Cloud service account invited in
@@ -192,7 +199,6 @@ How to run: `README.md`.
 - Pages that show shared lists use `useLiveRecords` (load + live updates +
   reload when the app returns to the front). The recipe list and categories
   don't yet: they load when opened (TODO.md has it).
-- User-facing error text should say what happened and what to do next.
 - The "(Xel, 2026-11-08)" credit style is for docs/PLAN.md only, never code
   comments: a comment says why, and web/test/noCommentCredits.test.ts fails
   on a who-asked-and-when credit.
@@ -202,5 +208,5 @@ How to run: `README.md`.
 - Claude can run the already-downloaded `server/pocketbase.exe` on a
   throwaway folder (see `test/` above); downloading a new PocketBase was
   blocked by auto mode once, so Xel does that.
-- Verify before claiming it works. The server side (migration, import route)
-  only gets truly checked by running PocketBase.
+- The server side (migration, import route) only gets truly checked by
+  running PocketBase.
