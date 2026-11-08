@@ -41,7 +41,7 @@ import QuickTags from "../QuickTags";
 import { DetailsEditor, EditButton, TextEditor } from "../RecipeInlineEdit";
 import SoftText from "../SoftText";
 import { withoutSoftMarks } from "../softMarks";
-import { listWording } from "../weekShopping";
+import { linesToBuy } from "../weekShopping";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
@@ -833,6 +833,9 @@ function IngredientsSection({
   // like): "Missing from pantry", and "Select what we need" when choosing
   // (which once left out lines not linked to the pantry; Xel, 2026-11-08).
   const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i])));
+  // "All": every line but those marked "not a pantry item" (water), as the
+  // plan's and the list's sheets leave them out too (review, 2026-11-08).
+  const buyable = pickable.filter((i) => linkOf(lines[i]).kind !== "notPantry");
   // "Add to shopping list" first offers All / Missing from pantry / Choose
   // (Lilly, 2026-11-08); Choose is the ticking below.
   const [choosing, setChoosing] = useState(false);
@@ -882,19 +885,14 @@ function IngredientsSection({
     setBusy(true);
     setStatus(null);
     try {
-      const things = [...indexes]
-        .sort((a, b) => a - b)
-        .map((index) => {
-          const { item } = linkOf(lines[index]);
-          // In the recipe's words at its size, without how to prepare it
-          // ("2 onions", listWording); still linked to its pantry item, so
-          // buying it marks that as Have again.
-          return {
-            text: listWording(scaleLine(lines[index], scale)),
-            pantryItem: item?.id ?? "",
-            recipe: recipe.id,
-          };
-        });
+      // In the recipe's words at its size, without how to prepare it
+      // ("2 onions"); lines sharing a pantry item as one, by its name
+      // (linesToBuy). Still linked, so buying marks the pantry item Have.
+      const things = linesToBuy(
+        [...indexes]
+          .sort((a, b) => a - b)
+          .map((index) => ({ text: scaleLine(lines[index], scale), pantryItem: linkOf(lines[index]).item }))
+      ).map(({ text, pantryItem }) => ({ text, pantryItem: pantryItem?.id ?? "", recipe: recipe.id }));
       setStatus({ text: addedMessage(await addToShoppingList(things)), isError: false });
       setPicking(false);
       setChoosing(false);
@@ -963,8 +961,8 @@ function IngredientsSection({
       )}
       {choosing && (
         <div className="add-choices" role="group" aria-label="Add to the shopping list">
-          <button className="button" disabled={busy} onClick={() => void addPicked(pickable)}>
-            All ({pickable.length})
+          <button className="button" disabled={busy || buyable.length === 0} onClick={() => void addPicked(buyable)}>
+            All ({buyable.length})
           </button>
           <button className="button" disabled={busy || missing.length === 0} onClick={() => void addPicked(missing)}>
             {missing.length ? `Missing from pantry (${missing.length})` : "Pantry has it all"}

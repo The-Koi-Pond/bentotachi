@@ -41,6 +41,11 @@ test("the plan summary counts the next 7 days, from today", () => {
   assert.equal(planSummary([entry("2026-11-04")], today, ["dinner"]), "1 of the next 7 dinners is planned.");
   // A dinner with its side is still one dinner.
   assert.equal(planSummary([entry("2026-11-04"), entry("2026-11-04")], today, ["dinner"]), "1 of the next 7 dinners is planned.");
+  // But a day's lunch and dinner are two meals.
+  assert.equal(
+    planSummary([entry("2026-11-04", "lunch"), entry("2026-11-04")], today, ["lunch", "dinner"]),
+    "2 of the next 14 meals are planned."
+  );
   assert.equal(planSummary([], today, ["dinner"]), "Nothing planned for the next 7 days yet.");
   const week = Array.from({ length: 7 }, (_, i) => entry(`2026-11-${String(4 + i).padStart(2, "0")}`));
   assert.equal(planSummary(week, today, ["dinner"]), "Every dinner for the next 7 days is planned.");

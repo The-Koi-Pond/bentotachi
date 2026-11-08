@@ -7,8 +7,8 @@ import { usePlanMeals } from "./household";
 import { MEAL_NAMES, type Meal } from "./meals";
 
 // "📅 Plan" on a recipe page: pick a day (and, when the plan has more than
-// dinner, which meal) and put this recipe on the plan. If that meal is
-// already planned, ask before replacing it.
+// dinner, which meal) and put this recipe on the plan, alongside anything
+// already planned for that meal.
 export default function PlanButton({ recipe }: { recipe: Recipe }) {
   const [meals] = usePlanMeals();
   const [open, setOpen] = useState(false);

@@ -31,14 +31,15 @@ test("slots as drag ids", () => {
 
 test("a meal's dishes, in the order they were added", () => {
   const at = (id: string, date: string, created: string, meal?: string) => ({ id, date: `${date} 00:00:00.000Z`, created, meal });
+  // Ids are random: the order is by when added, not by id ("zcurry" first).
   const slots = dishesBySlot([
-    at("rice", "2026-11-02", "2026-11-01 10:00:02"),
-    at("curry", "2026-11-02", "2026-11-01 10:00:01"),
+    at("arice", "2026-11-02", "2026-11-01 10:00:02"),
+    at("zcurry", "2026-11-02", "2026-11-01 10:00:01"),
     at("soup", "2026-11-02", "2026-11-01 09:00:00", "lunch"),
     // From before meals: a dinner.
     at("old", "2026-11-03", "2026-10-01 09:00:00"),
   ]);
-  assert.deepEqual(slots.get("2026-11-02|dinner")?.map((e) => e.id), ["curry", "rice"]);
+  assert.deepEqual(slots.get("2026-11-02|dinner")?.map((e) => e.id), ["zcurry", "arice"]);
   assert.deepEqual(slots.get("2026-11-02|lunch")?.map((e) => e.id), ["soup"]);
   assert.deepEqual(slots.get("2026-11-03|dinner")?.map((e) => e.id), ["old"]);
 });
