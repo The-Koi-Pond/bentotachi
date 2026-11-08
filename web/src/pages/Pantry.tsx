@@ -19,12 +19,15 @@ import { useUndo } from "../undo";
 import { UNDO_SECONDS } from "../pendingDelete";
 import {
   detailsFor,
+  itemAfterPacket,
   justBought,
   knowsBarcode,
+  lastPacketRunsOut,
+  learnsBarcode,
   packetLabel,
+  packetToSave,
   packetsOf,
   tidySize,
-  untickCanTakeBack,
   withDetails,
   type PacketDetails,
 } from "../pantryPackets";
@@ -45,7 +48,7 @@ import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
-import { sameThing } from "../shoppingMatch";
+import { onTheList } from "../shoppingMatch";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -151,7 +154,7 @@ export default function Pantry() {
     return () => window.clearTimeout(timer);
   }, [notice]);
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
-  const isOnList = (item: PantryItem) => waiting.some((w) => sameThing({ text: item.name, pantryItem: item.id }, w));
+  const isOnList = (item: PantryItem) => onTheList(item, waiting);
 
   // Run out with only Undo to offer (it's on the list already, or someone
   // has put it there since it asked): that goes by itself too, like other
@@ -232,7 +235,7 @@ export default function Pantry() {
           if (!(await outSaved)) return;
           if (!(await save(item, { status: to, opened: !!item.opened }, ""))) return;
           try {
-            for (const packet of cleared) packets.upsert(await pantryPackets().create(packetFields(packet)));
+            for (const packet of cleared) packets.upsert(await pantryPackets().create(packetToSave(packet)));
           } catch (err) {
             setError(errorMessage(err));
           }
@@ -251,28 +254,13 @@ export default function Pantry() {
     });
   }
 
-  // A packet as it's saved (for adding one, or putting one back).
-  // One put back (Out's Undo) keeps what's left of it, and the shopping row
-  // that bought it while unticking that row could still take it back.
-  const packetFields = (
-    packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left"> & Partial<Pick<PantryPacket, "bought_with" | "created">>
-  ) => ({
-    item: packet.item,
-    brand: packet.brand,
-    size: packet.size,
-    barcode: packet.barcode,
-    ...(packet.left && { left: packet.left }),
-    ...(packet.created && untickCanTakeBack({ bought_with: packet.bought_with, created: packet.created }) && { bought_with: packet.bought_with }),
-  });
-
-  // A packet bought or found: on the item, which is then in stock if it was
-  // out. Its barcode's brand and size are remembered for next time. Whether
-  // the packet was added. Within a few hours of the shopping list adding one
-  // to it (ticked bought), this is likely the same bag being put away, so
-  // it asks first.
+  // A packet bought or found: on the item (itemAfterPacket says what that
+  // changes on it). Whether the packet was added. Within a few hours of the
+  // shopping list adding one to it (ticked bought), this is likely the same
+  // bag being put away, so it asks first.
   async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<boolean> {
     setError("");
-    const remember = !!barcode && !knowsBarcode(item, barcode) && !!(details.brand.trim() || details.size.trim());
+    const remember = learnsBarcode(item, barcode, details);
     const bought = justBought(packetsOf(packets.items ?? [], item.id, undo.hidden));
     if (
       bought &&
@@ -286,18 +274,14 @@ export default function Pantry() {
     }
     try {
       packets.upsert(
-        await pantryPackets().create(packetFields({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
+        await pantryPackets().create(packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
       );
     } catch (err) {
       setError(errorMessage(err));
       return false;
     }
-    if (item.status === "out" || remember) {
-      await save(item, {
-        ...(item.status === "out" && { status: "have" as const }),
-        ...(remember && { barcode_details: withDetails(item, barcode, details) }),
-      }, "");
-    }
+    const changes = itemAfterPacket(item, barcode, details);
+    if (changes) await save(item, changes, "");
     return true;
   }
 
@@ -320,8 +304,7 @@ export default function Pantry() {
   // about the shopping list); others, and one on an item already Out (a
   // dropped connection can leave one), wait a few seconds for Undo.
   function finishPacket(item: PantryItem, packet: PantryPacket) {
-    const left = packetsOf(packets.items ?? [], item.id, undo.hidden);
-    if (left.length <= 1 && item.status !== "out") {
+    if (lastPacketRunsOut(item, packetsOf(packets.items ?? [], item.id, undo.hidden))) {
       setStatus(item, "out", true);
       return;
     }

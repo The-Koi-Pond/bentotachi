@@ -3,23 +3,31 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createPendingDelete } from "../src/pendingDelete.ts";
 
-// A clock the test moves by hand.
+// A clock the test moves by hand: advance runs only the timers that are due
+// by then, in order, so a timer that should have been cleared shows up.
 function fakeTimer() {
   let next = 1;
-  const waiting = new Map<number, () => void>();
+  let now = 0;
+  const waiting = new Map<number, { run: () => void; at: number }>();
+  const advance = (ms: number) => {
+    now += ms;
+    const due = [...waiting].filter(([, timer]) => timer.at <= now).sort(([, a], [, b]) => a.at - b.at);
+    for (const [id, timer] of due) {
+      if (!waiting.delete(id)) continue;
+      timer.run();
+    }
+  };
   return {
-    set: (run: () => void) => {
-      waiting.set(next, run);
+    set: (run: () => void, ms: number) => {
+      waiting.set(next, { run, at: now + ms });
       return next++;
     },
     clear: (id: number | undefined) => {
       if (id !== undefined) waiting.delete(id);
     },
-    fire: () => {
-      const runs = [...waiting.values()];
-      waiting.clear();
-      runs.forEach((run) => run());
-    },
+    advance,
+    // Every timer, however far off.
+    fire: () => advance(Infinity),
   };
 }
 
@@ -58,6 +66,22 @@ test("another removal carries out the one waiting", async () => {
   await Promise.resolve();
   assert.deepEqual(done, ["milk"]);
   assert.deepEqual(undo.current()?.ids, ["eggs"]);
+});
+
+test("a second removal gets its own full time for Undo", async () => {
+  const { timer, done, undo, remove } = setup();
+  remove("milk");
+  timer.advance(4000);
+  remove("eggs");
+  await Promise.resolve();
+  // When milk's time would have been up, eggs still waits.
+  timer.advance(3000);
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk"]);
+  assert.deepEqual(undo.current()?.ids, ["eggs"]);
+  timer.advance(3000);
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk", "eggs"]);
 });
 
 test("leaving the page carries it out", async () => {

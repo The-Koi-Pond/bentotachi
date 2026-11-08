@@ -61,6 +61,7 @@ import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
 import { shrinkPhoto } from "../pantryPhoto";
+import { inTurn } from "../inTurn";
 import {
   MAX_PHOTOS,
   PHOTO_SIDE,
@@ -83,6 +84,12 @@ import { stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
 import RecipeJumpBar from "../RecipeJumpBar";
 import { startTimer, useStepTimers } from "../StepTimerTray";
+
+// This page's saves that read the recipe as saved, change it and save it
+// back (pantry links, step photos, photos, ingredients, method, re-import),
+// one at a time: two quick choices would otherwise both read the old copy,
+// and the second would undo the first.
+const recipeSaves = inTurn();
 
 // An ingredient or method line with soft hints for the household: weights,
 // temperatures, lengths and liquids in its units ("1½ lbs (680 g)", "350°F
@@ -220,11 +227,14 @@ export default function RecipeView() {
       !window.confirm(`The website's recipe is now called “${fresh.title}”. Replace “${recipe.title}” with it anyway?`)
     )
       return "";
-    const now = await recipes().getOne(recipe.id, { fields: "id,ingredients,steps,ingredient_links,photo_steps,photos,tags" });
-    const saved = await recipes().update(recipe.id, reimportChanges(now, fresh), { expand: "added_by" });
-    setRecipe(saved);
-    saveRecipe(saved);
-    return `Re-imported from ${site}.`;
+    const siteVersion = fresh;
+    return recipeSaves(async () => {
+      const now = await recipes().getOne(current.id, { fields: "id,ingredients,steps,ingredient_links,photo_steps,photos,tags" });
+      const saved = await recipes().update(current.id, reimportChanges(now, siteVersion), { expand: "added_by" });
+      setRecipe(saved);
+      saveRecipe(saved);
+      return `Re-imported from ${site}.`;
+    });
   }
 
   // ⋯ → Duplicate: a copy to make a variation ("Lasagne (copy)"), with the
@@ -310,20 +320,24 @@ export default function RecipeView() {
   // keeps its link and lines that are gone lose theirs (carriedLinks, as in
   // the full editor), worked out from the links as saved now so one someone
   // else picked meanwhile isn't undone.
-  async function saveIngredients(text: string) {
-    const ingredients = textToLines(text);
-    const { ingredient_links: links } = await recipes().getOne(current.id, { fields: "id,ingredient_links" });
-    const carried = carriedLinks(current.ingredients ?? [], ingredients, links);
-    await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried });
+  function saveIngredients(text: string) {
+    return recipeSaves(async () => {
+      const ingredients = textToLines(text);
+      const { ingredient_links: links } = await recipes().getOne(current.id, { fields: "id,ingredient_links" });
+      const carried = carriedLinks(current.ingredients ?? [], ingredients, links);
+      await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried });
+    });
   }
 
   // The method, with step photos kept on their steps (carriedStepPhotos),
   // worked out from them as saved now, like the pantry links.
-  async function saveSteps(text: string) {
-    const steps = textToLines(text);
-    const { photo_steps, photos } = await recipes().getOne(current.id, { fields: "id,photo_steps,photos" });
-    const carried = carriedStepPhotos(current.steps, steps, photo_steps, photos);
-    await save(samePhotoSteps(carried, photo_steps) ? { steps } : { steps, photo_steps: carried });
+  function saveSteps(text: string) {
+    return recipeSaves(async () => {
+      const steps = textToLines(text);
+      const { photo_steps, photos } = await recipes().getOne(current.id, { fields: "id,photo_steps,photos" });
+      const carried = carriedStepPhotos(current.steps, steps, photo_steps, photos);
+      await save(samePhotoSteps(carried, photo_steps) ? { steps } : { steps, photo_steps: carried });
+    });
   }
 
   // The photos besides the cover (recipePhotos.ts). Each change saves
@@ -351,34 +365,43 @@ export default function RecipeView() {
     const blob = await answer.blob();
     return new File([blob], uploadName(), { type: blob.type });
   }
-  async function setPhotoStep(name: string, key: string | null) {
-    const photo_steps = await photoStepsNow((steps) => {
-      if (key) steps[name] = key;
-      else delete steps[name];
+  function setPhotoStep(name: string, key: string | null) {
+    return recipeSaves(async () => {
+      const photo_steps = await photoStepsNow((steps) => {
+        if (key) steps[name] = key;
+        else delete steps[name];
+      });
+      await savePhotos({ photo_steps });
     });
-    await savePhotos({ photo_steps });
   }
-  async function removePhoto(name: string) {
-    const photo_steps = await photoStepsNow((steps) => delete steps[name]);
-    await savePhotos({ "photos-": [name], photo_steps });
+  function removePhoto(name: string) {
+    return recipeSaves(async () => {
+      const photo_steps = await photoStepsNow((steps) => delete steps[name]);
+      await savePhotos({ "photos-": [name], photo_steps });
+    });
   }
   // The photo becomes the cover (framed from the middle), and the cover
   // joins the other photos.
-  async function makeCover(name: string) {
-    const now = await photosNow();
-    const data: Record<string, unknown> = {
-      image: await loadPhoto(recipePhotoUrl(current, name)),
-      image_framing: null,
-      "photos-": [name],
-      photo_steps: await photoStepsNow((steps) => delete steps[name]),
-    };
-    if (now.image) data["photos+"] = [await loadPhoto(recipeImageUrl({ ...current, image: now.image }))];
-    await savePhotos(data);
-    setViewing(null);
+  function makeCover(name: string) {
+    return recipeSaves(async () => {
+      const now = await photosNow();
+      const data: Record<string, unknown> = {
+        image: await loadPhoto(recipePhotoUrl(current, name)),
+        image_framing: null,
+        "photos-": [name],
+        photo_steps: await photoStepsNow((steps) => delete steps[name]),
+      };
+      if (now.image) data["photos+"] = [await loadPhoto(recipeImageUrl({ ...current, image: now.image }))];
+      await savePhotos(data);
+      setViewing(null);
+    });
   }
   // ⋯ → Add photos: shrunk, then added; the first becomes the cover if
   // there isn't one. Says what happened.
-  async function addPhotos(files: File[]): Promise<string> {
+  function addPhotos(files: File[]): Promise<string> {
+    return recipeSaves(() => addPhotosNow(files));
+  }
+  async function addPhotosNow(files: File[]): Promise<string> {
     const now = await photosNow();
     const hasCover = !!now.image;
     const room = MAX_PHOTOS - (now.photos?.length ?? 0) + (hasCover ? 0 : 1);
@@ -984,10 +1007,13 @@ function IngredientsSection({
     onRecipeChange({ ...recipe, ingredient_links: { ...(recipe.ingredient_links ?? {}), [key]: pantryItemId } });
     try {
       // Added to the links as saved now, not this page's copy, so a link
-      // someone else chose meanwhile isn't undone.
-      const { ingredient_links: current } = await recipes().getOne(recipe.id, { fields: "id,ingredient_links" });
-      const links = { ...(current ?? {}), [key]: pantryItemId };
-      const saved = await recipes().update(recipe.id, { ingredient_links: links }, { expand: "added_by" });
+      // someone else chose meanwhile isn't undone, nor one chosen here a
+      // moment ago (in turn).
+      const saved = await recipeSaves(async () => {
+        const { ingredient_links: current } = await recipes().getOne(recipe.id, { fields: "id,ingredient_links" });
+        const links = { ...(current ?? {}), [key]: pantryItemId };
+        return recipes().update(recipe.id, { ingredient_links: links }, { expand: "added_by" });
+      });
       onRecipeChange(saved);
     } catch (err) {
       onRecipeChange(before);

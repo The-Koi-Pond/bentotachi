@@ -1,5 +1,5 @@
 import { pb, shoppingItems } from "./pb";
-import { sameThing } from "./shoppingMatch";
+import { newToTheList } from "./shoppingMatch";
 
 export interface ToBuy {
   text: string;
@@ -10,16 +10,15 @@ export interface ToBuy {
 }
 
 // Adds things to the shopping list in order, skipping anything already
-// waiting on it (sameThing), so nothing gets doubled up and trying again
+// waiting on it (newToTheList), so nothing gets doubled up and trying again
 // after an error is safe.
 export async function addToShoppingList(things: ToBuy[]): Promise<{ added: number; skipped: number }> {
   const waiting: { text: string; pantry_item: string }[] = await shoppingItems().getFullList({
     filter: "checked = false",
     fields: "text,pantry_item",
   });
-  let added = 0;
-  for (const thing of things) {
-    if (waiting.some((item) => sameThing(thing, item))) continue;
+  const fresh = newToTheList(things, waiting);
+  for (const thing of fresh) {
     // One at a time, so the list keeps this order.
     await shoppingItems().create({
       text: thing.text.trim(),
@@ -28,10 +27,8 @@ export async function addToShoppingList(things: ToBuy[]): Promise<{ added: numbe
       pantry_item: thing.pantryItem,
       added_by: pb.authStore.record?.id,
     });
-    waiting.push({ text: thing.text, pantry_item: thing.pantryItem });
-    added += 1;
   }
-  return { added, skipped: things.length - added };
+  return { added: fresh.length, skipped: things.length - fresh.length };
 }
 
 // "Added 3 items to the shopping list. 1 was already on it."

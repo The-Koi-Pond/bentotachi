@@ -46,14 +46,18 @@ they say otherwise.
 - Saving an edit: send only the changed fields, `changedFields`
   (`changedFields.ts`), so a housemate's change meanwhile isn't put back.
   Pantry items: `editChanges` (`pantryFields.ts`).
+- Read-what's-saved-then-save on one page (a link, a step photo): one at a
+  time through `inTurn` (`inTurn.ts`; the recipe page's `recipeSaves`), so
+  a second quick choice doesn't undo the first.
 - Remembering something on this device (a setting, a view): `remembered` /
   `rememberedJson` / `remember` (`phoneStorage.ts`), never raw
   `localStorage`. Offline copies of lists: `read` / `write` and the `*_KEY`
   names (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
   `useShoppingQueue` (`shoppingQueue.ts`).
 - Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
-  what's already waiting). "Is it already on the list?": `sameThing`
-  (`shoppingMatch.ts`; `server/pb_hooks/pantry.pb.js` follows the same rule).
+  what's already waiting, `newToTheList`). "Is it already on the list?":
+  `sameThing`, for a pantry item `onTheList` (`shoppingMatch.ts`;
+  `server/pb_hooks/pantry.pb.js` follows the same rule).
   How much the pantry's packets cover of what a recipe needs, and whether
   it's worth buying: `coversFor` / `coverOf`, `worthBuying`, `stillToBuy`,
   `coverNote` (`pantryStock.ts`); an amount in grams or millilitres:
@@ -136,7 +140,9 @@ they say otherwise.
 - A pantry item's packets as "− 3 × 400 g +": `<PacketCounters>`
   (`PacketCounters.tsx`, grouping by `packetGroups`); what "+ 1 packet"
   adds: `nextPacket` (`pantryPackets.ts`). An item's quick card:
-  `<PantryCard>`.
+  `<PantryCard>`. Packet rules (`pantryPackets.ts`): a packet as saved or
+  put back `packetToSave`, the last one making it Out `lastPacketRunsOut`,
+  what adding one changes on the item `itemAfterPacket` / `learnsBarcode`.
 
 ## Scripts (`web/scripts/`)
 

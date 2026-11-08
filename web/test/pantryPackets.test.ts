@@ -4,11 +4,15 @@ import assert from "node:assert/strict";
 import {
   brandsToPickFrom,
   detailsFor,
+  itemAfterPacket,
   justBought,
   knowsBarcode,
+  lastPacketRunsOut,
+  learnsBarcode,
   nextPacket,
   packetGroups,
   packetLabel,
+  packetToSave,
   packetsOf,
   tidySize,
   untickCanTakeBack,
@@ -55,6 +59,38 @@ test("Out's Undo keeps a packet's shopping row only while unticking could still 
   assert.equal(untickCanTakeBack({ bought_with: "s1", created: "2026-11-08 11:30:00.000Z" }, now), true);
   assert.equal(untickCanTakeBack({ bought_with: "s1", created: "2026-11-05 11:30:00.000Z" }, now), false);
   assert.equal(untickCanTakeBack({ bought_with: "", created: "2026-11-08 11:30:00.000Z" }, now), false);
+});
+
+test("a packet put back keeps what's left, and its shopping row only within the hour", () => {
+  const now = new Date("2026-11-08T12:00:00Z");
+  const base = { item: "rice", brand: "Sunrice", size: "1 kg", barcode: "123" };
+  assert.deepEqual(packetToSave({ ...base, left: "300 g", bought_with: "s1", created: "2026-11-08 11:30:00.000Z" }, now), {
+    ...base,
+    left: "300 g",
+    bought_with: "s1",
+  });
+  assert.deepEqual(packetToSave({ ...base, left: "", bought_with: "s1", created: "2026-11-05 11:30:00.000Z" }, now), base);
+  // A new one has neither.
+  assert.deepEqual(packetToSave(base, now), base);
+});
+
+test("finishing the last packet on screen makes the item Out, unless it's Out already", () => {
+  assert.equal(lastPacketRunsOut({ status: "have" }, ["p1"]), true);
+  assert.equal(lastPacketRunsOut({ status: "low" }, ["p1"]), true);
+  assert.equal(lastPacketRunsOut({ status: "have" }, ["p1", "p2"]), false);
+  assert.equal(lastPacketRunsOut({ status: "out" }, ["p1"]), false);
+});
+
+test("adding a packet: an Out item is in stock again, and a new barcode with details is learned", () => {
+  const details = { brand: "White Mill", size: "1 kg" };
+  const fresh = { status: "have" as const, barcode_details: null };
+  assert.equal(itemAfterPacket(fresh, "", details), null);
+  assert.deepEqual(itemAfterPacket({ ...fresh, status: "out" }, "", details), { status: "have" });
+  assert.deepEqual(itemAfterPacket(fresh, CODE, details), { barcode_details: { [CODE]: details } });
+  // Known already, or nothing to remember: not learned.
+  assert.equal(learnsBarcode({ barcode_details: { [CODE]: { brand: "Coles" } } }, CODE, details), false);
+  assert.equal(learnsBarcode(fresh, CODE, { brand: " ", size: "" }), false);
+  assert.equal(itemAfterPacket(fresh, CODE, { brand: "", size: "" }), null);
 });
 
 test("a packet the shopping list added in the last few hours is found, so adding one by hand asks first", () => {

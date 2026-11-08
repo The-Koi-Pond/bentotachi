@@ -51,6 +51,52 @@ export function untickCanTakeBack(packet: Pick<PantryPacket, "bought_with" | "cr
   return !!packet.bought_with && now.getTime() - storedTime(packet.created).getTime() < 60 * 60 * 1000;
 }
 
+// A packet as it's saved, for adding one or putting one back (Out's Undo).
+// One put back keeps what's left of it, and the shopping row that bought it
+// only while unticking that row could still take it back.
+export function packetToSave(
+  packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left"> & Partial<Pick<PantryPacket, "bought_with" | "created">>,
+  now = new Date()
+) {
+  return {
+    item: packet.item,
+    brand: packet.brand,
+    size: packet.size,
+    barcode: packet.barcode,
+    ...(packet.left && { left: packet.left }),
+    ...(packet.created && untickCanTakeBack({ bought_with: packet.bought_with, created: packet.created }, now) && { bought_with: packet.bought_with }),
+  };
+}
+
+// Whether finishing a packet, with these left on screen (it among them),
+// makes its item Out: the last one does, unless the item is Out already (a
+// dropped connection can leave one behind), when it just goes.
+export function lastPacketRunsOut(item: Pick<PantryItem, "status">, onScreen: unknown[]): boolean {
+  return onScreen.length <= 1 && item.status !== "out";
+}
+
+// Whether adding a packet with this barcode teaches the item its brand and
+// size: only a barcode it doesn't know yet, and only with something to
+// remember.
+export function learnsBarcode(item: Pick<PantryItem, "barcode_details">, barcode: string, details: PacketDetails): boolean {
+  return !!barcode && !knowsBarcode(item, barcode) && !!(details.brand.trim() || details.size.trim());
+}
+
+// What adding a packet changes on its item, or null for nothing: an Out item
+// is in stock again, and a barcode it learns is remembered.
+export function itemAfterPacket(
+  item: Pick<PantryItem, "status" | "barcode_details">,
+  barcode: string,
+  details: PacketDetails
+): Partial<Pick<PantryItem, "status" | "barcode_details">> | null {
+  const learns = learnsBarcode(item, barcode, details);
+  if (item.status !== "out" && !learns) return null;
+  return {
+    ...(item.status === "out" && { status: "have" as const }),
+    ...(learns && { barcode_details: withDetails(item, barcode, details) }),
+  };
+}
+
 // A packet the shopping list added (ticking it bought) in the last few
 // hours, newest first, or null: adding one by hand now is likely the same
 // bag, so the page asks first.

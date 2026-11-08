@@ -208,6 +208,25 @@ check("a set-up server doesn't offer setup again", (await api("GET", "/cookbook/
 const superusersNow = (await (await fetch(B + "/collections/_superusers/records", { headers: { authorization: superToken } })).json()).items.map((s) => s.email);
 check("servers that already have an admin get no placeholder admin", !superusersNow.includes("admin@bento.local"), superusersNow.join(", "));
 
+// Running out again, editing an Out item, and a tick sent twice.
+token = memberToken;
+const rerun = await api("POST", "/collections/pantry_items/records", { name: "Rerun lentils", status: "have" });
+const rowsFor = async (id) => (await waiting()).filter((i) => i.pantry_item === id);
+await api("PATCH", `/collections/pantry_items/records/${rerun.id}`, { status: "out" });
+const [firstRow] = await rowsFor(rerun.id);
+await api("PATCH", `/collections/shopping_items/records/${firstRow.id}`, { checked: true });
+await api("PATCH", `/collections/pantry_items/records/${rerun.id}`, { status: "out" });
+check("running out again adds it again: the old ticked row doesn't count as on the list", (await rowsFor(rerun.id)).length === 1);
+const [againRow] = await rowsFor(rerun.id);
+await api("DELETE", `/collections/shopping_items/records/${againRow.id}`);
+await api("PATCH", `/collections/pantry_items/records/${rerun.id}`, { note: "the red ones" });
+check("editing an item that's already Out doesn't put it back on the list", (await rowsFor(rerun.id)).length === 0);
+await api("PATCH", `/collections/shopping_items/records/${firstRow.id}`, { checked: true });
+await api("PATCH", `/collections/pantry_items/records/${rerun.id}`, { status: "low" });
+await api("PATCH", `/collections/shopping_items/records/${firstRow.id}`, { checked: true });
+const afterResend = await api("GET", `/collections/pantry_items/records/${rerun.id}`);
+check("a tick sent again doesn't reset the item to Have", afterResend.status === "low", `(${afterResend.status})`);
+
 // Profiles: you can change your own name and password, and nobody else's.
 token = memberToken;
 const me = (await api("POST", "/collections/users/auth-refresh")).record;
