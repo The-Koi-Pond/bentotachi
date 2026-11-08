@@ -10,7 +10,7 @@ import { lineMeasure, scaleLine } from "./scaling.ts";
 import { packetsOf } from "./pantryPackets.ts";
 
 type Kind = "mass" | "volume";
-interface Quantity {
+export interface Quantity {
   kind: Kind;
   // In grams or millilitres.
   amount: number;
@@ -47,18 +47,28 @@ function perUnit(unit: string, measures: RecipeMeasures): { kind: Kind; size: nu
   return null;
 }
 
-function quantityOf(text: string, measures: RecipeMeasures): Quantity | null {
+// How much a line or a packet size says, in grams or millilitres, or null
+// when it isn't a measure ("2 onions").
+export function quantityOf(text: string, measures: RecipeMeasures = US_MEASURES): Quantity | null {
   const measure = lineMeasure(text);
   const unit = measure && perUnit(measure.unit, measures);
   if (!measure || !unit || !(measure.amount > 0)) return null;
   return { kind: unit.kind, amount: measure.amount * unit.size };
 }
 
+// How much is in a packet: what's left of it once cooking used some, else
+// its size.
+export function packetAmount(packet: Pick<PantryPacket, "size" | "left">): Quantity | null {
+  return quantityOf((packet.left || packet.size) ?? "");
+}
+
+type Sized = Pick<PantryPacket, "size" | "left">;
+
 // All of a pantry item's packets together, or null if any of them has no
 // size Bentotachi can read, or they mix grams and millilitres.
-function stockOf(packets: Pick<PantryPacket, "size">[]): Quantity | null {
+function stockOf(packets: Sized[]): Quantity | null {
   if (!packets.length) return null;
-  const sizes = packets.map((packet) => quantityOf(packet.size ?? "", US_MEASURES));
+  const sizes = packets.map(packetAmount);
   const first = sizes[0];
   if (!first || sizes.some((size) => !size || size.kind !== first.kind)) return null;
   return { kind: first.kind, amount: sizes.reduce((sum, size) => sum + (size?.amount ?? 0), 0) };
@@ -67,14 +77,15 @@ function stockOf(packets: Pick<PantryPacket, "size">[]): Quantity | null {
 const twoDecimals = (n: number) => String(Math.round(n * 100) / 100);
 
 // An amount as people would say it: "750 ml", "1.25 kg".
-function amountLabel({ kind, amount }: Quantity): string {
+export function amountLabel({ kind, amount }: Quantity): string {
   const [small, big] = kind === "mass" ? ["g", "kg"] : ["ml", "L"];
   return amount >= 1000 ? `${twoDecimals(amount / 1000)} ${big}` : `${Math.round(amount)} ${small}`;
 }
 
 // What's in stock, as people would say it: "500 g", "2 × 500 g", or the
-// total when the packets differ ("1.25 kg", "750 ml").
-function stockLabel(packets: Pick<PantryPacket, "size">[], stock: Quantity): string {
+// total when the packets differ or some are partly used ("1.25 kg").
+function stockLabel(packets: Sized[], stock: Quantity): string {
+  if (packets.some((packet) => packet.left)) return amountLabel(stock);
   const sizes = packets.map((packet) => (packet.size ?? "").trim());
   if (sizes.every((size) => size === sizes[0])) return sizes.length > 1 ? `${sizes.length} × ${sizes[0]}` : sizes[0];
   return amountLabel(stock);
@@ -99,7 +110,7 @@ function totalOf(needs: Need[], kind: Kind): number | null {
 // can be read in the same kind of measure. `setAside`: what other lines use
 // of these packets first (a recipe asking for linguine, before one where
 // any pasta will do); then only what's left counts ("300 g spare").
-export function coverOf(needs: Need[], packets: Pick<PantryPacket, "size">[], { setAside = [] as Quantity[] } = {}): Cover {
+export function coverOf(needs: Need[], packets: Sized[], { setAside = [] as Quantity[] } = {}): Cover {
   const stock = stockOf(packets);
   if (!stock || !needs.length) return UNKNOWN;
   const needed = totalOf(needs, stock.kind);

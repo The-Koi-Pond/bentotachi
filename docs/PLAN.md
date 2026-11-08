@@ -1613,7 +1613,17 @@ sheet's list. A line names "any" only when nothing but an amount or a
 describing word ("dried", "short") comes before the group's name, so
 "bucatini pasta" isn't taken as any pasta. Not built: splitting an old
 umbrella item ("Pasta") into kinds; renaming it to one kind and setting
-"A kind of" does it by hand. Next: 5.
+"A kind of" does it by hand. Then 5 (2026-11-08): "✓ Finished" at the end
+of the method marks it cooked and opens "Nice. Used anything up?"
+(UsedUpSheet.tsx; "We cooked this" and the timer's finish open it too). It
+works out (cookedUses.ts, at the size it was cooked): whole packets used
+up, a partly used one first, then oldest; the last one used in part keeps
+"about 100 g left" (pantry_packets.left, shown on its counter as "500 g,
+about 100 g left", and counted as what's left); "1 tin chickpeas" uses one
+packet; using the last packet marks the item Out (not put on the list).
+An item with no packets is offered as "mark it Low?", unticked. Left out:
+"any pasta" lines (which kind is unknown) and anything it can't measure.
+The sheet only opens when there's something to offer.
 
 **Ticking bought things adds a packet** (agreed and built 2026-11-08):
 only for items that already use packets, in the size and brand of the

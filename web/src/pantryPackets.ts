@@ -24,15 +24,17 @@ export function packetLabel(packet: Pick<PantryPacket, "brand" | "size">): strin
 // the label leaves out the item's favourite brand (it's under the name
 // already), and `packets` are oldest first, so the first is the one to use
 // up. In the order each kind was first added.
-export function packetGroups<T extends Pick<PantryPacket, "brand" | "size">>(
+export function packetGroups<T extends Pick<PantryPacket, "brand" | "size" | "left">>(
   packets: T[],
   favouriteBrand = ""
 ): { label: string; count: number; packets: T[] }[] {
   const groups = new Map<string, { label: string; count: number; packets: T[] }>();
   for (const packet of packets) {
     const brand = norm(packet.brand ?? "") === norm(favouriteBrand) ? "" : packet.brand ?? "";
-    const label = packetLabel({ brand, size: packet.size });
-    const key = `${norm(brand)}|${norm(packet.size ?? "")}`;
+    // A partly used one (cooking left "100 g") is its own counter.
+    const left = (packet.left ?? "").trim();
+    const label = `${packetLabel({ brand, size: packet.size })}${left ? `, about ${left} left` : ""}`;
+    const key = `${norm(brand)}|${norm(packet.size ?? "")}|${norm(left)}`;
     const group = groups.get(key) ?? { label, count: 0, packets: [] };
     group.count += 1;
     group.packets.push(packet);

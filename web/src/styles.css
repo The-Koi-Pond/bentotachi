@@ -3938,6 +3938,17 @@ legend {
   color: var(--out);
 }
 
+/* "✓ Finished" at the end of a recipe's method. */
+.finished-cooking {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
 /* "Enough: 2 × 500 g" under a recipe line while choosing what to buy. */
 .pick-note {
   font-size: 0.8rem;

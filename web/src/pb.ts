@@ -165,6 +165,9 @@ export interface PantryPacket extends RecordModel {
   // The shopping item whose tick added it, or "" (pantry_usual_packet
   // migration).
   bought_with?: string;
+  // What's left once cooking used part of it ("100 g"), or "" when it's full
+  // (pantry_packets_left migration).
+  left?: string;
   created: string;
 }
 

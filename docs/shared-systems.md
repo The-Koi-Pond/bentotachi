@@ -55,8 +55,12 @@ they say otherwise.
   what's already waiting). "Is it already on the list?": `sameThing`
   (`shoppingMatch.ts`; `server/pb_hooks/pantry.pb.js` follows the same rule).
   How much the pantry's packets cover of what a recipe needs, and whether
-  it's worth buying: `coverOf`, `worthBuying`, `stillToBuy`, `coverNote`
-  (`pantryStock.ts`); a line's measured amount: `lineMeasure` (`scaling.ts`).
+  it's worth buying: `coversFor` / `coverOf`, `worthBuying`, `stillToBuy`,
+  `coverNote` (`pantryStock.ts`); an amount in grams or millilitres:
+  `quantityOf`, a packet's (what's left, else its size): `packetAmount`,
+  saying one: `amountLabel`; a line's measured amount: `lineMeasure`
+  (`scaling.ts`). What a cooked recipe used up: `cookedUses`
+  (`cookedUses.ts`), offered by `<UsedUpSheet>`.
 - Delete with Undo: `useUndo` (`undo.tsx`, rules in `pendingDelete.ts`).
   Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
   the question from `deleteQuestion`, `deleteWarning.ts`).

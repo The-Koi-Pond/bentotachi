@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import {
@@ -74,6 +74,7 @@ import {
   uploadName,
 } from "../recipePhotos";
 import RecipeTimer from "../RecipeTimer";
+import UsedUpSheet from "../UsedUpSheet";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
 import { scaleLine } from "../scaling";
@@ -132,6 +133,9 @@ export default function RecipeView() {
   // "We cooked this" days, shared by the history line and the timer.
   const cooked = useLiveRecords<CookedEntry>("cooked");
   const [cookError, setCookError] = useState("");
+  // "Used anything up?" open after cooking (UsedUpSheet).
+  const [usedUp, setUsedUp] = useState(false);
+  const closeUsedUp = useCallback(() => setUsedUp(false), []);
   const quickMinutes = useQuickMinutes();
   // Showing the phone's saved copy because the server can't be reached.
   const [offline, setOffline] = useState(false);
@@ -410,14 +414,22 @@ export default function RecipeView() {
   // "We cooked this" (or finishing the timer): today, by whoever's logged
   // in. Once a day is enough.
   const cookedToday = (cooked.items ?? []).some((entry) => entry.recipe === current.id && datePart(entry.date) === localToday());
-  async function markCooked() {
-    if (cookedToday) return;
+  async function markCooked(): Promise<boolean> {
+    if (cookedToday) return true;
     setCookError("");
     try {
       cooked.upsert(await cookedLog().create({ date: toStoredDate(localToday()), recipe: current.id, cooked_by: pb.authStore.record?.id }));
+      return true;
     } catch (err) {
       setCookError(`Couldn't mark it as cooked: ${errorMessage(err)}`);
+      return false;
     }
+  }
+  // Finished, "We cooked this" or the timer: marked cooked, then "Used
+  // anything up?" (UsedUpSheet, which only opens when there's something to
+  // offer).
+  async function finishCooking() {
+    if (await markCooked()) setUsedUp(true);
   }
   async function undoCooked(entries: CookedEntry[]) {
     setCookError("");
@@ -543,7 +555,7 @@ export default function RecipeView() {
               </dl>
             )}
             {/* Timing it while cooking, to save how long it really takes. */}
-            {!offline && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void markCooked()} />}
+            {!offline && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} />}
           </section>
         </>
       )}
@@ -574,7 +586,7 @@ export default function RecipeView() {
             <CookHistory
               recipeId={recipe.id}
               cooked={cooked.items ?? []}
-              onCooked={() => void markCooked()}
+              onCooked={() => void finishCooking()}
               onUndo={(entries) => void undoCooked(entries)}
             />
             {cookError && <p className="error">{cookError}</p>}
@@ -699,7 +711,18 @@ export default function RecipeView() {
             })}
           </ol>
         )}
+        {/* At the end of the method, where cooking ends: marks it cooked,
+            then asks what it used up (UsedUpSheet). */}
+        {!offline && editing !== "steps" && (recipe.steps ?? []).length > 0 && (
+          <div className="finished-cooking">
+            <button className="button primary" onClick={() => void finishCooking()}>
+              ✓ Finished
+            </button>
+            <span className="muted">Marks it cooked today, then asks what it used up</span>
+          </div>
+        )}
       </section>
+      {usedUp && <UsedUpSheet recipe={recipe} scale={scale} measures={hints.measures} onClose={closeUsedUp} />}
 
       {(recipe.author_notes || recipe.notes || editing === "author_notes" || editing === "notes") && (
       <div id="jump-notes" className="stack">
