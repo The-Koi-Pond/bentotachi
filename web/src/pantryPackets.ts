@@ -19,6 +19,41 @@ export function packetLabel(packet: Pick<PantryPacket, "brand" | "size">): strin
   return [packet.brand, packet.size].map((part) => (part ?? "").trim()).filter(Boolean).join(" ") || "Packet";
 }
 
+// An item's packets as counters, one per brand and size ("− 3 × 400 g +"):
+// the label leaves out the item's favourite brand (it's under the name
+// already), and `packets` are oldest first, so the first is the one to use
+// up. In the order each kind was first added.
+export function packetGroups<T extends Pick<PantryPacket, "brand" | "size">>(
+  packets: T[],
+  favouriteBrand = ""
+): { label: string; count: number; packets: T[] }[] {
+  const groups = new Map<string, { label: string; count: number; packets: T[] }>();
+  for (const packet of packets) {
+    const brand = norm(packet.brand ?? "") === norm(favouriteBrand) ? "" : packet.brand ?? "";
+    const label = packetLabel({ brand, size: packet.size });
+    const key = `${norm(brand)}|${norm(packet.size ?? "")}`;
+    const group = groups.get(key) ?? { label, count: 0, packets: [] };
+    group.count += 1;
+    group.packets.push(packet);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+// What "+ 1 packet" adds: one like the item's usual packet (the last one
+// added, remembered after they're gone), else like its newest packet, else
+// one with its favourite brand and no size.
+export function nextPacket(
+  item: Pick<PantryItem, "brand" | "usual_packet">,
+  packets: Pick<PantryPacket, "brand" | "size">[]
+): PacketDetails {
+  const usual = item.usual_packet;
+  if (usual && (usual.brand || usual.size)) return { brand: usual.brand ?? "", size: usual.size ?? "" };
+  const newest = packets[packets.length - 1];
+  if (newest) return { brand: newest.brand ?? "", size: newest.size ?? "" };
+  return { brand: brandsOf(item.brand ?? "").length === 1 ? item.brand.trim() : "", size: "" };
+}
+
 // An item's packets, oldest first (the one to use up first), leaving out
 // `hidden` ones (finished, waiting for Undo).
 export function packetsOf<T extends Packet>(all: T[], itemId: string, hidden: Set<string> = new Set()): T[] {

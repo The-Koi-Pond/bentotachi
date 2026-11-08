@@ -3,13 +3,13 @@
 //   and how much we have.
 // - Detailed: the photo (or a tile with its first letter), the name, its
 //   brand and note on one muted line, then Opened and the store links.
-//   With packets in stock, a line of them ("In stock: White Mill 1 kg ✕");
-//   tapping one finishes it.
+//   With packets in stock, a counter per kind ("In stock: − 3 × 400 g +").
 // Both show the shopping list as an icon beside the level: a cart when it's
 // on the list, a dashed "+ cart" button when it's low or out and isn't.
 import { useState } from "react";
 import { pantryPhotoUrl, type PantryItem, type PantryPacket, type PantryStatus } from "./pb";
-import { packetLabel } from "./pantryPackets";
+import type { PacketDetails } from "./pantryPackets";
+import PacketCounters from "./PacketCounters";
 import { CartIcon } from "./icons";
 import { describeExpiry, shortExpiry } from "./expiry";
 import { itemExpiry, norm } from "./pantryGroups";
@@ -26,6 +26,7 @@ export default function PantryRow({
   onList,
   packets = [],
   onFinishPacket,
+  onAddPacket,
   onEdit,
   onStatus,
   onOpened,
@@ -36,7 +37,10 @@ export default function PantryRow({
   onList: boolean;
   // Its packets in stock, oldest first (pantryPackets.ts).
   packets?: PantryPacket[];
-  onFinishPacket?: (packet: PantryPacket) => void;
+  onFinishPacket: (packet: PantryPacket) => void;
+  onAddPacket: (details: PacketDetails) => void;
+  // Tapping the name: the pantry page opens its card (PantryCard.tsx), a
+  // scan result its full form.
   onEdit: () => void;
   onStatus: (status: PantryStatus) => void;
   onOpened: (opened: boolean) => void;
@@ -52,7 +56,7 @@ export default function PantryRow({
   const brand = brandBesideName(item);
   const note = item.note?.trim() ?? "";
   // The name button's label says everything the name block shows.
-  const label = [`Edit ${item.name}`, detailed && brand, detailed && note, showExpiry && describeExpiry(item.expires)]
+  const label = [`Open ${item.name}`, detailed && brand, detailed && note, showExpiry && describeExpiry(item.expires)]
     .filter(Boolean)
     .join(", ");
 
@@ -130,23 +134,7 @@ export default function PantryRow({
             <span className="pantry-packets-label" aria-hidden="true">
               In stock:
             </span>
-            {/* Their own wrapping row, so a second line lines up with the first. */}
-            <span className="pantry-packets-chips">
-              {packets.map((packet) => (
-                <button
-                  key={packet.id}
-                  className="packet-chip"
-                  onClick={() => onFinishPacket?.(packet)}
-                  aria-label={`${packetLabel(packet)}: tap when it's finished`}
-                  title="Tap when it's finished"
-                >
-                  {packetLabel(packet)}
-                  <span className="packet-chip-x" aria-hidden="true">
-                    ✕
-                  </span>
-                </button>
-              ))}
-            </span>
+            <PacketCounters packets={packets} favouriteBrand={item.brand} onUsed={onFinishPacket} onMore={onAddPacket} />
           </span>
         )}
         {(canOpen || storeLinks.length > 0) && (

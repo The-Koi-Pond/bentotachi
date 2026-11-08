@@ -1571,7 +1571,11 @@ fine with "a kind of Pasta" as its own small field, not the sub-headings,
 
 **Using things up when a meal is cooked** (Xel, 2026-11-08): pressing "We
 cooked this" should take from the pantry what makes sense, so it needs
-less managing by hand. Open, for the mock-up: packets count as full and
+less managing by hand. Xel, later the same day: rather a **Finished**
+button at the end of the method, which marks it cooked and then asks
+(the moment you know what you used). Open: what the top "We cooked this"
+does then (keep it with the same sheet, keep it as a plain record, or
+remove it); the cooking timer's finish already counts as cooked too. Open, for the mock-up: packets count as full and
 don't record what's left (decided earlier, as tracking it by hand was
 too much work), so a recipe using 400 g of a 500 g bag either finishes
 the bag (wrong: 100 g is left) or leaves it (wrong next time: counted as
@@ -1580,6 +1584,28 @@ which reverses that decision without asking anyone to count. Also: ask
 first ("Used up: 1 bag of linguine, 2 of 3 eggs. Change?") or just do it
 with Undo; and what happens to items without packets (maybe Have -> Low
 when a recipe uses most of it? probably nothing).
+
+**Xel's picks from the pantry mock-up (2026-11-08):**
+1. Kinds of one thing: "Pasta" is a small sub-heading (like Baking), its
+   kinds ordinary rows under it.
+2. Packets in stock: a counter per size, "− 3 × 400 g +" (Xel's pick over
+   "3 × 400 g · Used one"). − uses one up, with Undo, since − and + are
+   easy to tap by accident; + adds one more like it.
+3. Tapping an item opens a light card under the row: + 1 packet, Used
+   one, It's low, It's out, and "Edit everything" for today's full form.
+4. Linking a recipe line: "Linguine only" or "Any pasta will do" at the
+   top of the sheet, then "Or a different item:" and the list.
+5. A **Finished** button at the end of the method marks it cooked, then
+   asks "Used anything up?" with what it worked out already ticked; ticked
+   ones come off the pantry (Skip to leave it).
+5b. A partly used packet says "about 100 g left" in words. (So cooking
+   records what's left of a packet, by itself: nobody counts by hand.)
+5c. "We cooked this" stays up top (for marking it afterwards) and opens
+   the same sheet; so does finishing the cooking timer.
+
+Built 2026-11-08: 2 and 3 (PacketCounters.tsx, PantryCard.tsx), in the
+row, the card and the edit form. The card also says what's in stock, as
+the Simple layout's row doesn't. Next: 1 and 4 (kinds), then 5.
 
 **Ticking bought things adds a packet** (agreed and built 2026-11-08):
 only for items that already use packets, in the size and brand of the

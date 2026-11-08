@@ -16,7 +16,8 @@ import { brandsOf, cleanStoreLinks, MOST_STORE_LINKS, PHOTO_REMOVED, photoSource
 import { norm, placeOptions, subcategoryOptions } from "./pantryGroups";
 import { editChanges, fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
-import { brandsToPickFrom, packetLabel, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
+import { brandsToPickFrom, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
+import PacketCounters from "./PacketCounters";
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
 // looked up (null if it doesn't know), for ones not in the pantry yet.
@@ -543,7 +544,8 @@ export function AddPantryItem({
 }
 
 // Packets in stock, in an item's edit form. They change straight away (each
-// is its own record), not on Save: Add puts one in, ✕ finishes one.
+// is its own record), not on Save: counters (PacketCounters.tsx) for the
+// ones there, "+ Add a packet" for a new brand or size.
 function PacketsField({
   packets,
   favouriteBrand,
@@ -583,22 +585,7 @@ function PacketsField({
         Packets in stock <span className="optional">(optional)</span>
       </span>
       {packets.length > 0 && (
-        <span className="pantry-packets-chips">
-          {packets.map((packet) => (
-            <button
-              key={packet.id}
-              type="button"
-              className="packet-chip"
-              onClick={() => onFinish(packet)}
-              aria-label={`${packetLabel(packet)}: tap when it's finished`}
-            >
-              {packetLabel(packet)}
-              <span className="packet-chip-x" aria-hidden="true">
-                ✕
-              </span>
-            </button>
-          ))}
-        </span>
+        <PacketCounters packets={packets} favouriteBrand={favouriteBrand} onUsed={onFinish} onMore={(more) => void onAdd(more)} />
       )}
       {adding ? (
         <span className="packet-add">
@@ -641,7 +628,7 @@ function PacketsField({
         </span>
       )}
       <span className="hint">
-        {packets.length ? "Tap one when it's finished. These change straight away." : "Only if you'd like to count them."}
+        {packets.length ? "− when one's used up, + for one more. These change straight away." : "Only if you'd like to count them."}
       </span>
     </div>
   );

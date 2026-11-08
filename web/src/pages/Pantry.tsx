@@ -29,6 +29,7 @@ import { placeOf } from "../pantryItem";
 import { groupItems, matchesPantrySearch, needsChecking, needsUsingSoon, norm } from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
+import PantryCard from "../PantryCard";
 import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
@@ -79,6 +80,8 @@ export default function Pantry() {
   // The name the add form starts with (what was typed in the find box).
   const [startName, setStartName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  // The item whose quick card is open under its row (PantryCard.tsx).
+  const [cardId, setCardId] = useState<string | null>(null);
   const [error, setError] = useState("");
   // Says where an item went when it moved drawers ("Opened", or running out).
   const [notice, setNotice] = useState("");
@@ -665,17 +668,33 @@ export default function Pantry() {
                           onDelete={() => remove(item)}
                         />
                       ) : (
-                        <PantryRow
-                          item={item}
-                          layout={layout}
-                          onList={isOnList(item)}
-                          packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
-                          onFinishPacket={(packet) => finishPacket(item, packet)}
-                          onEdit={() => setEditingId(item.id)}
-                          onStatus={(status) => setStatus(item, status)}
-                          onOpened={(opened) => setOpened(item, opened)}
-                          onAddToList={() => addToList(item)}
-                        />
+                        <>
+                          <PantryRow
+                            item={item}
+                            layout={layout}
+                            onList={isOnList(item)}
+                            packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
+                            onFinishPacket={(packet) => finishPacket(item, packet)}
+                            onAddPacket={(details) => void addPacket(item, details)}
+                            onEdit={() => setCardId((open) => (open === item.id ? null : item.id))}
+                            onStatus={(status) => setStatus(item, status)}
+                            onOpened={(opened) => setOpened(item, opened)}
+                            onAddToList={() => addToList(item)}
+                          />
+                          {cardId === item.id && (
+                            <PantryCard
+                              item={item}
+                              packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
+                              onMore={(details) => void addPacket(item, details)}
+                              onUsed={(packet) => finishPacket(item, packet)}
+                              onStatus={(status) => setStatus(item, status)}
+                              onEditAll={() => {
+                                setCardId(null);
+                                setEditingId(item.id);
+                              }}
+                            />
+                          )}
+                        </>
                       )}
                     </li>
                   )),

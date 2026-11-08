@@ -1,7 +1,49 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { brandsToPickFrom, detailsFor, knowsBarcode, packetLabel, packetsOf, tidySize, withDetails } from "../src/pantryPackets.ts";
+import {
+  brandsToPickFrom,
+  detailsFor,
+  knowsBarcode,
+  nextPacket,
+  packetGroups,
+  packetLabel,
+  packetsOf,
+  tidySize,
+  withDetails,
+} from "../src/pantryPackets.ts";
+
+test("packets show as one counter per brand and size, without the favourite brand", () => {
+  const packets = [
+    { id: "1", brand: "Edgell", size: "400 g" },
+    { id: "2", brand: "Coles", size: "400 g" },
+    { id: "3", brand: "edgell ", size: "400 g" },
+    { id: "4", brand: "Edgell", size: "800 g" },
+  ];
+  const groups = packetGroups(packets, "Edgell");
+  assert.deepEqual(
+    groups.map((g) => [g.label, g.count, g.packets.map((p) => p.id)]),
+    [
+      // The oldest first in each, so − uses that one up.
+      ["400 g", 2, ["1", "3"]],
+      ["Coles 400 g", 1, ["2"]],
+      ["800 g", 1, ["4"]],
+    ]
+  );
+  assert.deepEqual(packetGroups([{ brand: "", size: "" }]).map((g) => g.label), ["Packet"]);
+});
+
+test("+ 1 packet adds one like the usual packet, else the newest, else just the favourite brand", () => {
+  const usual = { brand: "White Mill", size: "1 kg" };
+  assert.deepEqual(nextPacket({ brand: "", usual_packet: usual }, [{ brand: "Coles", size: "2 kg" }]), usual);
+  assert.deepEqual(
+    nextPacket({ brand: "", usual_packet: null }, [{ brand: "Coles", size: "2 kg" }, { brand: "Lowan", size: "750 g" }]),
+    { brand: "Lowan", size: "750 g" }
+  );
+  assert.deepEqual(nextPacket({ brand: "White Mill", usual_packet: { brand: "", size: "" } }, []), { brand: "White Mill", size: "" });
+  // An older item listing several brands doesn't pick one.
+  assert.deepEqual(nextPacket({ brand: "Coles, White Mill" }, []), { brand: "", size: "" });
+});
 
 const CODE = "9300633603161";
 

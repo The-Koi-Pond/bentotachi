@@ -126,6 +126,10 @@ they say otherwise.
 - `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
   `PhotoViewer.tsx`. Screen stays on: `useWakeLock`.
+- A pantry item's packets as "− 3 × 400 g +": `<PacketCounters>`
+  (`PacketCounters.tsx`, grouping by `packetGroups`); what "+ 1 packet"
+  adds: `nextPacket` (`pantryPackets.ts`). An item's quick card:
+  `<PantryCard>`.
 
 ## Scripts (`web/scripts/`)
 

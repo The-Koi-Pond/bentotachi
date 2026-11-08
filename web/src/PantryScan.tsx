@@ -96,6 +96,7 @@ export function ScanResult({
               onList={isOnList(found)}
               packets={packetsFor?.(found) ?? []}
               onFinishPacket={(packet) => onFinishPacket(found, packet)}
+              onAddPacket={(details) => void onAddTypedPacket(found, details)}
               onEdit={() => onEdit(true)}
               onStatus={(status) => onStatus(found, status)}
               onOpened={(opened) => onOpened(found, opened)}
