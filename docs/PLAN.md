@@ -195,6 +195,27 @@ keep recipes readable without internet, and avoid subscriptions.
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
+Released in 1.19.0 (2026-11-08, deployed the same day):
+
+- Recipe photos: up to 20 besides the cover, step photos shown in their
+  steps, a swipeable strip and a full-size viewer; "Bring step photos"
+  (⋮ menu) brings a website's step photos; Paprika files carry them both
+  ways.
+- Step timers ring with the phone locked (an Android notification), and
+  still beep in the app when it's on screen.
+- The plan: more than one recipe per meal ("+ Dinner"), the list starts
+  at yesterday, the recipe page's Plan adds alongside.
+- Shopping: a recipe's Add to shopping list offers All, Missing from
+  pantry or Choose; "+ Add from a recipe" on the list; items keep the
+  recipe's words minus how to prepare them.
+- Recipes: small cards, big cards or a list; a tidier toolbar (Close all
+  shelves, a View panel); recipes remember their servings; the Recipes
+  tab returns to the recipe you were on; Add recipe only on Recipes and
+  Browse.
+- Tester fixes: Scan a barcode in an empty pantry; the Plan popup fits a
+  phone; list cards fill their space again; Browse's corners; nutrition
+  says it's the recipe's own numbers.
+
 Released in 1.18.0 (2026-11-07, deployed the same day):
 
 - Backlog fixes for testers (2026-11-07): the built-in browser no longer
