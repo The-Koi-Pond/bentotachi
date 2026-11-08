@@ -1461,6 +1461,17 @@ Xel's answers (2026-11-07):
 1. Tap-to-talk (one big button) first; hands-free listening later.
 2. The phone's own voice is fine (no Ben voice).
 
+## Next: buy only what the pantry is short of (Xel, 2026-11-08)
+
+Adding a recipe's ingredients to the shopping list should count what's in
+stock. Example: the pantry has 200 g of linguine, the recipe (scaled up)
+needs 1.5 kg, so the list gets "1.3 kg linguine", not 1.5 kg. Needs the
+pantry's packets to say how much is left (pantry_packets has sizes like
+"500 g"; see pantryPackets.ts), the recipe line's amount at its scale
+(scaling.ts reads amounts), and units that can be compared (g/kg, ml/l;
+"2 onions" against a packet count is harder). Where it can't tell, add the
+whole amount as now. Xel: build it next time.
+
 ## To consider: ideas from the Paprika comparison (Xel, 2026-11-07)
 
 From research/reports/Paprika compared with Bentotachi.md (local only),
