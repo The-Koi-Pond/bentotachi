@@ -172,7 +172,11 @@ export default function StepTimerTray() {
       let beep = false;
       for (const timer of due) {
         const since = Date.now() - (timer.endsAt ?? Date.now());
-        const shown = !!timer.alert && since > JUST_ENDED_MS && (await alertShown(timer));
+        // Ended a while ago: an on-time notification has rung (tapping it
+        // removes it, so asking Android wouldn't tell); a late one has if
+        // Android still shows it.
+        const shown =
+          since > JUST_ENDED_MS && (timer.alert === "exact" || (timer.alert === "inexact" && (await alertShown(timer))));
         if (beepsInApp(since, shown)) beep = true;
         if (timer.alert) queue(() => dropAlert(timer));
       }
