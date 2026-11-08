@@ -171,6 +171,17 @@ phone's font, and so do buttons and anything longer than a title.
 
 **Follows the phone.** Light or dark mode comes from the phone's setting.
 
+**Compact, not airy** (Xel, 2026-11-09, picked from side-by-side screenshots
+of "Now", "Snug" and "Compact"): 15px text, about 8px between things,
+list rows 36–38px tall (still well over the smallest tappable size; the
+app had 44–52px). More of a list fits on one screen: the whole shopping
+list, eight days of the plan. New screens follow the same spacing rather
+than the roomier defaults. Two layouts changed with it (picked from
+mock-ups the same day): on the plan, a second dish is added with a "+"
+beside the last dish's ✕, not a "+ Dinner" under every planned day; on a
+recipe, the details, tags, ratings and cooking history share one box,
+split by thin lines, instead of three boxes.
+
 ## What it won't become
 
 - A social network: no public feed, followers or recipe sharing with

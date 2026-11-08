@@ -107,7 +107,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Compact on purpose (docs/VISION.md, "Compact, not airy"). */
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 h1,
@@ -118,13 +119,13 @@ h2 {
 
 /* Page titles ("Dinner plan", "Pantry"…) in Pond Pebbles. */
 h1 {
-  font: 400 2.1rem/1.1 "Pond Pebbles", system-ui, sans-serif;
+  font: 400 1.8rem/1.1 "Pond Pebbles", system-ui, sans-serif;
   letter-spacing: 0.01em;
 }
 
 /* A recipe's own name is typed by people (accents, ×…): the plain font. */
 .recipe .title-row h1 {
-  font: 700 1.7rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 700 1.45rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
   letter-spacing: normal;
 }
 
@@ -140,7 +141,7 @@ main {
   max-width: 760px;
   margin: 0 auto;
   /* Room at the bottom so the tab bar never covers content. */
-  padding: 16px 16px calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 32px);
+  padding: 8px 10px calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 32px);
 }
 
 /* Bottom tab bar */
@@ -191,8 +192,8 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 12px 6px 16px;
-  padding-top: max(6px, env(safe-area-inset-top));
+  padding: 3px 12px 3px 16px;
+  padding-top: max(3px, env(safe-area-inset-top));
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -584,7 +585,7 @@ main {
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 /* The gap spaces a stack's paragraphs: without this the browser's own 1em
@@ -643,8 +644,8 @@ main {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin: 4px 0 10px;
-  padding: 10px 12px 10px 14px;
+  margin: 0 0 4px;
+  padding: 4px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -762,7 +763,7 @@ main {
 /* By aisle: a small heading row before each aisle's things (aisles.ts). */
 .shopping-list li.aisle-heading {
   min-height: 0;
-  padding: 10px 14px 2px;
+  padding: 4px 14px 2px;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
@@ -791,8 +792,8 @@ main {
   align-items: center;
   gap: 12px;
   font-weight: 400;
-  min-height: 44px;
-  padding: 5px 0;
+  min-height: 36px;
+  padding: 0;
   cursor: pointer;
 }
 
@@ -874,8 +875,9 @@ main {
   z-index: 6;
   display: flex;
   justify-content: center;
-  margin: -8px -16px;
-  padding: 8px 16px;
+  /* Edge to edge: the page's side padding (main), taken back. */
+  margin: -4px -10px;
+  padding: 4px 10px;
   background: var(--bg);
 }
 
@@ -915,8 +917,8 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 60px;
-  padding: 6px 8px 6px 12px;
+  min-height: 40px;
+  padding: 2px 8px 2px 12px;
   transition: background 0.1s;
 }
 
@@ -1032,7 +1034,7 @@ main {
 
 .plan-add {
   width: 100%;
-  min-height: 44px;
+  min-height: 34px;
   padding: 0 10px;
   font: inherit;
   font-size: 0.92rem;
@@ -1057,9 +1059,9 @@ main {
 /* "+ Add another" under a planned meal: a small chip, not a second row. */
 .plan-add.another {
   width: auto;
-  min-height: 32px;
+  min-height: 26px;
   margin-top: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   border-radius: 999px;
 }
 
@@ -1092,7 +1094,7 @@ main {
 }
 
 .dinner-slot .dinner-card {
-  padding: 4px 0;
+  padding: 0;
 }
 
 /* The original stays put (faded) while its copy follows your finger. */
@@ -1137,8 +1139,8 @@ main {
 .dinner-card img,
 .dinner-no-photo {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -1582,8 +1584,8 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 52px;
-  padding: 10px 14px;
+  min-height: 40px;
+  padding: 5px 12px;
   color: var(--text);
   text-decoration: none;
 }
@@ -1665,7 +1667,7 @@ main {
   align-items: center;
   gap: 4px 8px;
   width: 100%;
-  min-height: 44px;
+  min-height: 34px;
   padding: 4px 0;
   font: inherit;
   text-align: left;
@@ -1893,7 +1895,7 @@ main {
 }
 
 .pantry-list > .pantry-sublabel {
-  padding: 10px 14px 0;
+  padding: 4px 14px 0;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
@@ -1910,9 +1912,9 @@ main {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  /* Less on the right: the level sits close to the edge (2026-11-07). */
-  padding: 8px 6px 8px 14px;
+  min-height: 38px;
+  /* Less on the right: the level sits close to the edge. */
+  padding: 2px 6px 2px 14px;
 }
 
 .pantry-row.detailed {
@@ -1931,7 +1933,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 36px;
 }
 
 .pantry-thumb.pantry-tile {
@@ -2308,7 +2310,7 @@ select {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 7px 12px;
   width: 100%;
 }
 
@@ -2383,8 +2385,8 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 8px 18px;
+  min-height: 38px;
+  padding: 6px 14px;
   font: inherit;
   font-weight: 600;
   color: var(--text);
@@ -3148,31 +3150,23 @@ legend {
 
 /* How it's gone for us, in one card (RecipeView.tsx): the ratings, a line,
    then when it was last had and next planned, beside "We cooked this". */
-.verdict-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 10px 14px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.verdict-card .reactions {
-  padding: 0;
+/* Ratings and cooking history, in the recipe's one box under a line each. */
+.details-card .reactions {
+  padding: 6px 0 0;
   background: none;
   border: none;
+  border-top: 1px solid var(--border);
   border-radius: 0;
 }
 
 /* "★ 4.8 from 2,341 ratings on taste.com.au", under the household's own. */
-.verdict-card .site-rating {
+.details-card .site-rating {
   margin: -6px 0 0;
   font-size: 0.85rem;
 }
 
-.verdict-card .cook-history {
-  padding-top: 12px;
+.details-card .cook-history {
+  padding-top: 6px;
   border-top: 1px solid var(--border);
 }
 
@@ -3388,8 +3382,8 @@ legend {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
+  gap: 6px;
+  padding: 8px 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -3414,20 +3408,23 @@ legend {
 }
 
 .details-card .description-box + .facts {
-  padding-top: 12px;
+  padding-top: 6px;
   border-top: 1px solid var(--border);
 }
 
-/* "⏱ Time it", then the running timer, is the card's last part (below a
-   line) rather than a card of its own inside it. */
-.details-card .description-box ~ .timer-start-row,
-.details-card .facts ~ .timer-start-row {
-  padding-top: 12px;
+.details-card .quick-tags {
+  margin: 0;
+}
+
+/* "⏱ Time it", then the running timer, is the box's last part (below a
+   line) rather than a box of its own inside it. */
+.details-card .timer-start-row {
+  padding-top: 6px;
   border-top: 1px solid var(--border);
 }
 
 .details-card .recipe-timer {
-  padding: 12px 0 0;
+  padding: 6px 0 0;
   background: none;
   border: none;
   border-top: 1px solid var(--border);
@@ -3557,7 +3554,7 @@ legend {
   align-items: flex-start;
   gap: 12px;
   font-weight: 400;
-  padding: 6px 0;
+  padding: 1px 0;
   cursor: pointer;
 }
 
@@ -4544,7 +4541,7 @@ footer .person-name:focus-visible {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 2px 10px 2px 8px;
+  padding: 0 10px 0 8px;
   background: var(--jade-soft);
   border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
 }
@@ -4561,7 +4558,7 @@ footer .person-name:focus-visible {
 
 /* What's inside, under a line. */
 .shelf > .recipe-grid {
-  padding: 12px;
+  padding: 6px 8px;
   border-top: 1px solid var(--border);
 }
 
@@ -4612,7 +4609,7 @@ footer .person-name:focus-visible {
 }
 
 .shelf .recipe-grid {
-  padding-bottom: 8px;
+  padding-bottom: 4px;
 }
 
 .shelf-toggle {
@@ -5455,8 +5452,8 @@ em.soft {
 /* Detailed rows: the photo, or a letter tile the same size. */
 .pantry-thumb {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
 }
 
@@ -5811,7 +5808,7 @@ em.soft {
    rows instead of cards in a card. Not "recipe-card": that's the recipe
    list's cards, which this padding squeezed. */
 .recipe-panel {
-  padding: 10px 14px 14px;
+  padding: 6px 10px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -5837,7 +5834,7 @@ em.soft {
 }
 
 .recipe-panel .step {
-  padding: 12px 0;
+  padding: 6px 0;
 }
 
 /* Lined up with the step's text: the number and the gap (28 + 12). Its

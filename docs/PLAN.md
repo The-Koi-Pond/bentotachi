@@ -197,6 +197,12 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
+- Compact, not airy (Xel, 2026-11-09): smaller text and spacing across
+  the app, so a whole shopping list or eight days of the plan fit on one
+  screen; the plan adds a second dish with a + beside the last one (no
+  "+ Dinner" under every day); a recipe's details, tags, ratings and
+  history share one box. "Welcome back" when returning to phone-only
+  mode.
 - Fixes: "rice-shaped pasta" (risoni) isn't Rice; the plan's and list's
   shopping sheets read "Parmesan, finely grated (about 50 g)" like the
   recipe page, and wait for packets before Add; the month view moves a

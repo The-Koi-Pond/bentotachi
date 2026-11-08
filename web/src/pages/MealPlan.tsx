@@ -31,7 +31,7 @@ import {
   weekStart,
   type FirstDay,
 } from "../dates";
-import { CartIcon, CloseIcon, GripIcon } from "../icons";
+import { CartIcon, CloseIcon, GripIcon, PlusIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
@@ -339,7 +339,9 @@ export default function MealPlan() {
             <p>
               Drag <GripIcon /> to move a {word} to another day or meal, or onto another one to swap them.
             </p>
-            <p>“+ {MEAL_NAMES[meals[meals.length - 1]]}” under a day adds another recipe to it, like a side.</p>
+            <p>
+              <PlusIcon /> beside a {word} adds another recipe to it, like a side.
+            </p>
           </>
         ) : (
           <p>Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Drag a picture to move it to another day.</p>
@@ -626,10 +628,6 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
   // breakfasts and lunches doesn't take several screens (2026-11-06).
   const empty = day.labelled ? day.meals.filter((meal) => day.dishesAt(meal).length === 0) : [];
   const full = day.meals.filter((meal) => !empty.includes(meal));
-  // Adding another recipe to a planned meal is a chip in the same row as
-  // the empty meals' ("+ Dinner + Breakfast"), not a row under each meal,
-  // which made a week look cluttered.
-  const planned = full.filter((meal) => day.dishesAt(meal).length > 0);
   return (
     <li className={`plan-day ${when}`}>
       <div className="plan-date">
@@ -640,15 +638,8 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
         {full.map((meal) => (
           <MealPlace key={meal} meal={meal} {...day} />
         ))}
-        {planned.length + empty.length > 0 && (
+        {empty.length > 0 && (
           <div className="plan-empty-meals">
-            {planned.map((meal) => (
-              <div key={meal} className="plan-meal compact">
-                <button className="plan-add" onClick={() => day.onAdd(meal)} aria-label={`Add another recipe to ${meal}`}>
-                  + {MEAL_NAMES[meal]}
-                </button>
-              </div>
-            ))}
             {empty.map((meal) => (
               <MealPlace key={meal} meal={meal} {...day} compact />
             ))}
@@ -677,10 +668,17 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = 
   return (
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
-      {dishes.map((entry) => (
-        <DraggableDinner key={entry.id} entry={entry} onRemove={onRemove} />
+      {/* Another recipe for it (a side): the + on its last dish, rather than
+          a "+ Dinner" under every planned day (docs/VISION.md). */}
+      {dishes.map((entry, i) => (
+        <DraggableDinner
+          key={entry.id}
+          entry={entry}
+          onRemove={onRemove}
+          onAddAnother={i === dishes.length - 1 ? () => onAdd(meal) : undefined}
+          meal={meal}
+        />
       ))}
-      {/* Another recipe for it: the "+ Dinner" chip under the day's meals. */}
       {dishes.length === 0 && (
         <button className="plan-add" onClick={() => onAdd(meal)}>
           + Add {meal}
@@ -690,7 +688,17 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = 
   );
 }
 
-function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: (entry: MealPlanEntry) => void }) {
+function DraggableDinner({
+  entry,
+  meal,
+  onRemove,
+  onAddAnother,
+}: {
+  entry: MealPlanEntry;
+  meal: Meal;
+  onRemove: (entry: MealPlanEntry) => void;
+  onAddAnother?: () => void;
+}) {
   const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id });
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
@@ -703,6 +711,11 @@ function DraggableDinner({ entry, onRemove }: { entry: MealPlanEntry; onRemove: 
         <GripIcon />
       </button>
       <DinnerCard entry={entry} />
+      {onAddAnother && (
+        <button className="icon-button small" onClick={onAddAnother} aria-label={`Add another recipe to ${meal}`}>
+          <PlusIcon />
+        </button>
+      )}
       <button
         className="icon-button small"
         onClick={() => onRemove(entry)}

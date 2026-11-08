@@ -555,10 +555,17 @@ export default function RecipeView() {
               />
             </span>
           </div>
-          {/* About it, in one card: the description, servings and times in
-              even columns, "⏱ Time it", and the ✎ for all of those (and the
-              name) in its corner. */}
-          <section className="details-card" aria-label="About this recipe">
+        </>
+      )}
+
+      {/* About it, in one box split by thin lines (docs/VISION.md, "Compact,
+          not airy"): the description, servings and times with the ✎ for
+          them (and the name) in its corner, the tags, how it's gone for us
+          (ratings, when it was last had and next planned, "We cooked
+          this"), and "⏱ Time it" last. */}
+      <section className="details-card" aria-label="About this recipe">
+        {editing !== "details" && (
+          <>
             <span className="details-edit">{editButton("details", "Change the name, description, servings and times")}</span>
             {recipe.description && <DescriptionPreview key={recipe.id} text={recipe.description} />}
             {(recipe.servings || times.length > 0) && (
@@ -579,24 +586,16 @@ export default function RecipeView() {
                 ))}
               </dl>
             )}
-            {/* Timing it while cooking, to save how long it really takes. */}
-            {!offline && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} />}
-          </section>
-        </>
-      )}
-
-      <QuickTags
-        tags={recipe.tags ?? []}
-        content={[recipe.title, recipe.description, ...(recipe.ingredients ?? [])].join("\n")}
-        canEdit={!offline}
-        onSave={(tags) => save({ tags })}
-      />
-
-      {!offline && (
-        <>
-          {/* How it's gone for us, in one card: ratings, then when it was
-              last had and next planned, with "We cooked this". */}
-          <div className="verdict-card">
+          </>
+        )}
+        <QuickTags
+          tags={recipe.tags ?? []}
+          content={[recipe.title, recipe.description, ...(recipe.ingredients ?? [])].join("\n")}
+          canEdit={!offline}
+          onSave={(tags) => save({ tags })}
+        />
+        {!offline && (
+          <>
             <RecipeReactions state={ratings} showHeart={!recipe.image} />
             {/* The website's own rating, plainly the site's (★, not onigiri). */}
             {!!recipe.site_rating && !!siteHost(recipe.source_url) && (
@@ -615,9 +614,11 @@ export default function RecipeView() {
               onUndo={(entries) => void undoCooked(entries)}
             />
             {cookError && <p className="error">{cookError}</p>}
-          </div>
-        </>
-      )}
+            {/* Timing it while cooking, to save how long it really takes. */}
+            {editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} />}
+          </>
+        )}
+      </section>
 
       {/* Ingredients · Method · Notes, sticking under the top bar. */}
       <RecipeJumpBar
