@@ -364,7 +364,12 @@ Released in 1.17.0 (2026-11-07, deployed the same day):
   "Next week" headings in the list ("Last week", "Week of Nov 16" once
   you move), so the list's top has just ‹ Today ›, centred (the month view
   keeps "November 2026"); and the list opens at today with yesterday just
-  above it (so does "Today"), instead of at Monday. A planned meal is one
+  above it (so does "Today"), instead of at Monday. Since 2026-11-08 the
+  list starts at yesterday instead (today second, the page at its top,
+  week headings where weeks start): scrolled to today late in the week, it
+  looked like the bottom of the page to a tester (Xel chose this). Also
+  since then, the top bar's Add recipe shows only on Recipes and Browse (a
+  tester expected it to add a pantry item on Pantry). A planned meal is one
   bordered card with its drag handle as a slim soft-jade tab down the left
   edge (Xel's pick of two mockups), so it's clearly what moves it.
 - Shopping list (2026-11-06): tighter rows (about 46px instead of 60,
@@ -679,6 +684,17 @@ picking a Paprika file to import.
   permission in the Android app, so the buzz needs the next APK). A locked
   phone doesn't run the app, so the beep comes when it's opened again;
   ⋮ → Keep screen on avoids that.
+  Since 2026-11-08 (a tester's report; Xel: build it): in the Android app a
+  running timer also has a notification waiting with Android
+  (web/src/timerAlerts.ts, @capacitor/local-notifications), which rings at
+  zero with the phone locked or Bentotachi in the background, and opens
+  the recipe when tapped. The first timer asks for notifications, then
+  once for "Alarms & reminders" (Android 14+ doesn't give it by itself);
+  without that one it rings roughly on time (Android held a 6-minute
+  timer's back by up to 4 minutes on the emulator), and the tray beeps at
+  zero while the app is on screen. Tested on an Android 16 emulator:
+  locked-phone ring, pause and stop taking it back, and turning the
+  permission off mid-timer (which restarts the app). Needs the next APK.
 - The plan's weeks start on Sunday for US households (list and month).
 - Dutch amounts (test/dutch.test.ts): "1,5 kg" (a decimal comma, kept when
   scaling), dl and cl, el and tl (eetlepel, theelepel), and 15 ml spoons

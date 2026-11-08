@@ -87,6 +87,18 @@ export interface StepTimer {
   leftMs: number;
   // Whether it has already beeped for reaching zero.
   rang: boolean;
+  // How Android's notification will ring it while it runs (timerAlerts.ts):
+  // on time, roughly, or (missing) not at all.
+  alert?: TimerAlert;
+}
+
+export type TimerAlert = "exact" | "inexact";
+
+// Whether the tray should beep for a timer that reached zero. Not when
+// Android's notification rings it on time (it already did, or does now:
+// both would ring twice), and not unless Bentotachi is on screen.
+export function beepsInApp(timer: StepTimer, visible: boolean): boolean {
+  return visible && timer.alert !== "exact";
 }
 
 export function startStepTimer(recipeId: string, recipeTitle: string, step: number, time: StepTime, now: number): StepTimer {
@@ -106,8 +118,9 @@ export function remaining(timer: StepTimer, now: number): number {
   return timer.endsAt === null ? timer.leftMs : Math.max(0, timer.endsAt - now);
 }
 
+// Paused, it has no notification waiting (resuming holds a new one).
 export function pausedTimer(timer: StepTimer, now: number): StepTimer {
-  return timer.endsAt === null ? timer : { ...timer, endsAt: null, leftMs: remaining(timer, now) };
+  return timer.endsAt === null ? timer : { ...timer, endsAt: null, leftMs: remaining(timer, now), alert: undefined };
 }
 
 export function resumedTimer(timer: StepTimer, now: number): StepTimer {

@@ -1,0 +1,121 @@
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { isAndroidApp } from "./pb";
+import type { StepTimer, TimerAlert } from "./stepTimers";
+
+// Step timers that ring with the phone locked or Bentotachi in the
+// background (Xel, 2026-11-08, after a tester pointed out they didn't).
+// While a timer runs, Android holds a notification for the moment it
+// reaches zero, so it rings whether or not the app is running. Only in the
+// Android app; in a browser the tray's own beep is all there is.
+//
+// On time needs Android's "Alarms & reminders" permission, which Android
+// 14 and newer don't give by themselves. Bentotachi asks once, at the first
+// timer, and otherwise settles for "roughly on time" (Android may hold the
+// notification back for a while to save battery).
+
+const CHANNEL = "step-timers";
+const ASKED_KEY = "bento.timerAlarmsAsked";
+
+// Notifications are numbered; a timer's id is text ("1762560000000-k3x9a").
+function notificationId(timer: Pick<StepTimer, "id">): number {
+  let hash = 0;
+  for (const char of timer.id) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return (Math.abs(hash) % 2_000_000_000) + 1;
+}
+
+let channel: Promise<void> | null = null;
+function timersChannel(): Promise<void> {
+  channel ??= LocalNotifications.createChannel({
+    id: CHANNEL,
+    name: "Step timers",
+    description: "When a recipe step's timer reaches zero",
+    // High: it sounds and shows on top, like an alarm clock's.
+    importance: 5,
+    visibility: 1,
+    vibration: true,
+  }).catch(() => {
+    channel = null;
+  });
+  return channel;
+}
+
+function askedBefore(): boolean {
+  try {
+    return localStorage.getItem(ASKED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberAsked() {
+  try {
+    localStorage.setItem(ASKED_KEY, "1");
+  } catch {
+    // Asked again next time, which is only a little annoying.
+  }
+}
+
+// Holds a notification for when the timer reaches zero. `ask`: whether
+// this is someone starting a timer (so Android's questions may come up),
+// rather than resuming one. Says how it'll ring: "exact" on time, "inexact"
+// roughly, or undefined for not at all (no permission, a browser, paused).
+export async function holdAlert(timer: StepTimer, ask: boolean): Promise<TimerAlert | undefined> {
+  if (!isAndroidApp || timer.endsAt === null) return undefined;
+  try {
+    let allowed = (await LocalNotifications.checkPermissions()).display;
+    if (allowed !== "granted" && ask) allowed = (await LocalNotifications.requestPermissions()).display;
+    if (allowed !== "granted") return undefined;
+
+    let exact = (await LocalNotifications.checkExactNotificationSetting()).exact_alarm === "granted";
+    if (!exact && ask && !askedBefore()) {
+      rememberAsked();
+      if (
+        window.confirm(
+          "Want timers to ring on time when the phone is locked? Android will open a settings page: turn on “Allow setting alarms and reminders”, then come back."
+        )
+      ) {
+        exact = (await LocalNotifications.changeExactNotificationSetting()).exact_alarm === "granted";
+      }
+    }
+
+    await timersChannel();
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: notificationId(timer),
+          title: `Time's up: step ${timer.step} (${timer.label})`,
+          body: timer.recipeTitle,
+          channelId: CHANNEL,
+          smallIcon: "ic_stat_timer",
+          schedule: { at: new Date(timer.endsAt), allowWhileIdle: true },
+          // Never the plugin's own trip to Android's settings: asked above.
+          isExactNotification: exact,
+          extra: { recipeId: timer.recipeId },
+        },
+      ],
+    });
+    return exact ? "exact" : "inexact";
+  } catch {
+    // No notification: the tray still beeps while Bentotachi is open.
+    return undefined;
+  }
+}
+
+// Takes the timer's notification back: waiting (paused or stopped) or
+// already showing (dismissed in the tray, or rung in the app instead).
+export function dropAlert(timer: Pick<StepTimer, "id">) {
+  if (!isAndroidApp) return;
+  const notifications = [{ id: notificationId(timer) }];
+  void LocalNotifications.cancel({ notifications }).catch(() => {});
+  void LocalNotifications.removeDeliveredNotifications({
+    notifications: notifications.map((n) => ({ ...n, title: "", body: "" })),
+  }).catch(() => {});
+}
+
+// Tapping a timer's notification opens its recipe.
+if (isAndroidApp) {
+  void LocalNotifications.addListener("localNotificationActionPerformed", ({ notification }) => {
+    const recipeId = (notification.extra as { recipeId?: string } | undefined)?.recipeId;
+    if (recipeId) window.location.hash = `#/recipes/${recipeId}`;
+  }).catch(() => {});
+}

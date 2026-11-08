@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router";
 import { CloseIcon } from "./icons";
+import { dropAlert, holdAlert } from "./timerAlerts";
 import {
+  beepsInApp,
   countdown,
   pausedTimer,
   remaining,
@@ -13,10 +15,11 @@ import {
 
 // The countdowns started from recipe steps (stepTimers.ts), in a small tray
 // above the tab bar on every page, so they carry on while you look at
-// something else. Kept on this device. When one reaches zero it beeps and
-// buzzes while Bentotachi is open; if the phone was asleep, it beeps when
-// it's opened again. (A phone that's locked doesn't run the app, so turn on
-// ⋮ → Keep screen on for long ones.)
+// something else. Kept on this device. When one reaches zero, the Android
+// app's notification rings it, locked phone or not (timerAlerts.ts). Without
+// one (a browser, or notifications not allowed) it beeps and buzzes while
+// Bentotachi is open, or when it's opened again; ⋮ → Keep screen on helps
+// there.
 
 const KEY = "bento.stepTimers";
 
@@ -54,14 +57,56 @@ export function useStepTimers(): StepTimer[] {
 }
 
 export function startTimer(recipeId: string, recipeTitle: string, step: number, time: StepTime) {
-  set([...timers, startStepTimer(recipeId, recipeTitle, step, time, Date.now())]);
+  const timer = startStepTimer(recipeId, recipeTitle, step, time, Date.now());
+  set([...timers, timer]);
   // Browsers only let a page make sound after a tap: this tap unlocks it.
   void audio()?.resume();
+  hold(timer, true);
 }
 
 const update = (id: string, change: (timer: StepTimer) => StepTimer) =>
   set(timers.map((timer) => (timer.id === id ? change(timer) : timer)));
-const remove = (id: string) => set(timers.filter((timer) => timer.id !== id));
+
+// Android's notification for a timer (timerAlerts.ts), one change at a time
+// so a quick pause and resume can't land in the wrong order.
+let alerts: Promise<void> = Promise.resolve();
+function queue(change: () => Promise<void> | void) {
+  alerts = alerts.then(change).catch(() => {});
+}
+
+function hold(timer: StepTimer, ask: boolean) {
+  queue(async () => {
+    const alert = await holdAlert(timer, ask);
+    const current = timers.find((t) => t.id === timer.id);
+    // Paused, resumed again or stopped while Android was asked.
+    if (!current || current.endsAt !== timer.endsAt) {
+      if (alert) dropAlert(timer);
+    } else if (current.alert !== alert) {
+      update(timer.id, (t) => ({ ...t, alert }));
+    }
+  });
+}
+
+// Held again each time Bentotachi starts, as Android now allows: turning
+// off "Alarms & reminders" restarts the app and deletes the on-time ones,
+// which would leave a running timer silent (found testing, 2026-11-08).
+for (const timer of timers) if (timer.endsAt !== null && timer.endsAt > Date.now()) hold(timer, false);
+
+function pauseOrResume(timer: StepTimer) {
+  if (timer.endsAt === null) {
+    const resumed = resumedTimer(timer, Date.now());
+    update(timer.id, () => resumed);
+    hold(resumed, false);
+  } else {
+    update(timer.id, (t) => pausedTimer(t, Date.now()));
+    queue(() => dropAlert(timer));
+  }
+}
+
+function remove(timer: StepTimer) {
+  set(timers.filter((t) => t.id !== timer.id));
+  queue(() => dropAlert(timer));
+}
 
 let context: AudioContext | null = null;
 function audio(): AudioContext | null {
@@ -111,11 +156,15 @@ export default function StepTimerTray() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  // Each timer beeps once when it reaches zero.
+  // Each timer rings once when it reaches zero. One Android rings on time
+  // is left to its notification; the rest beep here once Bentotachi is on
+  // screen, and a notification still waiting to come late is taken back.
   useEffect(() => {
-    const due = list.filter((timer) => !timer.rang && remaining(timer, now) === 0);
-    if (!due.length || document.visibilityState !== "visible") return;
-    ring();
+    const visible = document.visibilityState === "visible";
+    const due = list.filter((timer) => !timer.rang && remaining(timer, now) === 0 && (visible || timer.alert === "exact"));
+    if (!due.length) return;
+    if (due.some((timer) => beepsInApp(timer, visible))) ring();
+    for (const timer of due) if (timer.alert === "inexact") queue(() => dropAlert(timer));
     set(timers.map((timer) => (due.some((d) => d.id === timer.id) ? { ...timer, rang: true } : timer)));
   }, [list, now]);
 
@@ -156,16 +205,13 @@ export default function StepTimerTray() {
               {done ? "Done!" : countdown(left)}
             </span>
             {!done && (
-              <button
-                className="button small"
-                onClick={() => update(timer.id, (t) => (isPaused ? resumedTimer(t, Date.now()) : pausedTimer(t, Date.now())))}
-              >
+              <button className="button small" onClick={() => pauseOrResume(timer)}>
                 {isPaused ? "Resume" : "Pause"}
               </button>
             )}
             <button
               className="icon-button small"
-              onClick={() => remove(timer.id)}
+              onClick={() => remove(timer)}
               aria-label={done ? `Dismiss step ${timer.step}'s timer` : `Stop step ${timer.step}'s timer`}
             >
               <CloseIcon />
