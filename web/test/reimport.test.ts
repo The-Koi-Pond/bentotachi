@@ -34,6 +34,26 @@ test("the site's parts replace the recipe's; links, step photos and tags carry o
   assert.equal("title" in data, false);
 });
 
+test("every site field is used, and a linked line with a new amount keeps its pantry link", () => {
+  const data = reimportChanges(now, {
+    ingredients: ["1 kg chicken thighs", "2 cups yoghurt"],
+    steps: ["Marinate.", "Bake."],
+    servings: "4",
+    prepMinutes: 10,
+    cookMinutes: 40,
+    totalMinutes: 50,
+    nutrition: ["Calories: 420 kcal"],
+    siteRating: { value: 4.8, count: 120 },
+  });
+  assert.deepEqual(data.ingredient_links, { "2 cups yoghurt": "yoghurt-id" });
+  assert.equal(data.servings, "4");
+  assert.equal(data.cook_minutes, 40);
+  assert.equal(data.total_minutes, 50);
+  assert.deepEqual(data.nutrition, ["Calories: 420 kcal"]);
+  assert.equal(data.site_rating, 4.8);
+  assert.equal(data.site_rating_count, 120);
+});
+
 test("what the site no longer gives stays as it was", () => {
   const data = reimportChanges(now, { ingredients: [], steps: [], description: "", servings: "" });
   assert.deepEqual(data.ingredients, now.ingredients);
@@ -46,5 +66,9 @@ test("what the site no longer gives stays as it was", () => {
 test("a site recipe with nothing in common by name looks different", () => {
   assert.equal(looksDifferent("Our butter chicken", "One-pan Baked Butter Chicken"), false);
   assert.equal(looksDifferent("Butter chicken", "Lemon drizzle cake"), true);
+  // One shared word is enough to count as the same recipe.
+  assert.equal(looksDifferent("Butter chicken", "Chicken tikka"), false);
+  // Small words don't count as shared.
+  assert.equal(looksDifferent("The best soup", "The best cake"), true);
   assert.equal(looksDifferent("Shakshuka", undefined), false);
 });
