@@ -47,6 +47,21 @@ test("nothing to buy is cut off: lists of things, and commas in brackets", () =>
   assert.equal(listWording("1 cup chopped walnuts, pecans, or almonds"), "1 cup chopped walnuts, pecans, or almonds");
   assert.equal(listWording("1 cup (2 sticks, 226 g) unsalted butter, softened"), "1 cup (2 sticks, 226 g) unsalted butter");
   assert.equal(listWording("1 can (14.5 oz, drained) tomatoes"), "1 can (14.5 oz, drained) tomatoes");
+  // A thing to buy that starts with a preparation word stays.
+  for (const line of [
+    "Salt, freshly ground black pepper",
+    "Coriander, toasted sesame seeds",
+    "Basil, grated parmesan",
+    "Olive oil, crushed red pepper flakes",
+    "Rice noodles, roasted peanuts",
+    "Tortillas, salsa, shredded cheese",
+  ])
+    assert.equal(listWording(line), line);
+  // Preparation phrases go: all preparation words, or a leading "to", "cut"…
+  assert.equal(listWording("1 carrot, peeled and diced"), "1 carrot");
+  assert.equal(listWording("2 potatoes, cut into 2 cm chunks"), "2 potatoes");
+  assert.equal(listWording("100 g butter, at room temperature"), "100 g butter");
+  assert.equal(listWording("Salt, pepper, to taste"), "Salt, pepper");
 });
 
 test("the plan's sheet uses the list's wording too", () => {

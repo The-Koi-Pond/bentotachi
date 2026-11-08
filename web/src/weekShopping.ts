@@ -21,18 +21,27 @@ export interface GatheredRow {
   recipeId: string;
 }
 
-// How a part after a comma starts when it's how to prepare the thing, not
-// another thing to buy: "diced", "finely chopped", "cut into chunks", "to
-// serve", "plus extra for dusting", "at room temperature".
+// A part after a comma is how to prepare the thing, not another thing to
+// buy, when every word in it is a preparation word ("diced", "finely
+// chopped", "peeled and diced"), or it starts with one of LEADS ("to serve",
+// "plus extra for dusting", "at room temperature", "cut into chunks").
+// "Toasted sesame seeds" or "freshly ground black pepper" have other words,
+// so they stay (review re-check, 2026-11-08).
 const PREPARATION = new Set(
   (
     "diced chopped sliced minced grated shredded crushed peeled cubed halved quartered julienned trimmed " +
     "rinsed drained beaten whisked softened melted cooled chilled divided optional juiced zested seeded " +
     "deseeded cored pitted toasted roasted cooked uncooked thawed defrosted torn picked washed separated " +
-    "mashed squeezed stemmed sifted packed heaped scrubbed cut finely roughly thinly coarsely freshly " +
-    "lightly very well to for plus at room preferably ideally if such"
+    "mashed squeezed stemmed sifted packed heaped scrubbed finely roughly thinly coarsely freshly " +
+    "lightly very well and or then"
   ).split(" ")
 );
+const LEADS = new Set("to for plus at if such cut preferably ideally".split(" "));
+
+function isPreparation(part: string): boolean {
+  const words = part.trim().toLowerCase().split(/\s+/);
+  return LEADS.has(words[0]) || words.every((word) => PREPARATION.has(word));
+}
 
 // The parts of a line between ", " that aren't inside brackets: commas in
 // "(2 sticks, 226 g)" don't split it.
@@ -61,11 +70,7 @@ function partsOf(text: string): string[] {
 // commas in brackets or decimals ("1,5 kg") don't count (review, 2026-11-08).
 export function listWording(line: string): string {
   const parts = partsOf(withoutSoftMarks(line).trim());
-  while (parts.length > 1) {
-    const first = parts[parts.length - 1].trim().split(/\s+/)[0].toLowerCase();
-    if (!PREPARATION.has(first)) break;
-    parts.pop();
-  }
+  while (parts.length > 1 && isPreparation(parts[parts.length - 1])) parts.pop();
   return parts.join(", ").trim();
 }
 
