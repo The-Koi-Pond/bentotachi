@@ -30,7 +30,20 @@ import {
 } from "../pb";
 import { formatMinutes, isQuick, totalMinutes } from "../format";
 import QuickTime from "../QuickTime";
-import { CheckIcon, GripIcon, HeartIcon, OnigiriIcon, PencilIcon, TagIcon, ThumbsDownIcon, ThumbsUpIcon, ZapIcon } from "../icons";
+import {
+  BigCardsIcon,
+  CheckIcon,
+  GripIcon,
+  HeartIcon,
+  ListIcon,
+  OnigiriIcon,
+  PencilIcon,
+  SmallCardsIcon,
+  TagIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  ZapIcon,
+} from "../icons";
 import { matchesSearch, searchWords } from "../recipeSearch";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
@@ -63,6 +76,26 @@ function savedSort(): SortOrder {
     return SORTS.find((sort) => sort.value === saved)?.value ?? "title";
   } catch {
     return "title";
+  }
+}
+
+// How the cards are shown, remembered on this device too: small cards
+// (three across on a phone), big ones (two across) or a list (Lily asked,
+// 2026-11-08).
+type CardLayout = "small" | "big" | "list";
+const LAYOUT_KEY = "bento.recipeLayout";
+const LAYOUTS: { value: CardLayout; label: string; icon: React.JSX.Element }[] = [
+  { value: "small", label: "Small cards", icon: <SmallCardsIcon /> },
+  { value: "big", label: "Big cards", icon: <BigCardsIcon /> },
+  { value: "list", label: "List", icon: <ListIcon /> },
+];
+
+function savedLayout(): CardLayout {
+  try {
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    return LAYOUTS.find((layout) => layout.value === saved)?.value ?? "small";
+  } catch {
+    return "small";
   }
 }
 
@@ -118,6 +151,7 @@ export default function RecipeList() {
   const quickMinutes = useQuickMinutes();
   const [ratings, setRatings] = useState<RecipeRating[]>([]);
   const [sort, setSort] = useState<SortOrder>(savedSort);
+  const [layout, setLayout] = useState<CardLayout>(savedLayout);
   // Showing the phone's saved copy because the server can't be reached.
   const [offline, setOffline] = useState(false);
   // The household's categories (shelves); null until loaded, or if they
@@ -156,6 +190,17 @@ export default function RecipeList() {
       // Not remembered; it starts A–Z next time.
     }
   }
+
+  function changeLayout(next: CardLayout) {
+    setLayout(next);
+    try {
+      localStorage.setItem(LAYOUT_KEY, next);
+    } catch {
+      // Not remembered; it starts with small cards next time.
+    }
+  }
+
+  const gridClass = `recipe-grid ${layout === "small" ? "" : layout}`;
 
   useEffect(() => {
     // The login first: with an expired one the server answers with no
@@ -664,16 +709,31 @@ export default function RecipeList() {
             </>
           )}
         </span>
-        <label className="sort-picker">
-          <span className="muted">Sort</span>
-          <select value={sort} onChange={(e) => changeSort(e.target.value as SortOrder)}>
-            {SORTS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+        <span className="list-view-tools">
+          <label className="sort-picker">
+            <span className="muted">Sort</span>
+            <select value={sort} onChange={(e) => changeSort(e.target.value as SortOrder)}>
+              {SORTS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="view-switch icon-switch" role="group" aria-label="Show recipes as">
+            {LAYOUTS.map((option) => (
+              <button
+                key={option.value}
+                aria-pressed={layout === option.value}
+                aria-label={option.label}
+                title={option.label}
+                onClick={() => changeLayout(option.value)}
+              >
+                {option.icon}
+              </button>
             ))}
-          </select>
-        </label>
+          </span>
+        </span>
       </div>
 
       {offline && <OfflineNote />}
@@ -800,7 +860,7 @@ export default function RecipeList() {
               movable={editing && shelf.id !== OTHER}
               editLink={editing && shelf.id !== OTHER ? `/shelves?edit=${shelf.id}` : null}
             >
-              <ul className="recipe-grid">{shelf.recipes.map((recipe) => tile(recipe))}</ul>
+              <ul className={gridClass}>{shelf.recipes.map((recipe) => tile(recipe))}</ul>
             </Shelf>
           ))}
           {!editing && emptyShelves.length > 0 && (
@@ -825,7 +885,7 @@ export default function RecipeList() {
           </DragOverlay>
         </DndContext>
       ) : (
-        <ul className="recipe-grid">{shown.map((recipe) => tile(recipe))}</ul>
+        <ul className={gridClass}>{shown.map((recipe) => tile(recipe))}</ul>
       )}
 
       {!editing && error && <p className="error">{error}</p>}

@@ -2593,6 +2593,94 @@ legend {
   }
 }
 
+/* Big cards (the list's middle view): two across on a phone, wider ones on
+   a computer, with room for a two-line name. */
+.recipe-grid.big {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.recipe-grid.big .recipe-card-text strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+}
+
+/* The list: one row each, a small square photo beside the name. */
+.recipe-grid.list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.recipe-grid.list .recipe-card {
+  flex-direction: row;
+  align-items: center;
+}
+
+.recipe-grid.list .card-photo {
+  flex: none;
+  width: 76px;
+}
+
+.recipe-grid.list .recipe-card img,
+.recipe-grid.list .no-photo {
+  aspect-ratio: 1;
+}
+
+.recipe-grid.list .no-photo {
+  font-size: 1.6rem;
+}
+
+.recipe-grid.list .recipe-card-text {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 14px;
+}
+
+@media (max-width: 520px) {
+  .recipe-grid.big {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .recipe-grid.big .recipe-card-text {
+    padding: 8px 10px 10px;
+    font-size: 0.95rem;
+  }
+
+  .recipe-grid.big .no-photo {
+    font-size: 2rem;
+  }
+
+  .recipe-grid.list {
+    gap: 6px;
+  }
+
+  .recipe-grid.list .card-photo {
+    width: 64px;
+  }
+
+  .recipe-grid.list .recipe-card-text {
+    padding: 6px 12px;
+    font-size: 0.92rem;
+  }
+}
+
+/* Sort and the view switch, together at the row's end. */
+.list-view-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-switch button {
+  display: grid;
+  place-items: center;
+  min-height: 30px;
+  padding: 2px 8px;
+}
+
 /* Recipe page */
 
 .hero,
