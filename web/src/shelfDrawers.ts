@@ -86,6 +86,27 @@ export function useShelfDrawers() {
         update({ ...state, closed });
       }
     },
+    // "Close all" / "Open all" on the Recipes page (Lilly asked, 2026-11-08):
+    // these shelves all open or all closed, remembered like one at a time.
+    setAll(ids: string[], open: boolean) {
+      if (state.startClosed) {
+        const opened = new Set(state.opened);
+        for (const id of ids) {
+          if (open) opened.add(id);
+          else opened.delete(id);
+        }
+        write(() => sessionStorage, OPENED_KEY, JSON.stringify([...opened]));
+        update({ ...state, opened });
+      } else {
+        const closed = new Set(state.closed);
+        for (const id of ids) {
+          if (open) closed.delete(id);
+          else closed.add(id);
+        }
+        write(() => localStorage, CLOSED_KEY, JSON.stringify([...closed]));
+        update({ ...state, closed });
+      }
+    },
     // Switching it on closes every shelf now, as it will on the next start.
     setStartClosed(on: boolean) {
       write(() => localStorage, START_CLOSED_KEY, on ? "1" : "0");

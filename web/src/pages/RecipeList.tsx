@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   DndContext,
   DragOverlay,
@@ -38,6 +38,7 @@ import {
   ListIcon,
   OnigiriIcon,
   PencilIcon,
+  SlidersIcon,
   SmallCardsIcon,
   TagIcon,
   ThumbsDownIcon,
@@ -85,8 +86,8 @@ function savedSort(): SortOrder {
 type CardLayout = "small" | "big" | "list";
 const LAYOUT_KEY = "bento.recipeLayout";
 const LAYOUTS: { value: CardLayout; label: string; icon: React.JSX.Element }[] = [
-  { value: "small", label: "Small cards", icon: <SmallCardsIcon /> },
-  { value: "big", label: "Big cards", icon: <BigCardsIcon /> },
+  { value: "small", label: "Small", icon: <SmallCardsIcon /> },
+  { value: "big", label: "Big", icon: <BigCardsIcon /> },
   { value: "list", label: "List", icon: <ListIcon /> },
 ];
 
@@ -144,6 +145,9 @@ export default function RecipeList() {
   const favoritesOnly = searchParams.has("fav");
   const quickOnly = searchParams.has("quick");
   const [tagsOpen, setTagsOpen] = useState(false);
+  // The View panel: the cards' size, the order, shelves or one list, Edit.
+  const [viewOpen, setViewOpen] = useState(false);
+  const navigate = useNavigate();
   // What tapping a tag in the panel does: show only recipes with it, or
   // hide the ones with it.
   const [tagMode, setTagMode] = useState<"with" | "without">("with");
@@ -552,6 +556,7 @@ export default function RecipeList() {
     !!categories?.length && !offline && !listChosen && !search.trim() && !filtering && !favoritesOnly && !quickOnly;
   const allShelves = showShelves ? shelves(shown, categories!) : [];
   const filledShelves = allShelves.filter((shelf) => shelf.recipes.length > 0);
+  const anyShelfOpen = filledShelves.some((shelf) => drawers.isOpen(shelf.id));
   const emptyShelves = allShelves.filter((shelf) => shelf.recipes.length === 0);
   const pickedNow = editing ? pickedRecipes(shown) : [];
   // Shelves recipes can be put on: those with a tag to add.
@@ -679,39 +684,50 @@ export default function RecipeList() {
       )}
 
       <div className="list-options">
-        <span className="muted">
-          {shown.length} {shown.length === 1 ? "recipe" : "recipes"}
-        </span>
-        {/* Between the count and Sort: switching between shelves and one
-            list, and Edit mode. */}
         <span className="list-options-links">
-          {showShelves && (
-            <Link to={{ search: editing ? "?list=1&edit=1" : "?list=1" }} className="list-options-link">
-              One list
-            </Link>
-          )}
-          {listChosen && !!categories?.length && (
-            <button className="link-button list-options-link" onClick={showShelvesAgain}>
-              Show shelves
-            </button>
-          )}
-          {categories?.length === 0 && (
-            <Link to="/shelves?new=1" className="list-options-link">
-              Make shelves
-            </Link>
-          )}
-          {!editing && !offline && (
+          <span className="muted">
+            {shown.length} {shown.length === 1 ? "recipe" : "recipes"}
+          </span>
+          {/* Every shelf shut or open at once (Lilly asked, 2026-11-08). */}
+          {showShelves && !editing && filledShelves.length > 1 && (
             <>
               <span aria-hidden="true">·</span>
-              <button className="link-button list-options-link" onClick={() => setEditing(true)}>
-                Edit
+              <button
+                className="link-button list-options-link"
+                onClick={() => drawers.setAll(filledShelves.map((shelf) => shelf.id), !anyShelfOpen)}
+              >
+                {anyShelfOpen ? "Close all shelves" : "Open all shelves"}
               </button>
             </>
           )}
         </span>
-        <span className="list-view-tools">
-          <label className="sort-picker">
-            <span className="muted">Sort</span>
+        {/* The rest, used now and then, behind one button (Lilly's idea,
+            2026-11-08): the cards' size, the order, shelves or one list,
+            and Edit. */}
+        <button
+          className={`button small view-options-button ${viewOpen ? "primary" : ""}`}
+          aria-expanded={viewOpen}
+          aria-controls="view-panel"
+          onClick={() => setViewOpen((open) => !open)}
+        >
+          <SlidersIcon size={16} /> View
+        </button>
+      </div>
+      {viewOpen && (
+        <div id="view-panel" className="view-panel" role="group" aria-label="View">
+          <div className="view-panel-row">
+            <span className="muted view-panel-label">Show as</span>
+            <span className="view-switch" role="group" aria-label="Show recipes as">
+              {LAYOUTS.map((option) => (
+                <button key={option.value} aria-pressed={layout === option.value} onClick={() => changeLayout(option.value)}>
+                  {option.icon}
+                  {option.label}
+                </button>
+              ))}
+            </span>
+          </div>
+          <label className="view-panel-row">
+            <span className="muted view-panel-label">Sort</span>
             <select value={sort} onChange={(e) => changeSort(e.target.value as SortOrder)}>
               {SORTS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -720,21 +736,42 @@ export default function RecipeList() {
               ))}
             </select>
           </label>
-          <span className="view-switch icon-switch" role="group" aria-label="Show recipes as">
-            {LAYOUTS.map((option) => (
+          {!!categories?.length && !offline && (
+            <div className="view-panel-row">
+              <span className="muted view-panel-label">Shelves</span>
+              <span className="view-switch" role="group" aria-label="Shelves or one list">
+                <button aria-pressed={!listChosen} onClick={() => listChosen && showShelvesAgain()}>
+                  Shelves
+                </button>
+                <button
+                  aria-pressed={listChosen}
+                  onClick={() => !listChosen && navigate({ search: editing ? "?list=1&edit=1" : "?list=1" })}
+                >
+                  One list
+                </button>
+              </span>
+            </div>
+          )}
+          <div className="view-panel-actions">
+            {categories?.length === 0 && (
+              <Link to="/shelves?new=1" className="button small">
+                Make shelves
+              </Link>
+            )}
+            {!editing && !offline && (
               <button
-                key={option.value}
-                aria-pressed={layout === option.value}
-                aria-label={option.label}
-                title={option.label}
-                onClick={() => changeLayout(option.value)}
+                className="button small"
+                onClick={() => {
+                  setViewOpen(false);
+                  setEditing(true);
+                }}
               >
-                {option.icon}
+                <PencilIcon /> Edit recipes
               </button>
-            ))}
-          </span>
-        </span>
-      </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {offline && <OfflineNote />}
       <BackupNudge recipes={all.length} />
