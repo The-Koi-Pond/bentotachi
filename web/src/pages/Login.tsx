@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl, users } from "../pb";
-import { isPhoneMode, leavePhoneMode, phoneModeSupported, rememberPhoneAccount, setUpPhone } from "../phoneMode";
+import { isPhoneMode, leavePhoneMode, phoneAccount, phoneModeSupported, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
 // "Set up your Bento" instead, to make the first account. In the app, with
@@ -174,8 +174,11 @@ export default function Login() {
   );
 }
 
-// "Just me, on this phone": only a name; Bento makes the account.
+// "Just me, on this phone": only a name; Bento makes the account. Coming
+// back to it (after "Join a household"), the account is still saved and the
+// name would go unused, so it isn't asked again.
 function PhoneSetupForm() {
+  const [returning] = useState(() => phoneAccount() !== null);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -195,19 +198,22 @@ function PhoneSetupForm() {
   return (
     <form className="stack" onSubmit={submit}>
       <div className="setup-intro">
-        <h2>Bentotachi on this phone</h2>
+        <h2>{returning ? "Welcome back" : "Bentotachi on this phone"}</h2>
         <p className="muted">
-          Everything stays on this phone, so save a backup now and then (⋮ → Backups). To share with your household
-          later: ⋮ → Join a household.
+          {returning
+            ? "Everything you added on this phone is still here."
+            : "Everything stays on this phone, so save a backup now and then (⋮ → Backups). To share with your household later: ⋮ → Join a household."}
         </p>
       </div>
-      <label>
-        Your name
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required autoFocus />
-      </label>
+      {!returning && (
+        <label>
+          Your name
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required autoFocus />
+        </label>
+      )}
       {error && <p className="error">{error}</p>}
       <button className="button primary" disabled={busy}>
-        {busy ? "Setting up… (a few seconds)" : "Start using Bentotachi"}
+        {busy ? "Starting… (a few seconds)" : returning ? "Open Bentotachi" : "Start using Bentotachi"}
       </button>
     </form>
   );

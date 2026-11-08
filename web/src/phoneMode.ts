@@ -109,7 +109,7 @@ export function leavePhoneMode() {
     waiting > 0 &&
     window.confirm(
       `This phone has ${waiting} shopping list ${waiting === 1 ? "change" : "changes"} that ${waiting === 1 ? "wasn't" : "weren't"} sent. ` +
-        "Send them to the server you're switching to? Choose OK only if that server has this phone's data (its backup restored there). Cancel throws them away."
+        `Send ${waiting === 1 ? "it" : "them"} to the server you're switching to? Choose OK only if that server has this phone's data (its backup restored there). Cancel throws ${waiting === 1 ? "it" : "them"} away.`
     );
   forgetOfflineCopy({ keepWaiting });
   remember(MODE_KEY, null);
