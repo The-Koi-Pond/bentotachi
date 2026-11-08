@@ -197,7 +197,12 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
-(nothing yet)
+- Fixes: "rice-shaped pasta" (risoni) isn't Rice; the plan's and list's
+  shopping sheets read "Parmesan, finely grated (about 50 g)" like the
+  recipe page, and wait for packets before Add; the month view moves a
+  whole meal, sides too; Paprika imports shrink their photos; a public
+  Wi-Fi's sign-in page can't sign anyone out; a new pantry's first add
+  form stays while it's being filled in.
 
 Released in 1.20.0 (2026-11-08, deployed the same day):
 
