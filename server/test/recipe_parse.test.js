@@ -504,6 +504,16 @@ test("reads the recipe card's ingredient sections as # headings", () => {
   ]);
 });
 
+test("a card's own title isn't a section; empty headings go; headings are plain text", () => {
+  const card =
+    `<div class="tasty-recipes-ingredients"><h3>Ingredients (serves 4)</h3><h4>Notes</h4>` +
+    `<h4>Chicken &amp; marinade</h4><ul><li>1 kg chicken thighs</li><li>1/2 cup yoghurt</li><li>1 tbsp lemon juice</li></ul>` +
+    `<h4><strong>Sauce</strong></h4><ul><li>1 cup passata</li><li>Rice</li></ul></div>`;
+  const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
+  assert.deepEqual(parsed.ingredients.filter((line) => line.startsWith("#")), ["# Chicken & marinade", "# Sauce"]);
+  assert.equal(parsed.ingredients[0], "# Chicken & marinade");
+});
+
 test("Tasty Recipes style sections (a heading, then its list) work too", () => {
   const card =
     `<div class="tasty-recipes-ingredients"><h4>For the chicken</h4><ul><li>1 kg chicken thighs</li><li>1/2 cup yoghurt</li><li>1 tbsp lemon juice</li></ul>` +
@@ -521,6 +531,12 @@ test("sections that don't line up with the recipe data are left out, not misplac
   ]);
   const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
   assert.deepEqual(parsed.ingredients, chickenData.recipeIngredient);
+  // Nor when the card has more than the data.
+  const more = wprmCard([
+    ["Marinade:", ["1 kg chicken thighs", "1/2 cup yoghurt", "1 tbsp lemon juice"]],
+    ["Sauce:", ["1 cup passata", "Rice", "Naan"]],
+  ]);
+  assert.deepEqual(parseRecipe(page(chickenData).replace("<body>hi", `<body>${more}`), "https://e.com").ingredients, chickenData.recipeIngredient);
   // And a card without named sections changes nothing.
   const plain = parseRecipe(page(chickenData).replace("<body>hi", `<body>${wprmCard([["", chickenData.recipeIngredient]])}`), "https://e.com");
   assert.deepEqual(plain.ingredients, chickenData.recipeIngredient);

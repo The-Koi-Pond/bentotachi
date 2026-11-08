@@ -55,6 +55,16 @@ check("a front-page-plus-query link is caught too", queryAgain.status === 409, `
 await call(token, "POST", "/cookbook/import", { url: "https://example.org/cr%C3%A8me-br%C3%BBl%C3%A9e", html: html("Crème brûlée") });
 const accentAgain = await call(token, "POST", "/cookbook/import", { url: "https://example.org/cr%C3%A8me-br%C3%BBl%C3%A9e", html: html("Crème brûlée") });
 check("a %-encoded address is caught too", accentAgain.status === 409, `(${accentAgain.status})`);
+// "Re-import from the website" asks for a preview: the page's recipe back,
+// nothing saved, even for a page already here.
+const beforePreview = await count();
+const preview = await call(token, "POST", "/cookbook/import", { url: "https://www.example.org/dupe-soup/", html: html("Dupe soup"), preview: true });
+check(
+  "a preview sends the recipe back, not a 409",
+  preview.status === 200 && preview.data?.recipe?.title === "Dupe soup" && !preview.data?.id,
+  `(${preview.status} ${JSON.stringify(preview.data).slice(0, 120)})`
+);
+check("a preview saves nothing", (await count()) === beforePreview);
 const noAuth = await call("", "POST", "/cookbook/import", { url: "https://www.example.org/dupe-soup/", html: html("x") });
 check("no 409 (or recipe name) for someone not logged in", noAuth.status === 401, `(${noAuth.status})`);
 

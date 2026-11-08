@@ -601,8 +601,8 @@ function ingredientSections(html) {
     while ((m = re.exec(element.inner)) !== null) {
       if (m[1] !== undefined) {
         var heading = cleanText(m[1]).replace(/\s*:\s*$/, "");
-        // The card's own "Ingredients" title isn't a section.
-        if (heading && !/^ingredients$/i.test(heading)) sections.push((current = { heading: heading, count: 0 }));
+        // The card's own "Ingredients" title ("Ingredients (serves 4)") isn't a section.
+        if (heading && !/^ingredients\b/i.test(heading)) sections.push((current = { heading: heading, count: 0 }));
         continue;
       }
       if (!current) sections.push((current = { heading: "", count: 0 }));
