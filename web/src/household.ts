@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { pb } from "./pb";
+import { pb, users } from "./pb";
 import { browserCountry } from "./country";
 import { spelled } from "./spelling";
 import { storesIn, type Store } from "./stores";
@@ -31,7 +31,7 @@ function subscribe(listener: () => void) {
 export function refreshHousehold() {
   if (asking || !pb.authStore.isValid) return;
   asking = true;
-  pb.collection("users")
+  users()
     .getList(1, 1, { fields: "id" })
     .then((page) => set(page.totalItems))
     .catch(() => {})

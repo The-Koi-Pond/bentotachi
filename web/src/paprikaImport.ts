@@ -9,6 +9,7 @@ import { gunzipSync, strFromU8, unzipSync } from "fflate";
 import { stepTimes } from "./stepTimers.ts";
 import { headingOf, textToTags } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
+import { sameTitle } from "./recipeTwins.ts";
 
 // What Bento keeps from each recipe (the same fields as a Bento recipe).
 export interface ImportedRecipe {
@@ -417,13 +418,12 @@ export function alreadyHave(
   existing: { id?: string; title: string; source_url?: string; ingredients?: string[] | null }[],
   uid = ""
 ): boolean {
-  const name = recipe.title.trim().toLowerCase();
   const lines = comparable(recipe.ingredients);
   const ownId = idFromUid(uid);
   return existing.some(
     (other) =>
       (!!uid && (other.id === uid || (!!ownId && other.id?.replace(/^0+/, "") === ownId))) ||
-      (other.title.trim().toLowerCase() === name &&
+      (sameTitle(other.title, recipe.title) &&
         ((!!recipe.source_url && other.source_url === recipe.source_url) || comparable(other.ingredients) === lines))
   );
 }

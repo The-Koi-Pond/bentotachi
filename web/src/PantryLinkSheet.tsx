@@ -3,6 +3,8 @@ import { errorMessage, pantryItems, type PantryItem } from "./pb";
 import { suggestedName, type IngredientLink } from "./pantryLinks";
 import { CloseIcon } from "./icons";
 import { placeOf } from "./pantryItem";
+import { matchesPantrySearch } from "./pantryGroups";
+import { sameName } from "./pantryFields";
 
 const STATUS_LABEL = { have: "Have", low: "Low", out: "Out" } as const;
 
@@ -35,9 +37,8 @@ export default function PantryLinkSheet({
     return () => dialog?.close();
   }, []);
 
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const shown = items
-    .filter((item) => words.every((word) => item.name.toLowerCase().includes(word)))
+    .filter((item) => matchesPantrySearch(item, search))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 
   // Adds the ingredient to the pantry (as "have") and links it.
@@ -45,7 +46,7 @@ export default function PantryLinkSheet({
     event.preventDefault();
     const name = newName.trim();
     if (!name) return;
-    const existing = items.find((item) => item.name.trim().toLowerCase() === name.toLowerCase());
+    const existing = sameName(items, name);
     if (existing) {
       onChoose(existing.id);
       return;

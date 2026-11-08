@@ -1,5 +1,5 @@
 import { registerPlugin } from "@capacitor/core";
-import { isAndroidApp, pb } from "./pb";
+import { isAndroidApp, pb, users } from "./pb";
 import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
@@ -85,7 +85,7 @@ export async function logInOnPhone(): Promise<boolean> {
   const account = phoneAccount();
   if (!account) return false;
   try {
-    await pb.collection("users").authWithPassword(account.username, account.password);
+    await users().authWithPassword(account.username, account.password);
     return true;
   } catch {
     return false;

@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { productNameFromTitle, productNameFromUrl, storeFor, storeSearchUrl, storesIn } from "../src/stores.ts";
+import { productNameFromTitle, productNameFromUrl, storeFor, storeName, storeSearchUrl, storesIn } from "../src/stores.ts";
 
 test("each country offers its own stores", () => {
   assert.deepEqual(storesIn("AU").map((s) => s.name), ["Coles", "Woolworths"]);
@@ -67,4 +67,11 @@ test("product names from Dutch store links and titles", () => {
   assert.equal(productNameFromTitle("Calvé Pindakaas. Nu bij Dirk | Dirk"), "Calvé Pindakaas");
   assert.equal(productNameFromTitle("AH Pindakaas bestellen | Albert Heijn"), "AH Pindakaas");
   assert.equal(productNameFromTitle("Jumbo Eieren 6 stuks | Jumbo"), "Jumbo Eieren");
+});
+
+test("a store link's name: the store, else the site, else just Store", () => {
+  assert.equal(storeName("https://www.coles.com.au/product/x-123"), "Coles");
+  assert.equal(storeName("https://www.iga.com.au/x"), "iga.com.au");
+  assert.equal(storeName("not a link"), "Store");
+  assert.equal(storeFor("not a link"), undefined);
 });

@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, type User } from "../pb";
+import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, users, type User } from "../pb";
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
@@ -8,7 +8,6 @@ import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
 import { useSpell } from "../household";
 
-const users = () => pb.collection<User>("users");
 
 // Your own account: picture, name, username, color
 // and password. Each part saves on its own. Saving your own account

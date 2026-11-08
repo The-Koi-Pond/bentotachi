@@ -5,6 +5,8 @@ import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon } from "./icons";
 import { GatheredList, useGatheredTicks } from "./GatheredTicks";
+import { matchesSearch } from "./recipeSearch";
+import { searchVariants } from "./regionalNames";
 
 // "From a recipe" on the shopping list: find a recipe,
 // then add its ingredients without leaving the list. What the pantry says
@@ -25,13 +27,13 @@ export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }
 
   useEffect(() => {
     recipes()
-      .getFullList({ sort: "title", fields: "id,collectionId,title,ingredients,ingredient_links" })
+      .getFullList({ sort: "title", fields: "id,collectionId,title,tags,ingredients,ingredient_links" })
       .then(setAll)
       .catch((err) => setLoadError(errorMessage(err)));
   }, []);
 
-  const words = search.trim().toLowerCase();
-  const found = (all ?? []).filter((recipe) => !words || recipe.title.toLowerCase().includes(words));
+  const variants = searchVariants(search);
+  const found = (all ?? []).filter((recipe) => matchesSearch(recipe, variants));
 
   return (
     <dialog

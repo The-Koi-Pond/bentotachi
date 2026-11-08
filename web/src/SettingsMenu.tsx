@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, useQuickMinutes } from "./pb";
+import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, useQuickMinutes, users } from "./pb";
 import { useWakeLock } from "./useWakeLock";
 import { useShelfDrawers } from "./shelfDrawers";
 import { useStepAmounts } from "./stepAmountsSetting";
@@ -269,7 +269,7 @@ function AccountSwitch({
   async function toggle() {
     setError("");
     try {
-      await pb.collection("users").update(userId, { [field]: !on });
+      await users().update(userId, { [field]: !on });
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -299,7 +299,7 @@ function QuickSetting({ userId, value }: { userId: string; value: number }) {
     try {
       // Updating your own account also refreshes the logged-in copy, so the
       // ⚡ badges change straight away.
-      await pb.collection("users").update(userId, { quick_minutes: minutes });
+      await users().update(userId, { quick_minutes: minutes });
     } catch (err) {
       setError(errorMessage(err));
     }

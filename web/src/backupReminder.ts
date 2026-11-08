@@ -20,9 +20,3 @@ export function backupReminder(now: Date, last: Date | null, snoozedUntil: Date 
 }
 
 export const snoozeUntil = (now: Date) => new Date(now.getTime() + SNOOZE_DAYS * DAY);
-
-// "today", "yesterday", "5 days ago".
-export function daysAgo(now: Date, then: Date): string {
-  const days = Math.floor((now.getTime() - then.getTime()) / DAY);
-  return days <= 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
-}

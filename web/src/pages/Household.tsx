@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, type User } from "../pb";
+import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, users, type User } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import Avatar from "../Avatar";
 import { refreshHousehold, useCountry, usePlanMeals, useTablespoon } from "../household";
@@ -11,7 +11,6 @@ import StoreLogo from "../StoreLogo";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 
-const users = () => pb.collection<User>("users");
 
 // Opened on the server computer itself ("localhost"), whose address phones
 // can't use.

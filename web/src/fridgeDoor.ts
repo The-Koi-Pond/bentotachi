@@ -1,6 +1,6 @@
 // The fridge door's rules (pages/Fridge.tsx, and the title's note count in
 // App.tsx), kept here so the tests can reach them.
-import { addDays, datePart } from "./dates.ts";
+import { addDays, datePart, storedTime } from "./dates.ts";
 import { mealOf, mealWord, type Meal } from "./meals.ts";
 import type { Note } from "./pb";
 
@@ -43,7 +43,7 @@ export function newestCreated(all: Pick<Note, "created">[]): string {
 // "yesterday", "4 days ago", then the date. created is the server's
 // "2026-11-04 03:13:06.123Z".
 export function noteAge(created: string, now: Date): string {
-  const then = new Date(created.replace(" ", "T"));
+  const then = storedTime(created);
   const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
   if (Number.isNaN(minutes)) return "";
   if (minutes < 1) return "just now";

@@ -46,7 +46,8 @@ import {
   ThumbsUpIcon,
   ZapIcon,
 } from "../icons";
-import { matchesSearch, searchWords } from "../recipeSearch";
+import { matchesSearch } from "../recipeSearch";
+import { searchVariants } from "../regionalNames";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
 import OfflineNote from "../OfflineNote";
@@ -268,7 +269,7 @@ export default function RecipeList() {
   // A recipe must match every typed word, have every chosen tag and none of
   // the left-out ones, be added by the chosen person, and be quick and/or
   // one of your favorites if those are switched on.
-  const words = searchWords(search);
+  const words = searchVariants(search);
   const matching = (all ?? []).filter(
     (recipe) =>
       matchesSearch(recipe, words) &&

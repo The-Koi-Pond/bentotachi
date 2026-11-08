@@ -9,6 +9,7 @@ import {
   formatDay,
   localToday,
   monthStart,
+  storedTime,
   toStoredDate,
   weekStart,
   firstDayFor,
@@ -72,4 +73,10 @@ test("says how long ago a date was", async () => {
   assert.equal(timeAgo("2026-08-30", today), "2 months ago");
   assert.equal(timeAgo("2025-11-01", today), "11 months ago");
   assert.equal(timeAgo("2025-10-30", today), "over a year ago");
+});
+
+test("reads a moment PocketBase stored, and nothing as invalid", () => {
+  assert.equal(storedTime("2026-11-07 01:23:45.678Z").toISOString(), "2026-11-07T01:23:45.678Z");
+  assert.ok(Number.isNaN(storedTime("").getTime()));
+  assert.ok(Number.isNaN(storedTime("soon").getTime()));
 });

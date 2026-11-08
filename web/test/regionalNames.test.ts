@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { otherNames, searchVariants, withRegionalHint } from "../src/regionalNames.ts";
 import { guessPantryItem } from "../src/pantryLinks.ts";
-import { matchesSearch, searchWords } from "../src/recipeSearch.ts";
+import { matchesSearch } from "../src/recipeSearch.ts";
 import { foldText } from "../src/wordMatch.ts";
 
 const item = (id: string, name: string) => ({ id, name }) as never;
@@ -132,7 +132,7 @@ test("accents and hyphens don't count", () => {
   assert.equal(withRegionalHint("100 g glace cherries", "US"), "100 g glace cherries *(candied cherries)*");
   assert.equal(foldText("Crème-fraîche"), "creme fraiche");
   const recipe = { title: "Jalapeño poppers", tags: ["stir-fry"], ingredients: ["1 cup self-raising flour"] };
-  assert.equal(matchesSearch(recipe, searchWords("jalapeno")), true);
-  assert.equal(matchesSearch(recipe, searchWords("stir fry")), true);
-  assert.equal(matchesSearch(recipe, searchWords("self rising flour")), true);
+  assert.equal(matchesSearch(recipe, searchVariants("jalapeno")), true);
+  assert.equal(matchesSearch(recipe, searchVariants("stir fry")), true);
+  assert.equal(matchesSearch(recipe, searchVariants("self rising flour")), true);
 });

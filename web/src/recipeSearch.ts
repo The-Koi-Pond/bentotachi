@@ -1,16 +1,10 @@
-// Searching recipes the same way everywhere (the Recipes tab and the dinner
-// plan's chooser).
+// Searching recipes the same way everywhere (the Recipes tab, the dinner
+// plan's chooser, the shopping list's "From a recipe"). The typed words go
+// through searchVariants (regionalNames.ts) first.
 
-import { searchVariants } from "./regionalNames.ts";
 import { foldText } from "./wordMatch.ts";
 
 type Searchable = { title: string; tags: string[] | null; ingredients: string[] | null };
-
-// "Chicken  Quick" -> [["chicken", "quick"]], plus the same search in the
-// other country's words ("capsicum" -> also ["bell pepper"], kept together).
-export function searchWords(text: string): string[][] {
-  return searchVariants(text);
-}
 
 // Every word typed must appear somewhere in the title, tags or ingredients,
 // so "chicken quick" finds quick chicken dishes. Any of the variants will do.

@@ -14,6 +14,8 @@
 // search addresses, unchecked. Lidl and Picnic are left out: Lidl doesn't
 // sell groceries online, and Picnic is app-only.
 
+import { siteHost } from "./recipeSites.ts";
+
 export type CountryCode = "AU" | "US" | "NL";
 
 export interface Store {
@@ -54,24 +56,15 @@ export function storeSearchUrl(store: Store, words: string): string {
 // The store a link belongs to, if it's one of the stores above (from any
 // country, so a link someone saved still shows its store).
 export function storeFor(url: string): Store | undefined {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, "");
-    return STORES.find((store) => host === store.host || host.endsWith(`.${store.host}`));
-  } catch {
-    return undefined;
-  }
+  const host = siteHost(url, "");
+  return host ? STORES.find((store) => host === store.host || host.endsWith(`.${store.host}`)) : undefined;
 }
 
 // "Coles" for a Coles product page; otherwise the site's address, like
 // "iga.com.au".
 export function storeName(url: string): string {
   const store = storeFor(url);
-  if (store) return store.name;
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return "Store";
-  }
+  return store ? store.name : siteHost(url, "Store");
 }
 
 // Whether a link is a page in one of the stores above.

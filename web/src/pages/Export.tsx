@@ -27,6 +27,7 @@ import {
 } from "../paprikaImport";
 import { MAX_PHOTOS, photoStepsFor, uploadName } from "../recipePhotos";
 import { localToday } from "../dates";
+import { sameTitle } from "../recipeTwins";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSpell } from "../household";
 
@@ -161,7 +162,7 @@ function ImportRecipes() {
         if (JSON.stringify(recipe) !== JSON.stringify(converted)) shortened.push(recipe.title);
         // A different recipe with a name already here: both are kept, and
         // the summary says so (their cards tell them apart, recipeTwins).
-        const twin = existing.some((other) => other.title.trim().toLowerCase() === recipe.title.trim().toLowerCase());
+        const twin = existing.some((other) => sameTitle(other.title, recipe.title));
         // Decoded only now: the slow part, and only for recipes being added.
         const { cover: photo, gallery } = paprikaPhotos(raw);
         let image =

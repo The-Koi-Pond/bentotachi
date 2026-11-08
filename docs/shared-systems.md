@@ -33,8 +33,8 @@ they say otherwise.
 ## Saved data and syncing
 
 - Talking to a collection: the typed helpers in `pb.ts` (`recipes()`,
-  `pantryItems()`, `shoppingItems()`, ...), not `pb.collection("...")`
-  (only logins, `users`, `household_settings` and `useLiveRecords` use that).
+  `pantryItems()`, `users()`, ...), not `pb.collection("...")` (only
+  `household_settings` and `useLiveRecords` use that).
 - A shared list on screen: `useLiveRecords` (load, live updates, reload on
   return, offline copy with `offlineKey`).
 - Before loading or sending: `ensureLogin` / `ensureLoginNow` (`session.ts`;
@@ -64,7 +64,8 @@ they say otherwise.
 - Calendar dates ("2026-11-02"): `dates.ts`. Today is `localToday` (never
   `toISOString().slice(0, 10)`, which is UTC), stored form `toStoredDate` /
   `datePart`, maths `dayNumber` / `addDays` / `weekStart`, showing
-  `formatDay`, "3 days ago" `timeAgo`.
+  `formatDay`, "3 days ago" `timeAgo`. A stored moment (`created`) as a
+  Date: `storedTime`. Notes' "20 min ago": `noteAge` (`fridgeDoor.ts`).
 - Expiry: `expiry.ts` (`daysUntil`, `describeExpiry`, `shortExpiry`).
 - Minutes: `formatMinutes`, `totalMinutes`, `isQuick` (`format.ts`); times
   in text ("10 minutes") `stepTimes`, `formatDuration` (`stepTimers.ts`).
@@ -83,8 +84,8 @@ they say otherwise.
 
 - An ingredient's name in a line (whole words, plurals, accents):
   `findMention`, `mentions`, `stem`, `foldText` (`wordMatch.ts`).
-- Recipe search: `searchWords` + `matchesSearch` (`recipeSearch.ts`). Pantry
-  search: `matchesSearch` (`pantryGroups.ts`).
+- Recipe search: `searchVariants` (`regionalNames.ts`) + `matchesSearch`
+  (`recipeSearch.ts`). Pantry search: `matchesPantrySearch` (`pantryGroups.ts`).
 - Ingredient/step lines and tags: `textToLines`, `linesToText`, `headingOf`,
   `textToTags` (`format.ts`); the tag box: `tagText.ts`; shelves:
   `normaliseTag`, `inCategory` (`recipeCategories.ts`).
@@ -92,10 +93,11 @@ they say otherwise.
   shown by `<SoftText>`, typed with `<FormatTextarea>` / `toggleMark`.
 - Pantry names: `sameName` (`pantryFields.ts`); ingredient links:
   `pantryLinks.ts`.
-- A site's name from its address: `siteHost` (`recipeSites.ts`); store:
+- A site's name from its address: `siteHost` (`recipeSites.ts`; pass `""`
+  as its second argument for blank instead of the address); store:
   `storeFor` / `storeName` (`stores.ts`).
-- Recipes sharing a name: `twinLabels` (`recipeTwins.ts`); "already
-  imported": `alreadyHave` (`paprikaImport.ts`).
+- Recipes with the same name: `sameTitle`, `twinLabels` (`recipeTwins.ts`);
+  "already imported": `alreadyHave` (`paprikaImport.ts`).
 - Words on screen the US spells differently (favourite, colour, grey):
   `useSpell()` (`household.ts`), the word list in `spelling.ts`.
 

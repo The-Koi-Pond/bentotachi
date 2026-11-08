@@ -12,6 +12,7 @@ import { gzipSync, strToU8 } from "fflate";
 import { extraTimes, formatMinutes, headingOf, totalMinutes } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 import { numberedSteps, stepKey } from "./recipePhotos.ts";
+import { siteHost } from "./recipeSites.ts";
 
 // What the export needs from a recipe (a Bento recipe has all of these).
 export interface ExportRecipe {
@@ -82,15 +83,6 @@ export interface PaprikaRecipe {
 const plain = (text: string) => withoutSoftMarks(text ?? "").trim();
 // "1 hr 30 min", as on the recipe page.
 const minutes = (n: number) => formatMinutes(n > 0 ? n : 0);
-
-// "https://www.recipetineats.com/x" -> "recipetineats.com".
-function siteName(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return "";
-  }
-}
 
 // Bento's "# Sauce" headings are Paprika's "Sauce:" (a line ending in a colon).
 // `marks`: photo names to point at from the end of a line, by its place.
@@ -185,7 +177,7 @@ export function toPaprika(
     // Prep + cook + other times when there's no total, as Bento shows it.
     total_time: minutes(totalMinutes(recipe)),
     difficulty: "",
-    source: siteName(recipe.source_url ?? ""),
+    source: siteHost(recipe.source_url ?? "", ""),
     source_url: recipe.source_url ?? "",
     image_url: "",
     photo: photo ? `${uid}.jpg` : "",

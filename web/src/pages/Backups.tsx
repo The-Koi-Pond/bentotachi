@@ -10,8 +10,7 @@ import {
   takeRestoredBackupNote,
   type BackupNote,
 } from "../phoneMode";
-import { daysAgo } from "../backupReminder";
-import { formatDay, localToday } from "../dates";
+import { formatDay, localToday, timeAgo } from "../dates";
 import { BenMood } from "../Brand";
 
 // Restoring reloads the app, so "Restored" is kept across the reload here.
@@ -106,7 +105,7 @@ export default function Backups() {
         <p className="muted">Everything in one file. Save it somewhere off this phone, like Google Drive.</p>
         <p className={last ? "small-note" : "small-note warning-text"}>
           {last
-            ? `Last saved ${daysAgo(new Date(), last)} (${formatDay(localToday(last), { weekday: "short", day: "numeric", month: "short" })}).`
+            ? `Last saved ${timeAgo(localToday(last), localToday())} (${formatDay(localToday(last), { weekday: "short", day: "numeric", month: "short" })}).`
             : "No backup saved from this phone yet."}
         </p>
         <button className="button primary" onClick={() => void backUp()} disabled={busy}>

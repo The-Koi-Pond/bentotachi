@@ -12,6 +12,12 @@ export function toStoredDate(date: string): string {
   return date ? `${date} 00:00:00.000Z` : "";
 }
 
+// A moment PocketBase stored ("2026-11-07 01:23:45.678Z", like `created`) as
+// a Date; an invalid one if blank or unreadable.
+export function storedTime(stored: string): Date {
+  return new Date(stored ? stored.replace(" ", "T") : NaN);
+}
+
 // Today on this device, as "2026-11-02".
 export function localToday(now = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0");

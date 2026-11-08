@@ -28,7 +28,7 @@ export const needsChecking = (item: Dated, now = new Date()) => item.status !== 
 
 // Whether an item matches what's typed in the pantry's find box: in its
 // name or its brands, ignoring capitals. Nothing typed matches everything.
-export function matchesSearch(item: Pick<PantryItem, "name" | "brand">, typed: string): boolean {
+export function matchesPantrySearch(item: Pick<PantryItem, "name" | "brand">, typed: string): boolean {
   const words = norm(typed).split(/\s+/).filter(Boolean);
   const text = norm(`${item.name} ${item.brand ?? ""}`);
   return words.every((word) => text.includes(word));

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
-import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl } from "../pb";
+import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl, users } from "../pb";
 import { isPhoneMode, leavePhoneMode, phoneModeSupported, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
@@ -232,7 +232,7 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
     // still works as well, for older accounts.)
     const identity = username.trim().includes("@") ? username.trim() : username.trim().toLowerCase();
     try {
-      await pb.collection("users").authWithPassword(identity, password);
+      await users().authWithPassword(identity, password);
       // Phone-only: log in by itself from now on.
       if (phone) rememberPhoneAccount({ username: identity, password });
     } catch (err) {
@@ -298,7 +298,7 @@ function SetupForm({ server }: { server: string }) {
     if (isAndroidApp) setServerUrl(normaliseServerUrl(server));
     try {
       await pb.send("/api/cookbook/setup", { method: "POST", body: { name: name.trim(), username, password } });
-      await pb.collection("users").authWithPassword(username, password);
+      await users().authWithPassword(username, password);
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);

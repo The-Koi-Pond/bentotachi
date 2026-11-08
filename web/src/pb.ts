@@ -240,6 +240,8 @@ export interface RecipeCategory extends RecordModel {
 
 export const recipeCategories = () => pb.collection<RecipeCategory>("recipe_categories");
 
+export const users = () => pb.collection<User>("users");
+
 // Their profile picture's address, or "" if they haven't added one.
 export function avatarUrl(user: User): string {
   return user.avatar ? pb.files.getURL(user, user.avatar) : "";

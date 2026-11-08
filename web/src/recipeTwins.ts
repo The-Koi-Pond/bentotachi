@@ -4,6 +4,9 @@
 // when it has no link, or when the others of that name share its site
 // Recipes with a name of their own get no line.
 
+import { storedTime } from "./dates.ts";
+import { siteHost } from "./recipeSites.ts";
+
 interface Named {
   id: string;
   title: string;
@@ -13,20 +16,15 @@ interface Named {
 
 const nameKey = (title: string) => title.trim().toLowerCase();
 
-function siteOf(url: string | undefined): string {
-  try {
-    return url ? new URL(url).hostname.replace(/^www\./, "") : "";
-  } catch {
-    return "";
-  }
-}
+// Whether two recipe names count as the same (ignoring capitals and spaces).
+export const sameTitle = (a: string, b: string) => nameKey(a) === nameKey(b);
+
+const siteOf = (url: string | undefined) => siteHost(url ?? "", "");
 
 // "added 7 Nov" from PocketBase's "2026-11-07 01:23:45.678Z".
 function addedOn(created: string | undefined): string {
-  const date = created ? new Date(created.replace(" ", "T")) : null;
-  return date && !Number.isNaN(date.getTime())
-    ? `added ${date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}`
-    : "";
+  const date = storedTime(created ?? "");
+  return Number.isNaN(date.getTime()) ? "" : `added ${date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
 }
 
 // Every card's source line, by recipe id (to find a recipe without opening

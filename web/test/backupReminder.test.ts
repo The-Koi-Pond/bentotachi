@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { backupReminder, daysAgo, snoozeUntil } from "../src/backupReminder.ts";
+import { backupReminder, snoozeUntil } from "../src/backupReminder.ts";
 
 const now = new Date("2026-11-20T10:00:00Z");
 const daysBefore = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
@@ -20,10 +20,4 @@ test("Later waits three days", () => {
   const snoozed = snoozeUntil(daysBefore(1));
   assert.equal(backupReminder(now, null, snoozed, 50), null);
   assert.deepEqual(backupReminder(now, null, snoozeUntil(daysBefore(3)), 50), { kind: "never" });
-});
-
-test("how long ago, in words", () => {
-  assert.equal(daysAgo(now, daysBefore(0)), "today");
-  assert.equal(daysAgo(now, daysBefore(1)), "yesterday");
-  assert.equal(daysAgo(now, daysBefore(9)), "9 days ago");
 });

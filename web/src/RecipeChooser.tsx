@@ -12,7 +12,8 @@ import {
 } from "./pb";
 import { formatDay, localToday, timeAgo } from "./dates";
 import { formatMinutes, isQuick, totalMinutes } from "./format";
-import { matchesSearch, searchWords } from "./recipeSearch";
+import { matchesSearch } from "./recipeSearch";
+import { searchVariants } from "./regionalNames";
 import { pantryCheck } from "./pantryLinks";
 import { twinLabels } from "./recipeTwins";
 import { useLiveRecords } from "./useLiveRecords";
@@ -110,7 +111,7 @@ export default function RecipeChooser({
   // Recipes sharing a name, each with a line to tell it apart (recipeTwins).
   const twins = useMemo(() => twinLabels(all ?? []), [all]);
 
-  const words = searchWords(search);
+  const words = searchVariants(search);
   const shown = (all ?? []).filter(
     (recipe) =>
       matchesSearch(recipe, words) &&

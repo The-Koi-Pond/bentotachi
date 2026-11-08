@@ -26,7 +26,7 @@ import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
 import { placeOf } from "../pantryItem";
-import { groupItems, matchesSearch, needsChecking, needsUsingSoon, norm } from "../pantryGroups";
+import { groupItems, matchesPantrySearch, needsChecking, needsUsingSoon, norm } from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
 import { ScanResult } from "../PantryScan";
@@ -438,7 +438,7 @@ export default function Pantry() {
   const soonCount = items.filter((i) => needsUsingSoon(i)).length;
   const shown = items.filter(
     (i) =>
-      (filter === "all" ? true : filter === "soon" ? needsUsingSoon(i) : i.status === filter) && matchesSearch(i, query),
+      (filter === "all" ? true : filter === "soon" ? needsUsingSoon(i) : i.status === filter) && matchesPantrySearch(i, query),
   );
   const groups = groupItems(shown);
   // A scanned barcode brings its own form (see ScanResult).

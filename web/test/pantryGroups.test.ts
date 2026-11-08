@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   groupItems,
   itemExpiry,
-  matchesSearch,
+  matchesPantrySearch,
   needsChecking,
   needsUsingSoon,
   placeOptions,
@@ -100,10 +100,10 @@ test("to check: low, out, or to use up soon", () => {
 
 test("the find box matches names and brands, every word, ignoring capitals", () => {
   const flour = { name: "Plain flour", brand: "White Mill" };
-  assert.equal(matchesSearch(flour, "FLOUR"), true);
-  assert.equal(matchesSearch(flour, "white"), true);
-  assert.equal(matchesSearch(flour, "mill plain"), true);
-  assert.equal(matchesSearch(flour, "rice"), false);
-  assert.equal(matchesSearch(flour, "  "), true);
-  assert.equal(matchesSearch({ name: "Eggs", brand: "" }, "eg"), true);
+  assert.equal(matchesPantrySearch(flour, "FLOUR"), true);
+  assert.equal(matchesPantrySearch(flour, "white"), true);
+  assert.equal(matchesPantrySearch(flour, "mill plain"), true);
+  assert.equal(matchesPantrySearch(flour, "rice"), false);
+  assert.equal(matchesPantrySearch(flour, "  "), true);
+  assert.equal(matchesPantrySearch({ name: "Eggs", brand: "" }, "eg"), true);
 });

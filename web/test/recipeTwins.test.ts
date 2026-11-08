@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sourceLines, twinLabels } from "../src/recipeTwins.ts";
+import { sameTitle, sourceLines, twinLabels } from "../src/recipeTwins.ts";
 
 test("every card says where it's from: the site, or home recipe, or its twin line", () => {
   const lines = sourceLines([
@@ -47,4 +47,13 @@ test("a bad link or date is left out rather than shown wrong", () => {
     { id: "b", title: "Tart" },
   ]);
   assert.equal(labels.size, 0);
+});
+
+test("names count as the same ignoring capitals and spaces", () => {
+  assert.equal(sameTitle(" Pancakes", "pancakes "), true);
+  assert.equal(sameTitle("Pancakes", "Pancake"), false);
+});
+
+test("a recipe with an address that isn't a link is a home recipe", () => {
+  assert.equal(sourceLines([{ id: "a", title: "Soup", source_url: "Nan's book" }]).get("a"), "home recipe");
 });

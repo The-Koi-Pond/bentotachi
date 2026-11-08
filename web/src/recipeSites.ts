@@ -89,12 +89,14 @@ export function searchUrl(site: RecipeSite, words: string): string {
   return site.search.replace("{q}", encodeURIComponent(words.trim()));
 }
 
-// "smittenkitchen.com" from "https://www.smittenkitchen.com/recipes".
-export function siteHost(url: string): string {
+// "smittenkitchen.com" from "https://www.smittenkitchen.com/recipes". An
+// address that can't be read gives `unreadable`: the address itself unless
+// said otherwise.
+export function siteHost(url: string, unreadable = url): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
-    return url;
+    return unreadable;
   }
 }
 

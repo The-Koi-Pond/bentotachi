@@ -6,7 +6,7 @@
 // make good changes look refused; only the renewal itself answers 401
 // (server/test/expired-login.check.mjs).
 
-import { pb } from "./pb";
+import { pb, users } from "./pb";
 import { forgetOfflineCopy } from "./offline";
 import { isPhoneMode, logInOnPhone } from "./phoneMode";
 import { createLoginGuard, type LoginState } from "./loginGuard";
@@ -15,7 +15,7 @@ export type { LoginState };
 
 async function renewLogin(): Promise<LoginState> {
   try {
-    await pb.collection("users").authRefresh();
+    await users().authRefresh();
     return "ok";
   } catch (err) {
     const status = (err as { status?: number })?.status;
