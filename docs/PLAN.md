@@ -211,6 +211,11 @@ Not released yet:
   covered for now by the site's own menu in the app's browser (Browse
   opens it there); in-app category lists per site would need keeping up
   as sites change, so they wait for Xel's call.
+- The Play version tells people when an update is out: Google Play's own
+  in-app update (the banner, then "Restart to update"). It only starts
+  working from the release after the one that brings it, since that one
+  still arrives through Play's background updates. Hand test on Xel's
+  to-do list.
 
 Released in 1.19.0 (2026-11-08, deployed the same day):
 
@@ -1512,7 +1517,7 @@ whole amount as now. Xel: build it next time.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 
-Built 2026-11-08 on the branch `play-update-prompts`, not yet on main:
+Built 2026-11-08 (on main since then, not released yet):
 @capawesome/capacitor-app-update 8.1.1, `updatesFromPlay` in
 appUpdates.ts, the same banner with "Restart to update" once Play has
 downloaded it, and "Check for updates" in the ⋮ menu (phone-only mode
