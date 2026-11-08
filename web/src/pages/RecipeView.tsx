@@ -828,13 +828,9 @@ function IngredientsSection({
   const [linking, setLinking] = useState<string | null>(null);
 
   const linkOf = (line: string) => linkFor(line, recipe.ingredient_links, pantryList);
-  // Lines whose pantry item is low or out: "what we need".
-  const needed = pickable.filter((i) => {
-    const status = linkOf(lines[i]).item?.status;
-    return status === "low" || status === "out";
-  });
   // Lines the pantry doesn't have enough of, or at all (not water and the
-  // like): "Missing from pantry".
+  // like): "Missing from pantry", and "Select what we need" when choosing
+  // (which once left out lines not linked to the pantry; Xel, 2026-11-08).
   const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i])));
   // "Add to shopping list" first offers All / Missing from pantry / Choose
   // (Lilly, 2026-11-08); Choose is the ticking below.
@@ -981,9 +977,9 @@ function IngredientsSection({
       )}
       {picking && (
         <div className="actions">
-          {needed.length > 0 && (
-            <button className="button" onClick={() => setPicked(new Set(needed))}>
-              Select what we need ({needed.length})
+          {missing.length > 0 && (
+            <button className="button" onClick={() => setPicked(new Set(missing))}>
+              Select what we need ({missing.length})
             </button>
           )}
           <button className="button" onClick={() => setPicked(new Set(allPicked ? [] : pickable))}>
