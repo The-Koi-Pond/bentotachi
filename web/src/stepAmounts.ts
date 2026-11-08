@@ -16,7 +16,7 @@ const NUMBER = "(?:\\d+(?:[.,/]\\d+)?(?:\\s+\\d+/\\d+)?|[½¼¾⅓⅔⅛⅜⅝�
 const UNIT =
   "(?:cups?|c|tablespoons?|tbsps?|tbs|teaspoons?|tsps?|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|" +
   "millilit(?:er|re)s?|ml|lit(?:er|re)s?|l|quarts?|pints?|pinch(?:es)?|dash(?:es)?|cloves?|cans?|tins?|jars?|" +
-  "sticks?|slices?|pieces?|bunch(?:es)?|handfuls?|sprigs?|heads?|stalks?|packets?|bags?|knobs?)";
+  "sticks?|slices?|pieces?|bunch(?:es)?|handfuls?|sprigs?|heads?|stalks?|packets?|bags?|knobs?|inch(?:es)?|cm)";
 // "1 tsp", "1/2 cup", "2-3 cloves", "1 1/2 tbsp", "2 × 400 g tins", "500g",
 // and both ways at once: "1.2 kg/ 2.4lb", "2 tbsp / 30g".
 const AMOUNT = new RegExp(
@@ -54,42 +54,58 @@ export function readIngredient(line: string): Ingredient | null {
   const plain = withoutSoftMarks(line).trim();
   const match = plain.match(AMOUNT);
   if (!match) return null;
-  const amount = match[1].trim();
-  const rest = plain.slice(match[0].length);
-  if (LEFTOVER_AMOUNT.test(rest)) return null;
+  let amount = match[1].trim();
+  let rest = plain.slice(match[0].length);
+  // A size in brackets and what it's in: "1 (400 g) can chopped tomatoes".
+  const sized = rest.match(new RegExp(`^\\(([^)]*)\\)\\s*(${UNIT}|each)(?=\\s|$)\\.?\\s*(?:of\\s+)?`, "i"));
+  if (sized) {
+    amount = `${amount} (${sized[1]}) ${sized[2]}`;
+    rest = rest.slice(sized[0].length);
+  }
+  // "1 tsp each salt and pepper" is two things: not sure which is which.
+  if (LEFTOVER_AMOUNT.test(rest) || /^each\b/i.test(rest)) return null;
   const name = rest
     .replace(/\([^)]*\)/g, " ")
     .split(/,\s/)[0]
     .toLowerCase();
-  const words = name.match(/[a-zà-ÿ']+(?:-[a-zà-ÿ']+)*/g) ?? [];
+  const words: string[] = name.match(/[a-zà-ÿ']+(?:-[a-zà-ÿ']+)*/g) ?? [];
   // "3 garlic cloves": the unit after the name goes with the amount.
   const unitLast = words.length > 1 && new RegExp(`^${UNIT}$`, "i").test(words[words.length - 1]);
   const shownAmount = unitLast && /^[\d½¼¾⅓⅔⅛⅜⅝⅞.,/\s-]+$/.test(amount) ? `${amount} ${words.pop()}` : amount;
-  if (!words.length) return null;
+  // Water is in too many steps ("boiled water", "a pot of water") to be
+  // sure it's this water.
+  if (!words.length || words.includes("water")) return null;
   return { amount: shownAmount, words, partly: /\bdivided\b|\bplus (?:extra|more)\b|\bto taste\b/i.test(plain) };
 }
 
-const stem = (word: string) => (word.length > 3 ? word.replace(/(?:es|s)$/, "") : word);
+// One spelling for a word's singular and plural, as the match pattern
+// accepts both: "olive" and "olives" are both "oliv", "tomatoes" "tomato".
+const stem = (word: string) => (word.length > 3 ? word.replace(/(?:es|s)$/, "").replace(/e$/, "") : word);
 
-// Every run of the name's words, longest first, that could name it: not
-// one describing word alone ("fresh").
+// Every run of the name's words, not one describing word alone ("fresh"):
+// what another ingredient's name might share.
 function phrasesOf(words: string[]): string[][] {
   const phrases: string[][] = [];
   for (let length = words.length; length >= 1; length--) {
     for (let start = 0; start + length <= words.length; start++) {
       const phrase = words.slice(start, start + length);
       if (phrase.every((word) => DESCRIBING.has(word))) continue;
-      if (DESCRIBING.has(phrase[0]) && length === 1) continue;
       phrases.push(phrase);
     }
   }
   return phrases;
 }
 
+// What a step may call it: its name, or the end of it ("chicken stock",
+// "stock"; not "chicken", which more often means other chicken).
+function namesOf(words: string[]): string[][] {
+  return words.map((_, start) => words.slice(start)).filter((phrase) => !phrase.every((word) => DESCRIBING.has(word)));
+}
+
 const key = (phrase: string[]) => phrase.map(stem).join(" ");
 
 function phrasePattern(phrase: string[]): RegExp {
-  const words = phrase.map((word) => stem(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:es|s)?");
+  const words = phrase.map((word) => stem(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:e|es|s)?");
   return new RegExp(`(?<![\\p{L}'-])${words.join("\\s+")}(?![\\p{L}'-])`, "iu");
 }
 
@@ -115,7 +131,7 @@ export function planStepAmounts(steps: string[], ingredientLines: string[]): Map
   const plan = new Map<number, StepAmount[]>();
   for (const ingredient of ingredients) {
     if (!ingredient || ingredient.partly) continue;
-    const sure = phrasesOf(ingredient.words).filter((phrase) => meanings.get(key(phrase)) === 1);
+    const sure = namesOf(ingredient.words).filter((phrase) => meanings.get(key(phrase)) === 1);
     // The first step that names it, by its longest sure phrase there.
     found: for (let i = 0; i < steps.length; i++) {
       if (headingOf(steps[i]) !== null) continue;

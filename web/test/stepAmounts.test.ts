@@ -61,6 +61,45 @@ test("plurals match, and the hint goes inside the brackets tidily", () => {
   assert.deepEqual(shown(steps, ingredients, format), ["Slice the tomato (3).", "Warm the milk (1 cup, 240 ml)."]);
 });
 
+test("the review's wrong amounts don't happen", () => {
+  // A size in brackets: "can" is part of the amount, not the name.
+  assert.deepEqual(
+    shown(["If you can, brown the beef.", "Add the tomatoes."], ["500 g minced beef", "1 (400 g) can chopped tomatoes"]),
+    ["If you can, brown the beef (500 g).", "Add the tomatoes (1 (400 g) can)."]
+  );
+  // Olive oil and olives: "olive" could be either.
+  assert.deepEqual(shown(["Toss the olives.", "Drizzle with olive oil."], ["2 tbsp olive oil", "1/2 cup kalamata olives"]), [
+    "Toss the olives.",
+    "Drizzle with olive oil (2 tbsp).",
+  ]);
+  // "Chicken" in a step isn't the chicken breast's amount next to stock.
+  assert.deepEqual(shown(["Pour in the chicken stock."], ["500 g chicken breast", "2 cups stock"]), ["Pour in the chicken stock (2 cups)."]);
+  // Water is in too many steps.
+  assert.deepEqual(shown(["Soak in boiled water for 1 minute."], ["1/4 cup water", "200 g noodles"]), ["Soak in boiled water for 1 minute."]);
+  // A word only inside another name ("cooking" in cooking wine) isn't its name.
+  assert.deepEqual(shown(["Rinse to stop it cooking."], ["1 1/2 tbsp Chinese cooking wine"]), ["Rinse to stop it cooking."]);
+  // "Each" is two things.
+  assert.deepEqual(shown(["Cut each chicken breast in half."], ["1 tsp each salt and pepper", "2 chicken breasts"]), [
+    "Cut each chicken breast (2) in half.",
+  ]);
+});
+
+test("whole words only, headings skipped, first mention, ranges and pinches", () => {
+  assert.deepEqual(shown(["Bring a pot to the boil.", "Slice the eggplant."], ["2 tbsp olive oil", "2 eggs"]), [
+    "Bring a pot to the boil.",
+    "Slice the eggplant.",
+  ]);
+  assert.deepEqual(shown(["# Chicken", "Brown the thighs, then turn the thighs."], ["1 kg chicken thighs"]), [
+    "# Chicken",
+    "Brown the thighs (1 kg), then turn the thighs.",
+  ]);
+  assert.deepEqual(shown(["Add a pinch of salt.", "Pour in the stock."], ["1 tsp salt", "2 to 3 cups stock"]), [
+    "Add a pinch of salt.",
+    "Pour in the stock (2 to 3 cups).",
+  ]);
+  assert.equal(readIngredient("2 inch piece ginger, grated")?.amount, "2 inch piece");
+});
+
 test("a name already followed by brackets, or with formatting marks, is handled", () => {
   const ingredients = ["1 tsp cumin", "2 tbsp **ghee**"];
   const steps = ["Toast the cumin (whole seeds) first.", "Melt the **ghee**."];
