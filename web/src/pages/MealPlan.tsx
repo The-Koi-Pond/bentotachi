@@ -608,6 +608,10 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
   // breakfasts and lunches doesn't take several screens (2026-11-06).
   const empty = day.labelled ? day.meals.filter((meal) => day.dishesAt(meal).length === 0) : [];
   const full = day.meals.filter((meal) => !empty.includes(meal));
+  // Adding another recipe to a planned meal is a chip in the same row as
+  // the empty meals' ("+ Dinner + Breakfast"), not a row under each meal
+  // (Xel's pick, 2026-11-08).
+  const planned = full.filter((meal) => day.dishesAt(meal).length > 0);
   return (
     <li className={`plan-day ${when}`}>
       <div className="plan-date">
@@ -618,8 +622,15 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
         {full.map((meal) => (
           <MealPlace key={meal} meal={meal} {...day} />
         ))}
-        {empty.length > 0 && (
+        {planned.length + empty.length > 0 && (
           <div className="plan-empty-meals">
+            {planned.map((meal) => (
+              <div key={meal} className="plan-meal compact">
+                <button className="plan-add" onClick={() => day.onAdd(meal)} aria-label={`Add another recipe to ${meal}`}>
+                  + {MEAL_NAMES[meal]}
+                </button>
+              </div>
+            ))}
             {empty.map((meal) => (
               <MealPlace key={meal} meal={meal} {...day} compact />
             ))}
@@ -651,7 +662,12 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = 
       {dishes.map((entry) => (
         <DraggableDinner key={entry.id} entry={entry} onRemove={onRemove} />
       ))}
-      <AddButton meal={meal} another={dishes.length > 0} onAdd={onAdd} />
+      {/* Another recipe for it: the "+ Dinner" chip under the day's meals. */}
+      {dishes.length === 0 && (
+        <button className="plan-add" onClick={() => onAdd(meal)}>
+          + Add {meal}
+        </button>
+      )}
     </div>
   );
 }
