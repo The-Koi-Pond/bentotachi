@@ -1,7 +1,7 @@
 // Whether something is already on the shopping list, the same way everywhere
-// (adding from recipes or the plan, the list's own add box, and the server
-// when a pantry item runs out: server/pb_hooks/pantry.pb.js). Tested in
-// web/test/shoppingMatch.test.ts.
+// (adding from recipes or the plan, the list's own add box, the Pantry page,
+// and the server when a pantry item runs out: server/pb_hooks/pantry.pb.js).
+// Tested in web/test/shoppingMatch.test.ts.
 
 // The same pantry item, or the same name (ignoring capitals and spaces)
 // unless the two are linked to different pantry items.

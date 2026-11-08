@@ -33,6 +33,7 @@ import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
+import { sameThing } from "../shoppingMatch";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -135,9 +136,7 @@ export default function Pantry() {
     return () => window.clearTimeout(timer);
   }, [notice]);
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
-  // On the list if it's linked, or someone typed the same name by hand.
-  const isOnList = (item: PantryItem) =>
-    waiting.some((w) => w.pantry_item === item.id || (!w.pantry_item && norm(w.text) === norm(item.name)));
+  const isOnList = (item: PantryItem) => waiting.some((w) => sameThing({ text: item.name, pantryItem: item.id }, w));
 
   // Run out with only Undo to offer (it's on the list already, or someone
   // has put it there since it asked): that goes by itself too, like other

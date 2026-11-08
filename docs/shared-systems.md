@@ -8,9 +8,13 @@ they say otherwise.
 
 ## Who can see and change what
 
-- Every collection is open to any logged-in household member, except the
-  `users` list (each sees only themselves) and `recipe_ratings` (each changes
-  only their own): set in `server/pb_migrations/`, never in the app.
+- Any logged-in household member can read and change every collection,
+  except: `users` (everyone sees every account's fields except email and
+  password, so nothing private goes there; any member can add an account;
+  each changes only their own),
+  `recipe_ratings` (each changes only their own), `cooked` (no editing an
+  entry) and `household_settings` (no deleting). Set in
+  `server/pb_migrations/`, never in the app.
 - "Added by" / "Cooked by": the server sets them to whoever is logged in
   (`server/pb_hooks/who_added.pb.js`). That only runs on record requests; a
   custom route that saves records sets it itself, as `import.pb.js` does.
@@ -75,7 +79,8 @@ they say otherwise.
 ## Numbers, amounts and units
 
 - Reading a number in recipe text: `NUMBER`, `parseNumber`, `amountRange`
-  (`weights.ts`; `stepAmounts.ts` and `scaling.ts` use them too). Showing one in kitchen fractions: `kitchenFraction`
+  (`weights.ts`; `NUMBER` is also what `stepAmounts.ts` and `scaling.ts`
+  read with). Showing one in kitchen fractions: `kitchenFraction`
   (`scaling.ts`).
 - Scaling: `scaleLine`, `servingsCount` (`scaling.ts`); remembered size:
   `recipeScale.ts`.
@@ -92,7 +97,8 @@ they say otherwise.
   `textToTags` (`format.ts`); the tag box: `tagText.ts`; shelves:
   `normaliseTag`, `inCategory` (`recipeCategories.ts`).
 - Soft and bold marks: `softParts` / `withoutSoftMarks` (`softMarks.ts`),
-  shown by `<SoftText>`, typed with `<FormatTextarea>` / `toggleMark`.
+  shown by `<SoftText>`, typed with `<FormatTextarea>` / `toggleMark`
+  (`textFormat.ts`).
 - Pantry names: `sameName` (`pantryFields.ts`); ingredient links:
   `pantryLinks.ts`.
 - A site's name from its address: `siteHost` (`recipeSites.ts`; pass `""`
