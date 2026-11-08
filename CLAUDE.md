@@ -111,8 +111,9 @@ How to run: `README.md`.
   app bundle (`.aab`, at the path it prints) to upload in Play Console,
   signed with the same key (Play's "upload key"). It's the same app without
   self-updating, which Play forbids: the web part is built with
-  `VITE_BENTO_PLAY=1` (`canSelfUpdate` in appUpdates.ts: no update checks,
-  banner, "Check for updates" or Ko-fi link), the Android part with
+  `VITE_BENTO_PLAY=1` (`canSelfUpdate` in appUpdates.ts: no Ko-fi link, and
+  its update banner and "Check for updates" ask Google Play instead, through
+  Play's in-app updates, `updatesFromPlay`), the Android part with
   `-PbentoPlay` (no BentoUpdaterPlugin, and src/play/AndroidManifest.xml
   removes REQUEST_INSTALL_PACKAGES; the script checks it's gone). It uses
   build.gradle's version as it is, and Play needs a higher one per upload,

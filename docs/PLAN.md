@@ -1512,9 +1512,17 @@ whole amount as now. Xel: build it next time.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 
-The Play version has no update banner, because Play forbids an app
+Built 2026-11-08 on the branch `play-update-prompts`, not yet on main:
+@capawesome/capacitor-app-update 8.1.1, `updatesFromPlay` in
+appUpdates.ts, the same banner with "Restart to update" once Play has
+downloaded it, and "Check for updates" in the ⋮ menu (phone-only mode
+too). Only testable with an install from Play: install the current
+version from the internal testing track, upload a higher one, then open
+the app.
+
+The Play version had no update banner, because Play forbids an app
 installing its own updates (`canSelfUpdate` in appUpdates.ts), so people
-wait for Play's background auto-update. Google's own in-app updates
+waited for Play's background auto-update. Google's own in-app updates
 (Play Core's app-update library; a Capacitor plugin like
 @capawesome/capacitor-app-update wraps it) are allowed: the app asks Play
 whether a newer version is out and shows Play's prompt, and Play downloads

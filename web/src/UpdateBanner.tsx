@@ -1,33 +1,45 @@
 import { useEffect, useState } from "react";
-import { installUpdate, startUpdateChecks, useUpdateState } from "./appUpdates";
+import { installUpdate, restartToUpdate, startUpdateChecks, useUpdateState } from "./appUpdates";
 
-// "Bento 1.3 is ready [Update] [Later]" at the top of the app, when the
-// server has a newer Android app than this one.
+// "Bentotachi 1.3 is ready [Update] [Later]" at the top of the app, when the
+// server (or, in the Google Play app, Play) has a newer Android app than
+// this one. Play's downloads end with "Restart to update".
 export default function UpdateBanner() {
   const update = useUpdateState();
-  // "Later" hides it until the next new version.
-  const [dismissedVersion, setDismissedVersion] = useState<number | null>(null);
+  // "Later" hides it until the next new version, or until a Play download
+  // finishes (that's news too).
+  const [dismissed, setDismissed] = useState<string | null>(null);
 
   useEffect(() => startUpdateChecks(), []);
 
   const latest = "latest" in update ? update.latest : undefined;
-  if (!latest || dismissedVersion === latest.versionCode) return null;
+  const downloaded = update.status === "downloaded";
+  const key = latest ? `${latest.versionCode}${downloaded ? "-downloaded" : ""}` : "";
+  if (!latest || dismissed === key) return null;
   const installing = update.status === "installing";
+  // Play doesn't say the version's name.
+  const name = latest.versionName ? `Bentotachi ${latest.versionName}` : "A new version of Bentotachi";
 
   return (
     <div className="update-banner" role="status">
       <p>
-        <strong>Bentotachi {latest.versionName} is ready.</strong>
+        <strong>{downloaded ? "The update has downloaded." : `${name} is ready.`}</strong>
         {latest.notes && <span className="muted"> {latest.notes}</span>}
       </p>
       {update.status === "error" && <p className="error">{update.message}</p>}
       <div className="actions">
-        <button className="button ghost small" onClick={() => setDismissedVersion(latest.versionCode)}>
+        <button className="button ghost small" onClick={() => setDismissed(key)}>
           Later
         </button>
-        <button className="button primary small" onClick={() => void installUpdate()} disabled={installing}>
-          {installing ? "Downloading…" : "Update"}
-        </button>
+        {downloaded ? (
+          <button className="button primary small" onClick={() => void restartToUpdate()}>
+            Restart to update
+          </button>
+        ) : (
+          <button className="button primary small" onClick={() => void installUpdate()} disabled={installing}>
+            {installing ? "Downloading…" : "Update"}
+          </button>
+        )}
       </div>
     </div>
   );

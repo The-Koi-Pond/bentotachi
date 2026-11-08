@@ -9,7 +9,15 @@ import Avatar from "./Avatar";
 import { ChevronIcon, MoreIcon } from "./icons";
 import { forgetOfflineCopy } from "./offline";
 import { isPhoneMode, switchToServer } from "./phoneMode";
-import { canSelfUpdate, checkForUpdate, installUpdate, useUpdateState, type UpdateState } from "./appUpdates";
+import {
+  canSelfUpdate,
+  checkForUpdate,
+  installUpdate,
+  restartToUpdate,
+  updatesFromPlay,
+  useUpdateState,
+  type UpdateState,
+} from "./appUpdates";
 import deki from "./assets/deki.svg";
 
 // The small line under "Check for updates".
@@ -23,6 +31,8 @@ function updateDetail(update: UpdateState): string {
       return `You have ${update.installed}`;
     case "installing":
       return "Downloading…";
+    case "downloaded":
+      return "Downloaded, ready to install";
     case "error":
       return update.message;
     default:
@@ -153,14 +163,28 @@ export default function SettingsMenu() {
             </span>
             <span className="switch" aria-hidden="true" />
           </button>
-          {canSelfUpdate && !phone && (
+          {/* The household's app updates from its server, which phone-only
+              mode doesn't have; Play's updates don't need one. */}
+          {((canSelfUpdate && !phone) || updatesFromPlay) && (
             <button
               role="menuitem"
-              onClick={() => void (update.status === "available" ? installUpdate() : checkForUpdate())}
+              onClick={() =>
+                void (update.status === "available"
+                  ? installUpdate()
+                  : update.status === "downloaded"
+                    ? restartToUpdate()
+                    : checkForUpdate())
+              }
               disabled={update.status === "checking" || update.status === "installing"}
             >
               <span className="menu-item-text">
-                {update.status === "available" ? `Update to ${update.latest.versionName}` : "Check for updates"}
+                {update.status === "available"
+                  ? update.latest.versionName
+                    ? `Update to ${update.latest.versionName}`
+                    : "Update Bentotachi"
+                  : update.status === "downloaded"
+                    ? "Restart to update"
+                    : "Check for updates"}
                 <span className="menu-item-detail">{updateDetail(update)}</span>
               </span>
             </button>
