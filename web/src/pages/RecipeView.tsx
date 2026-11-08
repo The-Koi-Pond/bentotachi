@@ -42,6 +42,8 @@ import { DetailsEditor, EditButton, TextEditor } from "../RecipeInlineEdit";
 import SoftText from "../SoftText";
 import { withoutSoftMarks } from "../softMarks";
 import { linesToBuy } from "../weekShopping";
+import { planStepAmounts, withStepAmounts } from "../stepAmounts";
+import { useStepAmounts } from "../stepAmountsSetting";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
@@ -113,6 +115,7 @@ export default function RecipeView() {
   // For hints like "1 red bell pepper (capsicum)" in the household's words
   // and units.
   const hints = useHints(recipe?.source_url ?? "");
+  const [stepAmountsOn] = useStepAmounts();
   // Ticked-off ingredients and steps, only for this cooking session.
   const [done, setDone] = useState<Set<string>>(new Set());
   const ratings = useRecipeRatings(id);
@@ -458,6 +461,11 @@ export default function RecipeView() {
     ["Total", totalMinutes(recipe)],
   ].filter(([, minutes]) => minutes) as [string, number][];
   let stepNumber = 0;
+  // "Amounts in the method" (⋮ menu): which steps show how much of what,
+  // from the ingredients at the recipe's chosen size (stepAmounts.ts).
+  const amountPlan = stepAmountsOn
+    ? planStepAmounts(recipe.steps ?? [], (recipe.ingredients ?? []).map((line) => scaleLine(line, scale)))
+    : null;
   // The photos: the cover and the gallery at the top, the rest in their
   // steps; the viewer goes through them in that order ("" is the cover).
   const gallery = galleryPhotos(recipe);
@@ -668,7 +676,9 @@ export default function RecipeView() {
                   <button className={`step ${done.has(key) ? "done" : ""}`} onClick={() => toggle(key)} aria-pressed={done.has(key)}>
                     <span className="step-number">{number}</span>
                     <span>
-                      <SoftText text={withHints(line, hints)} />
+                      <SoftText
+                        text={withStepAmounts(withHints(line, hints), amountPlan?.get(i), (amount) => withHints(amount, hints))}
+                      />
                     </span>
                   </button>
                   {/* Beside the step, not inside it: the step itself is a button. */}

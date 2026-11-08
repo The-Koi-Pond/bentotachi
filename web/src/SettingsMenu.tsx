@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, useQuickMinutes } from "./pb";
 import { useWakeLock } from "./useWakeLock";
 import { useShelfDrawers } from "./shelfDrawers";
+import { useStepAmounts } from "./stepAmountsSetting";
 import { useSingleUser } from "./household";
 import Avatar from "./Avatar";
 import { ChevronIcon, MoreIcon } from "./icons";
@@ -36,6 +37,7 @@ export default function SettingsMenu() {
   const user = useCurrentUser();
   const wakeLock = useWakeLock();
   const drawers = useShelfDrawers();
+  const [stepAmounts, setStepAmounts] = useStepAmounts();
   const singleUser = useSingleUser();
   const update = useUpdateState();
   const quickMinutes = useQuickMinutes();
@@ -134,6 +136,13 @@ export default function SettingsMenu() {
               <span className="switch" aria-hidden="true" />
             </button>
           )}
+          <button role="menuitemcheckbox" aria-checked={stepAmounts} onClick={() => setStepAmounts(!stepAmounts)}>
+            <span className="menu-item-text">
+              Amounts in the method
+              <span className="menu-item-detail">“Add the oregano (1 tsp)”, when it's sure</span>
+            </span>
+            <span className="switch" aria-hidden="true" />
+          </button>
           <button role="menuitemcheckbox" aria-checked={drawers.startClosed} onClick={() => drawers.setStartClosed(!drawers.startClosed)}>
             <span className="menu-item-text">
               Shelves start closed
