@@ -62,6 +62,12 @@ test("nothing to buy is cut off: lists of things, and commas in brackets", () =>
   assert.equal(listWording("2 potatoes, cut into 2 cm chunks"), "2 potatoes");
   assert.equal(listWording("100 g butter, at room temperature"), "100 g butter");
   assert.equal(listWording("Salt, pepper, to taste"), "Salt, pepper");
+  assert.equal(listWording("Sour cream, chopped chives, to serve"), "Sour cream, chopped chives");
+  // The first part is the thing itself, even when it starts like preparation.
+  assert.equal(listWording("Chopped parsley, to serve"), "Chopped parsley");
+  // A comma inside brackets never cuts, even before a preparation word.
+  assert.equal(listWording("1 can chickpeas (15 oz, drained and rinsed)"), "1 can chickpeas (15 oz, drained and rinsed)");
+  assert.equal(listWording("2 cups stock [hot, divided]"), "2 cups stock [hot, divided]");
 });
 
 test("the plan's sheet uses the list's wording too", () => {
@@ -86,8 +92,13 @@ test("a recipe's lines sharing a pantry item go on the list once, by its name", 
     { text: "3 eggs", pantryItem: item("eggs", "Eggs", "low") },
   ]);
   assert.deepEqual(
-    things.map((t) => t.text),
-    ["Butter", "1 lime", "3 eggs"]
+    things.map((t) => [t.text, (t.pantryItem as { id: string } | null)?.id ?? null]),
+    [
+      ["Butter", "butter"],
+      ["1 lime", null],
+      // Still linked, so buying it marks the pantry item Have.
+      ["3 eggs", "eggs"],
+    ]
   );
 });
 
