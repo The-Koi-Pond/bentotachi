@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { errorMessage, recipes, type PantryItem, type Recipe } from "./pb";
+import { errorMessage, recipes, type PantryItem, type PantryPacket, type Recipe } from "./pb";
 import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
@@ -97,7 +97,8 @@ function ChosenRecipe({
   pantryError: string;
   onBack: () => void;
 }) {
-  const rows = gatherIngredients([recipe], pantry ?? []);
+  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const rows = gatherIngredients([recipe], pantry ?? [], packets.items ?? []);
   const ticks = useGatheredTicks(rows);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);

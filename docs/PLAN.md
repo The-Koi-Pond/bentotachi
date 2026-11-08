@@ -1504,7 +1504,7 @@ Xel's answers (2026-11-07):
 1. Tap-to-talk (one big button) first; hands-free listening later.
 2. The phone's own voice is fine (no Ben voice).
 
-## Next: buy only what the pantry is short of (Xel, 2026-11-08)
+## Buy only what the pantry is short of (Xel, 2026-11-08; built the same day)
 
 Adding a recipe's ingredients to the shopping list should count what's in
 stock. Example: the pantry has 200 g of linguine, the recipe (scaled up)
@@ -1514,6 +1514,18 @@ pantry's packets to say how much is left (pantry_packets has sizes like
 (scaling.ts reads amounts), and units that can be compared (g/kg, ml/l;
 "2 onions" against a packet count is harder). Where it can't tell, add the
 whole amount as now. Xel: build it next time.
+Xel's choices (2026-11-08): every packet in stock counts as its full size
+(packets don't say how much is left; now and then the list asks for a bit
+too little, which beats another thing to keep up to date). A line the
+pantry already covers stays in the add choices, unticked, saying "Enough"
+and what's in stock; a short one shows the reduced amount and "Have …".
+Built (pantryStock.ts): the recipe page's "Missing from pantry" and
+Choose…, the list's "From a recipe" and the plan's "Add these to the
+shopping list" all use it. Grams, kilos, pounds, ounces, millilitres,
+litres, spoons and cups (at the recipe's own spoon size) compare; counts
+("2 onions") and packets with no size fall back to Have / Low / Out. An
+item two recipes need is compared against both amounts together, but its
+row still says just the pantry's name, with no reduced amount.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 

@@ -5,8 +5,11 @@
 
 import { headingOf } from "./format.ts";
 import { linkFor } from "./pantryLinks.ts";
+import { packetsOf } from "./pantryPackets.ts";
+import { coverOf, stillToBuy, worthBuying, type Cover } from "./pantryStock.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
-import type { PantryItem, Recipe } from "./pb";
+import { recipeMeasures, type RecipeMeasures } from "./volumes.ts";
+import type { PantryItem, PantryPacket, Recipe } from "./pb";
 
 export interface GatheredRow {
   // Unique per row: "p:<pantry id>" or "t:<line in lowercase>".
@@ -19,6 +22,8 @@ export interface GatheredRow {
   recipeTitles: string[];
   // The first recipe that needs it, for the shopping item's "for" note.
   recipeId: string;
+  // What the pantry's packets cover of it (pantryStock.ts).
+  cover: Cover;
 }
 
 // A part after a comma is how to prepare the thing, not another thing to
@@ -107,9 +112,18 @@ export function linesToBuy(
   return things;
 }
 
-export function gatherIngredients(dinners: Recipe[], pantry: PantryItem[]): GatheredRow[] {
+// `packets`: the pantry's packets in stock, so a row asks only for what's
+// short (a row of one line shows the reduced amount; a merged row keeps the
+// pantry's name and says whether there's enough).
+export function gatherIngredients(
+  dinners: Recipe[],
+  pantry: PantryItem[],
+  packets: Pick<PantryPacket, "id" | "item" | "brand" | "size" | "created">[] = []
+): GatheredRow[] {
   const rows = new Map<string, GatheredRow>();
+  const needs = new Map<string, { line: string; measures: RecipeMeasures }[]>();
   for (const recipe of dinners) {
+    const measures = recipeMeasures(recipe.source_url ?? "");
     for (const line of recipe.ingredients ?? []) {
       if (headingOf(line) !== null || !line.trim()) continue;
       const link = linkFor(line, recipe.ingredient_links, pantry);
@@ -118,6 +132,7 @@ export function gatherIngredients(dinners: Recipe[], pantry: PantryItem[]): Gath
       // duplicate check sees the same words.
       const plain = listWording(line);
       const key = link.item ? `p:${link.item.id}` : `t:${plain.toLowerCase()}`;
+      needs.set(key, [...(needs.get(key) ?? []), { line: plain, measures }]);
       const row = rows.get(key);
       if (row) {
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);
@@ -132,15 +147,22 @@ export function gatherIngredients(dinners: Recipe[], pantry: PantryItem[]): Gath
           pantryItem: link.item,
           recipeTitles: [recipe.title],
           recipeId: recipe.id,
+          cover: { kind: "unknown" },
         });
       }
     }
   }
+  for (const row of rows.values()) {
+    if (!row.pantryItem) continue;
+    const lines = needs.get(row.key) ?? [];
+    row.cover = coverOf(lines, packetsOf(packets, row.pantryItem.id));
+    if (lines.length === 1) row.text = stillToBuy(row.text, row.cover);
+  }
   return [...rows.values()];
 }
 
-// Ticked to start with: everything except what the pantry says we have.
-// Lines not in the pantry are ticked too, since Bento can't tell.
+// Ticked to start with: what's worth buying (worthBuying). Lines not in the
+// pantry are ticked too, since Bentotachi can't tell.
 export function startsTicked(row: GatheredRow): boolean {
-  return row.pantryItem?.status !== "have";
+  return worthBuying(row.pantryItem, row.cover);
 }

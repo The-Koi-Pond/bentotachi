@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { errorMessage, type MealPlanEntry, type PantryItem, type Recipe } from "./pb";
+import { errorMessage, type MealPlanEntry, type PantryItem, type PantryPacket, type Recipe } from "./pb";
 import { addDays, datePart, formatDay } from "./dates";
 import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
@@ -28,6 +28,7 @@ export default function WeekShoppingSheet({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pantry = useLiveRecords<PantryItem>("pantry_items");
+  const packets = useLiveRecords<PantryPacket>("pantry_packets");
   const [days, setDays] = useState(7);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
@@ -47,7 +48,8 @@ export default function WeekShoppingSheet({
     .sort((a, b) => a.date.localeCompare(b.date) || MEALS.indexOf(mealOf(a)) - MEALS.indexOf(mealOf(b)));
   const rows = gatherIngredients(
     dinners.map((entry) => entry.expand!.recipe as Recipe),
-    pantry.items ?? []
+    pantry.items ?? [],
+    packets.items ?? []
   );
 
   const ticks = useGatheredTicks(rows);

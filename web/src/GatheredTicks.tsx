@@ -3,6 +3,7 @@ import type { ShoppingItem } from "./pb";
 import { startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
 import { sameThing } from "./shoppingMatch";
+import { coverNote } from "./pantryStock";
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 
@@ -48,6 +49,9 @@ export function GatheredList({
       {rows.map((row) => {
         const already = ticks.onList(row);
         const status = row.pantryItem?.status;
+        // "Enough: 2 × 500 g" or "Have 200 g" when the packets can tell,
+        // instead of Have / Low / Out.
+        const note = coverNote(row.cover);
         return (
           <li key={row.key}>
             <label className={already ? "done" : ""}>
@@ -58,6 +62,11 @@ export function GatheredList({
               </span>
               {already ? (
                 <span className="muted week-row-state">On the list</span>
+              ) : note ? (
+                <span className={`week-row-state status-${row.cover.kind === "enough" ? "have" : "low"}`}>
+                  <span className={`status-dot status-${row.cover.kind === "enough" ? "have" : "low"}`} aria-hidden="true" />
+                  {note}
+                </span>
               ) : (
                 status && (
                   <span className={`week-row-state status-${status}`}>

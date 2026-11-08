@@ -12,6 +12,7 @@ import { headingOf } from "./format.ts";
 import type { PantryItem, Recipe } from "./pb";
 import { mentions, stem } from "./wordMatch.ts";
 import { otherNames } from "./regionalNames.ts";
+import { worthBuying, type Cover } from "./pantryStock.ts";
 
 export type IngredientLink =
   | { kind: "chosen" | "guessed"; item: PantryItem }
@@ -38,12 +39,10 @@ export function guessPantryItem(line: string, items: PantryItem[]): PantryItem |
   return best;
 }
 
-// Whether a recipe line is worth buying: the pantry is low on it, out of it,
-// or doesn't have it at all. Not lines marked "not a pantry item" (water).
-// "Add missing from pantry".
-export function missingFromPantry(link: IngredientLink): boolean {
-  if (link.kind === "notPantry") return false;
-  return link.item?.status !== "have";
+// Whether a recipe line is worth buying (worthBuying, pantryStock.ts), for
+// "Missing from pantry". Never lines marked "not a pantry item" (water).
+export function missingFromPantry(link: IngredientLink, cover: Cover = { kind: "unknown" }): boolean {
+  return link.kind !== "notPantry" && worthBuying(link.item, cover);
 }
 
 // What a line is linked to: someone's choice for this recipe, else a guess.

@@ -130,3 +130,35 @@ test("starts with everything ticked except what we have", () => {
     ["dashi", true],
   ]);
 });
+
+const packet = (id: string, itemId: string, size: string) => ({ id, item: itemId, brand: "", size, created: id });
+const stocked = [item("pasta", "Linguine", "have"), item("rice", "Rice", "low"), item("flour", "Flour", "have")];
+const packets = [packet("1", "pasta", "200 g"), packet("2", "rice", "1 kg"), packet("3", "rice", "1 kg")];
+
+test("packets in stock: a short line asks for the rest, a covered one starts unticked", () => {
+  const rows = gatherIngredients(
+    [recipe("a", "Pasta", ["1.5 kg linguine, cooked", "500 g rice", "2 cups flour"], { "1.5 kg linguine, cooked": "pasta" })],
+    stocked,
+    packets
+  );
+  assert.deepEqual(
+    rows.map((r) => [r.text, r.cover.kind, startsTicked(r)]),
+    [
+      // Have, but only 200 g of 1.5 kg: ticked, for the 1.3 kg still needed.
+      ["1.3 kg linguine", "short", true],
+      // Low, but 2 kg in: enough, so unticked.
+      ["500 g rice", "enough", false],
+      // No packets: Have / Low / Out decides, as before.
+      ["2 cups flour", "unknown", false],
+    ]
+  );
+});
+
+test("packets in stock: a merged row keeps the pantry's name and adds up what both recipes need", () => {
+  const rows = gatherIngredients(
+    [recipe("a", "Curry", ["1.5 kg rice"]), recipe("b", "Fried rice", ["800 g rice"])],
+    stocked,
+    packets
+  );
+  assert.deepEqual(rows.map((r) => [r.text, r.cover.kind, startsTicked(r)]), [["Rice", "short", true]]);
+});

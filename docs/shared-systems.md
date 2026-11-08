@@ -54,6 +54,9 @@ they say otherwise.
 - Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
   what's already waiting). "Is it already on the list?": `sameThing`
   (`shoppingMatch.ts`; `server/pb_hooks/pantry.pb.js` follows the same rule).
+  How much the pantry's packets cover of what a recipe needs, and whether
+  it's worth buying: `coverOf`, `worthBuying`, `stillToBuy`, `coverNote`
+  (`pantryStock.ts`); a line's measured amount: `lineMeasure` (`scaling.ts`).
 - Delete with Undo: `useUndo` (`undo.tsx`, rules in `pendingDelete.ts`).
   Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
   the question from `deleteQuestion`, `deleteWarning.ts`).

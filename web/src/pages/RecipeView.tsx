@@ -15,8 +15,11 @@ import {
   type CookedEntry,
   type MealPlanEntry,
   type PantryItem,
+  type PantryPacket,
   type Recipe,
 } from "../pb";
+import { packetsOf } from "../pantryPackets";
+import { coverNote, coverOf, stillToBuy, type Cover } from "../pantryStock";
 import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
@@ -874,10 +877,35 @@ function IngredientsSection({
   const [linking, setLinking] = useState<string | null>(null);
 
   const linkOf = (line: string) => linkFor(line, recipe.ingredient_links, pantryList);
+  // What the pantry's packets cover of each linked item, over all of this
+  // recipe's lines for it at its size (pantryStock.ts).
+  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const linesByItem = new Map<string, number[]>();
+  for (const i of pickable) {
+    const item = linkOf(lines[i]).item;
+    if (item) linesByItem.set(item.id, [...(linesByItem.get(item.id) ?? []), i]);
+  }
+  const covers = new Map(
+    [...linesByItem].map(([itemId, indexes]) => [
+      itemId,
+      coverOf(
+        indexes.map((i) => ({ line: scaleLine(lines[i], scale), measures: hints.measures })),
+        packetsOf(packets.items ?? [], itemId)
+      ),
+    ])
+  );
+  const coverOfLine = (i: number): Cover => covers.get(linkOf(lines[i]).item?.id ?? "") ?? { kind: "unknown" };
+  const onlyLineFor = (i: number) => linesByItem.get(linkOf(lines[i]).item?.id ?? "")?.length === 1;
+  // Beside a line while choosing: "Enough: 2 × 500 g", or "Have 200 g: adds
+  // the rest" when only the shortfall goes on the list.
+  const pickNote = (i: number) => {
+    const cover = coverOfLine(i);
+    return cover.kind === "short" && onlyLineFor(i) ? `${coverNote(cover)}: adds the rest` : coverNote(cover);
+  };
   // Lines the pantry doesn't have enough of, or at all (not water and the
   // like): "Missing from pantry", and "Select what we need" when choosing
   // (which once left out lines not linked to the pantry).
-  const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i])));
+  const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i]), coverOfLine(i)));
   // "All": every line but those marked "not a pantry item" (water), as the
   // plan's and the list's sheets leave them out too.
   const buyable = pickable.filter((i) => linkOf(lines[i]).kind !== "notPantry");
@@ -931,12 +959,19 @@ function IngredientsSection({
     setStatus(null);
     try {
       // In the recipe's words at its size, without how to prepare it
-      // ("2 onions"); lines sharing a pantry item as one, by its name
-      // (linesToBuy). Still linked, so buying marks the pantry item Have.
+      // ("2 onions"), less what the packets in stock cover; lines sharing a
+      // pantry item as one, by its name (linesToBuy). Still linked, so
+      // buying marks the pantry item Have.
       const things = linesToBuy(
         [...indexes]
           .sort((a, b) => a - b)
-          .map((index) => ({ text: scaleLine(lines[index], scale), pantryItem: linkOf(lines[index]).item }))
+          .map((index) => {
+            const scaled = scaleLine(lines[index], scale);
+            return {
+              text: onlyLineFor(index) ? stillToBuy(scaled, coverOfLine(index)) : scaled,
+              pantryItem: linkOf(lines[index]).item,
+            };
+          })
       ).map(({ text, pantryItem }) => ({ text, pantryItem: pantryItem?.id ?? "", recipe: recipe.id }));
       setStatus({ text: addedMessage(await addToShoppingList(things)), isError: false });
       setPicking(false);
@@ -977,7 +1012,10 @@ function IngredientsSection({
               {picking ? (
                 <label>
                   <input type="checkbox" checked={picked.has(i)} onChange={() => togglePicked(i)} />
-                  <SoftText text={withHints(scaleLine(line, scale), hints)} />
+                  <span className="week-row-text">
+                    <SoftText text={withHints(scaleLine(line, scale), hints)} />
+                    {pickNote(i) && <span className="muted pick-note">{pickNote(i)}</span>}
+                  </span>
                 </label>
               ) : (
                 <label className={done.has(key) ? "done" : ""}>
