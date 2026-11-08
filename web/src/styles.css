@@ -1527,6 +1527,9 @@ main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  /* A tapped row's tint stays inside the rounded corners (on a phone, the
+     tint stays after a tap; Xel, 2026-11-08). */
+  overflow: hidden;
 }
 
 .site-list li + li {
