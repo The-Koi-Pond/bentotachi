@@ -1,7 +1,7 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // More than one dish per meal: a main with its sides, or a curry with its
-// rice (Lilly asked, 2026-11-08). A meal's place (its day and meal) was
+// rice. A meal's place (its day and meal) was
 // unique; now it can hold several entries, shown in the order they were
 // added. Nothing already planned changes.
 //

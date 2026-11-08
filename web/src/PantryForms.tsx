@@ -726,7 +726,7 @@ export function EditPantryItem({
   // Opened by tapping the item, so easy to open by accident: its name with
   // a ✕ right where the tap was closes it again (like Cancel), Escape too,
   // and Remove / Cancel / Save stay in reach at the bottom of the screen
-  // while scrolling through the form (Xel, 2026-11-07).
+  // while scrolling through the form.
   return (
     <form
       className="pantry-edit stack"

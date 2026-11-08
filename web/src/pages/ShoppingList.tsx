@@ -241,7 +241,7 @@ export default function ShoppingList() {
           Add
         </button>
       </form>
-      {/* A recipe's ingredients, found from here (Lilly, 2026-11-08). */}
+      {/* A recipe's ingredients, found from here. */}
       {!offline && (
         <button className="link-button from-recipe" onClick={() => setFromRecipe(true)}>
           + Add from a recipe

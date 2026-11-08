@@ -20,7 +20,7 @@ const RECIPE_PAGES = ["/recipes", "/add", "/new", "/shelves"];
 // to no tab.
 // Where you last were in the Recipes tab (a recipe, or the list with its
 // filters), so leaving for Shopping and tapping Recipes again goes back
-// there (Xel, 2026-11-08). Tapping Recipes while in it goes to the list.
+// there. Tapping Recipes while in it goes to the list.
 let lastRecipesPlace = "/";
 
 export default function TabBar() {

@@ -1,7 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Nutrition facts per serving, as most recipe apps keep them (Xel,
-// 2026-11-07): a JSON list of lines like "Calories: 420 kcal", from a
+// Nutrition facts per serving, as most recipe apps keep them: a JSON list of lines like "Calories: 420 kcal", from a
 // website's recipe data (recipe_parse.js nutritionLines) or a Paprika file.
 // Kept on every recipe, shown only to people who turn on "Show nutrition"
 // (users.show_nutrition, in the ⋮ menu): some would rather not see it.

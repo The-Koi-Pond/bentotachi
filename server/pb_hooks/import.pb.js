@@ -22,7 +22,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   }
 
   // "preview": read the page and send back what's in it, saving nothing:
-  // a recipe's "Re-import from the website" (Xel, 2026-11-08), which merges
+  // a recipe's "Re-import from the website", which merges
   // it into the recipe in the app.
   const preview = body.preview === true;
 

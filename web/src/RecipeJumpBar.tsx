@@ -4,7 +4,7 @@ import { currentSection, jumpTarget, stillTapped, type JumpSection } from "./rec
 // The recipe page's Ingredients · Method · Notes switch: it sits above the
 // ingredients and sticks under the top bar while you scroll through them,
 // so you can hop between "how much butter?" and "what's next?" without
-// scrolling past everything (Xel, 2026-11-07). Each section remembers
+// scrolling past everything. Each section remembers
 // where you were (recipeJump.ts). `sections` name the page elements (by
 // id) to jump to; ones not on the page are left out.
 export default function RecipeJumpBar({ sections }: { sections: { id: string; label: string }[] }) {

@@ -1,5 +1,5 @@
 // How big each recipe was last made, remembered on this device: scaled from
-// 4 to 6 servings, it opens at 6 next time (Xel, 2026-11-08). Kept as
+// 4 to 6 servings, it opens at 6 next time. Kept as
 // { recipe id: factor }; "as written" (1) isn't kept.
 
 const KEY = "bento.recipeScales";

@@ -86,7 +86,7 @@ export function useShelfDrawers() {
         update({ ...state, closed });
       }
     },
-    // "Close all" / "Open all" on the Recipes page (Lilly asked, 2026-11-08):
+    // "Close all" / "Open all" on the Recipes page:
     // these shelves all open or all closed, remembered like one at a time.
     setAll(ids: string[], open: boolean) {
       if (state.startClosed) {

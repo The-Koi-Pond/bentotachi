@@ -82,8 +82,7 @@ function savedSort(): SortOrder {
 }
 
 // How the cards are shown, remembered on this device too: small cards
-// (three across on a phone), big ones (two across) or a list (Lily asked,
-// 2026-11-08).
+// (three across on a phone), big ones (two across) or a list.
 type CardLayout = "small" | "big" | "list";
 const LAYOUT_KEY = "bento.recipeLayout";
 const LAYOUTS: { value: CardLayout; label: string; icon: React.JSX.Element }[] = [
@@ -101,7 +100,7 @@ function savedLayout(): CardLayout {
   }
 }
 
-// Edit mode: tidying the collection (Xel, 2026-11-06). Tapping cards picks
+// Edit mode: tidying the collection. Tapping cards picks
 // them for the bar at the bottom ("Put on a shelf", "Delete"), and shelves
 // show their grips (drag to reorder) and "Edit shelf". Everything else
 // about a single recipe is on its own page. Lives in the address
@@ -510,7 +509,7 @@ export default function RecipeList() {
         <span className="recipe-card-text">
           <strong title={recipe.title}>{recipe.title}</strong>
           {/* Where it's from, so a recipe is easy to find without opening
-              several (Xel, 2026-11-07); see recipeTwins.ts. */}
+              several; see recipeTwins.ts. */}
           <span className="card-source muted">{sources.get(recipe.id)}</span>
           <CardDetails
             recipe={recipe}
@@ -537,7 +536,7 @@ export default function RecipeList() {
     }
     return (
       <li key={recipe.id} className="recipe-tile">
-        {/* Your favourites wear a heart (Xel, 2026-11-06): a badge, not a
+        {/* Your favourites wear a heart: a badge, not a
             button. A row of empty hearts was clutter; favouriting is on the
             recipe's own page. */}
         {isMyFavorite(recipe) && (
@@ -689,7 +688,7 @@ export default function RecipeList() {
           <span className="muted">
             {shown.length} {shown.length === 1 ? "recipe" : "recipes"}
           </span>
-          {/* Every shelf shut or open at once (Lilly asked, 2026-11-08). */}
+          {/* Every shelf shut or open at once. */}
           {showShelves && !editing && filledShelves.length > 1 && (
             <>
               <span aria-hidden="true">·</span>
@@ -702,8 +701,7 @@ export default function RecipeList() {
             </>
           )}
         </span>
-        {/* The rest, used now and then, behind one button (Lilly's idea,
-            2026-11-08): the cards' size, the order, shelves or one list,
+        {/* The rest, used now and then, behind one button: the cards' size, the order, shelves or one list,
             and Edit. */}
         <button
           className={`button small view-options-button ${viewOpen ? "primary" : ""}`}
@@ -891,8 +889,8 @@ export default function RecipeList() {
           {shelfError && <p className="error">{shelfError}</p>}
           {/* Edit mode shows every shelf in its real order, empty ones as
               shut drawers with grips, so any can be moved or edited and
-              lands where it's dropped (review, 2026-11-07). Otherwise the
-              empty ones are one line at the end (Xel, 2026-11-05): a new
+              lands where it's dropped. Otherwise the
+              empty ones are one line at the end: a new
               household's first recipes come first, not seven empty drawers. */}
           {(editing ? allShelves : filledShelves).map((shelf) => (
             <Shelf

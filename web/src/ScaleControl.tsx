@@ -38,8 +38,7 @@ export default function ScaleControl({
     more = at < FACTORS.length - 1 ? FACTORS[at + 1] : null;
   }
 
-  // A small card (Xel's pick, 2026-11-06; a slider can come later if people
-  // ask): "Makes" with the stepper beside it, then once changed one line
+  // A small card (a slider can come later if people ask): "Makes" with the stepper beside it, then once changed one line
   // saying what it was scaled from, with Reset.
   return (
     <div className="scale-row">

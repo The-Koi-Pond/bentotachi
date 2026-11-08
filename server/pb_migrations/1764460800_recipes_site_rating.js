@@ -3,7 +3,7 @@
 // The recipe website's own rating, saved when a recipe is imported from a
 // link (recipe_parse.js siteRating): site_rating out of 5 (0 = none) and
 // how many people gave it. Shown in grey ★ on a card until the household
-// rates it in onigiri, and on the recipe page (Xel, 2026-11-07).
+// rates it in onigiri, and on the recipe page.
 
 migrate((app) => {
   const recipes = app.findCollectionByNameOrId("recipes");

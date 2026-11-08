@@ -1,8 +1,7 @@
 // The recipe page's jump bar (RecipeJumpBar.tsx): which section you're
 // in, and where a tap takes you. Kept here so the tests can check it.
 //
-// Like Paprika's Ingredients / Directions tabs, but on one page (Xel,
-// 2026-11-07): jumping away from step 5 to the ingredients and tapping
+// Like Paprika's Ingredients / Directions tabs, but on one page: jumping away from step 5 to the ingredients and tapping
 // Method again goes back to step 5, not the top of the method.
 
 // A section's place on the page, in pixels from the top of the page.
@@ -16,8 +15,7 @@ export interface JumpSection {
 // just under the bars (`offset` px down the screen). The first one before
 // any have. At the very bottom of the page (`maxScroll`, as far as it
 // scrolls), the last one: a short last section (notes) can't scroll up to
-// the bars, and would otherwise never count as being read (found in
-// review, 2026-11-07).
+// the bars, and would otherwise never count as being read.
 export function currentSection(sections: JumpSection[], scrollY: number, offset: number, maxScroll = Infinity): string | null {
   if (sections.length && maxScroll > 0 && scrollY >= maxScroll - 1) return sections[sections.length - 1].key;
   let current = sections[0]?.key ?? null;
@@ -37,7 +35,7 @@ export function currentSection(sections: JumpSection[], scrollY: number, offset:
 // (the last one, at the bottom of the page), but the place is remembered
 // under the one whose top you've passed: at the bottom you may be
 // reading the method's last steps with the notes lit, and Method should
-// bring you back to them (found in review, 2026-11-07).
+// bring you back to them.
 export function jumpTarget(
   sections: JumpSection[],
   to: string,

@@ -580,7 +580,7 @@ function findAuthorNotes(html) {
 // Ingredient sections ("Marinade:", "Sauce:", "Serving:"): recipe data
 // lists ingredients as one flat list, so the section headings only exist in
 // the page's recipe card (WP Recipe Maker, Tasty Recipes, Mediavine Create;
-// Lilly found RecipeTin Eats' missing, 2026-11-08). Reads the card's
+// RecipeTin Eats' came in flat without this). Reads the card's
 // headings and how many ingredients each one covers, then puts "# Heading"
 // lines into the recipe data's list at those places. Only when the card
 // lists exactly as many ingredients as the data, so a heading can't land in
@@ -767,7 +767,7 @@ function parseRecipe(html, pageUrl) {
 // trailing slash, a #part or tracking extras (utm_…, fbclid, gclid…), and
 // whatever the capitals in the site's name. "" for something that isn't a
 // web link. Used to warn before saving a recipe that's already here
-// (import.pb.js; Xel, 2026-11-07).
+// (import.pb.js).
 function linkKey(url) {
   var m = String(url || "").trim().match(/^https?:\/\/([^/?#]+)([^?#]*)(\?[^#]*)?/i);
   if (!m) return "";

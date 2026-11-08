@@ -28,7 +28,7 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
     try {
       // Already planned there: nothing to do. Something else planned there:
       // this goes alongside it, as a meal can hold more than one recipe
-      // (Lilly, 2026-11-08; it used to ask to replace it).
+      // (it used to ask to replace it).
       const already = await mealPlan()
         .getFirstListItem(pb.filter("date = {:date} && meal = {:meal} && recipe = {:recipe}", { date: toStoredDate(date), meal, recipe: recipe.id }))
         .catch((err) => {

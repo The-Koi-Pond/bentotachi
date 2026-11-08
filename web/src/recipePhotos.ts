@@ -1,4 +1,4 @@
-// A recipe's photos besides its cover (the "photos" field, Xel 2026-11-07):
+// A recipe's photos besides its cover (the "photos" field):
 // a gallery swiped through at the top of the recipe page, and photos shown
 // with a step. Which step is kept in photo_steps as { photo file name: the
 // step's wording, lower case }, so a step keeps its photo when the steps

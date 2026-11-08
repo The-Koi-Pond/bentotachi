@@ -1,7 +1,7 @@
 // A whole recipe pasted as text (from a message, an email, a document or a
 // social post's caption), sorted into the "Add by hand" form's boxes for
-// checking before it's saved (Add recipe → "Paste a recipe"; Xel,
-// 2026-11-07). Like Paprika 4's "Create from Clipboard".
+// checking before it's saved (Add recipe → "Paste a recipe"). Like
+// Paprika 4's "Create from Clipboard".
 //
 // Headings like "Ingredients", "Method" and "Notes" say where each part
 // starts; without them, the short lines that look like ingredients at the

@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// "Bring step photos from websites" (Xel, 2026-11-07), off unless chosen: a
+// "Bring step photos from websites", off unless chosen: a
 // recipe saved from a link then also brings the photos its page gives for
 // its steps (import.pb.js), shown in those steps. Off by default because a
 // recipe can have 15 or more, which fills a phone-only phone and its

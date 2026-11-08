@@ -91,7 +91,7 @@ export default function MealPlan() {
   const today = localToday();
   const [view, setView] = useState<View>(savedView);
   // The list's first day, or null for yesterday: the list opens with today
-  // near the top, yesterday just above it (Xel, 2026-11-08; it used to open
+  // near the top, yesterday just above it (it used to open
   // at the week's first day and scroll to today, which late in the week
   // looked like the bottom of the page to a tester).
   const [chosenStart, setStart] = useState<string | null>(null);
@@ -268,7 +268,7 @@ export default function MealPlan() {
   const thisWeek = weekStart(today, firstDay);
   const atToday = isList ? chosenStart === null : month === monthStart(today);
   // The month view says which month; the list needs no label, as its week
-  // headings say which weeks they are (Xel, 2026-11-06).
+  // headings say which weeks they are.
   const monthLabel = formatDay(month, { month: "long", year: "numeric" });
 
   // The heading over each week in the list.
@@ -555,7 +555,7 @@ interface DayProps {
   meals: Meal[];
   labelled: boolean;
   // A meal's recipes (or notes), in the order added: it can hold more than
-  // one (Lilly, 2026-11-08).
+  // one.
   dishesAt: (meal: Meal) => MealPlanEntry[];
   onAdd: (meal: Meal) => void;
   onRemove: (entry: MealPlanEntry) => void;
@@ -609,8 +609,8 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
   const empty = day.labelled ? day.meals.filter((meal) => day.dishesAt(meal).length === 0) : [];
   const full = day.meals.filter((meal) => !empty.includes(meal));
   // Adding another recipe to a planned meal is a chip in the same row as
-  // the empty meals' ("+ Dinner + Breakfast"), not a row under each meal
-  // (Xel's pick, 2026-11-08).
+  // the empty meals' ("+ Dinner + Breakfast"), not a row under each meal,
+  // which made a week look cluttered.
   const planned = full.filter((meal) => day.dishesAt(meal).length > 0);
   return (
     <li className={`plan-day ${when}`}>

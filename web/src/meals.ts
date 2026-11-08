@@ -35,7 +35,7 @@ export function parseSlot(key: string): { date: string; meal: Meal } {
   return { date, meal: mealOf({ meal }) };
 }
 
-// A meal can hold several dishes (a main and its sides; Lilly, 2026-11-08).
+// A meal can hold several dishes (a main and its sides).
 // Each place's entries ("2026-11-02|lunch"), in the order they were added.
 export function dishesBySlot<T extends { id: string; date: string; meal?: string; created?: string }>(
   entries: T[]

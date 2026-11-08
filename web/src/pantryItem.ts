@@ -103,8 +103,7 @@ export function photoSources(item: { barcodes?: unknown } & StoreLinked): string
 
 // What photo_link_tried holds once someone removes an item's photo: it's
 // never looked up by itself again (on any phone, whatever barcodes or links
-// it gets later), only when someone taps "Find its photo online" (Xel,
-// 2026-11-02).
+// it gets later), only when someone taps "Find its photo online".
 export const PHOTO_REMOVED = "removed";
 
 // Whether the app should look for an item's photo online by itself

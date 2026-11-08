@@ -60,9 +60,9 @@ function OneRecipe({ page: Page }: { page: () => React.JSX.Element | null }) {
 // The top bar's plum book-with-a-plus: adds a recipe. It used to add to the
 // page you were on, but Pantry and the shopping list have their own add box
 // at the top, and one button meaning three things was harder to trust than
-// one that always means "recipe" (Xel, 2026-11-07). Only on the Recipes
-// and Browse pages, though: a tester expected it to add a pantry item on
-// the Pantry page (Xel, 2026-11-08).
+// one that always means "recipe". Only on the Recipes
+// and Browse pages, though: people expected it to add a pantry item on
+// the Pantry page.
 const ADD_RECIPE_PAGES = ["/", "/browse"];
 
 function AddRecipeButton() {

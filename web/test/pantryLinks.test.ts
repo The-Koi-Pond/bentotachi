@@ -134,7 +134,7 @@ test("a reworded ingredient keeps its link, or its 'not a pantry item'", () => {
 
 test("a reworded line never takes a different ingredient's link", () => {
   const one = (from: string, to: string, link = "x") => carriedLinks([from], [to], { [from.toLowerCase()]: link });
-  // One word in common isn't the same thing (the review's cases, 2026-11-07).
+  // One word in common isn't the same thing.
   assert.deepEqual(one("2 tbsp soy sauce", "1 tbsp fish sauce"), {});
   assert.deepEqual(one("juice of 1 lemon", "zest of 1 orange"), {});
   assert.deepEqual(one("salt and pepper", "oil and vinegar", ""), {});
@@ -146,7 +146,7 @@ test("a reworded line never takes a different ingredient's link", () => {
   assert.deepEqual(carriedLinks(["1 tbsp olive oil", "2 tbsp vegetable oil", "salt"], ["3 tbsp vegetable oil", "salt"], oils), {});
   const chicken = { "500 g chicken thighs": "thighs", "1 cup chicken stock": "stock" };
   assert.deepEqual(carriedLinks(["500 g chicken thighs", "1 cup chicken stock"], ["2 cups chicken stock"], chicken), {});
-  // Two lines of the same name (re-check, 2026-11-07): once one goes, the
+  // Two lines of the same name: once one goes, the
   // other can't be told apart, so neither carries.
   const tins = { "1 can tomatoes, crushed": "crushed", "1 can tomatoes, diced": "diced" };
   assert.deepEqual(carriedLinks(["1 can tomatoes, crushed", "1 can tomatoes, diced"], ["2 cans tomatoes, diced"], tins), {});

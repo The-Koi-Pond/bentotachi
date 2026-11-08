@@ -5,7 +5,7 @@ import { recipeAsText } from "./recipeText";
 import { shareText } from "./shareReceiver";
 import { fileNamePart, savePaprikaFile } from "./paprikaSave";
 
-// The recipe page's ⋯ beside its title (Xel, 2026-11-07, like Paprika's):
+// The recipe page's ⋯ beside its title (like Paprika's):
 // Share (as text, at the size it's scaled to: Android's share sheet in the
 // app, which reaches email and chats, the browser's where it has one, or
 // copied), Save as a Paprika file (to send to a friend, who can import it),

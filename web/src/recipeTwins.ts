@@ -2,7 +2,7 @@
 // site and one typed in, or a Paprika import), and a short line to tell
 // each apart on its card: the site it came from, or the day it was added
 // when it has no link, or when the others of that name share its site
-// (Xel, 2026-11-07). Recipes with a name of their own get no line.
+// Recipes with a name of their own get no line.
 
 interface Named {
   id: string;
@@ -29,8 +29,8 @@ function addedOn(created: string | undefined): string {
     : "";
 }
 
-// Every card's source line, by recipe id (Xel, 2026-11-07: easier to find
-// a recipe without opening several): the site it came from, or "home
+// Every card's source line, by recipe id (to find a recipe without opening
+// several): the site it came from, or "home
 // recipe" with no link; a recipe sharing its name with another gets its
 // twin line instead (the day it was added when the site doesn't tell them
 // apart).

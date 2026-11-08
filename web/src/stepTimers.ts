@@ -102,7 +102,7 @@ export const JUST_ENDED_MS = 10_000;
 // Whether the tray beeps for a timer that reached zero, now that Bentotachi
 // is on screen. Always when it just ended: the tray's beep plays at media
 // volume, while Android's notification is silent on a phone set to silent
-// or Do Not Disturb (review, 2026-11-08); the notification is taken back
+// or Do Not Disturb; the notification is taken back
 // straight after. Ended a while ago, only if Android's notification hasn't
 // already rung it (a late one would otherwise ring twice).
 export function beepsInApp(msSinceEnd: number, notificationShown: boolean): boolean {

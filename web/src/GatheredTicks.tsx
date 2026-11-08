@@ -30,7 +30,7 @@ export function useGatheredTicks(rows: GatheredRow[]) {
     isTicked,
     ticked: rows.filter(isTicked),
     toggle: (row: GatheredRow) => setTicks((previous) => new Map(previous).set(row.key, !isTicked(row))),
-    // "All" or "Missing from pantry" (Lilly, 2026-11-08).
+    // "All" or "Missing from pantry".
     tickAll: () => setTicks(new Map(rows.map((row) => [row.key, true]))),
     tickMissing: () => setTicks(new Map()),
   };

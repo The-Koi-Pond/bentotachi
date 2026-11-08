@@ -6,8 +6,8 @@ import { useFridgeSeen } from "./fridgeSeen";
 import { BentoTitle } from "./Brand";
 
 // The title in the top bar: it opens the fridge door (pages/Fridge.tsx). A
-// little sticky note stuck to the end of it says it's a way in (Xel,
-// 2026-11-06: part of the title, not a separate boxed button), and shows
+// little sticky note stuck to the end of it says it's a way in (part of
+// the title, not a separate boxed button), and shows
 // how many notes someone else left since this phone last looked.
 export default function FridgeLink() {
   const list = useLiveRecords<Note>("notes");

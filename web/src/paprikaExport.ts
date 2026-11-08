@@ -227,8 +227,7 @@ const TOO_BIG = "That's more than one Paprika file can hold (65,535 recipes, or 
 
 // A .paprikarecipes file written a recipe at a time, each piece handed to
 // `write` as it's made, so a big collection never has to fit in memory at
-// once (stress test, 2026-11-07: building it whole took over 1 GB on a
-// phone). A plain zip that stores the entries (they're gzipped already),
+// once (building it whole took over 1 GB on a phone). A plain zip that stores the entries (they're gzipped already),
 // each with its size and checksum before its data, as every zip reader
 // expects. Not for files over 4 GB (no zip64): a recipe collection's
 // photos come nowhere near.

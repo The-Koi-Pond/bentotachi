@@ -90,7 +90,7 @@ function hold(timer: StepTimer, ask: boolean) {
 
 // Held again each time Bentotachi starts, as Android now allows: turning
 // off "Alarms & reminders" restarts the app and deletes the on-time ones,
-// which would leave a running timer silent (found testing, 2026-11-08).
+// which would leave a running timer silent.
 for (const timer of timers) if (timer.endsAt !== null && timer.endsAt > Date.now()) hold(timer, false);
 
 function pauseOrResume(timer: StepTimer) {

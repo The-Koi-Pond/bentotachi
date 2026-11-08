@@ -14,7 +14,7 @@ export default function Login() {
   const firstRun = isAndroidApp && !phone && !savedServerUrl();
   // A new app asks first how it'll be used: two plain choices, so someone
   // joining their household's server can't take the phone-only form for the
-  // way in (a housemate did, 2026-11-04).
+  // way in (easy to do when it came first).
   const [step, setStep] = useState<"choose" | "phone" | "server">(firstRun ? "choose" : "server");
   // Whether this phone can run phone-only mode: null until known.
   const [phoneOk, setPhoneOk] = useState<boolean | null>(isAndroidApp ? null : false);
@@ -140,7 +140,7 @@ export default function Login() {
           <label>
             Server address
             {/* A made-up home-network address: a 100.x one (Tailscale's)
-                looked like the household's own to a housemate (2026-11-08). */}
+                looked like the household's own address. */}
             <span className="hint">The address you were given, like 192.168.1.20:8090</span>
             {/* Plain text (with the web address keyboard): a type="url" box
                 refuses addresses without http://, like the example above. */}

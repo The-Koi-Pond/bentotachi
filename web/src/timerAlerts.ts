@@ -4,7 +4,7 @@ import { localToday } from "./dates";
 import type { StepTimer, TimerAlert } from "./stepTimers";
 
 // Step timers that ring with the phone locked or Bentotachi in the
-// background (Xel, 2026-11-08, after a tester pointed out they didn't).
+// background, where they used to stay silent until the app was opened.
 // While a timer runs, Android holds a notification for the moment it
 // reaches zero, so it rings whether or not the app is running. Only in the
 // Android app; in a browser the tray's own beep is all there is.
@@ -12,7 +12,7 @@ import type { StepTimer, TimerAlert } from "./stepTimers";
 // On time needs Android's "Alarms & reminders" permission, which Android
 // 14 and newer don't give by themselves. Bentotachi asks at the first timer
 // of a day until it's allowed (at most once a day, so a "no" isn't asked
-// again straight away, nor forever final: review, 2026-11-08), and
+// again straight away, nor forever final), and
 // otherwise settles for "roughly on time" (Android may hold the
 // notification back a long while to save battery).
 

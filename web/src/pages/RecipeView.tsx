@@ -174,7 +174,7 @@ export default function RecipeView() {
   if (!recipe) return <p className="muted">Loading…</p>;
 
   const current = recipe;
-  // ⋯ → Re-import from the website (Xel, 2026-11-08): the site's current
+  // ⋯ → Re-import from the website: the site's current
   // ingredients, method, servings, times, description, writer's notes and
   // nutrition replace the recipe's, e.g. after the importer learned to read
   // ingredient sections. The household's own stay: the name, notes, ratings,
@@ -783,8 +783,7 @@ export default function RecipeView() {
           ) : (
             <>
               {/* Where the numbers are from, as Bentotachi doesn't work them
-                  out (a tester asked, 2026-11-08). Not the site's name: they
-                  may have been typed in (review, 2026-11-08). */}
+                  out. Not the site's name: they may have been typed in. */}
               <p className="muted nutrition-note">
                 Per serving{scale !== 1 ? ", whatever the recipe's size" : ""}, as the recipe gives it (Bentotachi doesn't
                 work it out).
@@ -832,7 +831,7 @@ export default function RecipeView() {
       )}
 
       {(recipe.source_url || (recipe.expand?.added_by && !singleUser)) && (
-        // One line, "From ica.se · Added by Sam" (Xel, 2026-11-08).
+        // One line, "From ica.se · Added by Sam".
         <footer className="muted small-print">
           <p>
             {recipe.source_url && (
@@ -907,13 +906,13 @@ function IngredientsSection({
   const linkOf = (line: string) => linkFor(line, recipe.ingredient_links, pantryList);
   // Lines the pantry doesn't have enough of, or at all (not water and the
   // like): "Missing from pantry", and "Select what we need" when choosing
-  // (which once left out lines not linked to the pantry; Xel, 2026-11-08).
+  // (which once left out lines not linked to the pantry).
   const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i])));
   // "All": every line but those marked "not a pantry item" (water), as the
-  // plan's and the list's sheets leave them out too (review, 2026-11-08).
+  // plan's and the list's sheets leave them out too.
   const buyable = pickable.filter((i) => linkOf(lines[i]).kind !== "notPantry");
   // "Add to shopping list" first offers All / Missing from pantry / Choose
-  // (Lilly, 2026-11-08); Choose is the ticking below.
+  // (Choose is the ticking below).
   const [choosing, setChoosing] = useState(false);
 
   function startPicking() {

@@ -67,7 +67,7 @@ export default function Fridge() {
       {error && <p className="error">{error}</p>}
       {list.items && shown.length === 0 && (
         // A dashed outline where the notes would go, so it doesn't float.
-        // The note box just above says what to do (Xel, 2026-11-07).
+        // The note box just above says what to do.
         <p className="muted fridge-empty">Nothing here yet.</p>
       )}
       {shown.length > 0 && (
@@ -143,8 +143,8 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
 
   return (
     <form className="card stack fridge-form" onSubmit={post}>
-      {/* No heading: the box says who it's for in its placeholder (Xel,
-          2026-11-06); the label stays for screen readers. */}
+      {/* No heading: the box says who it's for in its placeholder; the
+          label stays for screen readers. */}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

@@ -1,4 +1,4 @@
-// "Amounts in the method" (⋮ menu; Xel, 2026-11-08): a step that names an
+// "Amounts in the method" (⋮ menu): a step that names an
 // ingredient shows how much, "Add the oregano (1 tsp) and stir", but only
 // where it's sure which ingredient is meant:
 // - the ingredient line starts with an amount ("1 tsp dried oregano");

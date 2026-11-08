@@ -1,6 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// More photos per recipe besides the cover (Xel, 2026-11-07): how ours
+// More photos per recipe besides the cover: how ours
 // turned out, Nan's handwritten card, the cookbook page, and photos for a
 // step, like Paprika's gallery and Tandoor's step photos. "image" stays the
 // cover (cards, the meal plan and imports keep using it); "photos" are the

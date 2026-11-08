@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 
 // "You already have this one": shown instead of saving a second copy of a
-// recipe page that's already here (recipeImport.ts; Xel, 2026-11-07).
+// recipe page that's already here (recipeImport.ts).
 // Open it, or add another copy anyway (to change one, say).
 export default function AlreadyHere({
   duplicate,

@@ -10,7 +10,7 @@ import { useUnsavedChanges } from "../unsavedChanges";
 
 // The last search stays until cleared (for this visit to Bento), so after
 // saving a recipe found with it, coming back to Browse (Back, or the tab)
-// still shows it, ready to look for more (Xel, 2026-11-04).
+// still shows it, ready to look for more.
 const SEARCH_KEY = "bento.browseSearch";
 
 function rememberedSearch(): string {
@@ -172,7 +172,7 @@ export default function Browse() {
       )}
 
       <section className="stack">
-        {/* "+ Add a site" on the heading's row (Xel, 2026-11-06); its form
+        {/* "+ Add a site" on the heading's row; its form
             opens below, after the sites. */}
         <div className="section-head sites-head">
           <h2>Our sites</h2>

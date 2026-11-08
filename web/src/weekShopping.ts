@@ -26,7 +26,7 @@ export interface GatheredRow {
 // chopped", "peeled and diced"), or it starts with one of LEADS ("to serve",
 // "plus extra for dusting", "at room temperature", "cut into chunks").
 // "Toasted sesame seeds" or "freshly ground black pepper" have other words,
-// so they stay (review re-check, 2026-11-08).
+// so they stay.
 const PREPARATION = new Set(
   (
     "diced chopped sliced minced grated shredded crushed peeled cubed halved quartered julienned trimmed " +
@@ -74,10 +74,10 @@ function partsOf(text: string): string[] {
 
 // How a recipe line reads on the shopping list: the recipe's own words
 // (amount and kind: "12 oz gluten free linguine pasta", not the pantry's
-// "Pasta"; Xel, 2026-11-08), without how to prepare it ("2 onions, diced" ->
+// "Pasta"), without how to prepare it ("2 onions, diced" ->
 // "2 onions", "Feta, to serve" -> "Feta"). Only preparation goes: "Salt,
 // pepper" and "2 carrots, 2 celery sticks" keep every thing to buy, and
-// commas in brackets or decimals ("1,5 kg") don't count (review, 2026-11-08).
+// commas in brackets or decimals ("1,5 kg") don't count.
 export function listWording(line: string): string {
   const parts = partsOf(withoutSoftMarks(line).trim());
   while (parts.length > 1 && isPreparation(parts[parts.length - 1])) parts.pop();
@@ -123,7 +123,7 @@ export function gatherIngredients(dinners: Recipe[], pantry: PantryItem[]): Gath
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);
         // Needed more than once (two recipes, or twice in one): one row, by
         // the pantry's name ("Onion"), as one line's amount would be too
-        // little (review, 2026-11-08).
+        // little.
         if (link.item) row.text = link.item.name;
       } else {
         rows.set(key, {

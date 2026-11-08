@@ -192,6 +192,9 @@ How to run: `README.md`.
   reload when the app returns to the front). The recipe list and categories
   don't yet: they load when opened (TODO.md has it).
 - User-facing error text should say what happened and what to do next.
+- The "(Xel, 2026-11-08)" credit style is for docs/PLAN.md only, never code
+  comments: a comment says why, and web/test/noCommentCredits.test.ts fails
+  on a who-asked-and-when credit.
 
 ## Environment notes
 

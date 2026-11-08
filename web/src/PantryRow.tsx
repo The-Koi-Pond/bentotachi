@@ -1,11 +1,10 @@
-// One pantry item in its place's card, in either layout (Xel, 2026-11-02,
-// from the pantry page playground):
+// One pantry item in its place's card, in either layout:
 // - Simple: one line, the name (with an expiry warning if it's soon or past)
 //   and how much we have.
 // - Detailed: the photo (or a tile with its first letter), the name, its
 //   brand and note on one muted line, then Opened and the store links.
 //   With packets in stock, a line of them ("In stock: White Mill 1 kg ✕");
-//   tapping one finishes it (Xel's pick, 2026-11-02).
+//   tapping one finishes it.
 // Both show the shopping list as an icon beside the level: a cart when it's
 // on the list, a dashed "+ cart" button when it's low or out and isn't.
 import { useState } from "react";

@@ -74,7 +74,7 @@ test("the file is a zip of gzipped JSON, one per recipe, readable like Mealie an
 
 // fflate (above) reads only part of a zip and checks no checksums; Python
 // (Mealie, Tandoor), Java and Paprika read more, so this walks the file the
-// way strict readers do (review, 2026-11-07: 28 of 50 deliberate breaks to
+// way strict readers do (28 of 50 deliberate breaks to
 // the writer passed the test above, and would have broken every export for
 // those apps).
 test("the zip is what strict readers expect: checksums, sizes, counts, UTF-8 names", () => {

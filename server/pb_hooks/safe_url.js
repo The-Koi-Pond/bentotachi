@@ -14,8 +14,7 @@
 // member who asked. So at worst a household member could see an image on
 // the home network (a camera snapshot, say). An outside website or Paprika
 // file can choose an address that gets fetched, but only the household
-// ever sees what comes back: every route needs a login (review,
-// 2026-11-07).
+// ever sees what comes back: every route needs a login.
 
 // The host part, lowercased, without login details or port:
 // "https://sam@Example.com:8080/x" -> "example.com", "http://[::1]/" -> "[::1]".

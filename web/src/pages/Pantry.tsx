@@ -188,7 +188,7 @@ export default function Pantry() {
   }
 
   // Something running out isn't put on the shopping list by itself: it may
-  // not be wanted again for a while, so this asks (Xel, 2026-11-02). The
+  // not be wanted again for a while, so this asks. The
   // server would add it for apps from before this; ask_about_list tells it
   // this one asks (pantry.pb.js). An opened one that runs out goes back to
   // its own place, for the next unopened one.

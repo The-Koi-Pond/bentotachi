@@ -6,7 +6,7 @@ import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon } from "./icons";
 import { GatheredList, useGatheredTicks } from "./GatheredTicks";
 
-// "From a recipe" on the shopping list (Lilly, 2026-11-08): find a recipe,
+// "From a recipe" on the shopping list: find a recipe,
 // then add its ingredients without leaving the list. What the pantry says
 // we have starts unticked; "All" ticks everything.
 export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }) {

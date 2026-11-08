@@ -89,7 +89,7 @@ const BATCH_BYTES = 8 * 1024 * 1024;
 // of gzipped JSON; a single .paprikarecipe is one gzipped JSON. Never all
 // at once: a big collection's photos make the file hundreds of MB, and
 // unpacking it whole took 4-5 times that in memory, enough for Android to
-// close the app on many phones (stress test, 2026-11-07).
+// close the app on many phones.
 export function paprikaEntries(bytes: Uint8Array): { count: number; recipes: () => Generator<Record<string, unknown> | null> } {
   if (!ZIP(bytes)) {
     return {
@@ -146,7 +146,7 @@ export function toMinutes(value: unknown): number {
   return time ? Math.round(time.seconds / 60) : 0;
 }
 
-// Paprika's own text marks that mean nothing here (Paprika 4, 2026-11-07):
+// Paprika's own text marks that mean nothing here:
 // "[recipe:Lasagne]" links to another recipe (the name stays),
 // "[photo:Step 3]" shows one of its photos there (the mark goes; in the
 // directions, its photo becomes that step's: paprikaStepPhotos),
@@ -253,8 +253,7 @@ export function paprikaPhotos(raw: Record<string, unknown>): {
   if (own) return { cover: own, gallery };
   // No photo of its own: the first one not shown in a step stands in. A
   // step's photo stays in its step (a recipe with only step photos, saved
-  // from Bentotachi, came back with step 1's as its cover; review,
-  // 2026-11-08).
+  // from Bentotachi, came back with step 1's as its cover).
   const marked = paprikaStepPhotos(raw);
   const at = gallery.findIndex((photo) => !marked[photo.name]);
   if (at < 0) return { cover: null, gallery };
@@ -312,7 +311,7 @@ function photoOf(value: unknown): ImportedRecipe["photo"] {
 }
 
 // What Paprika keeps that Bentotachi has no place for, kept in the notes
-// rather than lost (Xel, 2026-11-07): where it's from when that isn't a
+// rather than lost: where it's from when that isn't a
 // link (a cookbook, "Grandma's card") and the difficulty. Bentotachi's own
 // export leaves these empty (its source is the link's site), so nothing is
 // added coming back. (Nutrition has its own place: `nutrition`.)
@@ -432,7 +431,7 @@ export function alreadyHave(
 // What the database keeps (as server/pb_hooks/recipe_parse.js LIMITS and
 // the recipes collection's field sizes): longer text is cut, ending in
 // "…", and lists keep as many lines as fit, so an over-long recipe still
-// comes in instead of failing (stress test, 2026-11-07).
+// comes in instead of failing.
 // (A test checks these match the server's.)
 export const IMPORT_LIMITS = { title: 300, description: 5000, servings: 100, notes: 20000, listBytes: 200000, tagBytes: 20000 };
 const LIMITS = IMPORT_LIMITS;
