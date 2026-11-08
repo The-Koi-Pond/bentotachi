@@ -512,6 +512,18 @@ test("a card's own title isn't a section; empty headings go; headings are plain 
   const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
   assert.deepEqual(parsed.ingredients.filter((line) => line.startsWith("#")), ["# Chicken & marinade", "# Sauce"]);
   assert.equal(parsed.ingredients[0], "# Chicken & marinade");
+  // The title straight above a list without its own heading isn't a section.
+  const titled =
+    `<div class="tasty-recipes-ingredients"><h3>Ingredients (serves 4)</h3><ul><li>1 kg chicken thighs</li><li>1/2 cup yoghurt</li><li>1 tbsp lemon juice</li></ul>` +
+    `<h4>Sauce</h4><ul><li>1 cup passata</li><li>Rice</li></ul></div>`;
+  const plainTop = parseRecipe(page(chickenData).replace("<body>hi", `<body>${titled}`), "https://e.com");
+  assert.deepEqual(plainTop.ingredients.filter((line) => line.startsWith("#")), ["# Sauce"]);
+  // A later section named "Ingredients for…" is a section.
+  const later =
+    `<div class="tasty-recipes-ingredients"><h4>For the chicken</h4><ul><li>1 kg chicken thighs</li><li>1/2 cup yoghurt</li><li>1 tbsp lemon juice</li></ul>` +
+    `<h4>Ingredients for the sauce</h4><ul><li>1 cup passata</li><li>Rice</li></ul></div>`;
+  const sauce = parseRecipe(page(chickenData).replace("<body>hi", `<body>${later}`), "https://e.com");
+  assert.equal(sauce.ingredients.indexOf("# Ingredients for the sauce"), 4);
 });
 
 test("Tasty Recipes style sections (a heading, then its list) work too", () => {
