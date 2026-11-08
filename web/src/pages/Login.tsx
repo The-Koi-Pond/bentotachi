@@ -139,7 +139,9 @@ export default function Login() {
         {isAndroidApp && (
           <label>
             Server address
-            <span className="hint">The address you were given, like 100.64.12.34:8090</span>
+            {/* A made-up home-network address: a 100.x one (Tailscale's)
+                looked like the household's own to a housemate (2026-11-08). */}
+            <span className="hint">The address you were given, like 192.168.1.20:8090</span>
             {/* Plain text (with the web address keyboard): a type="url" box
                 refuses addresses without http://, like the example above. */}
             <input
@@ -150,7 +152,7 @@ export default function Login() {
               value={server}
               onChange={(e) => setServer(e.target.value)}
               onBlur={checkSetup}
-              placeholder="100.64.12.34:8090"
+              placeholder="192.168.1.20:8090"
               required
             />
           </label>
