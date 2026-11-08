@@ -171,6 +171,71 @@ export default function RecipeView() {
   if (!recipe) return <p className="muted">Loading…</p>;
 
   const current = recipe;
+  // ⋯ → Re-import from the website (Xel, 2026-11-08): the site's current
+  // ingredients, method, servings, times, description, writer's notes and
+  // nutrition replace the recipe's, e.g. after the importer learned to read
+  // ingredient sections. The household's own stay: the name, notes, ratings,
+  // photos, tags (the site's are added) and pantry links and step photos
+  // (carried to the new wording, as when editing). Read fresh, so a
+  // housemate's change meanwhile isn't undone. Returns what happened.
+  async function reimport(): Promise<string> {
+    if (!recipe?.source_url) return "";
+    const site = siteHost(recipe.source_url);
+    if (
+      !window.confirm(
+        `Re-import “${recipe.title}” from ${site}? Its ingredients, method, servings, times, description and the writer's notes become the website's current version. The name, your notes, ratings, photos and tags stay.`
+      )
+    )
+      return "";
+    let fresh: {
+      description: string;
+      servings: string;
+      prepMinutes: number;
+      cookMinutes: number;
+      totalMinutes: number;
+      ingredients: string[];
+      steps: string[];
+      tags: string[];
+      authorNotes: string;
+      nutrition?: string[];
+      siteRating?: { value: number; count: number } | null;
+    } | null = null;
+    try {
+      fresh = (await pb.send("/api/cookbook/import", { method: "POST", body: { url: recipe.source_url, preview: true } })).recipe ?? null;
+    } catch (err) {
+      // A server from before re-importing would have offered to add a copy.
+      if ((err as { status?: number }).status !== 409) throw err;
+    }
+    if (!fresh) return "This Bentotachi server can't re-import yet: it needs updating first.";
+    const now = await recipes().getOne(recipe.id, { fields: "id,ingredients,steps,ingredient_links,photo_steps,photos,tags" });
+    // What the site no longer gives (no description now, say) stays as it was.
+    const lines = (list: string[] | undefined) => (list && list.length ? list : undefined);
+    const ingredients = lines(fresh.ingredients) ?? now.ingredients ?? [];
+    const steps = lines(fresh.steps) ?? now.steps ?? [];
+    const data: Record<string, unknown> = {
+      ingredients,
+      steps,
+      ingredient_links: carriedLinks(now.ingredients ?? [], ingredients, now.ingredient_links),
+      tags: [...new Set([...(now.tags ?? []), ...(fresh.tags ?? [])])],
+    };
+    if (now.photo_steps !== undefined) data.photo_steps = carriedStepPhotos(now.steps, steps, now.photo_steps, now.photos);
+    if (fresh.description) data.description = fresh.description;
+    if (fresh.servings) data.servings = fresh.servings;
+    if (fresh.prepMinutes) data.prep_minutes = fresh.prepMinutes;
+    if (fresh.cookMinutes) data.cook_minutes = fresh.cookMinutes;
+    if (fresh.totalMinutes) data.total_minutes = fresh.totalMinutes;
+    if (fresh.authorNotes) data.author_notes = fresh.authorNotes;
+    if (lines(fresh.nutrition)) data.nutrition = fresh.nutrition;
+    if (fresh.siteRating) {
+      data.site_rating = fresh.siteRating.value;
+      data.site_rating_count = fresh.siteRating.count;
+    }
+    const saved = await recipes().update(recipe.id, data, { expand: "added_by" });
+    setRecipe(saved);
+    saveRecipe(saved);
+    return `Re-imported from ${site}.`;
+  }
+
   // ⋯ → Duplicate: a copy to make a variation ("Lasagne (copy)"), with the
   // photo, opened in the editor to change. Ratings, cooking history and
   // plans stay with the original.
@@ -456,6 +521,7 @@ export default function RecipeView() {
                 offline={offline}
                 editing={editing !== null}
                 onDuplicate={duplicate}
+                onReimport={reimport}
                 onDelete={remove}
                 onAddPhotos={addPhotos}
               />

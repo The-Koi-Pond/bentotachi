@@ -21,10 +21,15 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
     throw new BadRequestError("Paste the full link, starting with http:// or https://");
   }
 
+  // "preview": read the page and send back what's in it, saving nothing:
+  // a recipe's "Re-import from the website" (Xel, 2026-11-08), which merges
+  // it into the recipe in the app.
+  const preview = body.preview === true;
+
   // A recipe from this page already here: say so (409, with its id and
   // name, for "Open it" and "Add another copy"), unless asked for another
   // copy ("again"). Older apps just show the message.
-  if (body.again !== true) {
+  if (body.again !== true && !preview) {
     const key = parser.linkKey(url);
     // Narrowed by the site and the last part of the address ("chasseur",
     // "p=123"), so a site with hundreds of recipes still finds an old one
@@ -86,6 +91,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   // Cut to what the database keeps (a 6,000-character introduction would
   // otherwise make the save, and the whole import, fail).
   const recipe = parser.fitRecipe(parsed);
+  if (preview) return e.json(200, { recipe: recipe });
 
   const record = new Record(e.app.findCollectionByNameOrId("recipes"));
   record.set("title", recipe.title || "Untitled recipe");

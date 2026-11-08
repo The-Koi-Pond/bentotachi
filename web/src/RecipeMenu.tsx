@@ -19,6 +19,7 @@ export default function RecipeMenu({
   offline,
   editing,
   onDuplicate,
+  onReimport,
   onDelete,
   onAddPhotos,
 }: {
@@ -29,6 +30,9 @@ export default function RecipeMenu({
   // wait, as they'd lose or outrun the unsaved changes (found in review).
   editing: boolean;
   onDuplicate: () => Promise<void>;
+  // Re-imports it from its website (RecipeView's reimport), saying what
+  // happened ("" when the person changed their mind).
+  onReimport: () => Promise<string>;
   onDelete: () => Promise<void>;
   // Adds the chosen photos (RecipeView's addPhotos), saying what happened.
   onAddPhotos: (files: File[]) => Promise<string>;
@@ -187,6 +191,15 @@ export default function RecipeMenu({
                 <span className="menu-item-detail">A copy to make your own version</span>
               </span>
               <CopyIcon />
+            </button>
+          )}
+          {!offline && !editing && recipe.source_url && (
+            <button role="menuitem" onClick={() => void run("Re-importing", async () => setMessage(await onReimport()))}>
+              <span className="menu-item-text">
+                Re-import from the website
+                <span className="menu-item-detail">Its current ingredients and method; your notes and photos stay</span>
+              </span>
+              <DownloadIcon />
             </button>
           )}
           {!offline && !editing && (
