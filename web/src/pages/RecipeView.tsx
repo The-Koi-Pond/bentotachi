@@ -21,7 +21,7 @@ import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
 import { CartIcon, LinkIcon, PencilIcon, TimerIcon } from "../icons";
-import { carriedLinks, linkFor, linkKey, sameLinks, type IngredientLink } from "../pantryLinks";
+import { carriedLinks, linkFor, linkKey, missingFromPantry, sameLinks, type IngredientLink } from "../pantryLinks";
 import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
 import { addToShoppingList, addedMessage } from "../shoppingAdd";
@@ -833,8 +833,15 @@ function IngredientsSection({
     const status = linkOf(lines[i]).item?.status;
     return status === "low" || status === "out";
   });
+  // Lines the pantry doesn't have enough of, or at all (not water and the
+  // like): "Missing from pantry".
+  const missing = pickable.filter((i) => missingFromPantry(linkOf(lines[i])));
+  // "Add to shopping list" first offers All / Missing from pantry / Choose
+  // (Lilly, 2026-11-08); Choose is the ticking below.
+  const [choosing, setChoosing] = useState(false);
 
   function startPicking() {
+    setChoosing(false);
     setPicking(true);
     setPicked(new Set());
     setStatus(null);
@@ -874,11 +881,11 @@ function IngredientsSection({
     }
   }
 
-  async function addPicked() {
+  async function addPicked(indexes: Iterable<number> = picked) {
     setBusy(true);
     setStatus(null);
     try {
-      const things = [...picked]
+      const things = [...indexes]
         .sort((a, b) => a - b)
         .map((index) => {
           const { item } = linkOf(lines[index]);
@@ -892,6 +899,7 @@ function IngredientsSection({
         });
       setStatus({ text: addedMessage(await addToShoppingList(things)), isError: false });
       setPicking(false);
+      setChoosing(false);
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
@@ -943,11 +951,33 @@ function IngredientsSection({
       </ul>
 
       {/* Under the list, where picking's own buttons then appear. */}
-      {!picking && !offline && pickable.length > 0 && (
-        <button className="button add-to-list" onClick={startPicking}>
+      {!picking && !choosing && !offline && pickable.length > 0 && (
+        <button
+          className="button add-to-list"
+          onClick={() => {
+            setChoosing(true);
+            setStatus(null);
+          }}
+        >
           <CartIcon size={18} />
           Add to shopping list
         </button>
+      )}
+      {choosing && (
+        <div className="add-choices" role="group" aria-label="Add to the shopping list">
+          <button className="button" disabled={busy} onClick={() => void addPicked(pickable)}>
+            All ({pickable.length})
+          </button>
+          <button className="button" disabled={busy || missing.length === 0} onClick={() => void addPicked(missing)}>
+            {missing.length ? `Missing from pantry (${missing.length})` : "Pantry has it all"}
+          </button>
+          <button className="button" disabled={busy} onClick={startPicking}>
+            Choose…
+          </button>
+          <button className="button ghost" disabled={busy} onClick={() => setChoosing(false)}>
+            Cancel
+          </button>
+        </div>
       )}
       {picking && (
         <div className="actions">
@@ -962,7 +992,7 @@ function IngredientsSection({
           <button className="button ghost" onClick={() => setPicking(false)} disabled={busy}>
             Cancel
           </button>
-          <button className="button primary" disabled={picked.size === 0 || busy} onClick={addPicked}>
+          <button className="button primary" disabled={picked.size === 0 || busy} onClick={() => void addPicked()}>
             {busy ? "Adding…" : picked.size ? `Add ${picked.size} to shopping list` : "Add to shopping list"}
           </button>
         </div>

@@ -4586,6 +4586,40 @@ footer .person-name:focus-visible {
   margin-top: 12px;
 }
 
+/* "+ Add from a recipe" under the shopping list's box, and its sheet's
+   recipe list. */
+.from-recipe {
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+.recipe-pick-list {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.recipe-pick-list .site-row {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.recipe-pick-back {
+  align-self: flex-start;
+  font-weight: 600;
+}
+
+/* All / Missing from pantry / Choose…, where "Add to shopping list" was. */
+.add-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .section-edit {
   flex: none;
 }

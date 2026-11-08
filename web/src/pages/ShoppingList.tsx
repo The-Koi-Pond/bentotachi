@@ -14,6 +14,7 @@ import { queueSender, setShoppingQueue, useShoppingQueue } from "../shoppingQueu
 import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
 import { aisleOf, byAisle } from "../aisles";
 import { BenMood } from "../Brand";
+import RecipeShoppingSheet from "../RecipeShoppingSheet";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
 // simply in the order it was added. Remembered on this device.
@@ -43,6 +44,7 @@ export default function ShoppingList() {
   const [notice, setNotice] = useState("");
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
+  const [fromRecipe, setFromRecipe] = useState(false);
   // Something typed into "Add to the list" but not added yet.
   useUnsavedChanges(text.trim() !== "");
   // Ticks and additions made offline, kept on the phone until they're sent
@@ -239,6 +241,13 @@ export default function ShoppingList() {
           Add
         </button>
       </form>
+      {/* A recipe's ingredients, found from here (Lilly, 2026-11-08). */}
+      {!offline && (
+        <button className="link-button from-recipe" onClick={() => setFromRecipe(true)}>
+          + Add from a recipe
+        </button>
+      )}
+      {fromRecipe && <RecipeShoppingSheet onClose={() => setFromRecipe(false)} />}
       {error && <p className="error">{error}</p>}
       {notice && (
         <p className="muted" role="status">

@@ -6,6 +6,7 @@ import {
   guessPantryItem,
   linkFor,
   linkKey,
+  missingFromPantry,
   pantryCheck,
   sameLinks,
   suggestedName,
@@ -213,4 +214,14 @@ test("tells whether the links changed", () => {
   assert.equal(sameLinks({}, null), true);
   assert.equal(sameLinks({ a: "1" }, { a: "" }), false);
   assert.equal(sameLinks({ a: "1" }, { a: "1", b: "2" }), false);
+});
+
+test("missing from the pantry: low, out, or not in it; not what we have or water", () => {
+  const stocked = [item("onion", "Onion"), { id: "rice", name: "Rice", status: "out" } as never, { id: "eggs", name: "Eggs", status: "low" } as never];
+  const missing = (line: string, links?: Record<string, string>) => missingFromPantry(linkFor(line, links, stocked));
+  assert.equal(missing("2 onions"), false);
+  assert.equal(missing("1 cup rice"), true);
+  assert.equal(missing("3 eggs"), true);
+  assert.equal(missing("1 lime"), true, "not in the pantry at all");
+  assert.equal(missing("2 cups water", { [linkKey("2 cups water")]: "" }), false, "marked not a pantry item");
 });

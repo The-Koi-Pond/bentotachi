@@ -37,6 +37,14 @@ export function guessPantryItem(line: string, items: PantryItem[]): PantryItem |
   return best;
 }
 
+// Whether a recipe line is worth buying: the pantry is low on it, out of it,
+// or doesn't have it at all. Not lines marked "not a pantry item" (water).
+// "Add missing from pantry" (Lilly, 2026-11-08).
+export function missingFromPantry(link: IngredientLink): boolean {
+  if (link.kind === "notPantry") return false;
+  return link.item?.status !== "have";
+}
+
 // What a line is linked to: someone's choice for this recipe, else a guess.
 export function linkFor(
   line: string,

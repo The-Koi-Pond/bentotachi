@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { errorMessage, type MealPlanEntry, type PantryItem, type Recipe, type ShoppingItem } from "./pb";
+import { errorMessage, type MealPlanEntry, type PantryItem, type Recipe } from "./pb";
 import { addDays, datePart, formatDay } from "./dates";
-import { gatherIngredients, startsTicked, type GatheredRow } from "./weekShopping";
+import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
 import { CloseIcon } from "./icons";
 import { MEALS, mealOf } from "./meals";
+import { GatheredList, useGatheredTicks } from "./GatheredTicks";
 
-const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 const RANGES = [7, 14];
 
 // "Add these to the shopping list" after the plan: gathers the ingredients of the meals planned from today
@@ -28,10 +28,7 @@ export default function WeekShoppingSheet({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pantry = useLiveRecords<PantryItem>("pantry_items");
-  const shopping = useLiveRecords<ShoppingItem>("shopping_items");
   const [days, setDays] = useState(7);
-  // Ticks people changed by hand; everything else uses the starting tick.
-  const [ticks, setTicks] = useState<Map<string, boolean>>(new Map());
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -53,20 +50,8 @@ export default function WeekShoppingSheet({
     pantry.items ?? []
   );
 
-  // What's already waiting on the shopping list, by pantry link or name.
-  const waiting = (shopping.items ?? []).filter((item) => !item.checked);
-  const onList = (row: GatheredRow) =>
-    waiting.some(
-      (item) =>
-        (row.pantryItem && item.pantry_item === row.pantryItem.id) ||
-        item.text.trim().toLowerCase() === row.text.toLowerCase()
-    );
-  const isTicked = (row: GatheredRow) => !onList(row) && (ticks.get(row.key) ?? startsTicked(row));
-  const ticked = rows.filter(isTicked);
-
-  function toggle(row: GatheredRow) {
-    setTicks((previous) => new Map(previous).set(row.key, !isTicked(row)));
-  }
+  const ticks = useGatheredTicks(rows);
+  const ticked = ticks.ticked;
 
   async function add() {
     setBusy(true);
@@ -83,7 +68,7 @@ export default function WeekShoppingSheet({
     }
   }
 
-  const loading = !pantry.items || !shopping.items;
+  const loading = !pantry.items || ticks.loading;
 
   return (
     <dialog
@@ -119,38 +104,12 @@ export default function WeekShoppingSheet({
         </p>
 
         {loading && <p className="muted">Checking the pantry…</p>}
-        {(pantry.loadError || shopping.loadError) && <p className="error">{pantry.loadError || shopping.loadError}</p>}
+        {(pantry.loadError || ticks.loadError) && <p className="error">{pantry.loadError || ticks.loadError}</p>}
 
         {!loading && rows.length > 0 && (
           <>
             <p className="muted week-dinners">Things the pantry says we have start unticked.</p>
-            <ul className="checklist week-list">
-              {rows.map((row) => {
-                const already = onList(row);
-                const status = row.pantryItem?.status;
-                return (
-                  <li key={row.key}>
-                    <label className={already ? "done" : ""}>
-                      <input type="checkbox" checked={isTicked(row)} disabled={already} onChange={() => toggle(row)} />
-                      <span className="week-row-text">
-                        <span>{row.text}</span>
-                        <span className="muted week-row-for">for {row.recipeTitles.join(", ")}</span>
-                      </span>
-                      {already ? (
-                        <span className="muted week-row-state">On the list</span>
-                      ) : (
-                        status && (
-                          <span className={`week-row-state status-${status}`}>
-                            <span className={`status-dot status-${status}`} aria-hidden="true" />
-                            {STATUS_WORDS[status]}
-                          </span>
-                        )
-                      )}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
+            <GatheredList rows={rows} ticks={ticks} showFor />
           </>
         )}
 
