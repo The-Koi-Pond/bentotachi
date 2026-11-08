@@ -222,7 +222,7 @@ function ImportRecipes() {
         return;
       }
       const parts = [`Added ${added} ${added === 1 ? "recipe" : "recipes"}.`];
-      if (rated) parts.push(`${rated === 1 ? "1 came" : `${rated} came`} with a rating or favorite, now yours.`);
+      if (rated) parts.push(`${rated === 1 ? "1 came" : `${rated} came`} with a rating or favourite, now yours.`);
       if (unrated) parts.push(`${unrated === 1 ? "1 rating" : `${unrated} ratings`} couldn't be saved: rate ${unrated === 1 ? "it" : "them"} on the recipe page.`);
       if (skipped.length) {
         parts.push(`${skipped.length} ${skipped.length === 1 ? "was" : "were"} already here (${someNames(skipped)}).`);
@@ -265,7 +265,7 @@ function ImportRecipes() {
       </p>
       <HelpBox help={help}>
         <p>
-          Categories become tags, and each recipe's rating becomes your own onigiri (and a favorite your heart, where the
+          Categories become tags, and each recipe's rating becomes your own onigiri (and a favourite your heart, where the
           file has them: Paprika's own files don't). Nutrition comes too; where it's from (when that isn't a link) and
           difficulty go into its notes. Meal plans don't come across.
         </p>
@@ -357,7 +357,7 @@ function ExportRecipes() {
         return;
       }
       // "Bentotachi recipes 2026-11-07", "Bentotachi Soups 2026-11-07".
-      const part = which === "favorites" ? "favorites" : shelf ? fileNamePart(shelf.name).slice(0, 40) : "";
+      const part = which === "favorites" ? "favourites" : shelf ? fileNamePart(shelf.name).slice(0, 40) : "";
       const name = `Bentotachi ${part || "recipes"} ${localToday()}.paprikarecipes`;
       const { saved, missingPhotos } = await savePaprikaFile(all, ratings, me, name, setProgress);
       if (saved) {
@@ -390,7 +390,7 @@ function ExportRecipes() {
         Which recipes
         <select value={which} onChange={(e) => setWhich(e.target.value)} disabled={busy}>
           <option value="all">Every recipe</option>
-          <option value="favorites">My favorites</option>
+          <option value="favorites">My favourites</option>
           {(categories ?? []).map((category) => (
             <option key={category.id} value={category.id}>
               The {category.name} shelf
@@ -401,7 +401,7 @@ function ExportRecipes() {
       <HelpBox help={help}>
         <p>
           Your notes and the recipe writer's notes go into each recipe's notes, tags become categories, each recipe's
-          rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favorites. The
+          rating is the household's average onigiri (as stars, Paprika's way), and your hearts become favourites. The
           meal plan, shopping list, pantry and cooking history aren't included.
         </p>
       </HelpBox>

@@ -599,8 +599,8 @@ export default function RecipeList() {
         <button
           className={`button favorites-button ${favoritesOnly ? "primary" : ""}`}
           aria-pressed={favoritesOnly}
-          aria-label="Show only my favorites"
-          title="Show only my favorites"
+          aria-label="Show only my favourites"
+          title="Show only my favourites"
           onClick={() => toggleParam("fav")}
         >
           <HeartIcon filled={favoritesOnly} />
@@ -868,7 +868,7 @@ export default function RecipeList() {
       {shown.length === 0 && (
         <p className="muted">
           {favoritesOnly && !quickOnly && !search.trim() && !filtering
-            ? "No favorites yet. Open a recipe and tap its ♥ to add it here."
+            ? "No favourites yet. Open a recipe and tap its ♥ to add it here."
             : quickOnly && !favoritesOnly && !search.trim() && !filtering
               ? `No recipes take ${quickMinutes} minutes or less. You can change what counts as quick in the ⋮ menu.`
               : search.trim()

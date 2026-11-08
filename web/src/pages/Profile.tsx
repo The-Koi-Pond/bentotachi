@@ -245,12 +245,12 @@ function ColorSection({ user }: { user: User }) {
   }
 
   return (
-    <Section title="My color">
+    <Section title="My colour">
       <div className="stack profile-color">
         <span className="muted">
           {current?.name ?? "None (the app's plum)"}. It marks your name and thumbs up around the app.
         </span>
-        <div className="swatches" role="group" aria-label="Choose my color">
+        <div className="swatches" role="group" aria-label="Choose my colour">
           {PERSON_COLORS.map((color) => (
             <button
               key={color.value}

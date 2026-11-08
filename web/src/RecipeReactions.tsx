@@ -97,8 +97,8 @@ export function FavoriteHeart({ state, onPhoto = false }: { state: RecipeRatings
     <button
       className={`heart-toggle ${onPhoto ? "on-photo" : ""}`}
       aria-pressed={on}
-      aria-label="Favorite"
-      title={on ? "One of your favorites" : "Add to your favorites"}
+      aria-label="Favourite"
+      title={on ? "One of your favourites" : "Add to your favourites"}
       onClick={() => void state.saveMine({ favorite: !on })}
     >
       <HeartIcon filled={on} size={24} />

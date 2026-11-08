@@ -181,7 +181,7 @@ export default function RecipeChooser({
       <span className="chooser-title">
         {recipe.title}
         {isFavorite(recipe) && (
-          <span className="chooser-heart" aria-label="(a favorite)">
+          <span className="chooser-heart" aria-label="(a favourite)">
             <HeartIcon filled size={12} />
           </span>
         )}
@@ -251,7 +251,7 @@ export default function RecipeChooser({
             />
             <div className="filter-chips">
               <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-                <HeartIcon filled={favoritesOnly} size={14} /> Favorites
+                <HeartIcon filled={favoritesOnly} size={14} /> Favourites
               </button>
               <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
                 <ZapIcon filled={quickOnly} size={14} /> Quick

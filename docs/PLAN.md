@@ -1533,8 +1533,9 @@ Xel's choice for their projects. American households could get American
 spelling and words instead (color, favorite), following the same household
 country that already picks regional ingredient names (regionalNames.ts,
 "bell pepper (capsicum)"). Not built: it means keeping the app's text in
-one place with both spellings. The app's text mixes the two spellings
-today (TODO.md, Cleanup), which is worth tidying first.
+one place with both spellings. The app's own text is all Australian
+since 2026-11-08 (favourite, colour); code names and stored values
+(`favorite`, `color`) stay as they are.
 
 ## To consider: ideas from the Paprika comparison (Xel, 2026-11-07)
 
