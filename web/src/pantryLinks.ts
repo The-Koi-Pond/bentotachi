@@ -19,7 +19,8 @@ export type IngredientLink =
 
 const norm = (text: string) => text.trim().toLowerCase();
 
-// The line's key in ingredient_links.
+// The line's key in ingredient_links. On purpose its own rule, not a shared
+// text helper: saved links are found by it, so it must never change.
 export const linkKey = norm;
 
 // The pantry item whose name (or its other region's name) appears in the

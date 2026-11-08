@@ -63,6 +63,7 @@ import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
 import { ensureLogin } from "../session";
+import { remember, remembered } from "../phoneStorage";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -75,12 +76,8 @@ const shelfDropTarget: CollisionDetection = (args) => {
 const SORT_KEY = "bento.recipeSort";
 
 function savedSort(): SortOrder {
-  try {
-    const saved = localStorage.getItem(SORT_KEY);
-    return SORTS.find((sort) => sort.value === saved)?.value ?? "title";
-  } catch {
-    return "title";
-  }
+  const saved = remembered(SORT_KEY);
+  return SORTS.find((sort) => sort.value === saved)?.value ?? "title";
 }
 
 // How the cards are shown, remembered on this device too: small cards
@@ -94,12 +91,8 @@ const LAYOUTS: { value: CardLayout; label: string; icon: React.JSX.Element }[] =
 ];
 
 function savedLayout(): CardLayout {
-  try {
-    const saved = localStorage.getItem(LAYOUT_KEY);
-    return LAYOUTS.find((layout) => layout.value === saved)?.value ?? "small";
-  } catch {
-    return "small";
-  }
+  const saved = remembered(LAYOUT_KEY);
+  return LAYOUTS.find((layout) => layout.value === saved)?.value ?? "small";
 }
 
 // Edit mode: tidying the collection. Tapping cards picks
@@ -192,20 +185,12 @@ export default function RecipeList() {
 
   function changeSort(next: SortOrder) {
     setSort(next);
-    try {
-      localStorage.setItem(SORT_KEY, next);
-    } catch {
-      // Not remembered; it starts A–Z next time.
-    }
+    remember(SORT_KEY, next);
   }
 
   function changeLayout(next: CardLayout) {
     setLayout(next);
-    try {
-      localStorage.setItem(LAYOUT_KEY, next);
-    } catch {
-      // Not remembered; it starts with small cards next time.
-    }
+    remember(LAYOUT_KEY, next);
   }
 
   const gridClass = `recipe-grid ${layout === "small" ? "" : layout}`;

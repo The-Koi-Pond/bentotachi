@@ -2,6 +2,7 @@ import PocketBase, { type RecordModel } from "pocketbase";
 import { Capacitor } from "@capacitor/core";
 import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
 import { DEFAULT_QUICK_MINUTES } from "./format";
+import { remember, remembered } from "./phoneStorage";
 
 // In a browser, Bento is served by PocketBase itself, so it talks to "/"
 // (in development Vite forwards that to PocketBase). The Android app carries
@@ -11,11 +12,7 @@ export const isAndroidApp = Capacitor.isNativePlatform();
 const SERVER_URL_KEY = "bento.serverUrl";
 
 export function savedServerUrl(): string {
-  try {
-    return localStorage.getItem(SERVER_URL_KEY) ?? "";
-  } catch {
-    return "";
-  }
+  return remembered(SERVER_URL_KEY) ?? "";
 }
 
 // "192.168.1.20:8090/" -> "http://192.168.1.20:8090"
@@ -26,11 +23,7 @@ export function normaliseServerUrl(input: string): string {
 
 export function setServerUrl(url: string) {
   pb.baseURL = url;
-  try {
-    localStorage.setItem(SERVER_URL_KEY, url);
-  } catch {
-    // Not saved; it'll be asked for again next time.
-  }
+  remember(SERVER_URL_KEY, url);
 }
 
 export const pb = new PocketBase(isAndroidApp ? savedServerUrl() : "/");

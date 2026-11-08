@@ -11,8 +11,10 @@
 
 import { headingOf } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
+import { NUMBER } from "./weights.ts";
 
-const NUMBER = "(?:\\d+(?:[.,/]\\d+)?(?:\\s+\\d+/\\d+)?|[½¼¾⅓⅔⅛⅜⅝⅞]|\\d+\\s*[½¼¾⅓⅔⅛⅜⅝⅞])";
+// Measures and the things counted in amounts ("2 cloves", "1 can"): wider
+// than scaling.ts's UNITS, which are only what scales by measure.
 const UNIT =
   "(?:cups?|c|tablespoons?|tbsps?|tbs|teaspoons?|tsps?|pounds?|lbs?|ounces?|oz|grams?|g|kilograms?|kg|" +
   "millilit(?:er|re)s?|ml|lit(?:er|re)s?|l|quarts?|pints?|pinch(?:es)?|dash(?:es)?|cloves?|cans?|tins?|jars?|" +
@@ -113,7 +115,8 @@ export function readIngredient(line: string): Ingredient | null {
 
 // One spelling for a word's singular and plural, as the match pattern
 // accepts both: "olive" and "olives" are both "oliv", "tomatoes" "tomato".
-const stem = (word: string) => (word.length > 3 ? word.replace(/(?:es|s)$/, "").replace(/e$/, "") : word);
+// On purpose cruder than wordMatch.ts's stem: the pattern adds e/es/s back.
+const wordRoot = (word: string) => (word.length > 3 ? word.replace(/(?:es|s)$/, "").replace(/e$/, "") : word);
 
 // Every run of the name's words, not one describing word alone ("fresh"):
 // what another ingredient's name might share.
@@ -142,10 +145,10 @@ function namesOf(words: string[]): string[][] {
   );
 }
 
-const key = (phrase: string[]) => phrase.map(stem).join(" ");
+const key = (phrase: string[]) => phrase.map(wordRoot).join(" ");
 
 function phrasePattern(phrase: string[]): RegExp {
-  const words = phrase.map((word) => stem(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:e|es|s)?");
+  const words = phrase.map((word) => wordRoot(word).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:e|es|s)?");
   return new RegExp(`(?<![\\p{L}'-])${words.join("\\s+")}(?![\\p{L}'-])`, "iu");
 }
 
@@ -172,12 +175,12 @@ export function planStepAmounts(steps: string[], ingredientLines: string[]): Map
   // right before another ingredient's main word describes that one ("the
   // chicken stock" isn't the chicken breast).
   const mainWords = ingredients.map((ingredient) =>
-    new Set((ingredient?.choices ?? []).map((choice) => stem(choice[choice.length - 1] ?? "")))
+    new Set((ingredient?.choices ?? []).map((choice) => wordRoot(choice[choice.length - 1] ?? "")))
   );
   const plan = new Map<number, StepAmount[]>();
   ingredients.forEach((ingredient, index) => {
     if (!ingredient || ingredient.partly) return;
-    const othersMain = (word: string) => mainWords.some((words, other) => other !== index && words.has(stem(word)));
+    const othersMain = (word: string) => mainWords.some((words, other) => other !== index && words.has(wordRoot(word)));
     // Longest first, so "cumin seeds" wins over "cumin" in the same step.
     const sure = ingredient.choices
       .flatMap(namesOf)

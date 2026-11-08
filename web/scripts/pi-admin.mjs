@@ -22,8 +22,8 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
-import { piConfig } from "./piConfig.mjs";
+import { basename, resolve } from "node:path";
+import { onPi, piConfig } from "./piConfig.mjs";
 
 const [script, ...scriptArgs] = process.argv.slice(2);
 if (!script || !existsSync(script)) {
@@ -33,11 +33,8 @@ if (!script || !existsSync(script)) {
   process.exit(1);
 }
 
-const { ssh, key, url } = piConfig();
-const api = `${url.replace(/\/$/, "")}/api`;
-const sshExe = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "OpenSSH", "ssh.exe");
-const onPi = (command) =>
-  execFileSync(sshExe, ["-i", key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", ssh, command], { encoding: "utf8" }).trim();
+const pi = piConfig();
+const api = `${pi.url.replace(/\/$/, "")}/api`;
 
 const email = "pi-admin-temp@example.invalid";
 const password = randomBytes(18).toString("hex");
@@ -62,14 +59,14 @@ async function backUp() {
 }
 
 console.log("1. Adding a temporary admin login on the Pi…");
-console.log("   " + onPi(`cd ~/bento/server && ./pocketbase superuser upsert ${email} ${password} --dir pb_data`));
+console.log("   " + onPi(pi, `cd ~/bento/server && ./pocketbase superuser upsert ${email} ${password} --dir pb_data`));
 try {
   console.log(`2. Backing up first (${backupName})…`);
   await backUp();
   console.log(`3. Running ${basename(script)}…`);
   execFileSync(process.execPath, [resolve(script), ...scriptArgs], {
     stdio: "inherit",
-    env: { ...process.env, BENTO_URL: url, BENTO_ADMIN_EMAIL: email, BENTO_ADMIN_PASSWORD: password },
+    env: { ...process.env, BENTO_URL: pi.url, BENTO_ADMIN_EMAIL: email, BENTO_ADMIN_PASSWORD: password },
   });
 } catch (err) {
   // The script's own output says what went wrong; this says what happened.
@@ -78,5 +75,5 @@ try {
   console.error(`The backup from before (if it was made) is ${backupName} on the Pi.`);
 } finally {
   console.log("4. Removing the temporary admin login…");
-  console.log("   " + onPi(`cd ~/bento/server && ./pocketbase superuser delete ${email} --dir pb_data`));
+  console.log("   " + onPi(pi, `cd ~/bento/server && ./pocketbase superuser delete ${email} --dir pb_data`));
 }

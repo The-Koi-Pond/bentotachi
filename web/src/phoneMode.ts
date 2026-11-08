@@ -1,6 +1,7 @@
 import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, pb, users } from "./pb";
 import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
+import { remember, remembered, rememberedJson } from "./phoneStorage";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
 // the Android app (BentoLocalServerPlugin.java, mobile/bentoserver), so
@@ -31,23 +32,6 @@ export interface PhoneAccount {
   password: string;
 }
 
-function read(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function write(key: string, value: string | null) {
-  try {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch {
-    // Not saved; it'll be asked again.
-  }
-}
-
 // Whether this phone can run Bento's own server: it's built for 64-bit ARM
 // phones (nearly all phones since about 2017), not older 32-bit ones or
 // Chromebooks. Never in a browser.
@@ -61,16 +45,14 @@ export async function phoneModeSupported(): Promise<boolean> {
 }
 
 export function isPhoneMode(): boolean {
-  return isAndroidApp && read(MODE_KEY) === "phone";
+  return isAndroidApp && remembered(MODE_KEY) === "phone";
 }
 
 export function phoneAccount(): PhoneAccount | null {
-  try {
-    const account = JSON.parse(read(ACCOUNT_KEY) ?? "null");
-    return account && typeof account.username === "string" && typeof account.password === "string" ? account : null;
-  } catch {
-    return null;
-  }
+  const account = rememberedJson(ACCOUNT_KEY) as Partial<PhoneAccount> | null;
+  return account && typeof account.username === "string" && typeof account.password === "string"
+    ? { username: account.username, password: account.password }
+    : null;
 }
 
 // Starts the phone's server (if it isn't already) and points Bento at it.
@@ -102,16 +84,16 @@ export async function setUpPhone(name: string) {
     // Saved before the account is made, so the app being closed in between
     // can't leave an account nobody knows the password to. If making it
     // fails, the one saved before is put back.
-    const before = read(ACCOUNT_KEY);
-    write(ACCOUNT_KEY, JSON.stringify(account));
+    const before = remembered(ACCOUNT_KEY);
+    remember(ACCOUNT_KEY, JSON.stringify(account));
     try {
       await pb.send("/api/cookbook/setup", { method: "POST", body: { ...account, name: name.trim() } });
     } catch (err) {
-      write(ACCOUNT_KEY, before);
+      remember(ACCOUNT_KEY, before);
       throw err;
     }
   }
-  write(MODE_KEY, "phone");
+  remember(MODE_KEY, "phone");
   if (!(await logInOnPhone())) throw new Error("Bentotachi is already set up on this phone with another account. Log in with it below.");
 }
 
@@ -130,7 +112,7 @@ export function leavePhoneMode() {
         "Send them to the server you're switching to? Choose OK only if that server has this phone's data (its backup restored there). Cancel throws them away."
     );
   forgetOfflineCopy({ keepWaiting });
-  write(MODE_KEY, null);
+  remember(MODE_KEY, null);
   pb.authStore.clear();
 }
 
@@ -153,16 +135,16 @@ export function switchToServer() {
 // starts again as if new.
 export async function erasePhone() {
   await LocalServer.erase();
-  write(MODE_KEY, null);
-  write(ACCOUNT_KEY, null);
-  write(LAST_BACKUP_KEY, null);
+  remember(MODE_KEY, null);
+  remember(ACCOUNT_KEY, null);
+  remember(LAST_BACKUP_KEY, null);
   forgetOfflineCopy();
   pb.authStore.clear();
 }
 
 export async function backUpPhone(): Promise<boolean> {
   const { saved } = await LocalServer.backup();
-  if (saved) write(LAST_BACKUP_KEY, new Date().toISOString());
+  if (saved) remember(LAST_BACKUP_KEY, new Date().toISOString());
   return saved;
 }
 
@@ -175,7 +157,7 @@ export type BackupNote = { text: string; isError: boolean };
 let restoredBackupNote: BackupNote | null = null;
 
 export function noteRestoredBackup(saved: boolean, error?: string) {
-  if (saved) write(LAST_BACKUP_KEY, new Date().toISOString());
+  if (saved) remember(LAST_BACKUP_KEY, new Date().toISOString());
   restoredBackupNote = saved
     ? { text: "Backup saved.", isError: false }
     : { text: error || "Android closed Bentotachi meanwhile, so the backup wasn't saved. Try again.", isError: true };
@@ -191,14 +173,14 @@ export function takeRestoredBackupNote(): BackupNote | null {
 // backup file (without the server) and asks where to save it.
 export async function rescuePhone(): Promise<boolean> {
   const { saved } = await LocalServer.rescue();
-  if (saved) write(LAST_BACKUP_KEY, new Date().toISOString());
+  if (saved) remember(LAST_BACKUP_KEY, new Date().toISOString());
   return saved;
 }
 
 // When a backup was last saved from this phone, or null for never (see
 // backupReminder.ts).
 export function lastBackup(): Date | null {
-  const saved = read(LAST_BACKUP_KEY);
+  const saved = remembered(LAST_BACKUP_KEY);
   const date = saved ? new Date(saved) : null;
   return date && !Number.isNaN(date.getTime()) ? date : null;
 }
@@ -227,7 +209,7 @@ export async function restorePhone(): Promise<boolean> {
 // Saves the account for logging in later (after logging in by hand, like
 // with an account from a restored backup).
 export function rememberPhoneAccount(account: PhoneAccount) {
-  write(ACCOUNT_KEY, JSON.stringify(account));
+  remember(ACCOUNT_KEY, JSON.stringify(account));
 }
 
 // (Profile hides the username and password in phone mode, so the saved

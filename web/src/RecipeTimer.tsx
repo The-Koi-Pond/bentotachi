@@ -13,6 +13,7 @@ import {
   startTimer,
   type TimerState,
 } from "./cookTiming";
+import { remember, rememberedJson } from "./phoneStorage";
 
 // "⏱ Time it" on a recipe: a prep-then-cook stopwatch to find out how long
 // the recipe really takes, then an offer to save that as its times. Kept on
@@ -22,21 +23,12 @@ import {
 const key = (recipeId: string) => `bento.timer.${recipeId}`;
 
 function load(recipeId: string): TimerState | null {
-  try {
-    const saved = JSON.parse(localStorage.getItem(key(recipeId)) ?? "null");
-    return saved && typeof saved.stage === "string" ? (saved as TimerState) : null;
-  } catch {
-    return null;
-  }
+  const saved = rememberedJson(key(recipeId)) as Partial<TimerState> | null;
+  return saved && typeof saved.stage === "string" ? (saved as TimerState) : null;
 }
 
 function store(recipeId: string, state: TimerState | null) {
-  try {
-    if (state) localStorage.setItem(key(recipeId), JSON.stringify(state));
-    else localStorage.removeItem(key(recipeId));
-  } catch {
-    // Not kept: the timer still works while the page stays open.
-  }
+  remember(key(recipeId), state && JSON.stringify(state));
 }
 
 export default function RecipeTimer({

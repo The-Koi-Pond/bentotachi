@@ -38,6 +38,7 @@ import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
 import { useCountry, usePlanMeals } from "../household";
+import { remember, remembered } from "../phoneStorage";
 import {
   MEALS,
   MEAL_NAMES,
@@ -72,11 +73,7 @@ type View = "list" | "month";
 const VIEW_KEY = "bento.planView";
 
 function savedView(): View {
-  try {
-    return localStorage.getItem(VIEW_KEY) === "month" ? "month" : "list";
-  } catch {
-    return "list";
-  }
+  return remembered(VIEW_KEY) === "month" ? "month" : "list";
 }
 
 // The meal plan, as a two-week list (one row per day) or a month grid. Each
@@ -111,11 +108,7 @@ export default function MealPlan() {
   function changeView(next: View) {
     setView(next);
     setPicking(null);
-    try {
-      localStorage.setItem(VIEW_KEY, next);
-    } catch {
-      // Not remembered; it'll start on the list next time.
-    }
+    remember(VIEW_KEY, next);
   }
 
   // Drag from the handle with a mouse or finger (after moving a few pixels,

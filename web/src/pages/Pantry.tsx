@@ -32,6 +32,7 @@ import PantryRow, { type PantryLayout } from "../PantryRow";
 import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
+import { remember, remembered, rememberedJson } from "../phoneStorage";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -44,30 +45,18 @@ type Filter = "all" | "low" | "out" | "soon";
 // stock-taking (docs/VISION.md).
 const layoutKey = () => `bento.pantryLayout.${pb.authStore.record?.id ?? ""}`;
 function savedLayout(): PantryLayout {
-  try {
-    return localStorage.getItem(layoutKey()) === "detailed" ? "detailed" : "simple";
-  } catch {
-    return "simple";
-  }
+  return remembered(layoutKey()) === "detailed" ? "detailed" : "simple";
 }
 
 // The places (Cupboard, Fridge…) closed on this device. Storage can be
 // missing or refuse; then every place just starts open.
 const CLOSED_PLACES_KEY = "bento.closedPantryPlaces";
 function savedClosedPlaces(): Set<string> {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(CLOSED_PLACES_KEY) ?? "[]");
-    return new Set(Array.isArray(saved) ? saved.filter((key): key is string => typeof key === "string") : []);
-  } catch {
-    return new Set();
-  }
+  const saved = rememberedJson(CLOSED_PLACES_KEY);
+  return new Set(Array.isArray(saved) ? saved.filter((key): key is string => typeof key === "string") : []);
 }
 function saveClosedPlaces(closed: Set<string>) {
-  try {
-    localStorage.setItem(CLOSED_PLACES_KEY, JSON.stringify([...closed]));
-  } catch {
-    // Not remembered.
-  }
+  remember(CLOSED_PLACES_KEY, JSON.stringify([...closed]));
 }
 
 export default function Pantry() {
@@ -136,11 +125,7 @@ export default function Pantry() {
 
   function changeLayout(next: PantryLayout) {
     setLayout(next);
-    try {
-      localStorage.setItem(layoutKey(), next);
-    } catch {
-      // Not remembered; it'll start in Simple next time.
-    }
+    remember(layoutKey(), next);
   }
 
   // The notice goes away by itself after a few seconds.

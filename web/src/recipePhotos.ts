@@ -13,7 +13,8 @@ import type { Recipe } from "./pb";
 export const MAX_PHOTOS = 20;
 export const PHOTO_SIDE = 1600;
 
-// A step's key in photo_steps.
+// A step's key in photo_steps. On purpose its own rule, not a shared text
+// helper: saved step photos are found by it, so it must never change.
 export const stepKey = (line: string) => line.trim().toLowerCase();
 
 export interface NumberedStep {

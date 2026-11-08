@@ -5,6 +5,7 @@
 // offline (see offlineShopping.ts). Other changes need the server.
 
 import type { Recipe, RecipeRating } from "./pb";
+import { remember, rememberedJson } from "./phoneStorage.ts";
 
 const RECIPES_KEY = "bento.offline.recipes";
 const RATINGS_KEY = "bento.offline.ratings";
@@ -15,20 +16,13 @@ export const PANTRY_KEY = "bento.offline.pantry";
 export const SHOPPING_QUEUE_KEY = "bento.offline.shoppingQueue";
 
 export function read<T>(key: string): T[] | null {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? (JSON.parse(saved) as T[]) : null;
-  } catch {
-    return null;
-  }
+  const saved = rememberedJson(key);
+  return Array.isArray(saved) ? (saved as T[]) : null;
 }
 
+// Phone storage full or blocked: offline reading just stays out of date.
 export function write(key: string, list: unknown[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(list));
-  } catch {
-    // Phone storage full or blocked: offline reading just stays out of date.
-  }
+  remember(key, JSON.stringify(list));
 }
 
 // The copy keeps what recipe pages and the list need: the recipe, and who
@@ -75,10 +69,6 @@ export function isOffline(err: unknown): boolean {
 // sent yet, for when the login merely expired; they go once someone logs
 // in again (the list is the household's).
 export function forgetOfflineCopy({ keepWaiting = false } = {}) {
-  try {
-    const keys = [RECIPES_KEY, RATINGS_KEY, SHOPPING_KEY, PANTRY_KEY, ...(keepWaiting ? [] : [SHOPPING_QUEUE_KEY])];
-    for (const key of keys) localStorage.removeItem(key);
-  } catch {
-    // Nothing to forget.
-  }
+  const keys = [RECIPES_KEY, RATINGS_KEY, SHOPPING_KEY, PANTRY_KEY, ...(keepWaiting ? [] : [SHOPPING_QUEUE_KEY])];
+  for (const key of keys) remember(key, null);
 }

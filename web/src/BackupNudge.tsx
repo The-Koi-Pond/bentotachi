@@ -2,16 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { backupReminder, snoozeUntil } from "./backupReminder";
 import { isPhoneMode, lastBackup } from "./phoneMode";
+import { remember, remembered } from "./phoneStorage";
 
 const SNOOZE_KEY = "bento.backupSnoozed";
 
 function snoozed(): Date | null {
-  try {
-    const saved = localStorage.getItem(SNOOZE_KEY);
-    return saved ? new Date(saved) : null;
-  } catch {
-    return null;
-  }
+  const saved = remembered(SNOOZE_KEY);
+  return saved ? new Date(saved) : null;
 }
 
 // On the Recipes page of a phone-only Bento: "Save a backup" when there's
@@ -24,11 +21,7 @@ export default function BackupNudge({ recipes }: { recipes: number }) {
   if (!reminder) return null;
 
   function later() {
-    try {
-      localStorage.setItem(SNOOZE_KEY, snoozeUntil(new Date()).toISOString());
-    } catch {
-      // Not remembered: it asks again next time.
-    }
+    remember(SNOOZE_KEY, snoozeUntil(new Date()).toISOString());
     setHidden(true);
   }
 

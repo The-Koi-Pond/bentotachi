@@ -42,8 +42,10 @@ they say otherwise.
 - Saving an edit: send only the changed fields, `changedFields`
   (`changedFields.ts`), so a housemate's change meanwhile isn't put back.
   Pantry items: `editChanges` (`pantryFields.ts`).
-- Offline copies of lists: `read` / `write` and the `*_KEY` names
-  (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
+- Remembering something on this device (a setting, a view): `remembered` /
+  `rememberedJson` / `remember` (`phoneStorage.ts`), never raw
+  `localStorage`. Offline copies of lists: `read` / `write` and the `*_KEY`
+  names (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
   `useShoppingQueue` (`shoppingQueue.ts`).
 - Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
   what's already waiting). "Is it already on the list?": `sameThing`
@@ -73,7 +75,7 @@ they say otherwise.
 ## Numbers, amounts and units
 
 - Reading a number in recipe text: `NUMBER`, `parseNumber`, `amountRange`
-  (`weights.ts`). Showing one in kitchen fractions: `kitchenFraction`
+  (`weights.ts`; `stepAmounts.ts` and `scaling.ts` use them too). Showing one in kitchen fractions: `kitchenFraction`
   (`scaling.ts`).
 - Scaling: `scaleLine`, `servingsCount` (`scaling.ts`); remembered size:
   `recipeScale.ts`.
@@ -118,6 +120,8 @@ they say otherwise.
 
 ## Scripts (`web/scripts/`)
 
-- The Pi's address and key: `piConfig` (`piConfig.mjs`). Only committed code
-  goes out: `refuseUncommittedCode` (`committed.mjs`). All checks before
-  sending: `runTests` (`tests.mjs`).
+- The Pi: `piConfig` (address, key, `sshOptions`), `onPi` to run a command
+  there, `SSH` / `SCP` (`piConfig.mjs`). Only committed code goes out:
+  `refuseUncommittedCode` (`committed.mjs`). All checks before sending:
+  `runTests` (`tests.mjs`). Android builds with the right Java: `run`
+  (`buildTools.mjs`).

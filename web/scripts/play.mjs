@@ -23,17 +23,16 @@
 // upload robot (playUpload.mjs; its key is android/play-publisher.json).
 // The notes are optional.
 
-import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 import { uploadBundle } from "./playUpload.mjs";
+import { run } from "./buildTools.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
-const javaHome = process.env.BENTO_JAVA_HOME || "C:\\Program Files\\Android\\Android Studio\\jbr";
 const [action, track, ...noteWords] = process.argv.slice(2);
 const keyFile = join(android, "play-publisher.json");
 if (action && action !== "upload") {
@@ -60,11 +59,6 @@ if (!existsSync(join(android, "keystore.properties"))) {
 // committed.mjs).
 refuseUncommittedCode("built");
 await runTests();
-
-function run(command, cwd, extraEnv = {}) {
-  console.log(`\n> ${command}`);
-  execSync(command, { cwd, stdio: "inherit", env: { ...process.env, JAVA_HOME: javaHome, ...extraEnv } });
-}
 
 run("npm run android", web, { VITE_BENTO_PLAY: "1" });
 run(`"${join(android, "gradlew.bat")}" bundleRelease -PbentoPlay --console=plain`, android);

@@ -16,6 +16,7 @@ import { aisleOf, byAisle } from "../aisles";
 import { BenMood } from "../Brand";
 import RecipeShoppingSheet from "../RecipeShoppingSheet";
 import { sameThing } from "../shoppingMatch";
+import { remember, remembered } from "../phoneStorage";
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
 // simply in the order it was added. Remembered on this device.
@@ -23,11 +24,7 @@ type Order = "aisle" | "added";
 const ORDER_KEY = "bento.shoppingOrder";
 
 function savedOrder(): Order {
-  try {
-    return localStorage.getItem(ORDER_KEY) === "added" ? "added" : "aisle";
-  } catch {
-    return "aisle";
-  }
+  return remembered(ORDER_KEY) === "added" ? "added" : "aisle";
 }
 
 export default function ShoppingList() {
@@ -97,11 +94,7 @@ export default function ShoppingList() {
 
   function changeOrder(next: Order) {
     setOrder(next);
-    try {
-      localStorage.setItem(ORDER_KEY, next);
-    } catch {
-      // Not remembered; it'll start by aisle next time.
-    }
+    remember(ORDER_KEY, next);
   }
 
   async function add(event: FormEvent) {

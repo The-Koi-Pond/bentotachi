@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { remember, remembered } from "./phoneStorage.ts";
 
 // When this phone last opened the fridge door: the newest note's `created`
 // then (see unreadNotes in fridgeDoor.ts), or "" if never. Kept on this
@@ -6,24 +7,12 @@ import { useSyncExternalStore } from "react";
 const KEY = "bento.fridgeSeen";
 const listeners = new Set<() => void>();
 
-function read(): string {
-  try {
-    return localStorage.getItem(KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-let seen = read();
+let seen = remembered(KEY) ?? "";
 
 export function markFridgeSeen(created: string) {
   if (!created || created <= seen) return;
   seen = created;
-  try {
-    localStorage.setItem(KEY, created);
-  } catch {
-    // Storage blocked: new notes just keep counting until the next visit.
-  }
+  remember(KEY, created);
   for (const listener of listeners) listener();
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { Link } from "react-router";
 import { CloseIcon } from "./icons";
 import { alertShown, dropAlert, holdAlert } from "./timerAlerts";
+import { remember, rememberedJson } from "./phoneStorage";
 import {
   JUST_ENDED_MS,
   beepsInApp,
@@ -25,12 +26,8 @@ import {
 const KEY = "bento.stepTimers";
 
 function load(): StepTimer[] {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
+  const saved = rememberedJson(KEY);
+  return Array.isArray(saved) ? saved : [];
 }
 
 let timers: StepTimer[] = load();
@@ -38,11 +35,7 @@ const listeners = new Set<() => void>();
 
 function set(next: StepTimer[]) {
   timers = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    // Not kept if the page closes; it still runs while it's open.
-  }
+  remember(KEY, JSON.stringify(next));
   for (const listener of listeners) listener();
 }
 

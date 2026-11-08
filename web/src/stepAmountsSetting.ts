@@ -1,19 +1,12 @@
 import { useSyncExternalStore } from "react";
+import { remember, remembered } from "./phoneStorage.ts";
 
 // "Amounts in the method" (⋮ menu): whether a recipe's steps show how much
 // of each ingredient they name (stepAmounts.ts). Off unless chosen, on this
 // device.
 const KEY = "bento.stepAmounts";
 
-function read(): boolean {
-  try {
-    return localStorage.getItem(KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-let on = read();
+let on = remembered(KEY) === "1";
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -29,11 +22,7 @@ export function useStepAmounts(): [boolean, (next: boolean) => void] {
     current,
     (next) => {
       on = next;
-      try {
-        localStorage.setItem(KEY, next ? "1" : "0");
-      } catch {
-        // Not remembered; it's off again next time.
-      }
+      remember(KEY, next ? "1" : "0");
       for (const listener of listeners) listener();
     },
   ];

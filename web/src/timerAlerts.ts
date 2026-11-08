@@ -1,6 +1,7 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { isAndroidApp } from "./pb";
 import { localToday } from "./dates";
+import { remember, remembered } from "./phoneStorage";
 import type { StepTimer, TimerAlert } from "./stepTimers";
 
 // Step timers that ring with the phone locked or Bentotachi in the
@@ -44,19 +45,11 @@ function timersChannel(): Promise<void> {
 }
 
 function askedToday(): boolean {
-  try {
-    return localStorage.getItem(ASKED_KEY) === localToday();
-  } catch {
-    return false;
-  }
+  return remembered(ASKED_KEY) === localToday();
 }
 
 function rememberAsked() {
-  try {
-    localStorage.setItem(ASKED_KEY, localToday());
-  } catch {
-    // Asked again next time, which is only a little annoying.
-  }
+  remember(ASKED_KEY, localToday());
 }
 
 // Holds a notification for when the timer reaches zero. `ask`: whether

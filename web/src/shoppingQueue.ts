@@ -10,6 +10,7 @@
 import { useSyncExternalStore } from "react";
 import { SHOPPING_QUEUE_KEY, read, write } from "./offline";
 import { createQueueSender, type QueuedChange } from "./offlineShopping";
+import { remembered } from "./phoneStorage";
 
 const listeners = new Set<() => void>();
 let stored: string | null = null;
@@ -17,11 +18,7 @@ let queue: QueuedChange[] = read<QueuedChange>(SHOPPING_QUEUE_KEY) ?? [];
 stored = storedText();
 
 function storedText(): string | null {
-  try {
-    return localStorage.getItem(SHOPPING_QUEUE_KEY);
-  } catch {
-    return null;
-  }
+  return remembered(SHOPPING_QUEUE_KEY);
 }
 
 function current(): QueuedChange[] {

@@ -15,12 +15,12 @@
 // offered it. Only for a server whose phones all have test-key builds:
 //   npm run release -- --test-key "What changed"
 
-import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
+import { run } from "./buildTools.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
@@ -44,15 +44,6 @@ if (!signed && !testKey) {
 // committed.mjs).
 refuseUncommittedCode("built");
 await runTests();
-
-// Android Studio's bundled Java 21. The PC's own JAVA_HOME is Java 17,
-// which is too old for Android's build tools.
-const javaHome = process.env.BENTO_JAVA_HOME || "C:\\Program Files\\Android\\Android Studio\\jbr";
-
-function run(command, cwd) {
-  console.log(`\n> ${command}`);
-  execSync(command, { cwd, stdio: "inherit", env: { ...process.env, JAVA_HOME: javaHome } });
-}
 
 // 1. Next version number. versionCode is what Android compares (it just
 //    counts up); versionName is what people see, like 1.2.1.

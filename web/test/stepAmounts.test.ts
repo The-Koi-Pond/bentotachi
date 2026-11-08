@@ -16,6 +16,10 @@ test("reads an ingredient's amount and name", () => {
     partly: false,
   });
   assert.deepEqual(readIngredient("2 tbsp ghee or butter")?.choices, [["ghee"], ["butter"]]);
+  // Numbers read the way weights.ts reads them: thousands, decimal commas, "1 ½".
+  assert.equal(readIngredient("1,000 g plain flour")?.amount, "1,000 g");
+  assert.equal(readIngredient("1,5 kg potatoes")?.amount, "1,5 kg");
+  assert.equal(readIngredient("1 ½ cups milk")?.amount, "1 ½ cups");
   assert.deepEqual(readIngredient("3/4 cup heavy / thickened cream")?.choices, [["heavy", "cream"], ["thickened", "cream"]]);
   // A describing word ("melted") doesn't make it two names to borrow from.
   assert.deepEqual(readIngredient("2 tbsp/ 30g melted ghee or butter")?.choices, [["melted", "ghee"], ["butter"]]);

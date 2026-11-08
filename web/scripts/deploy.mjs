@@ -17,22 +17,17 @@ import { createReadStream, existsSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { piConfig } from "./piConfig.mjs";
+import { onPi, piConfig, SSH } from "./piConfig.mjs";
 import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 
-const { ssh: PI, url: PI_URL, key: KEY } = piConfig();
+const pi = piConfig();
+const { url: PI_URL } = pi;
 const FOLDERS = ["pb_hooks", "pb_migrations", "pb_public", "releases"];
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const server = join(web, "..", "server");
-const ssh = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "OpenSSH", "ssh.exe");
 const tar = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe");
-const sshArgs = ["-i", KEY, "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", PI];
-
-function onPi(command) {
-  return execFileSync(ssh, [...sshArgs, command], { encoding: "utf8" });
-}
 
 // Only committed server code and web app go to the Pi (see committed.mjs).
 refuseUncommittedCode("sent");
@@ -81,7 +76,7 @@ const remote =
 console.log(`\nSending ${FOLDERS.join(", ")} to the Pi…`);
 try {
   await new Promise((resolve, reject) => {
-    const send = spawn(ssh, [...sshArgs, remote], { stdio: ["pipe", "inherit", "inherit"] });
+    const send = spawn(SSH, [...pi.sshOptions, pi.ssh, remote], { stdio: ["pipe", "inherit", "inherit"] });
     // If ssh ends early (the Pi can't be reached), writing to it fails; the
     // exit code below says what happened, so this mustn't crash the script.
     send.stdin.on("error", () => {});
@@ -94,7 +89,7 @@ try {
 }
 
 console.log("Restarting Bentotachi on the Pi…");
-onPi("sudo -n /usr/bin/systemctl restart bento");
+onPi(pi, "sudo -n /usr/bin/systemctl restart bento");
 
 // Wait for it to answer again. (No process.exit: on Windows, exiting
 // straight after a fetch can crash Node on the way out.)
