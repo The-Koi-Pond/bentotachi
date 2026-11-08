@@ -197,6 +197,27 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
+(nothing yet)
+
+Released in 1.20.0 (2026-11-08, deployed the same day):
+
+- Buy only what the pantry is short of: adding a recipe's ingredients
+  (its page, the plan, the list's "From a recipe") counts the packets in
+  stock and adds just the rest; a covered line starts unticked, saying
+  "Enough"; an item marked Low still starts ticked.
+- Ticking something bought on the shopping list adds a packet like the
+  item's usual one (unticking within the hour takes it back); adding one
+  by hand soon after asks if it's the same bag.
+- Pantry: packets as "− 3 × 400 g +" counters; tapping an item opens a
+  quick card (+ 1 packet, Used one, the other levels, Edit everything).
+- Kinds of one thing: "A kind of" (Linguine, Penne: kinds of Pasta), kinds
+  grouped in the pantry, a recipe asking for one kind counts only that
+  kind, "Any pasta will do" for the rest.
+- "✓ Finished" at the end of a recipe's method, then "Used anything up?":
+  what it used comes off the pantry, and an open packet remembers "about
+  100 g left".
+- The Edit page's cover photo is made smaller before it's sent, like the
+  other photos.
 - Websites' ingredient sections ("Marinade", "Sauce") come in with the
   recipe; "Re-import from the website" in a recipe's ⋯ menu.
 - "Amounts in the method" (⋮ menu, off unless turned on).
