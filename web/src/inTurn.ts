@@ -1,7 +1,8 @@
 // Runs jobs one after another, each starting once the one before has
 // finished (failed ones too). For saves that read the record as saved now,
 // change it and save it back: two at once would both read the old copy, and
-// the second would undo the first.
+// the second would undo the first. A job must never wait for another job
+// in the same queue: it would wait for itself, and every later job with it.
 export function inTurn() {
   let last: Promise<unknown> = Promise.resolve();
   return <T>(job: () => Promise<T>): Promise<T> => {

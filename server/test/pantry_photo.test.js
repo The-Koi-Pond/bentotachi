@@ -44,6 +44,31 @@ test("Open Food Facts' photo first, then the store page's", () => {
   assert.equal(fromStore.result.photo.type, "image/jpeg");
 });
 
+test("one source down or empty doesn't stop the others being tried", () => {
+  // Open Food Facts can't be reached, but the store page has a photo.
+  const storeAnyway = find({
+    barcodes: [CODE],
+    urls: [STORE],
+    answers: {
+      [lookup.photoLookupUrl(CODE)]: "unreachable",
+      [STORE]: page("https://shop.example.com/rice.jpg"),
+      "https://shop.example.com/rice.jpg": { statusCode: 200, body: JPEG },
+    },
+  });
+  assert.equal(storeAnyway.result.photo?.type, "image/jpeg");
+  // Two barcodes: the first unknown, the second with a photo.
+  const OTHER = "9300633603178";
+  const second = find({
+    barcodes: [CODE, OTHER],
+    answers: {
+      [lookup.photoLookupUrl(CODE)]: { statusCode: 404, json: {} },
+      [lookup.photoLookupUrl(OTHER)]: { statusCode: 200, json: { status: 1, product: { image_front_url: "https://images.openfoodfacts.org/b.jpg" } } },
+      "https://images.openfoodfacts.org/b.jpg": { statusCode: 200, body: JPEG },
+    },
+  });
+  assert.equal(second.result.photo?.type, "image/jpeg");
+});
+
 test("nothing found is 400, so the app doesn't ask again", () => {
   const { result } = find({
     barcodes: [CODE],
@@ -54,7 +79,7 @@ test("nothing found is 400, so the app doesn't ask again", () => {
 });
 
 test("a site that couldn't answer is 503, worth asking again later, even if another said no", () => {
-  for (const offAnswer of ["unreachable", { statusCode: 503, json: {} }, { statusCode: 429, json: {} }]) {
+  for (const offAnswer of ["unreachable", { statusCode: 500, json: {} }, { statusCode: 503, json: {} }, { statusCode: 429, json: {} }]) {
     const { result } = find({
       barcodes: [CODE],
       urls: [STORE],
@@ -87,6 +112,12 @@ test("a download that isn't a photo, or is too big, isn't kept", () => {
     answers: { [STORE]: page("https://shop.example.com/rice.jpg"), "https://shop.example.com/rice.jpg": { statusCode: 200, body: "<html>error</html>" } },
   });
   assert.match(notPhoto.result.message, /Couldn't download that page's photo/);
+  // An error page that happens to be a picture (a "not found" image).
+  const errorPicture = find({
+    urls: [STORE],
+    answers: { [STORE]: page("https://shop.example.com/rice.jpg"), "https://shop.example.com/rice.jpg": { statusCode: 404, body: JPEG } },
+  });
+  assert.equal(errorPicture.result.photo, undefined);
   const big = new Array(parser.LIMITS.image + 1).fill(0);
   big[0] = 0xff;
   big[1] = 0xd8;

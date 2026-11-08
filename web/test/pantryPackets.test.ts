@@ -87,6 +87,10 @@ test("adding a packet: an Out item is in stock again, and a new barcode with det
   assert.equal(itemAfterPacket(fresh, "", details), null);
   assert.deepEqual(itemAfterPacket({ ...fresh, status: "out" }, "", details), { status: "have" });
   assert.deepEqual(itemAfterPacket(fresh, CODE, details), { barcode_details: { [CODE]: details } });
+  // Ran out, bought more, scanned a new barcode: both at once.
+  assert.deepEqual(itemAfterPacket({ ...fresh, status: "out" }, CODE, details), { status: "have", barcode_details: { [CODE]: details } });
+  // Low stays a judgement: a packet added doesn't change it.
+  assert.equal(itemAfterPacket({ ...fresh, status: "low" }, "", details), null);
   // Known already, or nothing to remember: not learned.
   assert.equal(learnsBarcode({ barcode_details: { [CODE]: { brand: "Coles" } } }, CODE, details), false);
   assert.equal(learnsBarcode(fresh, CODE, { brand: " ", size: "" }), false);
