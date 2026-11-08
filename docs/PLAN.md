@@ -1493,6 +1493,16 @@ pantry's packets to say how much is left (pantry_packets has sizes like
 "2 onions" against a packet count is harder). Where it can't tell, add the
 whole amount as now. Xel: build it next time.
 
+## To consider: spelling that follows the household's region (Xel, 2026-11-08)
+
+Text people see is in Australian spelling (colour, favourite, organise),
+Xel's choice for their projects. American households could get American
+spelling and words instead (color, favorite), following the same household
+country that already picks regional ingredient names (regionalNames.ts,
+"bell pepper (capsicum)"). Not built: it means keeping the app's text in
+one place with both spellings. The app's text mixes the two spellings
+today (TODO.md, Cleanup), which is worth tidying first.
+
 ## To consider: ideas from the Paprika comparison (Xel, 2026-11-07)
 
 From research/reports/Paprika compared with Bentotachi.md (local only),
