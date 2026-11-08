@@ -577,6 +577,60 @@ function findAuthorNotes(html) {
   return [];
 }
 
+// Ingredient sections ("Marinade:", "Sauce:", "Serving:"): recipe data
+// lists ingredients as one flat list, so the section headings only exist in
+// the page's recipe card (WP Recipe Maker, Tasty Recipes, Mediavine Create;
+// Lilly found RecipeTin Eats' missing, 2026-11-08). Reads the card's
+// headings and how many ingredients each one covers, then puts "# Heading"
+// lines into the recipe data's list at those places. Only when the card
+// lists exactly as many ingredients as the data, so a heading can't land in
+// the wrong place; otherwise the list stays as it was.
+var INGREDIENT_BOXES = ["wprm-recipe-ingredients-container", "tasty-recipes-ingredients", "mv-create-ingredients"];
+
+function ingredientSections(html) {
+  for (var i = 0; i < INGREDIENT_BOXES.length; i++) {
+    var start = html.search(new RegExp("<[a-z][a-z0-9]*\\b[^>]*\\bclass\\s*=\\s*[\"'](?:[^\"']*\\s)?" + INGREDIENT_BOXES[i] + "(?=[\\s\"'])", "i"));
+    if (start < 0) continue;
+    var element = elementAt(html, start);
+    if (!element) continue;
+    // In order: each heading, then how many list items follow it.
+    var sections = [];
+    var current = null;
+    var re = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>|<li\b/gi;
+    var m;
+    while ((m = re.exec(element.inner)) !== null) {
+      if (m[1] !== undefined) {
+        var heading = cleanText(m[1]).replace(/\s*:\s*$/, "");
+        // The card's own "Ingredients" title isn't a section.
+        if (heading && !/^ingredients$/i.test(heading)) sections.push((current = { heading: heading, count: 0 }));
+        continue;
+      }
+      if (!current) sections.push((current = { heading: "", count: 0 }));
+      current.count += 1;
+    }
+    sections = sections.filter(function (section) {
+      return section.count > 0;
+    });
+    if (sections.some(function (section) { return section.heading; })) return sections;
+  }
+  return [];
+}
+
+// The recipe data's ingredient lines with the card's section headings put in
+// (ingredientSections), or the lines as they were when they don't line up.
+function withSections(lines, sections) {
+  var total = 0;
+  for (var i = 0; i < sections.length; i++) total += sections[i].count;
+  if (!sections.length || total !== lines.length) return lines;
+  var out = [];
+  var at = 0;
+  for (var j = 0; j < sections.length; j++) {
+    if (sections[j].heading) out.push("# " + sections[j].heading);
+    for (var k = 0; k < sections[j].count; k++) out.push(lines[at++]);
+  }
+  return out;
+}
+
 // The site's own rating from a recipe's aggregateRating, out of 5 with one
 // decimal, and how many people gave it; null when there's none or it makes
 // no sense (no ratings yet, a value off the scale). Sites rating out of 10
@@ -697,7 +751,7 @@ function parseRecipe(html, pageUrl) {
     prepMinutes: durationToMinutes(recipe.prepTime),
     cookMinutes: durationToMinutes(recipe.cookTime),
     totalMinutes: durationToMinutes(recipe.totalTime),
-    ingredients: joinAmounts(toLines(recipe.recipeIngredient || recipe.ingredients)),
+    ingredients: joinAmounts(withSections(toLines(recipe.recipeIngredient || recipe.ingredients), ingredientSections(html))),
     steps: steps,
     tags: collectTags(recipe),
     authorNotes: findAuthorNotes(html).join("\n"),

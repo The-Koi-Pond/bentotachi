@@ -464,3 +464,64 @@ test("no more step photos than a recipe keeps", () => {
   const parsed = parseRecipe(page({ "@type": "Recipe", name: "Long", recipeInstructions: steps }), "https://e.com");
   assert.equal(parsed.stepImages.length, 20);
 });
+
+// A recipe card's ingredient sections (WP Recipe Maker style, as on
+// RecipeTin Eats): the data's list is flat, the card has the headings.
+const chickenData = {
+  "@type": "Recipe",
+  name: "Butter chicken",
+  recipeIngredient: ["1 kg chicken thighs", "1/2 cup yoghurt", "1 tbsp lemon juice", "1 cup passata", "Rice"],
+  recipeInstructions: ["Bake."],
+};
+const wprmCard = (groups) =>
+  `<div class="wprm-recipe-ingredients-container wprm-block-text-normal"><h3 class="wprm-recipe-header">Ingredients</h3>` +
+  groups
+    .map(
+      ([name, items]) =>
+        `<div class="wprm-recipe-ingredient-group">${name ? `<h4 class="wprm-recipe-group-name">${name}</h4>` : ""}` +
+        `<ul class="wprm-recipe-ingredients">${items.map((item) => `<li class="wprm-recipe-ingredient">${item}</li>`).join("")}</ul></div>`
+    )
+    .join("") +
+  `</div>`;
+
+test("reads the recipe card's ingredient sections as # headings", () => {
+  const card = wprmCard([
+    ["", ["1 kg chicken thighs"]],
+    ["Marinade:", ["1/2 cup yoghurt", "1 tbsp lemon juice"]],
+    ["Sauce:", ["1 cup passata"]],
+    ["Serving:", ["Rice"]],
+  ]);
+  const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
+  assert.deepEqual(parsed.ingredients, [
+    "1 kg chicken thighs",
+    "# Marinade",
+    "1/2 cup yoghurt",
+    "1 tbsp lemon juice",
+    "# Sauce",
+    "1 cup passata",
+    "# Serving",
+    "Rice",
+  ]);
+});
+
+test("Tasty Recipes style sections (a heading, then its list) work too", () => {
+  const card =
+    `<div class="tasty-recipes-ingredients"><h4>For the chicken</h4><ul><li>1 kg chicken thighs</li><li>1/2 cup yoghurt</li><li>1 tbsp lemon juice</li></ul>` +
+    `<h4>For the sauce</h4><ul><li>1 cup passata</li><li>Rice</li></ul></div>`;
+  const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
+  assert.deepEqual(parsed.ingredients.filter((line) => line.startsWith("#")), ["# For the chicken", "# For the sauce"]);
+  assert.equal(parsed.ingredients.indexOf("# For the sauce"), 4);
+});
+
+test("sections that don't line up with the recipe data are left out, not misplaced", () => {
+  // The card has one ingredient fewer than the data.
+  const card = wprmCard([
+    ["Marinade:", ["1/2 cup yoghurt", "1 tbsp lemon juice"]],
+    ["Sauce:", ["1 cup passata", "Rice"]],
+  ]);
+  const parsed = parseRecipe(page(chickenData).replace("<body>hi", `<body>${card}`), "https://e.com");
+  assert.deepEqual(parsed.ingredients, chickenData.recipeIngredient);
+  // And a card without named sections changes nothing.
+  const plain = parseRecipe(page(chickenData).replace("<body>hi", `<body>${wprmCard([["", chickenData.recipeIngredient]])}`), "https://e.com");
+  assert.deepEqual(plain.ingredients, chickenData.recipeIngredient);
+});
