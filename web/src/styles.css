@@ -5380,39 +5380,45 @@ em.soft {
 
 /* Ingredients and Method as cards of their own (Xel, 2026-11-07), like the
    cards above them. Inside, the scaling box and the steps become light
-   rows instead of cards in a card. */
-.recipe-card {
+   rows instead of cards in a card. Not "recipe-card": that's the recipe
+   list's cards, which this padding squeezed (Xel noticed, 2026-11-08). */
+.recipe-panel {
   padding: 10px 14px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-.recipe-card .scale-row {
+.recipe-panel .scale-row {
   background: var(--bg);
   border-color: transparent;
 }
 
-.recipe-card .steps {
+.recipe-panel .steps {
   gap: 0;
 }
 
-.recipe-card .steps > li:not(.list-heading) {
+.recipe-panel .steps > li:not(.list-heading) {
   background: none;
   border: none;
   border-radius: 0;
 }
 
-.recipe-card .steps > li:not(.list-heading) + li:not(.list-heading) {
+.recipe-panel .steps > li:not(.list-heading) + li:not(.list-heading) {
   border-top: 1px solid var(--border);
 }
 
-.recipe-card .step {
+.recipe-panel .step {
   padding: 12px 0;
 }
 
-/* Lined up with the step's text: the number and the gap (28 + 12). */
-.recipe-card .step-timers {
+/* Lined up with the step's text: the number and the gap (28 + 12). Its
+   photos too, under the timers. */
+.recipe-panel .step-photos {
+  margin: -4px 0 12px 40px;
+}
+
+.recipe-panel .step-timers {
   margin: -6px 0 12px 40px;
 }
 
@@ -5472,11 +5478,11 @@ em.soft {
   }
 
   .steps > li:not(.list-heading),
-  .recipe-card .steps > li:not(.list-heading) + li:not(.list-heading) {
+  .recipe-panel .steps > li:not(.list-heading) + li:not(.list-heading) {
     border: none;
   }
 
-  .recipe-card {
+  .recipe-panel {
     padding: 0;
     border: none;
   }

@@ -530,7 +530,7 @@ export default function RecipeView() {
 
       <div id="jump-ingredients" className="jump-target">
       {editing === "ingredients" ? (
-        <section className="recipe-card">
+        <section className="recipe-panel">
           <h2>Ingredients</h2>
           <TextEditor
             label="Ingredients"
@@ -555,7 +555,7 @@ export default function RecipeView() {
       )}
       </div>
 
-      <section id="jump-method" className="recipe-card">
+      <section id="jump-method" className="recipe-panel">
         <div className="section-head">
           <h2>Method</h2>
           {editButton("steps", "Change the method")}
@@ -896,7 +896,7 @@ function IngredientsSection({
   const allPicked = picked.size === pickable.length;
 
   return (
-    <section className="recipe-card">
+    <section className="recipe-panel">
       <div className="section-head">
         <h2>Ingredients</h2>
         {!picking && editButton}
