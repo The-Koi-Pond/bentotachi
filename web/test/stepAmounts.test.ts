@@ -9,13 +9,19 @@ const shown = (steps: string[], ingredients: string[], format?: (a: string) => s
 };
 
 test("reads an ingredient's amount and name", () => {
-  assert.deepEqual(readIngredient("1 tsp dried oregano, crushed"), { amount: "1 tsp", words: ["dried", "oregano"], partly: false });
+  assert.deepEqual(readIngredient("1 tsp dried oregano, crushed"), {
+    amount: "1 tsp",
+    words: ["dried", "oregano"],
+    choices: [["dried", "oregano"]],
+    partly: false,
+  });
+  assert.deepEqual(readIngredient("2 tbsp ghee or butter")?.choices, [["ghee"], ["butter"]]);
   assert.equal(readIngredient("2 cloves garlic")?.amount, "2 cloves");
   assert.equal(readIngredient("1 1/2 cups stock")?.amount, "1 1/2 cups");
   assert.equal(readIngredient("2 × 400 g tins chopped tomatoes")?.amount, "2 × 400 g tins");
   assert.equal(readIngredient("500g beef mince")?.amount, "500g");
   assert.equal(readIngredient("1 large egg")?.amount, "1");
-  assert.deepEqual(readIngredient("3 garlic cloves, crushed"), { amount: "3 cloves", words: ["garlic"], partly: false });
+  assert.deepEqual(readIngredient("3 garlic cloves, crushed"), { amount: "3 cloves", words: ["garlic"], choices: [["garlic"]], partly: false });
   // Both ways at once (RecipeTin Eats).
   assert.equal(readIngredient("1.2 kg/ 2.4lb (6 pieces) bone-in chicken thighs")?.amount, "1.2 kg/ 2.4lb");
   assert.equal(readIngredient("2 tbsp/ 30g melted ghee or butter")?.amount, "2 tbsp/ 30g");
@@ -84,15 +90,34 @@ test("the review's wrong amounts don't happen", () => {
   ]);
 });
 
+test("a generic word alone isn't a name; a part's whole thing and either choice are", () => {
+  assert.deepEqual(
+    shown(
+      ["Make the sauce: whisk well.", "Add the fish sauce.", "Scrape out the seeds.", "Toast the cumin seeds.", "Pour off the juices."],
+      ["2 tbsp fish sauce", "1 tsp cumin seeds", "1 tbsp lemon juice"]
+    ),
+    ["Make the sauce: whisk well.", "Add the fish sauce (2 tbsp).", "Scrape out the seeds.", "Toast the cumin seeds (1 tsp).", "Pour off the juices."]
+  );
+  assert.deepEqual(
+    shown(
+      ["Coat the chicken.", "Scatter over coriander.", "Melt the ghee.", "Stir in the cornflour."],
+      ["1.2 kg chicken thighs", "1/2 cup coriander leaves", "2 tbsp ghee or butter", "2 tsp cornflour / cornstarch"]
+    ),
+    ["Coat the chicken (1.2 kg).", "Scatter over coriander (1/2 cup).", "Melt the ghee (2 tbsp).", "Stir in the cornflour (2 tsp)."]
+  );
+});
+
 test("whole words only, headings skipped, first mention, ranges and pinches", () => {
   assert.deepEqual(shown(["Bring a pot to the boil.", "Slice the eggplant."], ["2 tbsp olive oil", "2 eggs"]), [
     "Bring a pot to the boil.",
     "Slice the eggplant.",
   ]);
-  assert.deepEqual(shown(["# Chicken", "Brown the thighs, then turn the thighs."], ["1 kg chicken thighs"]), [
-    "# Chicken",
+  assert.deepEqual(shown(["# Thighs", "Brown the thighs, then turn the thighs."], ["1 kg chicken thighs"]), [
+    "# Thighs",
     "Brown the thighs (1 kg), then turn the thighs.",
   ]);
+  // Describing words alone never name it ("chopped" of "onion finely chopped").
+  assert.deepEqual(shown(["Add the chopped carrots."], ["1 onion finely chopped", "2 carrots, diced"]), ["Add the chopped carrots (2)."]);
   assert.deepEqual(shown(["Add a pinch of salt.", "Pour in the stock."], ["1 tsp salt", "2 to 3 cups stock"]), [
     "Add a pinch of salt.",
     "Pour in the stock (2 to 3 cups).",

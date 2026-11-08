@@ -46,8 +46,19 @@ interface Ingredient {
   amount: string;
   // The name's words, lowercase: "dried oregano" -> ["dried", "oregano"].
   words: string[];
+  // Each choice's words: "ghee or butter" -> [[ghee], [butter]].
+  choices: string[][];
   partly: boolean;
 }
+
+// Words that end many names and mean little alone: "the sauce" is any
+// sauce, not the fish sauce.
+const GENERIC = new Set("sauce juice juices paste seed seeds leaf leaves powder zest flakes flake extract essence".split(" "));
+// The part of a thing: "chicken thighs" can be called "chicken", "coriander
+// leaves" "coriander".
+const PARTS = new Set("leaf leaves seed seeds thigh thighs breast breasts fillet fillets drumsticks wings sprigs stalks".split(" "));
+
+const wordsOf = (text: string): string[] => text.match(/[a-zà-ÿ']+(?:-[a-zà-ÿ']+)*/g) ?? [];
 
 // "1 tsp dried oregano, crushed" -> { amount: "1 tsp", words: [dried, oregano] }.
 export function readIngredient(line: string): Ingredient | null {
@@ -68,14 +79,24 @@ export function readIngredient(line: string): Ingredient | null {
     .replace(/\([^)]*\)/g, " ")
     .split(/,\s/)[0]
     .toLowerCase();
-  const words: string[] = name.match(/[a-zà-ÿ']+(?:-[a-zà-ÿ']+)*/g) ?? [];
+  const choices = name.split(/\s+or\s+|\//).map(wordsOf).filter((choice) => choice.length);
+  const words = choices.flat();
   // "3 garlic cloves": the unit after the name goes with the amount.
   const unitLast = words.length > 1 && new RegExp(`^${UNIT}$`, "i").test(words[words.length - 1]);
-  const shownAmount = unitLast && /^[\d½¼¾⅓⅔⅛⅜⅝⅞.,/\s-]+$/.test(amount) ? `${amount} ${words.pop()}` : amount;
+  const withUnit = unitLast && /^[\d½¼¾⅓⅔⅛⅜⅝⅞.,/\s-]+$/.test(amount);
+  if (withUnit) {
+    amount = `${amount} ${words.pop()}`;
+    choices[choices.length - 1].pop();
+  }
   // Water is in too many steps ("boiled water", "a pot of water") to be
   // sure it's this water.
   if (!words.length || words.includes("water")) return null;
-  return { amount: shownAmount, words, partly: /\bdivided\b|\bplus (?:extra|more)\b|\bto taste\b/i.test(plain) };
+  return {
+    amount,
+    words,
+    choices: choices.filter((choice) => choice.length),
+    partly: /\bdivided\b|\bplus (?:extra|more)\b|\bto taste\b/i.test(plain),
+  };
 }
 
 // One spelling for a word's singular and plural, as the match pattern
@@ -96,10 +117,17 @@ function phrasesOf(words: string[]): string[][] {
   return phrases;
 }
 
-// What a step may call it: its name, or the end of it ("chicken stock",
-// "stock"; not "chicken", which more often means other chicken).
+// What a step may call one choice: its name, or the end of it ("chicken
+// stock", "stock"; not "chicken", which more often means other chicken),
+// but not a generic word alone ("sauce"); and for a part of something, the
+// something ("chicken" for "chicken thighs").
 function namesOf(words: string[]): string[][] {
-  return words.map((_, start) => words.slice(start)).filter((phrase) => !phrase.every((word) => DESCRIBING.has(word)));
+  const ends = (list: string[]) => list.map((_, start) => list.slice(start));
+  const names = ends(words);
+  if (words.length > 1 && PARTS.has(words[words.length - 1])) names.push(...ends(words.slice(0, -1)));
+  return names.filter(
+    (phrase) => !phrase.every((word) => DESCRIBING.has(word)) && !(phrase.length === 1 && GENERIC.has(phrase[0]))
+  );
 }
 
 const key = (phrase: string[]) => phrase.map(stem).join(" ");
@@ -128,10 +156,21 @@ export function planStepAmounts(steps: string[], ingredientLines: string[]): Map
     for (const phrase of new Set(phrasesOf(words).map(key))) meanings.set(phrase, (meanings.get(phrase) ?? 0) + 1);
   }
 
+  // Each ingredient's main word ("stock" of "chicken stock"): a mention
+  // right before another ingredient's main word describes that one ("the
+  // chicken stock" isn't the chicken breast).
+  const mainWords = ingredients.map((ingredient) =>
+    new Set((ingredient?.choices ?? []).map((choice) => stem(choice[choice.length - 1] ?? "")))
+  );
   const plan = new Map<number, StepAmount[]>();
-  for (const ingredient of ingredients) {
-    if (!ingredient || ingredient.partly) continue;
-    const sure = namesOf(ingredient.words).filter((phrase) => meanings.get(key(phrase)) === 1);
+  ingredients.forEach((ingredient, index) => {
+    if (!ingredient || ingredient.partly) return;
+    const othersMain = (word: string) => mainWords.some((words, other) => other !== index && words.has(stem(word)));
+    // Longest first, so "cumin seeds" wins over "cumin" in the same step.
+    const sure = ingredient.choices
+      .flatMap(namesOf)
+      .filter((phrase) => meanings.get(key(phrase)) === 1)
+      .sort((a, b) => b.length - a.length);
     // The first step that names it, by its longest sure phrase there.
     found: for (let i = 0; i < steps.length; i++) {
       if (headingOf(steps[i]) !== null) continue;
@@ -141,13 +180,14 @@ export function planStepAmounts(steps: string[], ingredientLines: string[]): Map
         const match = text.match(pattern);
         if (!match) continue;
         const before = text.slice(0, match.index);
-        if (!PART_BEFORE.test(before) && !AMOUNT_BEFORE.test(before)) {
+        const next = text.slice((match.index ?? 0) + match[0].length).match(/^\s+([\p{L}'-]+)/u)?.[1];
+        if (!PART_BEFORE.test(before) && !AMOUNT_BEFORE.test(before) && !(next && othersMain(next.toLowerCase()))) {
           plan.set(i, [...(plan.get(i) ?? []), { pattern, amount: ingredient.amount }]);
         }
         break found;
       }
     }
-  }
+  });
   return plan;
 }
 
