@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { gatherIngredients, startsTicked } from "../src/weekShopping.ts";
+import { gatherIngredients, listWording, startsTicked } from "../src/weekShopping.ts";
 
 const item = (id: string, name: string, status: string) => ({ id, name, status }) as never;
 const pantry = [item("onion", "Onion", "have"), item("eggs", "Eggs", "low"), item("rice", "Rice", "out")];
@@ -19,12 +19,23 @@ test("merges lines linked to the same pantry item, across recipes", () => {
   assert.deepEqual(
     rows.map((r) => [r.text, r.recipeTitles.join(" + "), r.recipeId]),
     [
+      // Two recipes, different words: the pantry's name.
       ["Onion", "Curry + Oyakodon", "a"],
-      ["Rice", "Curry", "a"],
-      ["Eggs", "Oyakodon", "b"],
+      // One recipe: its own words.
+      ["1 cup rice", "Curry", "a"],
+      ["3 eggs", "Oyakodon", "b"],
       ["Dashi", "Oyakodon", "b"],
     ]
   );
+});
+
+test("the list says what the recipe needs, without how to prepare it", () => {
+  assert.equal(listWording("12 oz gluten free linguine pasta"), "12 oz gluten free linguine pasta");
+  assert.equal(listWording("2 onions, diced"), "2 onions");
+  assert.equal(listWording("Feta and coriander, to serve"), "Feta and coriander");
+  assert.equal(listWording("2 tsp *soft* dashi, toasted"), "2 tsp soft dashi");
+  // A decimal comma isn't a cut.
+  assert.equal(listWording("1,5 kg flour"), "1,5 kg flour");
 });
 
 test("the same recipe twice in a week is named once", () => {
@@ -46,9 +57,9 @@ test("unlinked lines lose their formatting marks, as from the recipe page", () =
 test("starts with everything ticked except what we have", () => {
   const rows = gatherIngredients([recipe("a", "A", ["onion", "eggs", "rice", "dashi"])], pantry);
   assert.deepEqual(rows.map((r) => [r.text, startsTicked(r)]), [
-    ["Onion", false],
-    ["Eggs", true],
-    ["Rice", true],
+    ["onion", false],
+    ["eggs", true],
+    ["rice", true],
     ["dashi", true],
   ]);
 });

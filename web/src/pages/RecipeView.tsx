@@ -41,6 +41,7 @@ import QuickTags from "../QuickTags";
 import { DetailsEditor, EditButton, TextEditor } from "../RecipeInlineEdit";
 import SoftText from "../SoftText";
 import { withoutSoftMarks } from "../softMarks";
+import { listWording } from "../weekShopping";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
@@ -885,10 +886,11 @@ function IngredientsSection({
         .sort((a, b) => a - b)
         .map((index) => {
           const { item } = linkOf(lines[index]);
-          // Linked lines go on the list as the pantry item ("Onion", not
-          // "2 onions, diced"), linked so buying it marks it as Have again.
+          // In the recipe's words at its size, without how to prepare it
+          // ("2 onions", listWording); still linked to its pantry item, so
+          // buying it marks that as Have again.
           return {
-            text: item ? item.name : withoutSoftMarks(scaleLine(lines[index], scale)),
+            text: listWording(scaleLine(lines[index], scale)),
             pantryItem: item?.id ?? "",
             recipe: recipe.id,
           };
