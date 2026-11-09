@@ -72,10 +72,13 @@ they say otherwise.
   the question from `deleteQuestion`, `deleteWarning.ts`).
 - Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
   (`unsavedChanges.ts`).
-- The page's scroll: screens scroll inside `.page-scroll` (App.tsx), which
-  ends at the tab bar, not the window. Read or move it, or listen to it,
-  with `pageScroller` / `pageScrollTarget` (`pageScroll.ts`), never
-  `window.scrollY` or `window.scrollTo`.
+- The page's scroll: screens scroll inside `.page-scroll` (App.tsx),
+  between the top bar and the tab bar, not the window. Read or move it, or
+  listen to it, with `pageScroller` / `pageScrollTarget` /
+  `pageScrollStart` (`pageScroll.ts`), never `window.scrollY` or
+  `window.scrollTo`. Something sticky sits at `top: 0` /
+  `bottom: var(--timer-tray-height, 0px)`, not offset by the bars, and
+  needs no `overflow: hidden` between it and the page (`clip` is fine).
 - Error text for people: `errorMessage` (`pb.ts`); "is it offline?":
   `isOffline` (`offline.ts`); `<OfflineNote>` to say so.
 - Import size limits: `LIMITS` / `fitRecipe` (`server/pb_hooks/recipe_parse.js`),

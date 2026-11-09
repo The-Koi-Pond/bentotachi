@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { currentSection, jumpTarget, stillTapped, type JumpSection } from "./recipeJump";
-import { pageScroller, pageScrollTarget } from "./pageScroll";
+import { pageScrollStart, pageScroller, pageScrollTarget } from "./pageScroll";
 
 // The recipe page's Ingredients · Method · Notes switch: it sits above the
-// ingredients and sticks under the top bar while you scroll through them,
+// ingredients and sticks at the top while you scroll through them,
 // so you can hop between "how much butter?" and "what's next?" without
 // scrolling past everything. Each section remembers
 // where you were (recipeJump.ts). `sections` name the page elements (by
@@ -17,35 +17,30 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
   // never light otherwise. Scrolling yourself ends it, however you scroll.
   const tapped = useRef<{ key: string; from: number; to: number; arrived: boolean; until: number } | null>(null);
   const [current, setCurrent] = useState<string | null>(null);
-  // Just under the top bar, whatever its height on this phone.
-  const [top, setTop] = useState(0);
 
-  // Where each section is now, how far down the screen the bars reach, and
-  // how far the page can scroll.
-  // Positions are within the scrolling page, which starts at the top of the
-  // screen (pageScroll.ts).
+  // Where each section is within the scrolling page (pageScroll.ts), how far
+  // down it the bar reaches, and how far the page can scroll.
   function measure(): { places: JumpSection[]; offset: number; maxScroll: number } {
     const page = pageScroller();
+    const start = pageScrollStart() - page.scrollTop;
     const places = sections.flatMap(({ id }) => {
       const element = document.getElementById(id);
       if (!element) return [];
       const box = element.getBoundingClientRect();
-      return [{ key: id, top: box.top + page.scrollTop, bottom: box.bottom + page.scrollTop }];
+      return [{ key: id, top: box.top - start, bottom: box.bottom - start }];
     });
-    const offset = top + (bar.current?.offsetHeight ?? 0) + 8;
+    const offset = (bar.current?.offsetHeight ?? 0) + 8;
     const maxScroll = page.scrollHeight - page.clientHeight;
     return { places, offset, maxScroll };
   }
 
   const ids = sections.map((section) => section.id).join(",");
   useEffect(() => {
-    const topbar = document.querySelector<HTMLElement>(".topbar");
     const page = pageScrollTarget();
     let frame = 0;
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        setTop(topbar?.offsetHeight ?? 0);
         const { places, offset, maxScroll } = measure();
         const scrolled = pageScroller().scrollTop;
         const tap = tapped.current;
@@ -64,8 +59,8 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
       page.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-    // measure() reads the latest sections and top when it runs.
-  }, [ids, top]);
+    // measure() reads the latest sections when it runs.
+  }, [ids]);
 
   function jump(id: string) {
     const { places, offset, maxScroll } = measure();
@@ -85,7 +80,7 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
 
   if (sections.length < 2) return null;
   return (
-    <nav ref={bar} className="recipe-jump" style={{ top }} aria-label="Jump to">
+    <nav ref={bar} className="recipe-jump" aria-label="Jump to">
       <div className="view-switch">
         {sections.map(({ id, label }) => (
           <button key={id} type="button" aria-current={current === id ? "true" : undefined} onClick={() => jump(id)}>

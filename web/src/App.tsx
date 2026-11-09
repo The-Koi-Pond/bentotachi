@@ -81,8 +81,9 @@ function Screens() {
       <ShareReceiver />
       <RestoredSaveReceiver />
       <UnsavedChangesGuard />
-      {/* The scrolling part, above the tab bar (pageScroll.ts). */}
-      <div className="page-scroll">
+      {/* The top bar, then the scrolling part, all above the tab bar
+          (pageScroll.ts). */}
+      <div className="app-frame">
       <header className="topbar">
         <FridgeLink />
         <nav>
@@ -90,6 +91,7 @@ function Screens() {
           <SettingsMenu />
         </nav>
       </header>
+      <div className="page-scroll">
       <main>
         <UpdateBanner />
         <Routes>
@@ -113,6 +115,7 @@ function Screens() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      </div>
       </div>
       <StepTimerTray />
       <TabBar />

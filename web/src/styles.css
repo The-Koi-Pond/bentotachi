@@ -177,13 +177,20 @@ a {
   color: var(--accent);
 }
 
-/* The screens scroll in here, which ends where the tab bar starts, so the
-   scrollbar doesn't run down beside the tab bar (pageScroll.ts). Not
+/* The top bar, then the screens scrolling under it, ending where the tab
+   bar starts, so the scrollbar runs beside neither (pageScroll.ts). Not
    position: fixed, which would trap the plan's bin and the menus under the
    tab bar. A slim jade scrollbar. */
-.page-scroll {
+.app-frame {
+  display: flex;
+  flex-direction: column;
   height: calc(100vh - var(--tabbar-height) - env(safe-area-inset-bottom));
   height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom));
+}
+
+.page-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -242,9 +249,10 @@ main {
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
-  /* Above everything on the page, including card hearts. */
+  /* Stays put: the page scrolls under it (.page-scroll). Above everything
+     on the page, including card hearts, so its menu opens over them. */
+  position: relative;
+  flex: none;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -315,6 +323,12 @@ main {
   right: 0;
   top: calc(100% + 6px);
   min-width: 260px;
+  /* On a short screen it scrolls itself, so its last items (Log out) never
+     end up under the tab bar. */
+  max-height: calc(100vh - var(--tabbar-height) - env(safe-area-inset-bottom) - 64px);
+  max-height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom) - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   padding: 6px;
@@ -1125,11 +1139,12 @@ main > .stack > section > :is(h2, p) {
 }
 
 /* The recipe page's Ingredients · Method · Notes (RecipeJumpBar.tsx): just
-   above the ingredients, then stuck under the top bar (its `top` is set
-   to the top bar's height), on the page's own background so the recipe
-   scrolls away under it. */
+   above the ingredients, then stuck at the top of the scrolling page,
+   under the top bar, on the page's own background so the recipe scrolls
+   away under it. */
 .recipe-jump {
   position: sticky;
+  top: 0;
   z-index: 6;
   display: flex;
   justify-content: center;
@@ -2341,7 +2356,9 @@ main > .stack > section > :is(h2, p) {
 
 .pantry-place > .pantry-list {
   margin: 0 0 5px;
-  overflow: hidden;
+  /* On purpose clip, not hidden: hidden would stop an open item's
+     Save/Cancel sticking to the bottom of the screen. */
+  overflow: clip;
   background: var(--surface);
   border: none;
   border-radius: 8px;
@@ -2657,7 +2674,9 @@ main > .stack > section > :is(h2, p) {
 .pantry-edit > .actions,
 .picker-bar {
   position: sticky;
-  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px));
+  /* The scrolling page already ends at the tab bar: only the timers can
+     cover its bottom. */
+  bottom: var(--timer-tray-height, 0px);
   z-index: 5;
   margin: 0 -14px;
   padding: 10px 14px;
@@ -6533,6 +6552,14 @@ em.soft {
 
   body {
     background: #fff;
+  }
+
+  /* The whole recipe on paper, not just what fits on screen. */
+  .app-frame,
+  .page-scroll {
+    display: block;
+    height: auto;
+    overflow: visible;
   }
 
   main {
