@@ -21,6 +21,7 @@ import { CloseIcon, HeartIcon, OnigiriIcon, ZapIcon } from "./icons";
 import RecipePhoto from "./RecipePhoto";
 import { MEAL_NAMES, type Meal } from "./meals";
 import { useSpell } from "./household";
+import RecipeStandIn from "./RecipeStandIn";
 
 // Slides up from the bottom to choose a meal for one day: search names,
 // tags and ingredients, narrow to favorites or quick recipes, and see what's
@@ -173,9 +174,7 @@ export default function RecipeChooser({
     return recipe.image ? (
       <RecipePhoto recipe={recipe} size="card" loading="lazy" />
     ) : (
-      <span className="dinner-no-photo" aria-hidden="true">
-        🍲
-      </span>
+      <RecipeStandIn title={recipe.title} className="dinner-no-photo" />
     );
   }
 

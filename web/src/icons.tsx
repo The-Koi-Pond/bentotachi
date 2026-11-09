@@ -268,6 +268,19 @@ export function CloseIcon() {
   );
 }
 
+// A pantry level as a little jar: full (Have), a little left (Low), or empty
+// with its lid off (Out). Coloured by styles.css (.level-jar-*).
+export function LevelJar({ level, size = 18 }: { level: "have" | "low" | "out"; size?: number }) {
+  const filled = { have: 11, low: 4, out: 0 }[level];
+  return (
+    <svg className={`level-jar level-jar-${level}`} width={(size * 16) / 18} height={size} viewBox="0 0 16 18" aria-hidden="true">
+      <rect className="jar-lid" x="4" y="0.8" width="8" height="2.6" rx="1" />
+      <path className="jar-body" d="M3.5 4h9a1.5 1.5 0 0 1 1.5 1.5V15a2.2 2.2 0 0 1-2.2 2.2H4.2A2.2 2.2 0 0 1 2 15V5.5A1.5 1.5 0 0 1 3.5 4Z" />
+      {filled > 0 && <rect className="jar-fill" x="3.3" y={16.4 - filled} width="9.4" height={filled} rx="1.4" />}
+    </svg>
+  );
+}
+
 export function PlusIcon() {
   return (
     <Icon>

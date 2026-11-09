@@ -182,6 +182,17 @@ beside the last dish's ✕, not a "+ Dinner" under every planned day; on a
 recipe, the details, tags, ratings and cooking history share one box,
 split by thin lines, instead of three boxes.
 
+**Bento touches** (Xel, 2026-11-09, picked from mock-ups on the real
+screens): section headings we write ("Ingredients", "Got it", shelf and
+pantry place names) are in Pond Pebbles too; the pantry's Have / Low / Out
+is a little jar (full, a little left, empty) instead of signal bars,
+keeping its words and colours; ticked shopping items get a brush stroke
+instead of a thin line; a round "Cooked" stamp sits beside "Last had"; a
+recipe without a photo shows a small drawn bento box with its first
+letter instead of 🍲; and two-way switches (Simple | Detailed, List |
+Month…) show the chosen one with a wooden chopstick underline and the
+other faded, Xel's own design (instead of an iPhone-style pill).
+
 ## What it won't become
 
 - A social network: no public feed, followers or recipe sharing with

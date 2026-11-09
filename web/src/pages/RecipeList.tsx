@@ -64,6 +64,7 @@ import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
 import { ensureLogin } from "../session";
 import { remember, remembered } from "../phoneStorage";
+import RecipeStandIn from "../RecipeStandIn";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -490,9 +491,7 @@ export default function RecipeList() {
           {recipe.image && !offline ? (
             <RecipePhoto recipe={recipe} size="card" loading="lazy" />
           ) : (
-            <span className="no-photo" aria-hidden="true">
-              🍲
-            </span>
+            <RecipeStandIn title={recipe.title} className="no-photo" />
           )}
         </span>
         <span className="recipe-card-text">

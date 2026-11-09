@@ -10,7 +10,7 @@ import { useState } from "react";
 import { pantryPhotoUrl, type PantryItem, type PantryPacket, type PantryStatus } from "./pb";
 import type { PacketDetails } from "./pantryPackets";
 import PacketCounters from "./PacketCounters";
-import { CartIcon } from "./icons";
+import { CartIcon, LevelJar } from "./icons";
 import { describeExpiry, shortExpiry } from "./expiry";
 import { itemExpiry, norm } from "./pantryGroups";
 import { brandBesideName, storeLinksOf } from "./pantryItem";
@@ -162,8 +162,8 @@ export default function PantryRow({
   );
 }
 
-// How much we have, as a level (three bars: all green for Have, one amber
-// for Low, empty red outlines for Out) with the word. Have is quiet (no
+// How much we have, as a level (a jar: full and green for Have, a little
+// amber for Low, empty and red for Out) with the word. Have is quiet (no
 // outline) so Low and Out stand out. Tapping it opens the phone's own list
 // of the three: a real dropdown underneath, laid over the level and
 // see-through, so it works with every screen reader and keyboard.
@@ -178,11 +178,7 @@ function StatusMeter({
 }) {
   return (
     <span className={`status-meter status-meter-${status}`}>
-      <span className="meter-bars" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </span>
+      <LevelJar level={status} />
       <span aria-hidden="true">{STATUS_WORDS[status]}</span>
       <span className="meter-caret" aria-hidden="true">
         ▾

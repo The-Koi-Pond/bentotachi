@@ -39,6 +39,7 @@ import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
 import { useCountry, usePlanMeals } from "../household";
 import { remember, remembered } from "../phoneStorage";
+import RecipeStandIn from "../RecipeStandIn";
 import {
   MEALS,
   MEAL_NAMES,
@@ -560,9 +561,10 @@ function CellThumb({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: b
   if (recipe?.image) {
     return <RecipePhoto recipe={recipe} size="card" className={`cell-thumb ${lifted ? "lifted" : ""}`} />;
   }
+  if (recipe) return <RecipeStandIn title={recipe.title} className={`cell-thumb dinner-no-photo ${lifted ? "lifted" : ""}`} />;
   return (
-    <span className={`cell-thumb dinner-no-photo ${recipe ? "" : "note"} ${lifted ? "lifted" : ""}`} aria-hidden="true">
-      {recipe ? "🍲" : "📝"}
+    <span className={`cell-thumb dinner-no-photo note ${lifted ? "lifted" : ""}`} aria-hidden="true">
+      📝
     </span>
   );
 }
@@ -750,9 +752,7 @@ function DinnerCard({ entry, lifted = false }: { entry: MealPlanEntry; lifted?: 
       {recipe.image ? (
         <RecipePhoto recipe={recipe} size="card" />
       ) : (
-        <span className="dinner-no-photo" aria-hidden="true">
-          🍲
-        </span>
+        <RecipeStandIn title={recipe.title} className="dinner-no-photo" />
       )}
       <span className="dinner-title">{recipe.title}</span>
     </>

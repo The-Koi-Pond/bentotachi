@@ -22,7 +22,7 @@ import { coverNote, coversFor, stillToBuy, type Cover } from "../pantryStock";
 import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, linesToText, textToLines, totalMinutes } from "../format";
-import { CartIcon, LinkIcon, PencilIcon, TimerIcon } from "../icons";
+import { CartIcon, LevelJar, LinkIcon, PencilIcon, TimerIcon } from "../icons";
 import {
   carriedLinks,
   linkedItems,
@@ -1197,11 +1197,7 @@ function PantryChip({ line, link, onClick }: { line: string; link: IngredientLin
       aria-label={`Pantry: ${description}`}
       title={description}
     >
-      <span className="meter-bars" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </span>
+      <LevelJar level={status} size={14} />
       {STATUS_WORDS[status]}
     </button>
   );
@@ -1277,6 +1273,14 @@ function CookHistory({
   const cookedToday = cooked.filter((entry) => entry.recipe === recipeId && datePart(entry.date) === today);
   return (
     <div className="cook-history">
+      {/* A round "Cooked" stamp with the date, like a hanko (docs/VISION.md,
+          "Bento touches"); the words beside it say it for screen readers. */}
+      {last && (
+        <span className="hanko" aria-hidden="true">
+          <span>Cooked</span>
+          <span className="hanko-date">{formatDay(last, { day: "numeric", month: "short" })}</span>
+        </span>
+      )}
       {/* One line each, beside the button, so it sits the same way however
           much there is to say. */}
       <div className="muted plan-history">

@@ -203,6 +203,10 @@ Not released yet:
   "+ Dinner" under every day); a recipe's details, tags, ratings and
   history share one box. "Welcome back" when returning to phone-only
   mode.
+- Bento touches: headings in Pond Pebbles, pantry levels as little jars,
+  a brush stroke through ticked shopping, a "Cooked" stamp on recipes, a
+  drawn bento box for recipes without a photo, and switches with a wooden
+  chopstick under the chosen option.
 - Fixes: "rice-shaped pasta" (risoni) isn't Rice; the plan's and list's
   shopping sheets read "Parmesan, finely grated (about 50 g)" like the
   recipe page, and wait for packets before Add; the month view moves a
@@ -1486,6 +1490,15 @@ pill switches, a plain strike-through):
 Claude's suggested set, one per screen: Pond Pebbles headings, drawn
 stand-ins (Recipes), the hanko stamp (a recipe), rice-jar levels (Pantry),
 the brush stroke (Shopping).
+
+Built 2026-11-09 (Xel's picks from mock-ups on the real screens; VISION.md
+"Bento touches"): Pond Pebbles headings, the bento-box stand-in (over the
+onigiri one), jar levels, the brush stroke, the "Cooked" stamp, and Xel's
+own switch design (a wooden chopstick under the chosen option, the other
+faded) instead of the bento lid. Still open from this list: the voice pass
+(a picker page of 56 lines is ready for Xel), onigiri step numbers, Ben
+cheering at a fully ticked list, the chopsticks loader, the bento export
+picker, the week as a bento, seasonal Ben.
 
 Next step when Xel wants it: a playground with two or three versions of
 the bento export picker (and maybe the hanko stamp), light and dark, at
