@@ -1463,6 +1463,30 @@ Ideas, roughly cheapest first (Claude's, for Xel to pick from):
 - Small, seasonal, rare: Ben in a scarf in winter and the like. Easy to
   overdo; only if the moods system makes it cheap.
 
+More ideas (2026-11-09, after the Compact pass; screenshots showed what
+reads generic now: 🍲 emoji as every photo-less recipe, signal bars for
+Have / Low / Out, the same tinted-header card everywhere, iPhone-style
+pill switches, a plain strike-through):
+
+- **Pond Pebbles for our own section headings** ("Ingredients", "Method",
+  "Got it", shelf names), not just page titles. Nearly free. It has no
+  accented letters: names people type need the phone's font as a fallback.
+- **Drawn stand-ins for recipes without a photo**: a small bento or onigiri
+  tile with the recipe's first letter, coloured by its shelf, instead of 🍲
+  on pink (emoji as icons is one of the AI-made tells).
+- **Pantry levels as a rice jar or bowl** (full, half, nearly empty)
+  instead of phone-signal bars: food, and still readable at a glance;
+  keep the Have / Low / Out words and colours.
+- **A brush stroke through ticked shopping items** instead of a plain line,
+  and Ben cheering when the whole list is ticked.
+- **Method step numbers in small onigiri**, matching the onigiri ratings.
+- **Switches as a bento lid**: Simple | Detailed as two compartments with a
+  baran zigzag between, instead of the iPhone-style pill.
+
+Claude's suggested set, one per screen: Pond Pebbles headings, drawn
+stand-ins (Recipes), the hanko stamp (a recipe), rice-jar levels (Pantry),
+the brush stroke (Shopping).
+
 Next step when Xel wants it: a playground with two or three versions of
 the bento export picker (and maybe the hanko stamp), light and dark, at
 phone width; and the voice-pass list as its own short document.
