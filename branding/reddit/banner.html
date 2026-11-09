@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- The subreddit's banners, drawn from the app's own art. Open with
+     ?size=desktop (4000×480) or ?size=mobile (1600×480) at exactly that
+     window size and screenshot it; branding/README.md says how. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bentotachi banner</title>
+<style>
+  @font-face { font-family: "Pond Pebbles"; src: url("../../web/src/assets/PondPebbles.woff2") format("woff2"); }
+  html, body { margin: 0; }
+  body { width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #f3f6f4; }
+  /* Soft jade at the ends, tea-rice in the middle where the words are. */
+  .wash { position: absolute; inset: 0; background: linear-gradient(90deg, #e2efeb 0%, #f3f6f4 30%, #f3f6f4 70%, #e2efeb 100%); }
+  /* A baran (the green divider leaf in a bento box) along the bottom. */
+  .baran { position: absolute; left: 0; right: 0; bottom: 0; height: 34px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='34' viewBox='0 0 40 34'%3E%3Cpath d='M0 34 L0 14 L10 4 L20 14 L30 4 L40 14 L40 34 Z' fill='%235a9a8a'/%3E%3C/svg%3E") repeat-x bottom / 40px 34px; opacity: 0.85; }
+  .group { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 46px; }
+  .ben { height: 300px; }
+  .words { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .title { height: 150px; }
+  .tagline { font: 400 40px/1 "Pond Pebbles", system-ui, sans-serif; color: #5f6b67; letter-spacing: 0.01em; white-space: nowrap; }
+  /* Umeboshi and rice grains scattered at the far ends (desktop only). */
+  .bits { position: absolute; inset: 0; }
+  .bits i { position: absolute; display: block; border-radius: 50%; }
+  .plum { width: 34px; height: 34px; background: #a82d4a; opacity: 0.35; }
+  .grain { width: 14px; height: 24px; background: #fffdf6; border: 2px solid #c9cfcc; border-radius: 50%; }
+  body.mobile .bits { display: none; }
+  body.mobile .group { top: 45%; gap: 34px; }
+  body.mobile .ben { height: 250px; }
+  body.mobile .title { height: 120px; }
+  body.mobile .tagline { font-size: 30px; }
+</style>
+</head>
+<body>
+<div class="wash"></div>
+<div class="bits" id="bits"></div>
+<div class="group">
+  <img class="ben" src="../../web/src/assets/onigiri.svg" alt="">
+  <div class="words">
+    <img class="title" src="../../web/src/assets/bentotachi-title.svg" alt="Bentotachi">
+    <div class="tagline">Because dinner insists on happening every day.</div>
+  </div>
+</div>
+<div class="baran"></div>
+<script>
+  if (new URLSearchParams(location.search).get("size") === "mobile") document.body.classList.add("mobile");
+  // A few plums and rice grains, placed the same way every time, away from the middle.
+  const spots = [[4, 22, "plum"], [9, 62, "grain", -20], [14, 30, "grain", 30], [19, 70, "plum"], [23, 18, "grain", 10],
+                 [77, 20, "grain", -15], [81, 66, "plum"], [86, 28, "grain", 25], [91, 58, "grain", -30], [96, 24, "plum"]];
+  const bits = document.getElementById("bits");
+  for (const [x, y, kind, turn = 0] of spots) {
+    const el = document.createElement("i");
+    el.className = kind;
+    el.style.left = x + "%"; el.style.top = y + "%"; el.style.transform = `rotate(${turn}deg)`;
+    bits.append(el);
+  }
+</script>
+</body>
+</html>

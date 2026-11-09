@@ -67,3 +67,10 @@ The page titles use Pond Pebbles, The Koi Pond's display font:
 
 The Google Play pictures (`play/`: icon, banner, screenshots) come from
 `make_play_listing.py`; docs/PLAY-LISTING.md says how.
+
+The subreddit's banners (`reddit/banner-desktop.png`, 4000×480, and
+`reddit/banner-mobile.png`, 1600×480) come from `reddit/banner.html`, which
+draws Ben and the title from `web/src/assets`. To remake them, open it in a
+browser window of exactly that size (`?size=desktop` or `?size=mobile`) and
+screenshot the whole page. Everything that matters sits in the middle, as
+Reddit crops banners to the screen's width.
