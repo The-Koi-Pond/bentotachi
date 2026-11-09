@@ -2290,19 +2290,29 @@ main {
   display: inline;
 }
 
-/* A pantry item's "A kind of" box, with its "?" beside the label. */
-.kind-of-field {
+/* "+ More details" under a new pantry item's name and place. */
+.more-details {
+  align-self: flex-start;
+  text-align: left;
+}
+
+/* A pantry field with its "?" beside the label ("A kind of", "Where it
+   lives"). */
+.kind-of-field,
+.field-with-help {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-weight: 600;
 }
 
-.kind-of-field > span > label {
+.kind-of-field > span > label,
+.field-with-help > span > label {
   display: inline;
 }
 
-.kind-of-field input {
+.kind-of-field input,
+.field-with-help select {
   font-weight: 400;
 }
 

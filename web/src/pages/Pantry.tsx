@@ -561,7 +561,7 @@ export default function Pantry() {
           <BenMood mood="sweat" small />
           <p className="muted">
             An empty pantry. Ben has some concerns. Add what you keep on hand, from fridge essentials to cupboard
-            staples. Group them by where they live, like “Fridge” or “Cupboard”, with optional subcategories like “Baking” or “Spices”.
+            staples.
           </p>
         </div>
       ) : (

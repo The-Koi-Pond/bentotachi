@@ -2,7 +2,7 @@
 // store links, favourite brand, note, photo, barcodes, and the packets in
 // stock). The fields' rules are in pantryFields.ts, the packets' in
 // pantryPackets.ts.
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
 import { useSpell, useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
@@ -45,6 +45,7 @@ function CategorySelect({
   newPlaceholder,
   disabled,
   onChange,
+  help,
 }: {
   label: string;
   value: string;
@@ -54,8 +55,11 @@ function CategorySelect({
   newPlaceholder: string;
   disabled?: boolean;
   onChange: (value: string) => void;
+  // A "?" beside the label, opening its tip below the field.
+  help?: { button: ReactNode; box: ReactNode };
 }) {
   const [typingNew, setTypingNew] = useState(false);
+  const selectId = useId();
 
   if (typingNew) {
     return (
@@ -80,56 +84,73 @@ function CategorySelect({
 
   // Match the saved value to its option regardless of capitals.
   const selected = options.find((option) => norm(option) === norm(value)) ?? "";
+  const select = (
+    <select
+      id={help ? selectId : undefined}
+      value={selected}
+      disabled={disabled}
+      onChange={(e) => {
+        if (e.target.value === NEW_OPTION) {
+          setTypingNew(true);
+          onChange("");
+        } else {
+          onChange(e.target.value);
+        }
+      }}
+    >
+      <option value="">{emptyLabel}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+      <option value={NEW_OPTION}>{newLabel}</option>
+    </select>
+  );
+  // With a "?", the label and the button sit side by side, so the label is
+  // tied to the dropdown by id rather than by wrapping it.
+  if (help) {
+    return (
+      <div className="field-with-help">
+        <span>
+          <label htmlFor={selectId} className="label-text">
+            {label}
+          </label>
+          {help.button}
+        </span>
+        {help.box}
+        {select}
+      </div>
+    );
+  }
   return (
     <label>
       {label}
-      <select
-        value={selected}
-        disabled={disabled}
-        onChange={(e) => {
-          if (e.target.value === NEW_OPTION) {
-            setTypingNew(true);
-            onChange("");
-          } else {
-            onChange(e.target.value);
-          }
-        }}
-      >
-        <option value="">{emptyLabel}</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-        <option value={NEW_OPTION}>{newLabel}</option>
-      </select>
+      {select}
     </label>
   );
 }
 
-// Name, place and subcategory. Subcategories only list ones belonging to the
-// chosen place, and changing the place clears the subcategory.
+// Name, place and subcategory, then the rest. Subcategories only list ones
+// belonging to the chosen place, and changing the place clears the
+// subcategory. `brief`: only the name and the place, the rest waiting behind
+// "More details" (docs/VISION.md: things are introduced when they're needed).
 function ItemFields({
   existing,
   fields,
   onChange,
   nameRef,
+  brief = false,
 }: {
   existing: PantryItem[];
   fields: Fields;
   onChange: (patch: Partial<Fields>) => void;
   nameRef?: Ref<HTMLInputElement>;
+  brief?: boolean;
 }) {
-  const spell = useSpell();
   const places = placeOptions(existing);
   const subs = subcategoryOptions(existing, fields.location);
-  // The groups already used, to pick from ("Pasta").
-  const kinds = uniqueLabels(existing.map((item) => item.kind_of ?? ""));
-  const kindHelp = useHelp();
-  const kindId = useId();
-  // Keep a value that isn't in the lists yet (one just typed in) selectable.
-  const withCurrent = (options: string[], value: string) =>
-    value.trim() && !options.some((o) => norm(o) === norm(value)) ? [...options, value.trim()] : options;
+  const placeHelp = useHelp();
 
   return (
     <>
@@ -143,6 +164,73 @@ function ItemFields({
           required
         />
       </label>
+      <div className="row">
+        <CategorySelect
+          label="Where it lives"
+          value={fields.location}
+          options={withCurrent(places, fields.location)}
+          emptyLabel="Not sorted"
+          newLabel="+ New place…"
+          newPlaceholder="New place, e.g. Pantry shelf"
+          onChange={(location) => onChange({ location, subcategory: "" })}
+          help={{
+            button: <HelpButton help={placeHelp} label="How places work" />,
+            box: (
+              <HelpBox help={placeHelp}>
+                <p>
+                  Group things by where they live, like “Fridge” or “Cupboard”, with optional subcategories like
+                  “Baking” or “Spices”.
+                </p>
+              </HelpBox>
+            ),
+          }}
+        />
+        {/* Brief: the subcategory once there's a place to put it under. */}
+        {(!brief || fields.location.trim()) && (
+          <CategorySelect
+            // A fresh dropdown for each place, so typing a new subcategory
+            // under one place doesn't carry over to another.
+            key={norm(fields.location)}
+            label="Subcategory"
+            value={fields.subcategory}
+            options={withCurrent(subs, fields.subcategory)}
+            emptyLabel={fields.location.trim() ? "None" : "Pick a place first"}
+            newLabel="+ New subcategory…"
+            newPlaceholder="New subcategory"
+            disabled={!fields.location.trim()}
+            onChange={(subcategory) => onChange({ subcategory })}
+          />
+        )}
+      </div>
+      {!brief && <MoreItemFields existing={existing} fields={fields} onChange={onChange} />}
+    </>
+  );
+}
+
+// Keep a value that isn't in the lists yet (one just typed in) selectable.
+const withCurrent = (options: string[], value: string) =>
+  value.trim() && !options.some((o) => norm(o) === norm(value)) ? [...options, value.trim()] : options;
+
+// The rest of an item's fields: its group ("A kind of"), note, favourite
+// brand, where it goes once opened, expiry and store links.
+function MoreItemFields({
+  existing,
+  fields,
+  onChange,
+}: {
+  existing: PantryItem[];
+  fields: Fields;
+  onChange: (patch: Partial<Fields>) => void;
+}) {
+  const spell = useSpell();
+  const places = placeOptions(existing);
+  // The groups already used, to pick from ("Pasta").
+  const kinds = uniqueLabels(existing.map((item) => item.kind_of ?? ""));
+  const kindHelp = useHelp();
+  const kindId = useId();
+
+  return (
+    <>
       <div className="kind-of-field">
         <span>
           <label htmlFor={kindId} className="label-text">
@@ -204,30 +292,6 @@ function ItemFields({
           ))}
         </div>
       )}
-      <div className="row">
-        <CategorySelect
-          label="Where it lives"
-          value={fields.location}
-          options={withCurrent(places, fields.location)}
-          emptyLabel="Not sorted"
-          newLabel="+ New place…"
-          newPlaceholder="New place, e.g. Pantry shelf"
-          onChange={(location) => onChange({ location, subcategory: "" })}
-        />
-        <CategorySelect
-          // A fresh dropdown for each place, so typing a new subcategory
-          // under one place doesn't carry over to another.
-          key={norm(fields.location)}
-          label="Subcategory"
-          value={fields.subcategory}
-          options={withCurrent(subs, fields.subcategory)}
-          emptyLabel={fields.location.trim() ? "None" : "Pick a place first"}
-          newLabel="+ New subcategory…"
-          newPlaceholder="New subcategory"
-          disabled={!fields.location.trim()}
-          onChange={(subcategory) => onChange({ subcategory })}
-        />
-      </div>
       <CategorySelect
         label="Once opened, keep in"
         value={fields.openedLocation}
@@ -419,6 +483,9 @@ export function AddPantryItem({
   // The scanned barcode goes on the first item added (not ones after it).
   const [barcode, setBarcode] = useState(fromBarcode?.code ?? "");
   const [photo, setPhoto] = useState<PhotoChoice>(undefined);
+  // The rest of the fields (brand, note, expiry, store links, photo…) wait
+  // behind "More details", unless a scan or a store page filled some in.
+  const [more, setMore] = useState(!!fromStore || !!fromBarcode);
   // Putting a store link into a new item suggests a name from it (the first
   // link), and keeps updating that suggestion (while the link is typed)
   // until someone types their own name. A name typed in the find box is
@@ -542,19 +609,25 @@ export function AddPantryItem({
           )}
         </p>
       )}
-      <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} />
-      <PantryPhotoField
-        savedUrl=""
-        barcodes={[]}
-        storeUrls={[]}
-        choice={photo}
-        onChoose={setPhoto}
-        hint={
-          (barcode || fields.storeUrls.some((url) => url.trim())) && !photo
-            ? "Leave it empty and Bentotachi looks for its photo online by itself."
-            : undefined
-        }
-      />
+      <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} brief={!more} />
+      {more ? (
+        <PantryPhotoField
+          savedUrl=""
+          barcodes={[]}
+          storeUrls={[]}
+          choice={photo}
+          onChoose={setPhoto}
+          hint={
+            (barcode || fields.storeUrls.some((url) => url.trim())) && !photo
+              ? "Leave it empty and Bentotachi looks for its photo online by itself."
+              : undefined
+          }
+        />
+      ) : (
+        <button type="button" className="link-button more-details" onClick={() => setMore(true)}>
+          + More details (brand, note, expiry, store links, photo)
+        </button>
+      )}
       {error && <p className="error">{error}</p>}
       {error && duplicate && barcode && onUseExisting && (
         <div className="actions">

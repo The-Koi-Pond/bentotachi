@@ -203,6 +203,15 @@ Not released yet:
   "+ Dinner" under every day); a recipe's details, tags, ratings and
   history share one box. "Welcome back" when returning to phone-only
   mode.
+- Voice pass (Xel's picks from a list of 56 lines, 2026-11-09): new words
+  on empty screens, loading lines and notices ("No recipes yet. Ben's
+  ready, though."), and a friendlier offline note on the shopping list
+  that says how many changes are waiting to sync.
+- Adding to the pantry starts short (Xel, 2026-11-09): only the name and
+  where it lives; "+ More details" opens the brand, note, expiry, store
+  links and photo (open from the start after a scan or a store page). The
+  grouping tip moved behind a "?" beside "Where it lives", so an empty
+  pantry isn't a wall of form. Editing an item still shows everything.
 - Bento touches: headings in Pond Pebbles, pantry levels as little jars,
   a brush stroke through ticked shopping, a "Cooked" stamp on recipes, a
   drawn bento box for recipes without a photo, and switches with a wooden
