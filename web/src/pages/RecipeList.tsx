@@ -278,8 +278,8 @@ export default function RecipeList() {
     setSearchParams(next, { replace: true });
   }
 
-  // Each card's source line: its site, "home recipe", or what tells it
-  // apart from a recipe of the same name (recipeTwins).
+  // Each card's source line: its site, nothing, or what tells it apart
+  // from a recipe of the same name (recipeTwins).
   const sources = useMemo(() => sourceLines(all ?? []), [all]);
 
   // Every tag in use, most-used first.

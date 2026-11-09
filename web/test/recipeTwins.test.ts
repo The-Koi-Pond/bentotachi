@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { sameTitle, sourceLines, twinLabels } from "../src/recipeTwins.ts";
 
-test("every card says where it's from: the site, or home recipe, or its twin line", () => {
+test("every card says where it's from: the site, nothing without one, or its twin line", () => {
   const lines = sourceLines([
     { id: "a", title: "Soup", source_url: "https://www.recipetineats.com/soup" },
     { id: "b", title: "Nan's scones", source_url: "" },
@@ -11,7 +11,7 @@ test("every card says where it's from: the site, or home recipe, or its twin lin
     { id: "d", title: "Pancakes", source_url: "https://example.com/q", created: "2026-11-05 10:00:00.000Z" },
   ]);
   assert.equal(lines.get("a"), "recipetineats.com");
-  assert.equal(lines.get("b"), "home recipe");
+  assert.equal(lines.get("b"), "");
   // Same name, same site: the day each was added tells them apart.
   assert.match(lines.get("c") ?? "", /^added /);
   assert.notEqual(lines.get("c"), lines.get("d"));
@@ -54,6 +54,6 @@ test("names count as the same ignoring capitals and spaces", () => {
   assert.equal(sameTitle("Pancakes", "Pancake"), false);
 });
 
-test("a recipe with an address that isn't a link is a home recipe", () => {
-  assert.equal(sourceLines([{ id: "a", title: "Soup", source_url: "Nan's book" }]).get("a"), "home recipe");
+test("a recipe with an address that isn't a link gets no line", () => {
+  assert.equal(sourceLines([{ id: "a", title: "Soup", source_url: "Nan's book" }]).get("a"), "");
 });

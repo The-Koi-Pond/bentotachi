@@ -3415,13 +3415,19 @@ legend {
   text-overflow: ellipsis;
 }
 
-/* Under the name: where it's from (its site, "home recipe", or what tells
-   it apart from a recipe of the same name; recipeTwins.ts). */
+/* Under the name: where it's from (its site, nothing, or what tells it
+   apart from a recipe of the same name; recipeTwins.ts). */
 .card-source {
   font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Blank, it keeps its line, so the time under it lines up with the next
+   card's. */
+.card-source:empty::before {
+  content: "\200b";
 }
 
 /* Phones: three small cards per row. */

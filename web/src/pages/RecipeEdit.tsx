@@ -206,7 +206,7 @@ export default function RecipeEdit() {
     } else if (framing) data.image_framing = framing;
     // The website's rating belongs to the site it came from: with the link
     // gone or pointing at another site, it's forgotten rather than credited
-    // to the wrong one (or shown on a "home recipe").
+    // to the wrong one (or shown on a recipe with no site at all).
     if (existing?.site_rating && "source_url" in data && siteHost(data.source_url as string) !== siteHost(existing.source_url)) {
       data.site_rating = 0;
       data.site_rating_count = 0;

@@ -28,13 +28,13 @@ function addedOn(created: string | undefined): string {
 }
 
 // Every card's source line, by recipe id (to find a recipe without opening
-// several): the site it came from, or "home
-// recipe" with no link; a recipe sharing its name with another gets its
-// twin line instead (the day it was added when the site doesn't tell them
+// several): the site it came from, or nothing with no link (a label there
+// only added noise); a recipe sharing its name with another gets its twin
+// line instead (the day it was added when the site doesn't tell them
 // apart).
 export function sourceLines(recipes: Named[]): Map<string, string> {
   const twins = twinLabels(recipes);
-  return new Map(recipes.map((recipe) => [recipe.id, twins.get(recipe.id) ?? (siteOf(recipe.source_url) || "home recipe")]));
+  return new Map(recipes.map((recipe) => [recipe.id, twins.get(recipe.id) ?? siteOf(recipe.source_url)]));
 }
 
 // Each twin's line, by recipe id.

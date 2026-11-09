@@ -395,7 +395,8 @@ Released in 1.18.0 (2026-11-07, deployed the same day):
   from the page's aggregateRating), shows as grey ★: on a card until the
   household rates it, and on the recipe page as "★ 4.8 from 2,341
   ratings on taste.com.au". Every card also says where it's from (its
-  site, or "home recipe"), so a recipe is easy to find without opening
+  site; blank without one, Xel's call 2026-11-09, after "home recipe"
+  turned out to be noise), so a recipe is easy to find without opening
   several (card version C from the mockups). Recipes imported before
   this have no site rating; Paprika files carry none (their rating is the
   person's own). "Top rated" still sorts by the household's.
