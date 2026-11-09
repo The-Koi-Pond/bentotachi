@@ -197,7 +197,17 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
-(nothing yet)
+- Settings → Appearance: light or dark (Auto follows the device), on
+  this device.
+- Settings → Household: the country, tablespoon and meals on the plan
+  moved here; the Household page is just who's in it and adding someone.
+- Profile, tidied: picture (tap to change, a small ✕ to remove), display
+  name and My colour in one box; username with the password under Logging
+  in; Save beside its box; tips behind "?"; Log out a centred button with
+  an icon.
+- The dinner chooser: recipes first in bento trays, "Or just a note" as a
+  tray at the bottom, calmer "Out of" and "Planned", the surprise as a
+  plum tray; Surprise me puts an open pick away again.
 
 Released in 1.21.0 (2026-11-09, deployed the same day):
 
