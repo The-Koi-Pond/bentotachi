@@ -197,6 +197,10 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
+(nothing yet)
+
+Released in 1.22.0 (2026-11-09, deployed the same day):
+
 - Settings → Appearance: light or dark (Auto follows the device), on
   this device.
 - Settings → Household: the country, tablespoon and meals on the plan
