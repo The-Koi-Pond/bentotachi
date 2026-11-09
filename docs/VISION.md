@@ -210,8 +210,10 @@ today filled, other months' days as faint outlined ghosts of compartments
 the shopping button), the recipe shelves (each recipe a compartment, the
 last row filled out with recessed empty ones in the card layouts), the tab
 bar, the pantry's filter chips and the Recipes page's search with its tag,
-quick and favourite filters. Loose lines between trays ("6 recipes", "Got
-it", "+ Add from a recipe") start where a tray's compartments do, not at
+quick and favourite filters, Browse's sites, and the Pantry, Shopping and
+Browse search boxes (the Shopping list's has a book beside Add for "Add
+from a recipe", Xel's pick over a row of its own). Loose lines between
+trays ("6 recipes", "Got it") start where a tray's compartments do, not at
 the page's edge (`--tray-inset`). Buttons, text
 boxes, tips, pop-ups and the chopstick switches stay plain; no tray inside
 a tray.

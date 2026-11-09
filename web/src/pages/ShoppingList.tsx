@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { errorMessage, pb, shoppingItems, type PantryItem, type ShoppingItem } from "../pb";
-import { CloseIcon } from "../icons";
+import { BookIcon, CloseIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
 import { brandBesideName, storeLinksOf } from "../pantryItem";
@@ -234,16 +234,23 @@ export default function ShoppingList() {
           aria-label="New shopping item"
           enterKeyHint="done"
         />
+        {/* A recipe's ingredients, found from here: a compartment of the
+            add tray, beside Add. */}
+        {!offline && (
+          <button
+            type="button"
+            className="button from-recipe"
+            onClick={() => setFromRecipe(true)}
+            aria-label="Add from a recipe"
+            title="Add from a recipe"
+          >
+            <BookIcon />
+          </button>
+        )}
         <button className="button primary" disabled={!text.trim()}>
           Add
         </button>
       </form>
-      {/* A recipe's ingredients, found from here. */}
-      {!offline && (
-        <button className="link-button from-recipe" onClick={() => setFromRecipe(true)}>
-          + Add from a recipe
-        </button>
-      )}
       {fromRecipe && <RecipeShoppingSheet onClose={() => setFromRecipe(false)} />}
       {error && <p className="error">{error}</p>}
       {notice && (

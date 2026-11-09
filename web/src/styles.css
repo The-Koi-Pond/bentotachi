@@ -633,11 +633,10 @@ main {
 }
 
 /* Loose lines between bento trays ("6 recipes · Close all shelves",
-   "Got it", "+ Add from a recipe", "From recipetineats.com") don't reach
-   past where a tray's compartments start (docs/VISION.md). */
+   "Got it", "From recipetineats.com") don't reach past where a tray's
+   compartments start (docs/VISION.md). */
 .list-options,
 .shelf-empty-line,
-.from-recipe,
 .add-notes,
 .small-print,
 .section-head:has(> h2),
@@ -5214,11 +5213,14 @@ footer .person-name:focus-visible {
   margin-top: 12px;
 }
 
-/* "+ Add from a recipe" under the shopping list's box, and its sheet's
-   recipe list. */
-.from-recipe {
-  align-self: flex-start;
-  font-weight: 600;
+/* "Add from a recipe" (a book) beside Add in the shopping list's tray, and
+   its sheet's recipe list. */
+.add-row.joined > .from-recipe {
+  flex: none;
+  width: 44px;
+  padding: 0;
+  color: var(--accent);
+  background: var(--surface);
 }
 
 .recipe-pick-list {
