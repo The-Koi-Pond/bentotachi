@@ -6757,6 +6757,68 @@ em.soft {
   color: var(--muted);
 }
 
+/* "Favourite: Masterfoods 560 g", so whoever's shopping knows which. */
+.pantry-card-preferred {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.pantry-card-preferred strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pantry-card > .pantry-packets {
+  margin-bottom: 8px;
+}
+
+/* "Another brand": the brands it's had as quick picks, then brand, size
+   and Add on one line. */
+.pantry-card-other {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pantry-card-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pantry-card-picks button {
+  min-height: 32px;
+  padding: 2px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pantry-card-picks button[aria-pressed="true"] {
+  background: var(--jade-soft);
+  border-color: var(--jade-strong);
+}
+
+.pantry-card-other-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pantry-card-other-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pantry-card-other-row .pantry-card-other-size {
+  flex: 0 0 84px;
+}
+
 .pantry-card-foot {
   display: flex;
   flex-wrap: wrap;

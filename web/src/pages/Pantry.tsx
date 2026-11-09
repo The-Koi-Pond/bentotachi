@@ -725,9 +725,9 @@ export default function Pantry() {
                             <PantryCard
                               item={item}
                               packets={packets.items && packetsOf(packets.items, item.id, undo.hidden)}
+                              layout={layout}
                               onMore={(details) => void addPacket(item, details)}
                               onUsed={(packet) => finishPacket(item, packet)}
-                              onStatus={(status) => setStatus(item, status)}
                               onEditAll={() => {
                                 setCardId(null);
                                 setEditingId(item.id);

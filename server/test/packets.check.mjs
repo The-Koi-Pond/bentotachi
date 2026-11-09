@@ -69,6 +69,17 @@ await api(token, "DELETE", `/collections/pantry_items/records/${rice.id}`);
 const orphans = await api(admin, "GET", `/collections/pantry_packets/records?filter=${encodeURIComponent(`item = "${rice.id}"`)}`);
 check("removing an item removes its packets", orphans.items.length === 0);
 
+// Another brand bought because the favourite was out doesn't become the
+// usual one: the next one bought should be the favourite again.
+const mustard = await api(token, "POST", "/collections/pantry_items/records", { name: `Mustard ${run}`, status: "have", brand: "Masterfoods" });
+await api(token, "POST", "/collections/pantry_packets/records", { item: mustard.id, brand: "Masterfoods", size: "560 g" });
+await api(token, "POST", "/collections/pantry_packets/records", { item: mustard.id, brand: "Heinz", size: "500 g" });
+const usualNow = (await api(token, "GET", `/collections/pantry_items/records/${mustard.id}`)).usual_packet;
+check("a stand-in brand doesn't replace the usual one", usualNow?.brand === "Masterfoods" && usualNow?.size === "560 g", JSON.stringify(usualNow));
+await api(token, "POST", "/collections/pantry_packets/records", { item: mustard.id, brand: "masterfoods", size: "250 g" });
+const usualSmaller = (await api(token, "GET", `/collections/pantry_items/records/${mustard.id}`)).usual_packet;
+check("...but the favourite in another size does", usualSmaller?.size === "250 g", JSON.stringify(usualSmaller));
+
 const guest = await api("", "GET", "/collections/pantry_packets/records");
 check("someone not logged in sees no packets", guest.items.length === 0);
 check("...and can't add one", [400, 401, 403].includes(await fails(() => api("", "POST", "/collections/pantry_packets/records", { item: sugar.id }))));

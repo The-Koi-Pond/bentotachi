@@ -117,13 +117,25 @@ onRecordAfterUpdateSuccess((e) => {
 }, "shopping_items");
 
 // A packet added with a brand or size becomes its item's usual packet: what
-// ticking it off the shopping list adds next time (see above).
+// ticking it off the shopping list (see above) and the app's "+ 1 more" add
+// next time. Not one of another brand than the item's favourite (bought
+// because the favourite was out): that's a stand-in, and the next one
+// bought should be the favourite again.
 onRecordAfterCreateSuccess((e) => {
   const brand = e.record.getString("brand");
   const size = e.record.getString("size");
   if (brand || size) {
     try {
       const item = e.app.findRecordById("pantry_items", e.record.get("item"));
+      const favourites = item
+        .getString("brand")
+        .split(",")
+        .map((b) => b.trim().toLowerCase())
+        .filter((b) => b);
+      if (brand && favourites.length && favourites.indexOf(brand.trim().toLowerCase()) === -1) {
+        e.next();
+        return;
+      }
       let usual = null;
       try {
         usual = JSON.parse(item.getString("usual_packet") || "null");

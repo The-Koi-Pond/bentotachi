@@ -1,29 +1,33 @@
-// Opens under a pantry row when it's tapped: the everyday changes as big
-// buttons (one more packet, used one, the other two levels), and "Edit
-// everything" for the full form (PantryForms.tsx).
-import { useEffect, useRef } from "react";
-import type { PantryItem, PantryPacket, PantryStatus } from "./pb";
-import { groupText, nextPacket, packetGroups, type PacketDetails } from "./pantryPackets";
+// Opens under a pantry row when it's tapped: only what the row can't do
+// itself (its pill already sets Have / Low / Out). The favourite to buy,
+// adding one (the favourite, or another brand bought instead), what's in
+// stock as counters when the Simple row hides them, and "Edit everything"
+// for the full form (PantryForms.tsx).
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { PantryItem, PantryPacket } from "./pb";
+import { nextPacket, otherBrands, type PacketDetails } from "./pantryPackets";
 import { describeExpiry } from "./expiry";
 import { placeOf } from "./pantryItem";
-
-const STATUS_BUTTONS: Record<PantryStatus, string> = { have: "We have it", low: "It's low", out: "It's out" };
+import { norm } from "./pantryGroups";
+import PacketCounters from "./PacketCounters";
+import type { PantryLayout } from "./PantryRow";
+import { useSpell } from "./household";
 
 export default function PantryCard({
   item,
   packets,
+  layout,
   onMore,
   onUsed,
-  onStatus,
   onEditAll,
 }: {
   item: PantryItem;
   // Its packets in stock, oldest first; null on a server from before
   // packets, which then aren't offered.
   packets: PantryPacket[] | null;
+  layout: PantryLayout;
   onMore: (details: PacketDetails) => void;
   onUsed: (packet: PantryPacket) => void;
-  onStatus: (status: PantryStatus) => void;
   onEditAll: () => void;
 }) {
   // Opened near the bottom of the screen, it would sit under the tab bar.
@@ -33,40 +37,55 @@ export default function PantryCard({
   useEffect(() => {
     ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, []);
+  const spell = useSpell();
+  const [other, setOther] = useState(false);
   const next = nextPacket(item, packets ?? []);
   const place = placeOf(item);
-  // What's in stock is said here too, as the Simple layout's row hides it.
-  const inStock = packetGroups(packets ?? [], item.brand).map(groupText).join(", ");
-  const about = [
-    inStock && `In stock: ${inStock}`,
-    item.brand?.trim(),
-    [place.location, place.subcategory].filter(Boolean).join(", "),
-    item.expires && describeExpiry(item.expires),
-  ]
+  const preferred = item.brand?.trim() ?? "";
+  // "Masterfoods 560 g": the favourite with its usual size, when "+ 1 more"
+  // adds that one.
+  const preferredText = [preferred, norm(next.brand) === norm(preferred) ? next.size : ""].filter(Boolean).join(" ");
+  const about = [[place.location, place.subcategory].filter(Boolean).join(", "), item.expires && describeExpiry(item.expires)]
     .filter(Boolean)
     .join(" · ");
   return (
     <div ref={ref} className="pantry-card" role="group" aria-label={`${item.name}: quick changes`}>
-      <div className="pantry-card-quick">
-        {packets && (
+      {/* So whoever's shopping knows which one to get. */}
+      {preferred && (
+        <p className="pantry-card-preferred">
+          {spell("Favourite")}: <strong>{preferredText}</strong>
+        </p>
+      )}
+      {/* The Simple row hides what's in stock; the Detailed one shows it. */}
+      {layout === "simple" && packets && packets.length > 0 && (
+        <span className="pantry-packets" role="group" aria-label={`${item.name} in stock`}>
+          <span className="pantry-packets-label" aria-hidden="true">
+            In stock:
+          </span>
+          <PacketCounters packets={packets} favouriteBrand={item.brand} onUsed={onUsed} onMore={onMore} />
+        </span>
+      )}
+      {packets && (
+        <div className="pantry-card-quick">
           <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more${next.size ? `, ${next.size}` : ""}`}>
             + 1 more
             {next.size && <span className="pantry-card-size">{next.size}</span>}
           </button>
-        )}
-        {packets && packets.length > 0 && (
-          <button className="button" onClick={() => onUsed(packets[0])}>
-            Used one
+          <button className="button" aria-expanded={other} onClick={() => setOther(!other)}>
+            Another brand
           </button>
-        )}
-        {(Object.keys(STATUS_BUTTONS) as PantryStatus[])
-          .filter((status) => status !== item.status)
-          .map((status) => (
-            <button key={status} className="button" onClick={() => onStatus(status)}>
-              {STATUS_BUTTONS[status]}
-            </button>
-          ))}
-      </div>
+        </div>
+      )}
+      {other && packets && (
+        <OtherBrand
+          item={item}
+          packets={packets}
+          onAdd={(details) => {
+            onMore(details);
+            setOther(false);
+          }}
+        />
+      )}
       <div className="pantry-card-foot">
         <span className="muted">{about}</span>
         <button className="link-button" onClick={onEditAll}>
@@ -74,5 +93,40 @@ export default function PantryCard({
         </button>
       </div>
     </div>
+  );
+}
+
+// "Bought another brand?": one added with the brand bought instead (the
+// favourite was out, say). It doesn't change the favourite, or what
+// "+ 1 more" adds (server/pb_hooks/pantry.pb.js keeps the usual one).
+function OtherBrand({ item, packets, onAdd }: { item: PantryItem; packets: PantryPacket[]; onAdd: (details: PacketDetails) => void }) {
+  const [brand, setBrand] = useState("");
+  const [size, setSize] = useState("");
+  const picks = otherBrands(item, packets);
+
+  function add(event: FormEvent) {
+    event.preventDefault();
+    if (brand.trim()) onAdd({ brand: brand.trim(), size: size.trim() });
+  }
+
+  return (
+    <form className="pantry-card-other" onSubmit={add}>
+      {picks.length > 0 && (
+        <div className="pantry-card-picks" role="group" aria-label="Brands it's had">
+          {picks.map((pick) => (
+            <button key={pick} type="button" aria-pressed={norm(pick) === norm(brand)} onClick={() => setBrand(pick)}>
+              {pick}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="pantry-card-other-row">
+        <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand bought" aria-label="Brand bought" maxLength={120} autoFocus />
+        <input value={size} onChange={(e) => setSize(e.target.value)} placeholder="Size" aria-label="Its size" maxLength={60} className="pantry-card-other-size" />
+        <button className="button primary small" disabled={!brand.trim()}>
+          Add
+        </button>
+      </div>
+    </form>
   );
 }

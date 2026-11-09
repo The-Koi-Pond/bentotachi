@@ -11,6 +11,7 @@ import {
   lastPacketRunsOut,
   learnsBarcode,
   nextPacket,
+  otherBrands,
   groupText,
   packetGroups,
   packetLabel,
@@ -127,6 +128,13 @@ test("+ 1 packet adds one like the usual packet, else the newest, else just the 
   assert.deepEqual(nextPacket({ brand: "White Mill", usual_packet: { brand: "", size: "" } }, []), { brand: "White Mill", size: "" });
   // An older item listing several brands doesn't pick one.
   assert.deepEqual(nextPacket({ brand: "Coles, White Mill" }, []), { brand: "", size: "" });
+  // A stand-in of another brand (the favourite was out) isn't what comes
+  // next: the favourite is.
+  assert.deepEqual(
+    nextPacket({ brand: "Masterfoods", usual_packet: null }, [{ brand: "Masterfoods", size: "560 g" }, { brand: "Heinz", size: "500 g" }]),
+    { brand: "Masterfoods", size: "560 g" }
+  );
+  assert.deepEqual(nextPacket({ brand: "Masterfoods", usual_packet: null }, [{ brand: "Heinz", size: "500 g" }]), { brand: "Masterfoods", size: "" });
 });
 
 const CODE = "9300633603161";
@@ -196,6 +204,15 @@ test("an older item's several brands are offered to pick the favourite from", ()
   assert.deepEqual(brandsToPickFrom("Coles, coles"), []);
   assert.deepEqual(brandsToPickFrom("White Mill"), []);
   assert.deepEqual(brandsToPickFrom(""), []);
+});
+
+test("another brand's quick picks: what it's had, not the favourite, each once", () => {
+  const item = {
+    brand: "Masterfoods",
+    barcode_details: { "9300000000002": { brand: "Heinz", size: "500 g" }, "9300000000019": { brand: "masterfoods", size: "560 g" } },
+  };
+  assert.deepEqual(otherBrands(item, [{ brand: "Coles" }, { brand: "Masterfoods" }, { brand: " heinz " }, { brand: "" }]), ["Coles", "heinz"]);
+  assert.deepEqual(otherBrands({ brand: "", barcode_details: null }, []), []);
 });
 
 test("scanning adds by itself only to items whose stock is counted", () => {

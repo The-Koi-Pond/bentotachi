@@ -117,6 +117,26 @@ export function justBought<T extends Pick<PantryPacket, "bought_with" | "created
   return bought.sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
 }
 
+// Brands this item has had besides its favourite, for "Another brand"'s
+// quick picks: from what's in stock and the barcodes it knows, first seen
+// first, each once.
+export function otherBrands(
+  item: Pick<PantryItem, "brand" | "barcode_details">,
+  packets: Pick<PantryPacket, "brand">[]
+): string[] {
+  const preferred = new Set(brandsOf(item.brand ?? "").map(norm));
+  const seen = new Set<string>();
+  const brands: string[] = [];
+  const all = [...packets.map((packet) => packet.brand ?? ""), ...Object.values(item.barcode_details ?? {}).map((details) => details.brand ?? "")];
+  for (const raw of all) {
+    const brand = raw.trim();
+    if (!brand || preferred.has(norm(brand)) || seen.has(norm(brand))) continue;
+    seen.add(norm(brand));
+    brands.push(brand);
+  }
+  return brands;
+}
+
 // Whether the household counts this item's stock: some counted now, or a
 // usual one remembered from counting before (it's kept after they're all
 // used up). Scanning one of these adds it by itself; one nobody counts
@@ -135,9 +155,12 @@ export function nextPacket(
 ): PacketDetails {
   const usual = item.usual_packet;
   if (usual && (usual.brand || usual.size)) return { brand: usual.brand ?? "", size: usual.size ?? "" };
-  const newest = packets[packets.length - 1];
+  // The newest one in stock, but not a stand-in of another brand than the
+  // favourite ("Another brand"): the next one should be the favourite.
+  const preferred = brandsOf(item.brand ?? "").map(norm);
+  const newest = [...packets].reverse().find((packet) => !preferred.length || !(packet.brand ?? "").trim() || preferred.includes(norm(packet.brand ?? "")));
   if (newest) return { brand: newest.brand ?? "", size: newest.size ?? "" };
-  return { brand: brandsOf(item.brand ?? "").length === 1 ? item.brand.trim() : "", size: "" };
+  return { brand: preferred.length === 1 ? item.brand.trim() : "", size: "" };
 }
 
 // An item's packets, oldest first (the one to use up first), leaving out

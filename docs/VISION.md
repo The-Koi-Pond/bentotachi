@@ -324,3 +324,10 @@ that say what they do ("Delete", "Keep editing"); never the browser's own
   Facts); scanning a barcode an item already knows adds one by itself, no
   tap, when that item's stock is counted, with Undo on the bottom bar.
   Items nobody counts aren't started on: they still offer "+ Add this one".
+- 2026-11-09 (Xel): an item's quick card holds only what its row can't do
+  (the row's pill already sets Have / Low / Out): "Favourite: Masterfoods
+  560 g" so whoever's shopping knows which to get, what's in stock (as
+  counters when the Simple row hides them), "+ 1 more" (the favourite) and
+  "Another brand" (one bought instead, the brands it's had as quick
+  picks), and Edit everything. A stand-in brand never takes over: "+ 1
+  more" and the shopping list keep adding the favourite.

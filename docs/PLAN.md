@@ -200,6 +200,10 @@ Not released yet:
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
+- An item's quick card, slimmed: "Favourite: Masterfoods 560 g", what's in
+  stock, "+ 1 more" and "Another brand" (for one bought because the
+  favourite was out; it never replaces the favourite as what "+ 1 more"
+  and the shopping list add).
 - Scanning a barcode an item already knows adds one by itself when that
   item's stock is counted ("Added one to American mustard: Masterfoods
   560 g." with Undo); items nobody counts still offer "+ Add this one".
