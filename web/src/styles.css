@@ -1613,22 +1613,24 @@ main {
 
 /* Month view */
 
+/* In the plan's bento tray (.plan-tray): the weekdays on the rim, each day
+   a compartment. */
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 3px;
+  gap: 4px;
 }
 
 .month-weekday {
-  padding-bottom: 2px;
+  padding: 1px 0 0;
   font-size: 0.78rem;
   font-weight: 700;
   text-align: center;
-  color: var(--muted);
+  color: var(--rim-text);
 }
 
 .month-cell {
-  border-radius: 8px;
+  border-radius: 7px;
 }
 
 .month-cell-button {
@@ -1642,8 +1644,8 @@ main {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: none;
+  border-radius: 7px;
   cursor: pointer;
 }
 
@@ -1659,26 +1661,31 @@ main {
   text-align: left;
 }
 
+/* Days of the months either side: bare rim with faint numbers, so they
+   don't look like today's filled compartment. */
 .month-cell.other-month .month-cell-button {
-  opacity: 0.4;
+  color: var(--rim-text);
+  background: none;
+  opacity: 0.55;
 }
 
 .month-cell.today .month-day {
   color: var(--accent);
 }
 
+/* Today is the filled compartment. */
 .month-cell.today .month-cell-button {
-  border-color: var(--accent);
+  background: var(--jade-soft);
 }
 
 .month-cell.selected .month-cell-button {
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 /* The day a dragged dinner would land on. */
 .month-cell.drop-here .month-cell-button {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 /* The dinner picture fills the rest of the day. Dragging it doesn't scroll. */
@@ -1714,14 +1721,14 @@ main {
   cursor: grabbing;
 }
 
+/* The chosen day's meals: the month tray's compartment under the days. */
 .selected-day {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
+  padding: 10px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 8px;
 }
 
 .selected-day h2 {

@@ -437,7 +437,9 @@ export default function MealPlan() {
             {shopButton}
           </div>
         ) : (
-          <>
+          // A bento tray too: the days as compartments, then the chosen
+          // day's meals and "Add these to the shopping list".
+          <div className="plan-tray">
             <MonthGrid
               month={month}
               firstDay={firstDay}
@@ -457,7 +459,8 @@ export default function MealPlan() {
               onAdd={(meal) => setPicking({ date: selected, meal })}
               onRemove={remove}
             />
-          </>
+            {shopButton}
+          </div>
         )}
         {dragging && <DropBin />}
         {/* The copy of a dinner that follows your finger while dragging. */}
@@ -466,8 +469,6 @@ export default function MealPlan() {
         </DragOverlay>
       </DndContext>
 
-      {/* The month view's, under the calendar (the list's is in its tray). */}
-      {!isList && shopButton}
 
       {picking && (
         <RecipeChooser
