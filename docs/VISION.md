@@ -80,9 +80,11 @@ Cheeky and silly wherever it can afford to be, while staying clear.
 - Plain English underneath: short sentences, no jargon, spell things out.
 - **Tips live behind a "?"** (decided 2026-11-08): how to use something
   (formatting codes, dragging, what an import carries, "not sure? count
-  the teaspoons") opens from a small ? beside what it explains, right
-  underneath it (web/src/Help.tsx). What a box needs, what just happened
-  and a mode's banner stay visible.
+  the teaspoons") opens from a small ? beside what it explains, as a
+  little bubble pointing at the ?, over the page rather than pushing it
+  down (Xel, 2026-11-09; web/src/Help.tsx). Tapping elsewhere, Escape or
+  back closes it. What a box needs, what just happened and a mode's banner
+  stay visible.
 - **The tagline** (decided 2026-11-04): "Because dinner insists on
   happening every day.", under the title in the app's first screen and on
   the website. A real sentence in normal case. **No eyebrow taglines:** an

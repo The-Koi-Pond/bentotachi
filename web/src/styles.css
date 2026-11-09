@@ -2336,6 +2336,38 @@ main {
   border-radius: 10px;
 }
 
+/* As a bubble over the page (Help.tsx places it), pointing at its "?". */
+.help-box.help-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(320px, calc(100vw - 16px));
+  /* The pointer sticks out above (or below) the bubble. */
+  overflow: visible;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+
+.help-pop::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: calc(var(--pointer, 20px) - 6px);
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.help-pop.above::before {
+  top: auto;
+  bottom: -6px;
+  transform: rotate(225deg);
+}
+
 .help-box p {
   margin: 0;
 }

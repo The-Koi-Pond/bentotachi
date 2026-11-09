@@ -9,10 +9,14 @@ import { isAndroidApp } from "./pb";
 export function setUpBackGesture() {
   if (!isAndroidApp) return;
   void App.addListener("backButton", ({ canGoBack }) => {
+    // An open "?" tip closes first, as Escape would. (A browser too old for
+    // popovers doesn't know :popover-open, and would throw on it.)
+    const tip = "popover" in HTMLElement.prototype ? document.querySelector<HTMLElement>(":popover-open") : null;
     const openDialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+    if (tip) tip.hidePopover();
     // As Escape does: the pop-up hears "cancel" first and may refuse (one
     // that's still saving, like "Used anything up?").
-    if (openDialog) {
+    else if (openDialog) {
       if (openDialog.dispatchEvent(new Event("cancel", { cancelable: true }))) openDialog.close();
     } else if (canGoBack) window.history.back();
     else void App.minimizeApp();
