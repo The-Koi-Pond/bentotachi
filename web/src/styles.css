@@ -38,6 +38,8 @@
   /* A bento tray's rim, and words on it (docs/VISION.md, "Bento trays"). */
   --rim: #b9d6cd;
   --rim-text: #24312d;
+  /* Loose lines between trays start where a tray's compartments do. */
+  --tray-inset: 8px;
   --radius: 12px;
   --tabbar-height: 60px;
   color-scheme: light;
@@ -628,6 +630,18 @@ main {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Loose lines between bento trays ("6 recipes · Close all shelves",
+   "Got it", "+ Add from a recipe", "From recipetineats.com") don't reach
+   past where a tray's compartments start (docs/VISION.md). */
+.list-options,
+.shelf-empty-line,
+.from-recipe,
+.add-notes,
+.small-print,
+.section-head:has(> h2) {
+  padding-inline: var(--tray-inset);
 }
 
 /* The gap spaces a stack's paragraphs: without this the browser's own 1em
@@ -2834,9 +2848,52 @@ legend {
   gap: 14px;
 }
 
+/* The Recipes page's search and filters (tags, quick, favourites): a bento
+   tray, each a compartment; a filter that's on is the filled one, its
+   icon keeping its own colour. */
 .toolbar {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.toolbar > .search {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.toolbar > .button {
+  flex: none;
+  width: 44px;
+  padding: 0;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.toolbar > .button.primary {
+  color: var(--text);
+  background: var(--jade-soft);
+}
+
+.toolbar > .quick-button.primary {
+  color: #a37500;
+}
+
+.toolbar > .favorites-button.primary {
+  color: var(--heart);
+}
+
+@media (prefers-color-scheme: dark) {
+  .toolbar > .quick-button.primary {
+    color: var(--gold);
+  }
 }
 
 .recipe-card {
