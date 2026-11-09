@@ -8,7 +8,8 @@ import { useSpell, useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
 import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
 import StoreLogo from "./StoreLogo";
-import { CloseIcon } from "./icons";
+import { CameraIcon, CloseIcon } from "./icons";
+import { usePreviewUrl } from "./pantryPhoto";
 import { useUnsavedChanges } from "./unsavedChanges";
 import { barcodesOf, normaliseBarcode, withBarcode } from "./barcodes";
 import { canScan, scanBarcode, type BarcodeProduct } from "./scanner";
@@ -151,10 +152,6 @@ function ItemFields({
   nameRef?: Ref<HTMLInputElement>;
   brief?: boolean;
 }) {
-  const places = placeOptions(existing);
-  const subs = subcategoryOptions(existing, fields.location);
-  const placeHelp = useHelp();
-
   return (
     <>
       <label>
@@ -167,46 +164,66 @@ function ItemFields({
           required
         />
       </label>
-      <div className="row">
-        <CategorySelect
-          label="Where it lives"
-          value={fields.location}
-          options={withCurrent(places, fields.location)}
-          emptyLabel="Not sorted"
-          newLabel="+ New place…"
-          newPlaceholder="New place, e.g. Pantry shelf"
-          onChange={(location) => onChange({ location, subcategory: "" })}
-          help={{
-            button: <HelpButton help={placeHelp} label="How places work" />,
-            box: (
-              <HelpBox help={placeHelp}>
-                <p>
-                  Group things by where they live, like “Fridge” or “Cupboard”, with optional subcategories like
-                  “Baking” or “Spices”.
-                </p>
-              </HelpBox>
-            ),
-          }}
-        />
-        {/* Brief: the subcategory once there's a place to put it under. */}
-        {(!brief || fields.location.trim()) && (
-          <CategorySelect
-            // A fresh dropdown for each place, so typing a new subcategory
-            // under one place doesn't carry over to another.
-            key={norm(fields.location)}
-            label="Subcategory"
-            value={fields.subcategory}
-            options={withCurrent(subs, fields.subcategory)}
-            emptyLabel={fields.location.trim() ? "None" : "Pick a place first"}
-            newLabel="+ New subcategory…"
-            newPlaceholder="New subcategory"
-            disabled={!fields.location.trim()}
-            onChange={(subcategory) => onChange({ subcategory })}
-          />
-        )}
-      </div>
+      <PlaceFields existing={existing} fields={fields} onChange={onChange} brief={brief} />
       {!brief && <MoreItemFields existing={existing} fields={fields} onChange={onChange} />}
     </>
+  );
+}
+
+// Where it lives and its subcategory, side by side.
+function PlaceFields({
+  existing,
+  fields,
+  onChange,
+  brief = false,
+}: {
+  existing: PantryItem[];
+  fields: Fields;
+  onChange: (patch: Partial<Fields>) => void;
+  brief?: boolean;
+}) {
+  const places = placeOptions(existing);
+  const subs = subcategoryOptions(existing, fields.location);
+  const placeHelp = useHelp();
+  return (
+    <div className="row">
+      <CategorySelect
+        label="Where it lives"
+        value={fields.location}
+        options={withCurrent(places, fields.location)}
+        emptyLabel="Not sorted"
+        newLabel="+ New place…"
+        newPlaceholder="New place, e.g. Pantry shelf"
+        onChange={(location) => onChange({ location, subcategory: "" })}
+        help={{
+          button: <HelpButton help={placeHelp} label="How places work" />,
+          box: (
+            <HelpBox help={placeHelp}>
+              <p>
+                Group things by where they live, like “Fridge” or “Cupboard”, with optional subcategories like
+                “Baking” or “Spices”.
+              </p>
+            </HelpBox>
+          ),
+        }}
+      />
+      {/* Brief: the subcategory once there's a place to put it under. */}
+      {(!brief || fields.location.trim()) && (
+        <CategorySelect
+          // A fresh dropdown for each place, so typing a new subcategory
+          // under one place doesn't carry over to another.
+          key={norm(fields.location)}
+          label="Subcategory"
+          value={fields.subcategory}
+          options={withCurrent(subs, fields.subcategory)}
+          emptyLabel={fields.location.trim() ? "None" : "Pick a place first"}
+          newLabel="+ New subcategory…"
+          newPlaceholder="New subcategory"
+          disabled={!fields.location.trim()}
+          onChange={(subcategory) => onChange({ subcategory })}
+        />
+      )}
+    </div>
   );
 }
 
@@ -214,64 +231,80 @@ function ItemFields({
 const withCurrent = (options: string[], value: string) =>
   value.trim() && !options.some((o) => norm(o) === norm(value)) ? [...options, value.trim()] : options;
 
-// The rest of an item's fields: its group ("A kind of"), note, favourite
-// brand, where it goes once opened, expiry and store links.
-function MoreItemFields({
-  existing,
-  fields,
-  onChange,
-}: {
-  existing: PantryItem[];
-  fields: Fields;
-  onChange: (patch: Partial<Fields>) => void;
-}) {
-  const spell = useSpell();
-  const places = placeOptions(existing);
+// The rest of an item's fields, in the add form's order: its group ("A kind
+// of"), note, favourite brand, where it goes once opened, expiry and store
+// links. The edit form sorts the same pieces into trays (EditPantryItem).
+type FieldProps = { existing: PantryItem[]; fields: Fields; onChange: (patch: Partial<Fields>) => void };
+
+function MoreItemFields(props: FieldProps) {
+  return (
+    <>
+      <KindOfField {...props} />
+      <NoteField {...props} />
+      <BrandField {...props} />
+      <OpenedField {...props} />
+      <ExpiresField {...props} />
+      <StoreLinkFor {...props} />
+    </>
+  );
+}
+
+function KindOfField({ existing, fields, onChange }: FieldProps) {
   // The groups already used, to pick from ("Pasta").
   const kinds = uniqueLabels(existing.map((item) => item.kind_of ?? ""));
   const kindHelp = useHelp();
   const kindId = useId();
+  return (
+    <div className="kind-of-field">
+      <span>
+        <label htmlFor={kindId} className="label-text">
+          A kind of <span className="optional">(optional)</span>
+        </label>
+        <HelpButton help={kindHelp} label="What a kind of is for" />
+      </span>
+      <HelpBox help={kindHelp}>
+        <p>
+          Like Pasta for Linguine, Penne and Spaghetti. Kinds of the same thing sit together in the pantry. A recipe
+          asking for linguine only counts Linguine; one that just says pasta can use any of them.
+        </p>
+      </HelpBox>
+      <input
+        id={kindId}
+        value={fields.kindOf}
+        onChange={(e) => onChange({ kindOf: e.target.value })}
+        maxLength={60}
+        placeholder="e.g. Pasta"
+        list={`${kindId}-list`}
+      />
+      <datalist id={`${kindId}-list`}>
+        {kinds.map((kind) => (
+          <option key={kind} value={kind} />
+        ))}
+      </datalist>
+    </div>
+  );
+}
 
+function NoteField({ fields, onChange }: FieldProps) {
+  return (
+    <label>
+      <span className="label-text">
+        Note <span className="optional">(optional)</span>
+      </span>
+      <input
+        value={fields.note}
+        onChange={(e) => onChange({ note: e.target.value })}
+        maxLength={200}
+        placeholder="e.g. 3 cans"
+      />
+    </label>
+  );
+}
+
+function BrandField({ fields, onChange }: FieldProps) {
+  const spell = useSpell();
   return (
     <>
-      <div className="kind-of-field">
-        <span>
-          <label htmlFor={kindId} className="label-text">
-            A kind of <span className="optional">(optional)</span>
-          </label>
-          <HelpButton help={kindHelp} label="What a kind of is for" />
-        </span>
-        <HelpBox help={kindHelp}>
-          <p>
-            Like Pasta for Linguine, Penne and Spaghetti. Kinds of the same thing sit together in the pantry. A recipe
-            asking for linguine only counts Linguine; one that just says pasta can use any of them.
-          </p>
-        </HelpBox>
-        <input
-          id={kindId}
-          value={fields.kindOf}
-          onChange={(e) => onChange({ kindOf: e.target.value })}
-          maxLength={60}
-          placeholder="e.g. Pasta"
-          list={`${kindId}-list`}
-        />
-        <datalist id={`${kindId}-list`}>
-          {kinds.map((kind) => (
-            <option key={kind} value={kind} />
-          ))}
-        </datalist>
-      </div>
-      <label>
-        <span className="label-text">
-          Note <span className="optional">(optional)</span>
-        </span>
-        <input
-          value={fields.note}
-          onChange={(e) => onChange({ note: e.target.value })}
-          maxLength={200}
-          placeholder="e.g. 3 cans"
-        />
-      </label>
       <label>
         <span className="label-text">
           {spell("Favourite brand")} <span className="optional">(optional)</span>
@@ -295,35 +328,51 @@ function MoreItemFields({
           ))}
         </div>
       )}
-      <CategorySelect
-        label="Once opened, keep in"
-        value={fields.openedLocation}
-        options={withCurrent(places, fields.openedLocation)}
-        emptyLabel="The same place"
-        newLabel="+ New place…"
-        newPlaceholder="New place, e.g. Door shelf"
-        onChange={(openedLocation) => onChange({ openedLocation })}
-      />
-      <label>
-        <span className="label-text">
-          Expires <span className="optional">(optional)</span>
-        </span>
-        <span className="date-row">
-          <input type="date" value={fields.expires} onChange={(e) => onChange({ expires: e.target.value })} />
-          {fields.expires && (
-            <button type="button" className="button ghost small" onClick={() => onChange({ expires: "" })}>
-              No date
-            </button>
-          )}
-        </span>
-      </label>
-      <StoreLinkField
-        // Store searches include the (first) brand: "Lea & Perrins Worcestershire".
-        name={[brandsOf(fields.brand)[0] ?? "", fields.name].map((part) => part.trim()).filter(Boolean).join(" ")}
-        value={fields.storeUrls}
-        onChange={(storeUrls) => onChange({ storeUrls })}
-      />
     </>
+  );
+}
+
+function OpenedField({ existing, fields, onChange }: FieldProps) {
+  const places = placeOptions(existing);
+  return (
+    <CategorySelect
+      label="Once opened, keep in"
+      value={fields.openedLocation}
+      options={withCurrent(places, fields.openedLocation)}
+      emptyLabel="The same place"
+      newLabel="+ New place…"
+      newPlaceholder="New place, e.g. Door shelf"
+      onChange={(openedLocation) => onChange({ openedLocation })}
+    />
+  );
+}
+
+function ExpiresField({ fields, onChange }: FieldProps) {
+  return (
+    <label>
+      <span className="label-text">
+        Expires <span className="optional">(optional)</span>
+      </span>
+      <span className="date-row">
+        <input type="date" value={fields.expires} onChange={(e) => onChange({ expires: e.target.value })} />
+        {fields.expires && (
+          <button type="button" className="button ghost small" onClick={() => onChange({ expires: "" })}>
+            No date
+          </button>
+        )}
+      </span>
+    </label>
+  );
+}
+
+function StoreLinkFor({ fields, onChange }: FieldProps) {
+  return (
+    <StoreLinkField
+      // Store searches include the (first) brand: "Lea & Perrins Worcestershire".
+      name={[brandsOf(fields.brand)[0] ?? "", fields.name].map((part) => part.trim()).filter(Boolean).join(" ")}
+      value={fields.storeUrls}
+      onChange={(storeUrls) => onChange({ storeUrls })}
+    />
   );
 }
 
@@ -344,6 +393,7 @@ function StoreLinkField({
 }) {
   // Its own for each form: an Add and an Edit form can be open together.
   const labelId = useId();
+  const help = useHelp();
   const [error, setError] = useState("");
   const stores = useStores();
   const boxes = value.length ? value : [""];
@@ -366,16 +416,22 @@ function StoreLinkField({
 
   return (
     <div className="store-link-field" role="group" aria-labelledby={labelId}>
-      <span className="label-text" id={labelId}>
-        {several ? "Store links" : "Store link"} <span className="optional">(optional)</span>
+      {/* How to get one is a tip, behind its "?" (docs/VISION.md, Voice). */}
+      <span className="field-head">
+        <span className="label-text" id={labelId}>
+          {several ? "Store links" : "Store link"} <span className="optional">(optional)</span>
+        </span>
+        <HelpButton help={help} label="How to link a store's page" />
       </span>
-      <span className="hint">
-        {!stores.length
-          ? "A shop's page for this product, copied from your browser."
-          : hasBuiltInBrowser
-            ? "Find it in a store, open the product, then tap Link this item."
-            : "Search a store, open the product, then copy its address into here."}
-      </span>
+      <HelpBox help={help}>
+        <p>
+          {!stores.length
+            ? "A shop's page for this product, copied from your browser."
+            : hasBuiltInBrowser
+              ? "Find it in a store, open the product, then tap Link this item."
+              : "Search a store, open the product, then copy its address into here."}
+        </p>
+      </HelpBox>
       {boxes.map((box, index) => (
         <span className="store-link-box" key={index}>
           {/* Plain text (with the web address keyboard), so "coles.com.au/…"
@@ -676,12 +732,15 @@ function PacketsField({
   favouriteBrand,
   onAdd,
   onFinish,
+  inTray = false,
 }: {
   packets: PantryPacket[];
   favouriteBrand: string;
   // Whether it was added.
   onAdd: (details: PacketDetails) => Promise<boolean>;
   onFinish: (packet: PantryPacket) => void;
+  // In the edit form's "In stock" tray, whose rim names it already.
+  inTray?: boolean;
 }) {
   const labelId = useId();
   const [adding, setAdding] = useState(false);
@@ -705,10 +764,12 @@ function PacketsField({
   };
 
   return (
-    <div className="packets-field" role="group" aria-labelledby={labelId}>
-      <span className="label-text" id={labelId}>
-        How many in stock <span className="optional">(optional)</span>
-      </span>
+    <div className="packets-field" role="group" aria-labelledby={inTray ? undefined : labelId} aria-label={inTray ? "In stock" : undefined}>
+      {!inTray && (
+        <span className="label-text" id={labelId}>
+          How many in stock <span className="optional">(optional)</span>
+        </span>
+      )}
       {packets.length > 0 && (
         <PacketCounters packets={packets} favouriteBrand={favouriteBrand} onUsed={onFinish} onMore={(more) => void onAdd(more)} />
       )}
@@ -752,9 +813,12 @@ function PacketsField({
           </button>
         </span>
       )}
-      <span className="hint">
-        {packets.length ? "− when one's used up, + for one more. These change straight away." : "Only if you'd like to count them."}
-      </span>
+      {/* In the tray, the − and + speak for themselves. */}
+      {!inTray && (
+        <span className="hint">
+          {packets.length ? "− when one's used up, + for one more. These change straight away." : "Only if you'd like to count them."}
+        </span>
+      )}
     </div>
   );
 }
@@ -789,6 +853,13 @@ export function EditPantryItem({
   const [busy, setBusy] = useState(false);
   const [opened] = useState(() => JSON.stringify([fields, barcodes]));
   useUnsavedChanges(JSON.stringify([fields, barcodes]) !== opened || photo !== undefined);
+  const change = (patch: Partial<Fields>) => setFields((previous) => ({ ...previous, ...patch }));
+  const [photoOpen, setPhotoOpen] = useState(false);
+  // "More details" starts open when one of them is set, so nothing set is
+  // hidden. Barcodes don't count: most scanned items have one.
+  const [more, setMore] = useState(() => !!(item.kind_of?.trim() || item.note?.trim() || item.opened_location?.trim()));
+  const preview = usePreviewUrl(photo);
+  const shownPhoto = photo === null ? "" : photo ? preview : pantryPhotoUrl(item);
 
   async function scanAnother() {
     setError("");
@@ -853,48 +924,104 @@ export function EditPantryItem({
           <CloseIcon />
         </button>
       </div>
-      <ItemFields
-        existing={existing}
-        fields={fields}
-        onChange={(patch) => setFields((previous) => ({ ...previous, ...patch }))}
-      />
-      <PantryPhotoField
-        savedUrl={pantryPhotoUrl(item)}
-        barcodes={barcodes}
-        storeUrls={cleanStoreLinks(fields.storeUrls) ?? []}
-        choice={photo}
-        onChoose={setPhoto}
-      />
-      {(barcodes.length > 0 || canScan) && (
-        <div className="barcode-list">
-          <span className="label-text">Barcodes</span>
-          {barcodes.map((code) => (
-            <span key={code} className="barcode-chip">
-              {code}
-              <button
-                type="button"
-                className="chip-remove"
-                aria-label={`Remove barcode ${code}`}
-                onClick={() => setBarcodes(barcodes.filter((other) => other !== code))}
-              >
-                ✕
-              </button>
+      {/* Its photo beside its name; tapping the photo offers the ways to
+          change it (docs/VISION.md, "Pantry item edit form"). */}
+      <div className="pantry-edit-who">
+        <button
+          type="button"
+          className="pantry-edit-photo"
+          onClick={() => setPhotoOpen(!photoOpen)}
+          aria-expanded={photoOpen}
+          aria-label="Change its photo"
+          title="Change its photo"
+        >
+          {shownPhoto ? (
+            <img src={shownPhoto} alt="" />
+          ) : (
+            <span className="pantry-tile" aria-hidden="true">
+              {(fields.name.trim() || item.name).charAt(0).toUpperCase()}
             </span>
-          ))}
-          {canScan && (
-            <button type="button" className="button small" onClick={() => void scanAnother()}>
-              <span className="button-mark" aria-hidden="true">📷</span> Add one
-            </button>
+          )}
+          <span className="avatar-corner" aria-hidden="true">
+            <CameraIcon size={13} />
+          </span>
+        </button>
+        <label className="pantry-edit-name">
+          Name
+          <input value={fields.name} onChange={(e) => change({ name: e.target.value })} placeholder="Eggs" required />
+        </label>
+      </div>
+      {photoOpen && (
+        <PantryPhotoField
+          bare
+          savedUrl={pantryPhotoUrl(item)}
+          barcodes={barcodes}
+          storeUrls={cleanStoreLinks(fields.storeUrls) ?? []}
+          choice={photo}
+          onChoose={setPhoto}
+        />
+      )}
+      <section className="stack tray-section">
+        <h2>Storage</h2>
+        <div className="tray-body">
+          <PlaceFields existing={existing} fields={fields} onChange={change} />
+          <ExpiresField existing={existing} fields={fields} onChange={change} />
+        </div>
+      </section>
+      <section className="stack tray-section">
+        <h2>Buying</h2>
+        <div className="tray-body">
+          <BrandField existing={existing} fields={fields} onChange={change} />
+          <StoreLinkFor existing={existing} fields={fields} onChange={change} />
+        </div>
+      </section>
+      {packets && onAddPacket && onFinishPacket && (
+        <section className="stack tray-section">
+          <h2>In stock</h2>
+          <div className="tray-body">
+            <PacketsField
+              inTray
+              packets={packets}
+              favouriteBrand={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
+              onAdd={onAddPacket}
+              onFinish={onFinishPacket}
+            />
+          </div>
+        </section>
+      )}
+      {/* The rarely needed ones, out of the way unless one is set. */}
+      <button type="button" className="link-button pantry-edit-more" aria-expanded={more} onClick={() => setMore(!more)}>
+        {more ? "− Fewer details" : "+ More details"}
+      </button>
+      {more && (
+        <div className="stack">
+          <KindOfField existing={existing} fields={fields} onChange={change} />
+          <NoteField existing={existing} fields={fields} onChange={change} />
+          <OpenedField existing={existing} fields={fields} onChange={change} />
+          {(barcodes.length > 0 || canScan) && (
+            <div className="barcode-list">
+              <span className="label-text">Barcodes</span>
+              {barcodes.map((code) => (
+                <span key={code} className="barcode-chip">
+                  {code}
+                  <button
+                    type="button"
+                    className="chip-remove"
+                    aria-label={`Remove barcode ${code}`}
+                    onClick={() => setBarcodes(barcodes.filter((other) => other !== code))}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {canScan && (
+                <button type="button" className="button small" onClick={() => void scanAnother()}>
+                  <span className="button-mark" aria-hidden="true">📷</span> Add one
+                </button>
+              )}
+            </div>
           )}
         </div>
-      )}
-      {packets && onAddPacket && onFinishPacket && (
-        <PacketsField
-          packets={packets}
-          favouriteBrand={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
-          onAdd={onAddPacket}
-          onFinish={onFinishPacket}
-        />
       )}
       {error && <p className="error">{error}</p>}
       <div className="actions">

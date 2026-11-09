@@ -331,3 +331,9 @@ that say what they do ("Delete", "Keep editing"); never the browser's own
   "Another brand" (one bought instead, the brands it's had as quick
   picks), and Edit everything. A stand-in brand never takes over: "+ 1
   more" and the shopping list keep adding the favourite.
+- **Pantry item edit form** (2026-11-09, Xel's pick of three): its photo
+  beside its name (tap the photo to change it), then trays: Storage (place,
+  subcategory, expires), Buying (favourite brand, store link) and In stock.
+  "+ More details" holds the rarely needed ones (a kind of, note, once
+  opened, barcodes), and starts open when one of the first three is set.
+  How-to tips sit behind "?" (the store link's too).

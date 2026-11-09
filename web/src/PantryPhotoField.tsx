@@ -21,6 +21,7 @@ export default function PantryPhotoField({
   choice,
   onChoose,
   hint,
+  bare = false,
 }: {
   // The photo already saved (its address), or "".
   savedUrl: string;
@@ -31,6 +32,8 @@ export default function PantryPhotoField({
   hint?: string;
   choice: PhotoChoice;
   onChoose: (choice: PhotoChoice) => void;
+  // Just the buttons: the edit form shows the photo itself, at the top.
+  bare?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -62,12 +65,14 @@ export default function PantryPhotoField({
 
   return (
     <div className="pantry-photo-field">
-      <span className="label-text">
-        Photo <span className="optional">(optional)</span>
-      </span>
+      {!bare && (
+        <span className="label-text">
+          Photo <span className="optional">(optional)</span>
+        </span>
+      )}
       {hint && <span className="hint">{hint}</span>}
       <div className="pantry-photo-row">
-        {shown && <img className="pantry-photo-preview" src={shown} alt="The item's photo" />}
+        {shown && !bare && <img className="pantry-photo-preview" src={shown} alt="The item's photo" />}
         <div className="store-buttons">
           {canTakePhoto && (
             <label className="button small file-button">

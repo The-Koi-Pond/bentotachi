@@ -200,6 +200,9 @@ Not released yet:
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
+- A pantry item's edit form, condensed: photo beside the name (tap to
+  change), trays for storage, buying and what's in stock, the rarely needed
+  fields under "+ More details".
 - An item's quick card, slimmed: "Favourite: Masterfoods 560 g", what's in
   stock, "+ 1 more" and "Another brand" (for one bought because the
   favourite was out; it never replaces the favourite as what "+ 1 more"
