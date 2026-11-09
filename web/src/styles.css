@@ -150,6 +150,20 @@ main h2:not(dialog *),
   letter-spacing: 0.01em;
 }
 
+/* Light Pond Pebbles on dark looks thinner than dark on light: in dark mode
+   the headings get a dark outline (tight shadows) to stand off the rim. */
+@media (prefers-color-scheme: dark) {
+  main h2:not(dialog *) .drawer-label,
+  main h2:not(dialog *):not(:has(.drawer-label)) {
+    text-shadow:
+      -1px 0 0 rgb(0 0 0 / 0.6),
+      1px 0 0 rgb(0 0 0 / 0.6),
+      0 -1px 0 rgb(0 0 0 / 0.6),
+      0 1px 0 rgb(0 0 0 / 0.6),
+      0 1px 3px rgb(0 0 0 / 0.48);
+  }
+}
+
 /* Counts and badges beside them stay in the phone's font: small text. */
 .shelf-toggle .drawer-counts,
 .pantry-place h2 .place-count,
