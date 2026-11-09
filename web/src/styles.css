@@ -841,6 +841,13 @@ main > .stack > section:not(.tray-section) > :is(h2, p) {
   padding-inline: var(--tray-inset);
 }
 
+/* Page titles ("Browse", a recipe's name) too: on the left only, so a
+   switch or buttons beside one still line up with the trays' right edge.
+   Not the recipe editor's, which is inside its card already. */
+main h1:not(.card h1) {
+  padding-inline-start: var(--tray-inset);
+}
+
 /* A section as one bento tray: its heading (and a button beside it) in the
    tray's top rim, like a recipe shelf or a pantry place, and what follows
    as compartments (Browse's sites, the shopping list's "Got it"). */
