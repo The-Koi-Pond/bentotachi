@@ -25,6 +25,7 @@ import {
   dayNumber,
   firstDayFor,
   formatDay,
+  formatRange,
   localToday,
   monthStart,
   toStoredDate,
@@ -375,23 +376,27 @@ export default function MealPlan() {
         )}
       </HelpBox>
 
-      <div className={`plan-toolbar ${isList ? "centred" : ""}`}>
-        {!isList && <strong className="plan-range">{monthLabel}</strong>}
-        <div className="week-nav">
-          <button
-            className="icon-button small"
-            onClick={() => step(-1)}
-            aria-label={isList ? "Previous week" : "Previous month"}
-          >
-            ‹
-          </button>
-          <button className="button small" onClick={goToToday} disabled={atToday}>
-            Today
-          </button>
-          <button className="icon-button small" onClick={() => step(1)} aria-label={isList ? "Next week" : "Next month"}>
-            ›
-          </button>
-        </div>
+      {/* ‹ what's shown › : the list's dates ("8–21 November") or the month;
+          "Today" under it to jump back once you've moved away. */}
+      <div className="plan-toolbar">
+        <button
+          className="icon-button small plan-step"
+          onClick={() => step(-1)}
+          aria-label={isList ? "Previous week" : "Previous month"}
+        >
+          ‹
+        </button>
+        <span className="plan-range">
+          <strong aria-live="polite">{isList ? formatRange(days[0], days[days.length - 1]) : monthLabel}</strong>
+          {!atToday && (
+            <button className="link-button" onClick={goToToday}>
+              Today
+            </button>
+          )}
+        </span>
+        <button className="icon-button small plan-step" onClick={() => step(1)} aria-label={isList ? "Next week" : "Next month"}>
+          ›
+        </button>
       </div>
       {error && <p className="error">{error}</p>}
 

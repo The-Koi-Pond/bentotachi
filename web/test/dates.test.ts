@@ -7,6 +7,7 @@ import {
   datePart,
   dayNumber,
   formatDay,
+  formatRange,
   localToday,
   monthStart,
   storedTime,
@@ -14,6 +15,15 @@ import {
   weekStart,
   firstDayFor,
 } from "../src/dates.ts";
+
+test("a range of days is written as people write it, with the year only across one", () => {
+  // Whatever kind of dash or space the phone's language puts between them.
+  const plain = (text: string) => text.replace(/\s+/g, " ").replace(/[–—-]/g, "-");
+  assert.equal(plain(formatRange("2026-11-08", "2026-11-21", "en-AU")), "8-21 November");
+  assert.equal(plain(formatRange("2026-11-29", "2026-12-12", "en-AU")), "29 November - 12 December");
+  assert.equal(plain(formatRange("2026-12-27", "2027-01-09", "en-AU")), "27 December 2026 - 9 January 2027");
+  assert.equal(plain(formatRange("2026-11-08", "2026-11-21", "en-US")), "November 8 - 21");
+});
 
 test("moves between months, across year ends", () => {
   assert.equal(monthStart("2026-11-17"), "2026-11-01");

@@ -76,6 +76,15 @@ export function formatDay(
   return new Date(dayNumber(date) * 86_400_000).toLocaleDateString(undefined, { ...parts, timeZone: "UTC" });
 }
 
+// Two dates as a range, the way the phone writes them: "8–21 November",
+// "29 November – 12 December" (or "Nov 8 – 21" in the US); the year only
+// when the range crosses one. `locale` is for tests; the phone's by default.
+export function formatRange(from: string, to: string, locale?: string): string {
+  const day = (date: string) => new Date(dayNumber(date) * 86_400_000);
+  const year = from.slice(0, 4) !== to.slice(0, 4) ? { year: "numeric" as const } : {};
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", ...year, timeZone: "UTC" }).formatRange(day(from), day(to));
+}
+
 // How long ago a past date was, in plain words: "today", "yesterday",
 // "5 days ago", "2 weeks ago", "3 months ago", "over a year ago".
 export function timeAgo(date: string, today: string): string {

@@ -865,17 +865,6 @@ main {
 
 /* Dinner plan */
 
-.week-nav {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.week-nav .icon-button {
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
 /* "List | Month" */
 /* Two-way switches (Simple | Detailed, List | Month…): the chosen one bold
    with a wooden chopstick under it, the other faded (Xel's design,
@@ -949,6 +938,8 @@ main {
 }
 
 /* The date range (or month) and the ‹ Today › buttons. */
+/* ‹ 8–21 November ›: the arrows at the ends, what's shown in the middle,
+   "Today" under it once you've moved away. */
 .plan-toolbar {
   display: flex;
   align-items: center;
@@ -956,9 +947,25 @@ main {
   gap: 8px;
 }
 
-/* The list: just ‹ Today ›, in the middle. */
-.plan-toolbar.centred {
-  justify-content: center;
+.plan-step {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.plan-range {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.plan-range strong {
+  font-size: 1.05rem;
+}
+
+.plan-range .link-button {
+  font-size: 0.85rem;
 }
 
 .help-box svg {
