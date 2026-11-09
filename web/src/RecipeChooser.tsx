@@ -253,7 +253,14 @@ export default function RecipeChooser({
               </div>
             </div>
             <div className="chooser-tools">
-              <button className="button small" onClick={surprise} disabled={shown.length === 0}>
+              {/* Opens a pick; with one showing, puts it away again
+                  (Another rolls again). */}
+              <button
+                className="button small"
+                onClick={suggested ? () => setSuggestion(null) : surprise}
+                disabled={!suggested && shown.length === 0}
+                aria-expanded={!!suggested}
+              >
                 <span className="button-mark" aria-hidden="true">🎲</span> Surprise me
               </button>
               {all && <span className="muted chooser-count">{shown.length} recipes</span>}
