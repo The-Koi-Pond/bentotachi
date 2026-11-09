@@ -255,18 +255,19 @@ function WhoSection({ user, phone }: { user: User; phone: boolean }) {
           <HelpBox help={nameHelp}>
             <p>Your name around Bentotachi, like on ratings, the dinner plan and fridge notes.</p>
           </HelpBox>
-          <input
-            id="profile-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={40}
-            placeholder={phone ? "Your name" : user.username}
-          />
-        </div>
-        <div className="actions">
-          <button className="button primary small" disabled={!!busy || !changed}>
-            {busy === "name" ? "Saving…" : "Save"}
-          </button>
+          {/* Save on the box's own row, so it takes no row of its own. */}
+          <div className="inline-save">
+            <input
+              id="profile-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={40}
+              placeholder={phone ? "Your name" : user.username}
+            />
+            <button className="button primary small" disabled={!!busy || !changed}>
+              {busy === "name" ? "Saving…" : "Save"}
+            </button>
+          </div>
         </div>
         {busy === "picture" && <p className="muted small-note">Saving the picture…</p>}
         <Status status={status} />
@@ -332,22 +333,22 @@ function UsernameForm({ user }: { user: User }) {
         <HelpBox help={help}>
           <p>What you log in with: lowercase letters, numbers, dots, dashes and underscores.</p>
         </HelpBox>
-        <input
-          id="profile-username"
-          value={username}
-          onChange={(e) => setUsername(cleanUsername(e.target.value))}
-          maxLength={30}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          autoComplete="username"
-          required
-        />
-      </div>
-      <div className="actions">
-        <button className="button primary small" disabled={busy || !changed}>
-          {busy ? "Saving…" : "Save"}
-        </button>
+        <div className="inline-save">
+          <input
+            id="profile-username"
+            value={username}
+            onChange={(e) => setUsername(cleanUsername(e.target.value))}
+            maxLength={30}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="username"
+            required
+          />
+          <button className="button primary small" disabled={busy || !changed}>
+            {busy ? "Saving…" : "Save"}
+          </button>
+        </div>
       </div>
       <Status status={status} />
     </form>

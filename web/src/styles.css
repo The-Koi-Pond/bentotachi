@@ -4924,6 +4924,24 @@ legend {
   grid-column: 1 / -1;
 }
 
+/* A box with its Save beside it (Profile's name and username): one row
+   instead of a box, then a row for the button. */
+.inline-save {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.inline-save > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.inline-save > .button {
+  flex: none;
+  min-height: 0;
+}
+
 /* "My colour · Teal ?" on one line. */
 .field-head {
   display: flex;
