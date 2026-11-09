@@ -200,6 +200,8 @@ Not released yet:
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
+- The pantry never says "packet" (tins and bottles count too): "+ 1 more",
+  "+ Add one", "How many in stock".
 - Fix: using something up and then adding a new one kept the old expiry
   date. Running out now clears it (on the server, so every way back into
   stock starts fresh); Undo of Out puts it back.
