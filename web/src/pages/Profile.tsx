@@ -8,7 +8,7 @@ import { askFirst } from "../askFirst";
 import { erasePhone, isPhoneMode, switchToServer } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
-import { CameraIcon, ChevronIcon, CloseIcon } from "../icons";
+import { CameraIcon, ChevronIcon, CloseIcon, LogOutIcon } from "../icons";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSingleUser, useSpell } from "../household";
 
@@ -28,17 +28,15 @@ export default function Profile() {
       <h1>Profile</h1>
       <WhoSection user={user} phone={phone} />
       {!phone && <LoggingInSection user={user} />}
-      <HouseholdAndLeaving phone={phone} />
+      <HouseholdLink phone={phone} />
+      <LeaveButton phone={phone} />
       <DeleteSection user={user} />
     </div>
   );
 }
 
-// The household (who's in it, or its country, spoons and meals on your own)
-// and the way out: Log out, or on a phone-only Bento, which logs itself in,
-// the way to the household's server instead (where people look for a way
-// out). In the ⋮ menu before; here they're out of the way.
-function HouseholdAndLeaving({ phone }: { phone: boolean }) {
+// The household: who's in it, or its country, spoons and meals on your own.
+function HouseholdLink({ phone }: { phone: boolean }) {
   const singleUser = useSingleUser();
   return (
     <ul className="settings-list profile-links">
@@ -57,28 +55,33 @@ function HouseholdAndLeaving({ phone }: { phone: boolean }) {
           <ChevronIcon />
         </Link>
       </li>
-      <li>
-        {phone ? (
-          <button type="button" className="setting-row" onClick={() => void switchToServer()}>
-            <span className="menu-item-text">
-              Join a household
-              <span className="menu-item-detail">Use the Bentotachi someone at home runs</span>
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="setting-row"
-            onClick={() => {
-              forgetOfflineCopy();
-              pb.authStore.clear();
-            }}
-          >
-            Log out
-          </button>
-        )}
-      </li>
     </ul>
+  );
+}
+
+// The way out, an action rather than a setting, so a button of its own in
+// the middle: Log out, or on a phone-only Bento, which logs itself in, the
+// way to the household's server instead (where people look for a way out).
+function LeaveButton({ phone }: { phone: boolean }) {
+  return (
+    <div className="profile-action">
+      {phone ? (
+        <button type="button" className="button" onClick={() => void switchToServer()}>
+          <LogOutIcon /> Join a household
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            forgetOfflineCopy();
+            pb.authStore.clear();
+          }}
+        >
+          <LogOutIcon /> Log out
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -122,8 +125,8 @@ function DeleteSection({ user }: { user: User }) {
             : "Deletes your account from this Bentotachi. What you added for the household stays."}
         </p>
       </div>
-      <div className="actions">
-        <button className="button danger small push-left" onClick={() => void remove()} disabled={busy}>
+      <div className="profile-action">
+        <button className="button danger small" onClick={() => void remove()} disabled={busy}>
           {busy ? "Deleting…" : phone ? "Delete everything" : "Delete my account"}
         </button>
       </div>

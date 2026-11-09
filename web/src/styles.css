@@ -4942,6 +4942,19 @@ legend {
   min-height: 0;
 }
 
+/* Profile's Log out and Delete my account: actions, centred, with an icon
+   where one fits. */
+.profile-action {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-action .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* "My colour · Teal ?" on one line. */
 .field-head {
   display: flex;
