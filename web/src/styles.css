@@ -3170,11 +3170,6 @@ legend {
   margin-right: auto;
 }
 
-/* Profile picture's Change/Remove sit beside the picture, not at a form's end. */
-.profile-picture .actions {
-  justify-content: flex-start;
-}
-
 /* Login and empty state */
 
 .login {
@@ -4912,19 +4907,88 @@ legend {
 }
 
 /* Profile page: the picture beside your name and its buttons. */
-.profile-picture {
+/* Profile's top box: your picture beside your display name. Tapping the
+   picture changes it; the round button on its corner removes it (or, with
+   none yet, a camera says it can be added). */
+.profile-who {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 }
 
-.profile-picture-side {
-  gap: 8px;
+.profile-avatar {
+  position: relative;
+  flex: none;
+}
+
+.avatar-change {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.avatar-change:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.avatar-change:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.avatar-corner {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+
+button.avatar-corner {
+  cursor: pointer;
+}
+
+button.avatar-corner:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button.avatar-corner svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The camera only says what tapping the picture does. */
+span.avatar-corner {
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.profile-name-form {
+  flex: 1;
   min-width: 0;
 }
 
-.profile-name {
-  font-size: 1.15rem;
+/* Between the username and the password in "Logging in". */
+.profile-divider {
+  width: 100%;
+  margin: 6px 0;
+  border: none;
+  border-top: 1px solid var(--border);
 }
 
 .profile-color {

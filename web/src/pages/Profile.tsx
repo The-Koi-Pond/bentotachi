@@ -8,7 +8,7 @@ import { askFirst } from "../askFirst";
 import { erasePhone, isPhoneMode, switchToServer } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
-import { ChevronIcon } from "../icons";
+import { CameraIcon, ChevronIcon, CloseIcon } from "../icons";
 import { useSingleUser, useSpell } from "../household";
 
 
@@ -25,10 +25,9 @@ export default function Profile() {
   return (
     <div className="stack narrow profile">
       <h1>Profile</h1>
-      <PictureSection user={user} />
-      <NameSection user={user} showUsername={!phone} />
+      <WhoSection user={user} phone={phone} />
       <ColorSection user={user} />
-      {!phone && <PasswordSection user={user} />}
+      {!phone && <LoggingInSection user={user} />}
       <HouseholdAndLeaving phone={phone} />
       <DeleteSection user={user} />
     </div>
@@ -152,14 +151,20 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function PictureSection({ user }: { user: User }) {
+// You, at the top: your picture beside your display name, in one box.
+// Tapping the picture changes it; the small round button in its corner
+// takes it off (✕), or with no picture yet, says it can be added (📷).
+function WhoSection({ user, phone }: { user: User; phone: boolean }) {
   const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const [name, setName] = useState(user.name);
+  const [busy, setBusy] = useState<"" | "picture" | "name">("");
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+  const changed = name.trim() !== user.name;
+  useUnsavedChanges(changed);
 
   async function upload(file: File | undefined) {
     if (!file) return;
-    setBusy(true);
+    setBusy("picture");
     setStatus(null);
     try {
       await users().update(user.id, { avatar: await squarePicture(file) });
@@ -167,13 +172,13 @@ function PictureSection({ user }: { user: User }) {
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
-      setBusy(false);
+      setBusy("");
       if (input.current) input.current.value = "";
     }
   }
 
-  async function remove() {
-    setBusy(true);
+  async function removePicture() {
+    setBusy("picture");
     setStatus(null);
     try {
       await users().update(user.id, { avatar: null });
@@ -181,25 +186,55 @@ function PictureSection({ user }: { user: User }) {
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
-      setBusy(false);
+      setBusy("");
     }
   }
 
+  async function saveName(event: FormEvent) {
+    event.preventDefault();
+    setBusy("name");
+    setStatus(null);
+    try {
+      await users().update(user.id, { name: name.trim() });
+      setStatus({ text: "Saved.", isError: false });
+    } catch (err) {
+      setStatus({ text: errorMessage(err), isError: true });
+    } finally {
+      setBusy("");
+    }
+  }
+
+  const pictureLabel = user.avatar ? "Change picture" : "Add a picture";
   return (
-    <section className="card profile-picture">
-      <Avatar user={user} size={88} />
-      <div className="stack profile-picture-side">
-        <strong className="profile-name">{displayName(user)}</strong>
-        <div className="actions">
-          <button className="button small" onClick={() => input.current?.click()} disabled={busy}>
-            {busy ? "Saving…" : user.avatar ? "Change picture" : "Add a picture"}
+    <section className="card profile-who">
+      <div className="profile-avatar">
+        <button
+          type="button"
+          className="avatar-change"
+          onClick={() => input.current?.click()}
+          disabled={!!busy}
+          aria-label={pictureLabel}
+          title={pictureLabel}
+        >
+          <Avatar user={user} size={88} />
+        </button>
+        {user.avatar ? (
+          <button
+            type="button"
+            className="avatar-corner"
+            onClick={() => void removePicture()}
+            disabled={!!busy}
+            aria-label="Remove picture"
+            title="Remove picture"
+          >
+            <CloseIcon />
           </button>
-          {user.avatar && (
-            <button className="button small ghost" onClick={() => void remove()} disabled={busy}>
-              Remove
-            </button>
-          )}
-        </div>
+        ) : (
+          // Says the picture can be added; the circle itself does it.
+          <span className="avatar-corner" aria-hidden="true">
+            <CameraIcon size={14} />
+          </span>
+        )}
         <input
           ref={input}
           type="file"
@@ -208,8 +243,21 @@ function PictureSection({ user }: { user: User }) {
           onChange={(e) => void upload(e.target.files?.[0])}
           aria-label="Choose a profile picture"
         />
-        <Status status={status} />
       </div>
+      <form className="stack profile-name-form" onSubmit={saveName}>
+        <label>
+          Display name
+          <span className="hint">Your name around Bentotachi, like on ratings and the dinner plan.</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={phone ? "Your name" : user.username} />
+        </label>
+        <div className="actions">
+          <button className="button primary small" disabled={!!busy || !changed}>
+            {busy === "name" ? "Saving…" : "Save"}
+          </button>
+        </div>
+        {busy === "picture" && <p className="muted small-note">Saving the picture…</p>}
+        <Status status={status} />
+      </form>
     </section>
   );
 }
@@ -217,12 +265,23 @@ function PictureSection({ user }: { user: User }) {
 // Usernames: lowercase letters, numbers, dots, dashes and underscores.
 const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]/g, "");
 
-function NameSection({ user, showUsername }: { user: User; showUsername: boolean }) {
-  const [name, setName] = useState(user.name);
+// What you log in with, in one box: the username (saved on its own), then
+// the password.
+function LoggingInSection({ user }: { user: User }) {
+  return (
+    <Section title="Logging in">
+      <UsernameForm user={user} />
+      <hr className="profile-divider" />
+      <PasswordForm user={user} />
+    </Section>
+  );
+}
+
+function UsernameForm({ user }: { user: User }) {
   const [username, setUsername] = useState(user.username);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
-  const changed = name.trim() !== user.name || username !== user.username;
+  const changed = username !== user.username;
   useUnsavedChanges(changed);
 
   async function save(event: FormEvent) {
@@ -234,7 +293,7 @@ function NameSection({ user, showUsername }: { user: User; showUsername: boolean
     setBusy(true);
     setStatus(null);
     try {
-      await users().update(user.id, { name: name.trim(), username });
+      await users().update(user.id, { username });
       setStatus({ text: "Saved.", isError: false });
     } catch (err) {
       const message = errorMessage(err);
@@ -248,36 +307,28 @@ function NameSection({ user, showUsername }: { user: User; showUsername: boolean
   }
 
   return (
-    <Section title="Name">
-      <form className="stack" onSubmit={save}>
-        <label>
-          Display name
-          <span className="hint">Your name around Bentotachi, like on ratings and the dinner plan.</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={showUsername ? user.username : "Your name"} />
-        </label>
-        {showUsername && (
-          <label>
-            Username
-            <span className="hint">What you log in with. Lowercase letters, numbers, dots, dashes and underscores.</span>
-            <input
-              value={username}
-              onChange={(e) => setUsername(cleanUsername(e.target.value))}
-              maxLength={30}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-            />
-          </label>
-        )}
-        <div className="actions">
-          <button className="button primary" disabled={busy || !changed}>
-            {busy ? "Saving…" : "Save"}
-          </button>
-        </div>
-        <Status status={status} />
-      </form>
-    </Section>
+    <form className="stack" onSubmit={save}>
+      <label>
+        Username
+        <span className="hint">Lowercase letters, numbers, dots, dashes and underscores.</span>
+        <input
+          value={username}
+          onChange={(e) => setUsername(cleanUsername(e.target.value))}
+          maxLength={30}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          autoComplete="username"
+          required
+        />
+      </label>
+      <div className="actions">
+        <button className="button primary small" disabled={busy || !changed}>
+          {busy ? "Saving…" : "Save"}
+        </button>
+      </div>
+      <Status status={status} />
+    </form>
   );
 }
 
@@ -354,7 +405,7 @@ function ColorSection({ user }: { user: User }) {
   );
 }
 
-function PasswordSection({ user }: { user: User }) {
+function PasswordForm({ user }: { user: User }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [again, setAgain] = useState("");
@@ -392,28 +443,26 @@ function PasswordSection({ user }: { user: User }) {
   }
 
   return (
-    <Section title="Password">
-      <form className="stack" onSubmit={change}>
-        <label>
-          Current password
-          <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
-        </label>
-        <label>
-          New password
-          <span className="hint">At least 8 characters.</span>
-          <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" required />
-        </label>
-        <label>
-          New password again
-          <input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" required />
-        </label>
-        <div className="actions">
-          <button className="button primary" disabled={busy || !current || !next || !again}>
-            {busy ? "Changing…" : "Change password"}
-          </button>
-        </div>
-        <Status status={status} />
-      </form>
-    </Section>
+    <form className="stack" onSubmit={change}>
+      <label>
+        Current password
+        <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+      </label>
+      <label>
+        New password
+        <span className="hint">At least 8 characters.</span>
+        <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" required />
+      </label>
+      <label>
+        New password again
+        <input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" required />
+      </label>
+      <div className="actions">
+        <button className="button primary small" disabled={busy || !current || !next || !again}>
+          {busy ? "Changing…" : "Change password"}
+        </button>
+      </div>
+      <Status status={status} />
+    </form>
   );
 }
