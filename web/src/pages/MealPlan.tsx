@@ -41,6 +41,7 @@ import { useUndo } from "../undo";
 import { useCountry, usePlanMeals } from "../household";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
+import { pageScroller } from "../pageScroll";
 import {
   MEALS,
   MEAL_NAMES,
@@ -135,7 +136,7 @@ export default function MealPlan() {
   useEffect(() => {
     if (!loaded || !showTop.current) return;
     showTop.current = false;
-    window.scrollTo({ top: 0 });
+    pageScroller().scrollTo({ top: 0 });
   });
 
   if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Checking what's on the menu…</p>;

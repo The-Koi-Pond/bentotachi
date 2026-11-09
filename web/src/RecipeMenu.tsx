@@ -4,6 +4,7 @@ import { CameraIcon, CopyIcon, DownloadIcon, MoreIcon, PrintIcon, ShareIcon, Tra
 import { recipeAsText } from "./recipeText";
 import { shareText } from "./shareReceiver";
 import { fileNamePart, savePaprikaFile } from "./paprikaSave";
+import { pageScrollTarget } from "./pageScroll";
 
 // The recipe page's ⋯ beside its title (like Paprika's):
 // Share (as text, at the size it's scaled to: Android's share sheet in the
@@ -81,14 +82,15 @@ export default function RecipeMenu({
     };
     // It's placed on the screen, not the page, so moving the page closes it.
     const onMove = () => setOpen(false);
+    const page = pageScrollTarget();
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", onMove, { passive: true });
+    page.addEventListener("scroll", onMove, { passive: true });
     window.addEventListener("resize", onMove);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("scroll", onMove);
+      page.removeEventListener("scroll", onMove);
       window.removeEventListener("resize", onMove);
     };
   }, [open]);

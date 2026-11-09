@@ -177,11 +177,25 @@ a {
   color: var(--accent);
 }
 
+/* The screens scroll in here, which ends where the tab bar starts, so the
+   scrollbar doesn't run down beside the tab bar (pageScroll.ts). Not
+   position: fixed, which would trap the plan's bin and the menus under the
+   tab bar. A slim jade scrollbar. */
+.page-scroll {
+  height: calc(100vh - var(--tabbar-height) - env(safe-area-inset-bottom));
+  height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--rim-text) 35%, var(--rim)) transparent;
+}
+
 main {
   max-width: 760px;
   margin: 0 auto;
-  /* Room at the bottom so the tab bar never covers content. */
-  padding: 8px 10px calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 32px);
+  /* Room at the bottom so the timers and Undo messages never cover the
+     last thing on the page. */
+  padding: 8px 10px calc(var(--timer-tray-height, 0px) + 32px);
 }
 
 /* Bottom tab bar */
@@ -6285,8 +6299,8 @@ em.soft {
   border: 1px solid var(--border);
   border-left: 4px solid var(--jade-strong);
   border-radius: 10px;
-  /* Scrolled into view clear of the tab bar. */
-  scroll-margin-bottom: calc(var(--tabbar-height) + 16px);
+  /* Scrolled into view clear of the bottom edge. */
+  scroll-margin-bottom: 16px;
 }
 
 .pantry-card-quick {
