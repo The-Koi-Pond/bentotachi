@@ -23,7 +23,7 @@ export default function UpdateBanner() {
   return (
     <div className="update-banner" role="status">
       <p>
-        <strong>{downloaded ? "The update has downloaded." : `${name} is ready.`}</strong>
+        <strong>{downloaded ? "The update has downloaded." : `${name} is out of the oven.`}</strong>
         {latest.notes && <span className="muted"> {latest.notes}</span>}
       </p>
       {update.status === "error" && <p className="error">{update.message}</p>}

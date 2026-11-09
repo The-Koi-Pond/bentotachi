@@ -126,7 +126,7 @@ export default function RecipeTimer({
             ? `The recipe says ${said.join(", ")}${recipeTotal && said.length > 1 ? ` (${formatMinutes(recipeTotal)})` : ""}.`
             : recipeTotal
               ? `The recipe says ${formatMinutes(recipeTotal)} in all.`
-              : "The recipe doesn't say how long it takes."}
+              : "The recipe never said how long it takes. Now you know."}
         </p>
         <p className="muted">
           <span aria-hidden="true">✓</span> Marked as cooked today.

@@ -131,7 +131,7 @@ export default function MealPlan() {
     window.scrollTo({ top: 0 });
   });
 
-  if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Loading the plan…</p>;
+  if (!plan.items) return plan.loadError ? <p className="error">{plan.loadError}</p> : <p className="muted">Checking what's on the menu…</p>;
 
   // Each place's dishes ("2026-11-02|lunch": a main and its sides, in the
   // order added), and each day's in plan order (for the month grid).

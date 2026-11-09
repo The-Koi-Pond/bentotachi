@@ -98,14 +98,14 @@ function ShelfPage({ opened }: { opened: string }) {
       <div className="stack">
         <h1>Shelves</h1>
         <p className="muted">
-          Each shelf on the <Link to="/">Recipes</Link> page holds every recipe with any of its tags. Websites name the
-          same thing in different ways, so add each spelling you see.
+          Each shelf on the <Link to="/">Recipes</Link> page holds every recipe with any of its tags. Websites can't agree on
+          what to call anything (“mains”, “main dishes”, “dinner”), so add each spelling you see.
         </p>
       </div>
       {error && <p className="error">{error}</p>}
       {category === undefined ? (
         <p className="muted">
-          That shelf isn't here any more: someone may have deleted it. <Link to="/?edit=1">Back to your recipes</Link>
+          That shelf has gone walkabout: someone may have deleted it. <Link to="/?edit=1">Back to your recipes</Link>
         </p>
       ) : (
         <CategoryForm

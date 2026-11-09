@@ -109,7 +109,7 @@ export default function ShoppingList() {
     const same = shown.find((item) => sameThing({ text: value, pantryItem: "" }, item));
     if (same && !same.checked) return setNotice(`“${same.text}” is already on the list.`);
     if (same) {
-      setNotice(`“${same.text}” is back on the list.`);
+      setNotice(`“${same.text}” is back on the list. That didn't last long.`);
       return toggle(same);
     }
     if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date()));
@@ -216,10 +216,13 @@ export default function ShoppingList() {
         </div>
       </div>
       {offline && (
-        <OfflineNote onRetry={reload}>
-          Showing the list saved on this phone. Ticking off and adding still work
-          {waiting ? ` (${waiting} ${waiting === 1 ? "change" : "changes"} waiting)` : ""}, and are sent when you're back
-          online.
+        <OfflineNote onRetry={reload} heading="Can't reach the server. Your shopping list didn't get the memo.">
+          The copy on your phone still works. Keep shopping, and we'll sync your changes when we reconnect.
+          {waiting > 0 && (
+            <span className="offline-waiting">
+              {waiting} {waiting === 1 ? "change" : "changes"} waiting to sync
+            </span>
+          )}
         </OfflineNote>
       )}
 

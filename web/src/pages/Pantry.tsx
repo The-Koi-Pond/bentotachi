@@ -171,7 +171,7 @@ export default function Pantry() {
   useOnlinePhotos(items ?? NO_ITEMS);
 
   const loadError = pantry.loadError || shopping.loadError;
-  if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Loading the pantry…</p>;
+  if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Counting the tins…</p>;
 
   // `also`: sent with the change but not kept (see setStatus). Whether it saved.
   async function save(item: PantryItem, patch: Partial<PantryItem>, movedTo: string, also = {}) {
@@ -265,7 +265,7 @@ export default function Pantry() {
     if (
       bought &&
       !window.confirm(
-        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Add another one too?`
+        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one. Add another anyway?`
       )
     ) {
       // The same bag: nothing added, but a scanned barcode is still learned.
@@ -560,8 +560,8 @@ export default function Pantry() {
         <div className="with-ben">
           <BenMood mood="sweat" small />
           <p className="muted">
-            Nothing in here yet (it's making someone nervous). Add the things you keep in stock. Group them by where
-            they live, like “Fridge” or “Cupboard”, with optional subcategories like “Baking” or “Spices”.
+            An empty pantry. Ben has some concerns. Add what you keep on hand, from fridge essentials to cupboard
+            staples. Group them by where they live, like “Fridge” or “Cupboard”, with optional subcategories like “Baking” or “Spices”.
           </p>
         </div>
       ) : (
@@ -640,7 +640,7 @@ export default function Pantry() {
       {items.length > 0 && shown.length === 0 && (
         <p className="muted">
           {query.trim()
-            ? `Nothing called “${query.trim()}” in the pantry${filter === "all" ? "" : " with that filter"}. Tap Add to put it in.`
+            ? `No “${query.trim()}” in the pantry${filter === "all" ? "" : " with that filter"}, unless it's hiding behind the rice. Tap Add to put it in.`
             : `${filter === "soon" ? "Nothing needs using up soon." : `Nothing is marked “${filter}”.`} Nice.`}
         </p>
       )}

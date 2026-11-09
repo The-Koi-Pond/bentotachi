@@ -101,18 +101,18 @@ export default function WeekShoppingSheet({
         </div>
         <p className="muted week-dinners">
           {dinners.length === 0
-            ? "No recipes planned in these days."
+            ? "No recipes planned in these days. Take-away doesn't need a shopping list."
             : dinners
                 .map((entry) => `${entry.expand!.recipe!.title} (${formatDay(datePart(entry.date), { weekday: "short", day: "numeric" })})`)
                 .join(", ")}
         </p>
 
-        {loading && <p className="muted">Checking the pantry…</p>}
+        {loading && <p className="muted">Rummaging through the pantry…</p>}
         {(pantry.loadError || ticks.loadError) && <p className="error">{pantry.loadError || ticks.loadError}</p>}
 
         {!loading && rows.length > 0 && (
           <>
-            <p className="muted week-dinners">Things the pantry says we have start unticked.</p>
+            <p className="muted week-dinners">The pantry says we've got the unticked ones. It's been wrong before: tick any you need.</p>
             <GatheredList rows={rows} ticks={ticks} showFor />
           </>
         )}

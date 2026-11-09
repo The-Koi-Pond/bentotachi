@@ -283,13 +283,15 @@ export default function RecipeChooser({
         )}
 
         {error && <p className="error">{error}</p>}
-        {!all && !error && <p className="muted">Loading recipes…</p>}
+        {!all && !error && <p className="muted">The recipes are in here somewhere…</p>}
         {all && all.length === 0 && (
           <p className="muted">
-            No recipes yet, so a note will do for now. Recipes you add on the Recipes tab show up here.
+            No recipes yet, so a note like “Toast again” will do for now. Recipes you add on the Recipes tab show up here.
           </p>
         )}
-        {all && all.length > 0 && shown.length === 0 && <p className="muted">Nothing matches.</p>}
+        {all && all.length > 0 && shown.length === 0 && (
+          <p className="muted">No recipe for that one. Who says you need one? Add it as a note.</p>
+        )}
 
         {suggested && (
           <div className="suggestion" role="status">

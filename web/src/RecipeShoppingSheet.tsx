@@ -126,7 +126,7 @@ function ChosenRecipe({
       <button className="link-button recipe-pick-back" onClick={onBack}>
         ‹ Another recipe
       </button>
-      {loading && <p className="muted">Checking the pantry…</p>}
+      {loading && <p className="muted">Rummaging through the pantry…</p>}
       {(pantryError || ticks.loadError) && <p className="error">{pantryError || ticks.loadError}</p>}
       {!loading && rows.length === 0 && <p className="muted">This recipe has no ingredients to buy.</p>}
       {!loading && rows.length > 0 && (

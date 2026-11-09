@@ -90,7 +90,11 @@ export default function UsedUpSheet({
         if (use.status === "out" && !newer) await pantryItems().update(use.item.id, { status: "out", ask_about_list: true });
         if (use.status === "low") await pantryItems().update(use.item.id, { status: "low" });
       }
-      setDone(chosen.length ? `Updated ${chosen.length === 1 ? "1 thing" : `${chosen.length} things`} in the pantry.` : "Nothing changed.");
+      setDone(
+        chosen.length
+          ? `The pantry's caught up: ${chosen.length === 1 ? "1 thing" : `${chosen.length} things`} updated.`
+          : "Nothing changed in the pantry."
+      );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -135,8 +139,8 @@ export default function UsedUpSheet({
           <>
             <p className="muted">
               {again
-                ? "Already marked cooked today: tick anything used again."
-                : "Marked as cooked today. Ticked ones come off the pantry."}
+                ? "Cooked twice in one day? Tick anything you used again."
+                : "Marked as cooked today. Tick what went in the pot and it comes off the pantry."}
             </p>
             <ul className="checklist used-up-list">
               {uses.map((use) => (

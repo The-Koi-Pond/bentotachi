@@ -115,7 +115,7 @@ export default function RecipeMenu({
   async function share() {
     try {
       const result = await shareText(recipe.title, recipeAsText(recipe, scale));
-      if (result === "copied") setMessage("Copied the recipe, ready to paste into a message or email.");
+      if (result === "copied") setMessage("Copied the recipe, ready to paste into a message for whoever asked for it.");
     } catch {
       setMessage("Couldn't share it from here. Try again, or select the text and copy it.");
     }

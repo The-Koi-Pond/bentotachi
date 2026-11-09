@@ -15,7 +15,7 @@ export default function AlreadyHere({
   return (
     <div className="card stack already-here" role="status">
       <p>
-        You already have <Link to={`/recipes/${duplicate.id}`}>“{duplicate.title || "this recipe"}”</Link> from that link.
+        Déjà vu: you already have <Link to={`/recipes/${duplicate.id}`}>“{duplicate.title || "this recipe"}”</Link> from that link.
       </p>
       <div className="actions">
         <button className="button" onClick={onAgain} disabled={busy}>

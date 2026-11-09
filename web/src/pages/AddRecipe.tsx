@@ -282,7 +282,7 @@ export default function AddRecipe() {
       <div className="card stack">
         <h2>Type or paste it in</h2>
         <p className="muted">
-          For family recipes, cookbooks, a recipe someone sent you, or a caption under a video. Paste the whole thing and
+          For Nan's recipe card, cookbooks, a recipe someone sent you, or a caption under a video. Paste the whole thing and
           Bentotachi sorts it into the form for you to check.
         </p>
         <label>

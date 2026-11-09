@@ -74,9 +74,13 @@ export function planSummary(entries: { date: string; meal?: string }[], today: s
   ).size;
   const total = 7 * meals.length;
   const word = mealWord(meals);
-  if (planned === 0) return `Nothing planned for the next 7 days yet.`;
-  if (planned >= total) return `Every ${word} for the next 7 days is planned.`;
-  return `${planned} of the next ${total} ${word}s ${planned === 1 ? "is" : "are"} planned.`;
+  if (planned === 0) return `Nothing planned for the next 7 days yet, and dinner still insists on happening.`;
+  if (planned >= total) return `Every ${word} for the next 7 days is sorted.`;
+  const rest = total - planned;
+  return (
+    `${planned} of the next ${total} ${word}s ${planned === 1 ? "is" : "are"} planned. ` +
+    (rest === 1 ? "The other one is anyone's guess." : `The other ${rest} are anyone's guess.`)
+  );
 }
 
 // "milk, onions and 3 more"

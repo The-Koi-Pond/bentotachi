@@ -211,7 +211,7 @@ export default function StepTimerTray() {
               </span>
             </Link>
             <span className="timer-left" aria-live={done ? "assertive" : "off"}>
-              {done ? "Done!" : countdown(left)}
+              {done ? "Ding!" : countdown(left)}
             </span>
             {!done && (
               <button className="button small" onClick={() => pauseOrResume(timer)}>

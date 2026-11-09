@@ -468,14 +468,14 @@ export default function RecipeList() {
     setWorking(false);
   }
 
-  if (!all) return error ? <p className="error">{error}</p> : <p className="muted">Loading recipes…</p>;
+  if (!all) return error ? <p className="error">{error}</p> : <p className="muted">The recipes are in here somewhere…</p>;
 
   if (all.length === 0) {
     return (
       <div className="empty card stack">
         <BenMood mood="ready" />
-        <h2>No recipes yet</h2>
-        <p>Add your first one from a link, or type it in by hand. Chopsticks at the ready.</p>
+        <h2>No recipes yet. Ben's ready, though.</h2>
+        <p>Add your first one from a link, or type in the one you know by heart.</p>
         <Link to="/add" className="button primary">
           + Add recipe
         </Link>
@@ -854,12 +854,12 @@ export default function RecipeList() {
       {shown.length === 0 && (
         <p className="muted">
           {favoritesOnly && !quickOnly && !search.trim() && !filtering
-            ? spell("No favourites yet. Open a recipe and tap its ♥ to add it here.")
+            ? spell("No favourites yet. We won't tell the others. Open a recipe and tap its ♥ to save it here.")
             : quickOnly && !favoritesOnly && !search.trim() && !filtering
-              ? `No recipes take ${quickMinutes} minutes or less. You can change what counts as quick in the ⋮ menu.`
+              ? `No recipes fit the ${quickMinutes}-minute limit. Apparently they're not in a hurry. You can change the limit in the ⋮ menu.`
               : search.trim()
-                ? `Nothing matches “${search.trim()}”${filtering || favoritesOnly || quickOnly ? " with those filters." : "."}`
-                : "Nothing matches all of those filters."}
+                ? `No recipe answers to “${search.trim()}”${filtering || favoritesOnly || quickOnly ? " with those filters" : ""}. We asked around.`
+                : "No recipe is all of those things at once. Try taking a filter off."}
         </p>
       )}
 
@@ -898,7 +898,7 @@ export default function RecipeList() {
           {!editing && emptyShelves.length > 0 && (
             <>
               <p className="muted shelf-empty-line">
-                Empty shelves: {emptyShelves.map((shelf) => shelf.name).join(" · ")}
+                Still bare: {emptyShelves.map((shelf) => shelf.name).join(" · ")}
                 <HelpButton help={shelfHelp} label="How to fill a shelf" />
               </p>
               <HelpBox help={shelfHelp}>

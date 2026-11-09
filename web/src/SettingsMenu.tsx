@@ -26,7 +26,7 @@ function updateDetail(update: UpdateState): string {
     case "checking":
       return "Checking…";
     case "current":
-      return `Up to date (Bentotachi ${update.installed})`;
+      return `As fresh as it gets (Bentotachi ${update.installed})`;
     case "available":
       return `You have ${update.installed}`;
     case "installing":

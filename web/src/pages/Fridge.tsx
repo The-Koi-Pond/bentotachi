@@ -43,7 +43,7 @@ export default function Fridge() {
 
   function takeDown(note: Note) {
     setError("");
-    undo.offer([note.id], "Took the note down.", async () => {
+    undo.offer([note.id], "Note's down, magnet's free.", async () => {
       list.removeLocally(note.id);
       try {
         await notesCollection().delete(note.id);
@@ -68,7 +68,7 @@ export default function Fridge() {
       {list.items && shown.length === 0 && (
         // A dashed outline where the notes would go, so it doesn't float.
         // The note box just above says what to do.
-        <p className="muted fridge-empty">Nothing here yet.</p>
+        <p className="muted fridge-empty">Nothing on the fridge yet, just magnets.</p>
       )}
       {shown.length > 0 && (
         <ul className="fridge-notes">

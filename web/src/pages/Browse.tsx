@@ -7,6 +7,7 @@ import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import { CloseIcon } from "../icons";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { useSpell } from "../household";
 
 // The last search stays until cleared (for this visit to Bento), so after
 // saving a recipe found with it, coming back to Browse (Back, or the tab)
@@ -32,6 +33,7 @@ function rememberSearch(text: string) {
 
 export default function Browse() {
   const navigate = useNavigate();
+  const spell = useSpell();
   const [text, setText] = useState(rememberedSearch);
   const [searched, setSearchedState] = useState(rememberedSearch);
   const searchBox = useRef<HTMLInputElement>(null);
@@ -142,7 +144,7 @@ export default function Browse() {
 
       {saving && (
         <p className="muted" role="status">
-          Saving the recipe…
+          Saving the recipe, minus the life story…
         </p>
       )}
       {error && <p className="error">{error}</p>}
@@ -185,7 +187,7 @@ export default function Browse() {
           )}
         </div>
         {ours.loadError && <p className="error">{ours.loadError}</p>}
-        {ours.items?.length === 0 && <p className="muted">The recipe sites you keep going back to, one tap away.</p>}
+        {ours.items?.length === 0 && <p className="muted">{spell("No regulars yet. Got a favourite haunt? Add it here.")}</p>}
         {ourSites.length > 0 && (
           <ul className="site-list">
             {ourSites.map((site) => (
@@ -234,7 +236,7 @@ export default function Browse() {
       <p className="muted">
         {hasBuiltInBrowser ? (
           <>
-            Open a site, find a recipe you like, then tap <strong>Save to Bentotachi</strong> at the top.
+            Open a site, find a recipe you like (past the ads), then tap <strong>Save to Bentotachi</strong> at the top.
           </>
         ) : (
           <>

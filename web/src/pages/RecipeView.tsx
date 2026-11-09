@@ -1299,7 +1299,7 @@ function CookHistory({
             Next: <Link to="/plan">{next === today ? "today" : formatDay(next)}</Link>
           </p>
         )}
-        {!last && !next && <p>Not cooked yet</p>}
+        {!last && !next && <p>The kitchen hasn't met this one yet.</p>}
       </div>
       {cookedToday.length ? (
         <button className="link-button cooked-undo" onClick={() => onUndo(cookedToday)}>

@@ -4153,6 +4153,22 @@ legend {
   flex: none;
 }
 
+/* The shopping list's own heading and its "2 changes waiting to sync" each
+   take a line, around the explanation. */
+.offline-heading,
+.offline-waiting {
+  display: block;
+}
+
+.offline-heading {
+  margin-bottom: 2px;
+}
+
+.offline-waiting {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
 /* Profile pictures, or a first letter on the person's color. */
 .avatar {
   flex: none;
@@ -4791,7 +4807,7 @@ footer .person-name:focus-visible {
   border-radius: 6px;
 }
 
-/* "Empty shelves: Sides · Desserts…", one line after the filled shelves. */
+/* "Still bare: Sides · Desserts…", one line after the filled shelves. */
 .shelf-empty-line {
   margin: 4px 0 0;
   font-size: 0.9rem;

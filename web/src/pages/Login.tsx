@@ -201,7 +201,7 @@ function PhoneSetupForm() {
         <h2>{returning ? "Welcome back" : "Bentotachi on this phone"}</h2>
         <p className="muted">
           {returning
-            ? "Everything you added on this phone is still here."
+            ? "Everything you added on this phone is still here, right where you left it."
             : "Everything stays on this phone, so save a backup now and then (⋮ → Backups). To share with your household later: ⋮ → Join a household."}
         </p>
       </div>

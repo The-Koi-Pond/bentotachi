@@ -178,7 +178,7 @@ export default function RecipeReactions({ state, showHeart }: { state: RecipeRat
 
       <p className="muted rating-summary">
         {average === null ? (
-          reactions.length === 0 && "No ratings yet"
+          reactions.length === 0 && "No ratings yet. Still awaiting a verdict."
         ) : (
           <span>
             <OnigiriIcon /> {average} average
