@@ -4955,6 +4955,26 @@ legend {
   gap: 8px;
 }
 
+/* A setting with something under its row (Settings → Household: the
+   country's stores, the plan's meal chips). */
+.setting-block > .setting-row {
+  cursor: default;
+}
+
+.setting-block > .setting-row:hover {
+  background: transparent;
+}
+
+.setting-block .menu-item-text label {
+  display: inline;
+  font-weight: 400;
+}
+
+.setting-note {
+  margin: 0;
+  padding: 0 12px 10px;
+}
+
 /* "My colour · Teal ?" on one line. */
 .field-head {
   display: flex;

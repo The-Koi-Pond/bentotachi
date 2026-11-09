@@ -7,7 +7,7 @@ import { plannedMeals, type Meal } from "./meals";
 
 // How many accounts this Bento has. With just one, Bento is in single-user
 // mode: the parts about other people (who added what, "for everyone", the
-// Household page's name in the menu) are hidden, and come back as soon as
+// Household link's name on Profile) are hidden, and come back as soon as
 // someone is added. Unknown (still loading, or offline) counts as shared,
 // which shows everything as before.
 

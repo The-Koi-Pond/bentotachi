@@ -88,7 +88,7 @@ function savedView(): View {
 
 // The meal plan, as a two-week list (one row per day) or a month grid. Each
 // day has a place for each of the household's meals (just dinner, unless
-// breakfast or lunch are turned on under Household). In both views, meals
+// breakfast or lunch are turned on in Settings → Household). In both views, meals
 // can be dragged to another place; if that place already has one, they swap.
 export default function MealPlan() {
   const plan = useLiveRecords<MealPlanEntry>("meal_plan", "recipe");

@@ -28,28 +28,25 @@ export default function Profile() {
       <h1>Profile</h1>
       <WhoSection user={user} phone={phone} />
       {!phone && <LoggingInSection user={user} />}
-      <HouseholdLink phone={phone} />
+      {!phone && <HouseholdLink />}
       <LeaveButton phone={phone} />
       <DeleteSection user={user} />
     </div>
   );
 }
 
-// The household: who's in it, or its country, spoons and meals on your own.
-function HouseholdLink({ phone }: { phone: boolean }) {
+// Who's in the household, and adding someone (its country, spoons and
+// meals are in Settings). Not on a phone-only Bento, which nobody can join.
+function HouseholdLink() {
   const singleUser = useSingleUser();
   return (
     <ul className="settings-list profile-links">
       <li>
         <Link to="/household" className="setting-row">
           <span className="menu-item-text">
-            {phone ? "Country, spoons & meals" : singleUser ? "Share Bentotachi" : "Household"}
+            {singleUser ? "Share Bentotachi" : "Household"}
             <span className="menu-item-detail">
-              {phone
-                ? "For store search, recipe hints and the plan"
-                : singleUser
-                  ? "Add someone to use it with you; country, spoons, meals"
-                  : "Who has an account; country, spoons, meals"}
+              {singleUser ? "Add someone to use it with you" : "Who has an account; add someone"}
             </span>
           </span>
           <ChevronIcon />

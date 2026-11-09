@@ -1,16 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { Navigate } from "react-router";
 import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, users, type User } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import Avatar from "../Avatar";
-import { refreshHousehold, useCountry, usePlanMeals, useTablespoon } from "../household";
-import { MEALS, MEAL_NAMES, type Meal } from "../meals";
+import { refreshHousehold } from "../household";
 import { isPhoneMode } from "../phoneMode";
-import { COUNTRIES, OTHER_COUNTRY } from "../country";
-import { storesIn } from "../stores";
-import StoreLogo from "../StoreLogo";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { HelpBox, HelpButton, useHelp } from "../Help";
-
 
 // Opened on the server computer itself ("localhost"), whose address phones
 // can't use.
@@ -21,18 +16,12 @@ const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]
 
 // Everyone with an account on this Bento, and a way to add someone. Anyone
 // in the household can add people; changing or removing accounts is done on
-// the server's admin page (see the setup guide).
-// In phone-only mode nobody else can join, so it's just the settings.
+// the server's admin page (see the setup guide). The household's settings
+// (country, spoons, meals) are in Settings (HouseholdSettings.tsx). In
+// phone-only mode nobody else can join, so there's no page: an old link
+// goes to Settings.
 export default function Household() {
-  if (isPhoneMode())
-    return (
-      <div className="stack narrow">
-        <h1>Country, spoons & meals</h1>
-        <CountrySetting />
-        <TablespoonSetting />
-        <PlanMealsSetting />
-      </div>
-    );
+  if (isPhoneMode()) return <Navigate to="/settings" replace />;
   return <People />;
 }
 
@@ -63,9 +52,6 @@ function People() {
         </ul>
       )}
       <AddPerson onAdded={people.upsert} />
-      <CountrySetting />
-      <TablespoonSetting />
-      <PlanMealsSetting />
       <p className="muted small-note">
         To reset someone's forgotten password or remove an account, use the server's admin page. The{" "}
         <a href="guide.html#admin" target="_blank" rel="noreferrer">
@@ -74,152 +60,6 @@ function People() {
         explains how.
       </p>
     </div>
-  );
-}
-
-// The household's country, which decides the grocery stores the Pantry
-// offers. One setting for everyone; it saves as soon as it's changed.
-function CountrySetting() {
-  const [country, setCountry] = useCountry();
-  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
-  const stores = storesIn(country);
-
-  async function change(next: string) {
-    setStatus(null);
-    try {
-      await setCountry(next);
-      setStatus({ text: "Saved.", isError: false });
-    } catch (err) {
-      setStatus({ text: errorMessage(err), isError: true });
-    }
-  }
-
-  return (
-    <section className="card stack">
-      <h2>Country</h2>
-      <label>
-        <span className="hint">
-          Decides the grocery stores Bentotachi offers in the Pantry, and the units recipes give hints in, for everyone
-          here.
-        </span>
-        <select value={country} onChange={(e) => void change(e.target.value)} aria-label="Country">
-          {COUNTRIES.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.name}
-            </option>
-          ))}
-          <option value={OTHER_COUNTRY}>Somewhere else</option>
-        </select>
-      </label>
-      <p className="muted country-stores">
-        {stores.length ? (
-          <>
-            Stores:{" "}
-            {stores.map((store) => (
-              <StoreLogo key={store.name} store={store} />
-            ))}
-          </>
-        ) : (
-          "Bentotachi doesn't know stores there yet, so store search is hidden. You can still paste any shop's product link into a pantry item."
-        )}
-      </p>
-      {stores.length > 0 && (
-        <p className="muted small-note">
-          Store names and logos belong to their owners. Bentotachi isn't connected with any store.
-        </p>
-      )}
-      {status && (
-        <p className={status.isError ? "error" : "success"} role="status">
-          {status.text}
-        </p>
-      )}
-    </section>
-  );
-}
-
-// What the household's tablespoon holds. Recipes written for the other size
-// (Australian sites use 20 ml, nearly everyone else 15 ml) get a hint in
-// these spoons (see volumes.ts). Saves as soon as it's changed.
-function TablespoonSetting() {
-  const help = useHelp();
-  const [tablespoon, setTablespoon] = useTablespoon();
-  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
-
-  async function change(next: number) {
-    setStatus(null);
-    try {
-      await setTablespoon(next);
-      setStatus({ text: "Saved.", isError: false });
-    } catch (err) {
-      setStatus({ text: errorMessage(err), isError: true });
-    }
-  }
-
-  return (
-    <section className="card stack">
-      <h2>
-        Our tablespoon
-        <HelpButton help={help} label="Not sure which?" />
-      </h2>
-      <HelpBox help={help}>
-        <p>Count how many teaspoons fill your tablespoon: 3 means 15 ml, 4 means 20 ml.</p>
-      </HelpBox>
-      <label>
-        <span className="hint">Recipes written for the other size get a hint, like “2 tbsp (your 1 tbsp + 2 tsp)”.</span>
-        <select value={tablespoon} onChange={(e) => void change(Number(e.target.value))} aria-label="Our tablespoon">
-          <option value={15}>15 ml (most spoons)</option>
-          <option value={20}>20 ml (the Australian standard)</option>
-        </select>
-      </label>
-      {status && (
-        <p className={status.isError ? "error" : "success"} role="status">
-          {status.text}
-        </p>
-      )}
-    </section>
-  );
-}
-
-// Which meals the plan has a place for. Dinner only until someone turns on
-// breakfast or lunch; at least one stays on. Saves as soon as it's changed.
-function PlanMealsSetting() {
-  const [meals, setMeals] = usePlanMeals();
-  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
-
-  async function toggle(meal: Meal) {
-    const next = meals.includes(meal) ? meals.filter((m) => m !== meal) : [...meals, meal];
-    if (next.length === 0) return;
-    setStatus(null);
-    try {
-      await setMeals(MEALS.filter((m) => next.includes(m)));
-      setStatus({ text: "Saved.", isError: false });
-    } catch (err) {
-      setStatus({ text: errorMessage(err), isError: true });
-    }
-  }
-
-  return (
-    <section className="card stack">
-      <h2>Meals on the plan</h2>
-      <span className="hint">Each day on the plan gets a place for these.</span>
-      <div className="filter-chips" role="group" aria-label="Meals on the plan">
-        {MEALS.map((meal) => (
-          <button
-            key={meal}
-            aria-pressed={meals.includes(meal)}
-            disabled={meals.length === 1 && meals[0] === meal}
-            onClick={() => void toggle(meal)}
-          >
-            {MEAL_NAMES[meal]}
-          </button>
-        ))}
-      </div>
-      {status && (
-        <p className={status.isError ? "error" : "success"} role="status">
-          {status.text}
-        </p>
-      )}
-    </section>
   );
 }
 

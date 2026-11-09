@@ -7,6 +7,7 @@ import { isPhoneMode } from "../phoneMode";
 import { ChevronIcon } from "../icons";
 import { canSelfUpdate, updateAction, updateDetail, updateLabel, updatesFromPlay, useUpdateState } from "../appUpdates";
 import deki from "../assets/deki.svg";
+import HouseholdSettings from "../HouseholdSettings";
 
 // ⋮ → Settings: what you set once and rarely touch, in bento trays by
 // what it's about (docs/VISION.md, "The ⋮ menu and Settings"). The menu
@@ -65,6 +66,8 @@ export default function Settings() {
           </li>
         </ul>
       </section>
+
+      <HouseholdSettings />
 
       <section className="stack tray-section">
         <h2>Your data</h2>

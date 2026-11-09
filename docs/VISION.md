@@ -237,10 +237,13 @@ view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 you reach for mid-task: your profile row, Keep screen on, Settings, and an
 update once one is waiting. Settings (its own page) holds what you set
 once, in trays: Recipes (Quick means, nutrition, amounts in the method,
-step photos, shelves start closed), Your data (import and export,
-backups) and App (the server, checking for updates), with the "A Koi
-Pond app" credit quietly at the very bottom. The household and Log out
-(or "Join a household" on a phone) are on the Profile page.
+step photos, shelves start closed), Household (country, tablespoon,
+meals on the plan), Your data (import and export, backups) and App (the
+server, checking for updates), with the "A Koi Pond app" credit quietly
+at the very bottom. Profile links to the Household page, which is only
+who's in it and adding someone ("Share Bentotachi" when you're alone;
+none on a phone-only Bentotachi), and ends with Log out (or "Join a
+household" on a phone).
 
 **The fridge door** (Xel, 2026-11-09, tried live): the splash line on a
 torn strip of masking tape, a little crooked, centred under the title

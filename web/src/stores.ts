@@ -1,5 +1,5 @@
 // Grocery stores for finding pantry items online, by country (the
-// household's country is chosen on the Household page; see country.ts).
+// household's country is chosen in Settings → Household; see country.ts).
 // `search` is the store's own search page, with {q} where the search words go.
 //
 // Australia, checked 2026-10-30: both search links answered normally. ALDI
