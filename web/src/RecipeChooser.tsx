@@ -22,6 +22,7 @@ import RecipePhoto from "./RecipePhoto";
 import { MEAL_NAMES, type Meal } from "./meals";
 import { useSpell } from "./household";
 import RecipeStandIn from "./RecipeStandIn";
+import { surpriseLine } from "./surpriseLines";
 
 // Slides up from the bottom to choose a meal for one day: search names,
 // tags and ingredients, narrow to favorites or quick recipes, and see what's
@@ -62,8 +63,11 @@ export default function RecipeChooser({
   const spell = useSpell();
   const [quickOnly, setQuickOnly] = useState(false);
   const [haveOnly, setHaveOnly] = useState(false);
-  // "Surprise me": the recipe Bento picked, shown above the list.
+  // "Surprise me": the recipe Bento picked, shown above the list, with what
+  // it says about it (surpriseLines.ts), cheekier the more times in a row
+  // it's asked while the chooser is open.
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [surprised, setSurprised] = useState<{ rolls: number; line: string }>({ rolls: 0, line: "" });
   const [error, setError] = useState("");
   const pantry = useLiveRecords<PantryItem>("pantry_items");
 
@@ -128,7 +132,10 @@ export default function RecipeChooser({
     const others = shown.filter((recipe) => recipe.id !== suggestion);
     const unplanned = others.filter((recipe) => !upcoming.has(recipe.id));
     const pool = unplanned.length ? unplanned : others.length ? others : shown;
-    if (pool.length) setSuggestion(pool[Math.floor(Math.random() * pool.length)].id);
+    if (!pool.length) return;
+    setSuggestion(pool[Math.floor(Math.random() * pool.length)].id);
+    const rolls = surprised.rolls + 1;
+    setSurprised({ rolls, line: surpriseLine(rolls, { last: surprised.line || null, choices: shown.length }) });
   }
 
   // The small grey line under a recipe's name.
@@ -286,7 +293,7 @@ export default function RecipeChooser({
 
         {suggested && (
           <div className="suggestion" role="status">
-            <p className="suggestion-label">How about…</p>
+            <p className="suggestion-label">{surprised.line || "How about…"}</p>
             <div className="suggestion-recipe">
               {photo(suggested)}
               <span className="chooser-text">

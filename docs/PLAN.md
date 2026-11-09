@@ -1504,6 +1504,23 @@ Next step when Xel wants it: a playground with two or three versions of
 the bento export picker (and maybe the hanko stamp), light and dark, at
 phone width; and the voice-pass list as its own short document.
 
+## Surprise me, gacha style (Xel, 2026-11-09; built the same day)
+
+The plan's "🎲 Surprise me" says something above the recipe it picks, and
+gets cheekier the more times in a row it's asked (web/src/surpriseLines.ts,
+lines from Xel's own brainstorm):
+
+- First roll: "The dice have spoken." Rolls 2–3: everyday lines ("How
+  about this one?", "Behold, dinner."). Rolls 4–6: half cheeky ("Tough
+  crowd.", "Picky, picky."). From roll 7: mostly cheeky.
+- Rare gems, 1 in 20 from roll 2 ("The Council of Dinner has reached a
+  decision."); "Ben is beginning to take this personally." only from roll
+  8, so it lands when the app has otherwise been minding its business.
+- Never the same line twice in a row; no escalation when only one recipe
+  can be offered (asking again isn't being picky then); it starts over
+  each time the chooser opens. The recipe always shows with the line, and
+  "Nothing matches" stays plain.
+
 ## To consider: talking to Bentotachi while cooking (Xel, 2026-11-07)
 
 Hands covered in flour, phone propped on the counter: "Hey, what does
