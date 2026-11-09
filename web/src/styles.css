@@ -862,6 +862,14 @@ main > .stack > section:not(.tray-section) > :is(h2, p) {
   color: var(--rim-text);
 }
 
+/* A button in the rim beside the heading ("+ Add a site", "Clear ticked
+   items"): slim, so the rim stays a rim rather than a toolbar. */
+.tray-section > .section-head .button.small {
+  min-height: 28px;
+  padding: 1px 12px;
+  font-size: 0.85rem;
+}
+
 .tray-section > p {
   margin: 0;
   padding: 10px 12px;
