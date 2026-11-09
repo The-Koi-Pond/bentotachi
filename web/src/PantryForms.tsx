@@ -145,17 +145,22 @@ function ItemFields({
   onChange,
   nameRef,
   brief = false,
+  photo,
+  photoChoices,
 }: {
   existing: PantryItem[];
   fields: Fields;
   onChange: (patch: Partial<Fields>) => void;
   nameRef?: Ref<HTMLInputElement>;
   brief?: boolean;
+  // The photo square to the left of the name (PhotoButton), and its
+  // choices under that row once it's tapped.
+  photo: ReactNode;
+  photoChoices: ReactNode;
 }) {
   return (
     <>
-      <label>
-        Name
+      <NameRow photo={photo}>
         <input
           ref={nameRef}
           value={fields.name}
@@ -163,10 +168,54 @@ function ItemFields({
           placeholder="Eggs"
           required
         />
-      </label>
+      </NameRow>
+      {photoChoices}
       <PlaceFields existing={existing} fields={fields} onChange={onChange} brief={brief} />
       {!brief && <MoreItemFields existing={existing} fields={fields} onChange={onChange} />}
     </>
+  );
+}
+
+// The photo square, then "Name" and its box, on one row (both forms).
+function NameRow({ photo, children }: { photo: ReactNode; children: ReactNode }) {
+  return (
+    <div className="pantry-who">
+      {photo}
+      <label className="pantry-who-name">
+        Name
+        {children}
+      </label>
+    </div>
+  );
+}
+
+// An item's photo as a square button beside its name (both forms): tapping
+// it shows the ways to change it, which the form puts under the row. No
+// photo: the name's first letter, or a camera before there's a name.
+function PhotoButton({ shown, name, open, onToggle }: { shown: string; name: string; open: boolean; onToggle: () => void }) {
+  const letter = name.trim().charAt(0).toUpperCase();
+  return (
+    <button
+      type="button"
+      className="pantry-who-photo"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={shown ? "Change its photo" : "Add a photo"}
+      title={shown ? "Change its photo" : "Add a photo"}
+    >
+      {shown ? (
+        <img src={shown} alt="" />
+      ) : (
+        <span className="pantry-tile" aria-hidden="true">
+          {letter || <CameraIcon size={24} />}
+        </span>
+      )}
+      {(shown || letter) && (
+        <span className="avatar-corner" aria-hidden="true">
+          <CameraIcon size={13} />
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -542,7 +591,10 @@ export function AddPantryItem({
   // The scanned barcode goes on the first item added (not ones after it).
   const [barcode, setBarcode] = useState(fromBarcode?.code ?? "");
   const [photo, setPhoto] = useState<PhotoChoice>(undefined);
-  // The rest of the fields (brand, note, expiry, store links, photo…) wait
+  // The photo's choices, under the name row once its square is tapped.
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const photoPreview = usePreviewUrl(photo);
+  // The rest of the fields (brand, note, expiry, store links…) wait
   // behind "More details", unless a scan or a store page filled some in.
   const [more, setMore] = useState(!!fromStore || !!fromBarcode);
   // Putting a store link into a new item suggests a name from it (the first
@@ -636,6 +688,7 @@ export function AddPantryItem({
       setFields((previous) => ({ ...previous, ...cleared }));
       setStarted(ownTyping({ ...fields, ...cleared }));
       setPhoto(undefined);
+      setPhotoOpen(false);
       setResetKey((key) => key + 1);
       nameRef.current?.focus();
     } catch (err) {
@@ -678,23 +731,35 @@ export function AddPantryItem({
           )}
         </p>
       )}
-      <ItemFields key={resetKey} existing={existing} fields={fields} nameRef={nameRef} onChange={change} brief={!more} />
-      {more ? (
-        <PantryPhotoField
-          savedUrl=""
-          barcodes={[]}
-          storeUrls={[]}
-          choice={photo}
-          onChoose={setPhoto}
-          hint={
-            (barcode || fields.storeUrls.some((url) => url.trim())) && !photo
-              ? "Leave it empty and Bentotachi looks for its photo online by itself."
-              : undefined
-          }
-        />
-      ) : (
+      <ItemFields
+        key={resetKey}
+        existing={existing}
+        fields={fields}
+        nameRef={nameRef}
+        onChange={change}
+        brief={!more}
+        photo={<PhotoButton shown={photo ? photoPreview : ""} name={fields.name} open={photoOpen} onToggle={() => setPhotoOpen(!photoOpen)} />}
+        photoChoices={
+          photoOpen && (
+            <PantryPhotoField
+              bare
+              savedUrl=""
+              barcodes={[]}
+              storeUrls={[]}
+              choice={photo}
+              onChoose={setPhoto}
+              hint={
+                (barcode || fields.storeUrls.some((url) => url.trim())) && !photo
+                  ? "Leave it empty and Bentotachi looks for its photo online by itself."
+                  : undefined
+              }
+            />
+          )
+        }
+      />
+      {!more && (
         <button type="button" className="link-button more-details" onClick={() => setMore(true)}>
-          + More details (brand, note, expiry, store links, photo)
+          + More details (brand, note, expiry, store links)
         </button>
       )}
       {error && <p className="error">{error}</p>}
@@ -926,31 +991,11 @@ export function EditPantryItem({
       </div>
       {/* Its photo beside its name; tapping the photo offers the ways to
           change it (docs/VISION.md, "Pantry item edit form"). */}
-      <div className="pantry-edit-who">
-        <button
-          type="button"
-          className="pantry-edit-photo"
-          onClick={() => setPhotoOpen(!photoOpen)}
-          aria-expanded={photoOpen}
-          aria-label="Change its photo"
-          title="Change its photo"
-        >
-          {shownPhoto ? (
-            <img src={shownPhoto} alt="" />
-          ) : (
-            <span className="pantry-tile" aria-hidden="true">
-              {(fields.name.trim() || item.name).charAt(0).toUpperCase()}
-            </span>
-          )}
-          <span className="avatar-corner" aria-hidden="true">
-            <CameraIcon size={13} />
-          </span>
-        </button>
-        <label className="pantry-edit-name">
-          Name
-          <input value={fields.name} onChange={(e) => change({ name: e.target.value })} placeholder="Eggs" required />
-        </label>
-      </div>
+      <NameRow
+        photo={<PhotoButton shown={shownPhoto} name={fields.name || item.name} open={photoOpen} onToggle={() => setPhotoOpen(!photoOpen)} />}
+      >
+        <input value={fields.name} onChange={(e) => change({ name: e.target.value })} placeholder="Eggs" required />
+      </NameRow>
       {photoOpen && (
         <PantryPhotoField
           bare
