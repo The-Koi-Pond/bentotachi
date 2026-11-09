@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- The subreddit's banners, drawn from the app's own art. Open with
-     ?size=desktop (4000×480) or ?size=mobile (1600×480) at exactly that
-     window size and screenshot it; branding/README.md says how. -->
+<!-- The subreddit's banners, drawn from the app's own art. Reddit shows a
+     banner as a thin strip (about 25:3) scaled to the page's width, so the
+     art fills the height. Open with ?size=desktop at 3000×360 or
+     ?size=mobile at 2160×256 and screenshot it; branding/README.md says how. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -11,25 +12,25 @@
   html, body { margin: 0; }
   body { width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #f3f6f4; }
   /* Soft jade at the ends, tea-rice in the middle where the words are. */
-  .wash { position: absolute; inset: 0; background: linear-gradient(90deg, #e2efeb 0%, #f3f6f4 30%, #f3f6f4 70%, #e2efeb 100%); }
+  .wash { position: absolute; inset: 0; background: linear-gradient(90deg, #e2efeb 0%, #f3f6f4 28%, #f3f6f4 72%, #e2efeb 100%); }
   /* A baran (the green divider leaf in a bento box) along the bottom. */
-  .baran { position: absolute; left: 0; right: 0; bottom: 0; height: 34px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='34' viewBox='0 0 40 34'%3E%3Cpath d='M0 34 L0 14 L10 4 L20 14 L30 4 L40 14 L40 34 Z' fill='%235a9a8a'/%3E%3C/svg%3E") repeat-x bottom / 40px 34px; opacity: 0.85; }
-  .group { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 46px; }
-  .ben { height: 300px; }
-  .words { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-  .title { height: 150px; }
-  .tagline { font: 400 40px/1 "Pond Pebbles", system-ui, sans-serif; color: #5f6b67; letter-spacing: 0.01em; white-space: nowrap; }
-  /* Umeboshi and rice grains scattered at the far ends (desktop only). */
+  .baran { position: absolute; left: 0; right: 0; bottom: 0; height: 7vh;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='34' viewBox='0 0 40 34'%3E%3Cpath d='M0 34 L0 14 L10 4 L20 14 L30 4 L40 14 L40 34 Z' fill='%235a9a8a'/%3E%3C/svg%3E") repeat-x bottom / 8.2vh 7vh; opacity: 0.85; }
+  .group { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5vh; }
+  .ben { height: 84vh; }
+  .words { display: flex; flex-direction: column; align-items: center; gap: 4vh; }
+  .title { height: 46vh; }
+  .tagline { font: 400 11vh/1 "Pond Pebbles", system-ui, sans-serif; color: #5f6b67; letter-spacing: 0.01em; white-space: nowrap; }
+  /* Umeboshi and rice grains scattered at the far ends. */
   .bits { position: absolute; inset: 0; }
   .bits i { position: absolute; display: block; border-radius: 50%; }
-  .plum { width: 34px; height: 34px; background: #a82d4a; opacity: 0.35; }
-  .grain { width: 14px; height: 24px; background: #fffdf6; border: 2px solid #c9cfcc; border-radius: 50%; }
-  body.mobile .bits { display: none; }
-  body.mobile .group { top: 45%; gap: 34px; }
-  body.mobile .ben { height: 250px; }
-  body.mobile .title { height: 120px; }
-  body.mobile .tagline { font-size: 30px; }
+  .plum { width: 8vh; height: 8vh; background: #a82d4a; opacity: 0.35; }
+  .grain { width: 3.4vh; height: 5.8vh; background: #fffdf6; border: 0.5vh solid #c9cfcc; }
+  /* The phone's strip is about 50px tall: no tagline, the name as big as it goes. */
+  body.mobile .tagline { display: none; }
+  body.mobile .ben { height: 86vh; }
+  body.mobile .title { height: 58vh; }
+  body.mobile .group { gap: 6vh; }
 </style>
 </head>
 <body>
@@ -45,9 +46,9 @@
 <div class="baran"></div>
 <script>
   if (new URLSearchParams(location.search).get("size") === "mobile") document.body.classList.add("mobile");
-  // A few plums and rice grains, placed the same way every time, away from the middle.
-  const spots = [[4, 22, "plum"], [9, 62, "grain", -20], [14, 30, "grain", 30], [19, 70, "plum"], [23, 18, "grain", 10],
-                 [77, 20, "grain", -15], [81, 66, "plum"], [86, 28, "grain", 25], [91, 58, "grain", -30], [96, 24, "plum"]];
+  // A few plums and rice grains, placed the same way every time, at the ends.
+  const spots = [[3, 20, "plum"], [7, 60, "grain", -20], [11, 26, "grain", 30], [15, 64, "plum"], [19, 16, "grain", 10],
+                 [80, 18, "grain", -15], [84, 62, "plum"], [88, 24, "grain", 25], [92, 58, "grain", -30], [96, 20, "plum"]];
   const bits = document.getElementById("bits");
   for (const [x, y, kind, turn = 0] of spots) {
     const el = document.createElement("i");
