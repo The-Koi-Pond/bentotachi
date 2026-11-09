@@ -31,7 +31,7 @@ import {
   weekStart,
   type FirstDay,
 } from "../dates";
-import { CartIcon, CloseIcon, GripIcon, PlusIcon } from "../icons";
+import { CartIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
@@ -64,10 +64,16 @@ interface Slot {
   meal: Meal;
 }
 
+// The bin that shows while dragging: a meal dropped on it comes off the plan.
+const BIN = "bin";
+
 // A meal lands on the place under your finger (or mouse). With the
-// keyboard there is no pointer, so it goes to the nearest one instead.
+// keyboard there is no pointer, so it goes to the nearest one instead. The
+// bin wins over the day scrolled underneath it.
 const dropTarget: CollisionDetection = (args) => {
   const underPointer = pointerWithin(args);
+  const bin = underPointer.find((hit) => hit.id === BIN);
+  if (bin) return [bin];
   return underPointer.length > 0 ? underPointer : closestCenter(args);
 };
 
@@ -190,13 +196,17 @@ export default function MealPlan() {
     }
   }
 
-  function remove(entry: MealPlanEntry) {
+  // Takes dishes off the plan, with Undo: one (✕, or the bin in the list),
+  // or a whole meal (its picture dropped in the bin in the month view).
+  function remove(...dishes: MealPlanEntry[]) {
+    if (!dishes.length) return;
     setError("");
-    const what = entry.expand?.recipe?.title ?? entry.note;
-    undo.offer([entry.id], what ? `Removed “${what}” from the plan.` : "Removed from the plan.", async () => {
-      plan.removeLocally(entry.id);
+    const what = dishes[0].expand?.recipe?.title ?? dishes[0].note;
+    const more = dishes.length > 1 ? ` and ${dishes.length - 1} more` : "";
+    undo.offer(dishes.map((dish) => dish.id), what ? `Removed “${what}”${more} from the plan.` : "Removed from the plan.", async () => {
+      for (const dish of dishes) plan.removeLocally(dish.id);
       try {
-        await mealPlan().delete(entry.id);
+        for (const dish of dishes) await mealPlan().delete(dish.id);
       } catch (err) {
         setError(errorMessage(err));
         plan.reload();
@@ -279,6 +289,9 @@ export default function MealPlan() {
     const entry = shown.find((e) => e.id === id);
     const over = String(event.over.id);
     if (!entry) return;
+    // In the bin: the dish (list), or the whole meal its picture stands for
+    // (month), as moving it would.
+    if (over === BIN) return remove(...(isList ? [entry] : (bySlot.get(slotKey(datePart(entry.date), mealOf(entry))) ?? [entry])));
     if (over.includes("|")) void move(id, over);
     else void moveMeal(slotKey(datePart(entry.date), mealOf(entry)), slotKey(over, mealOf(entry)));
   }
@@ -347,14 +360,18 @@ export default function MealPlan() {
         {isList ? (
           <>
             <p>
-              Drag <GripIcon /> to move a {word} to another day or meal, or onto another one to swap them.
+              Drag <GripIcon /> to move a {word} to another day or meal, or onto another one to swap them. Drop it on
+              the bin that appears at the bottom to take it off the plan.
             </p>
             <p>
               <PlusIcon /> beside a {word} adds another recipe to it, like a side.
             </p>
           </>
         ) : (
-          <p>Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Drag a picture to move it to another day.</p>
+          <p>
+            Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Drag a picture to move it to another
+            day, or to the bin at the bottom to take it off.
+          </p>
         )}
       </HelpBox>
 
@@ -437,6 +454,7 @@ export default function MealPlan() {
             />
           </>
         )}
+        {dragging && <DropBin />}
         {/* The copy of a dinner that follows your finger while dragging. */}
         <DragOverlay>
           {dragging && (isList ? <DinnerCard entry={dragging} lifted /> : <CellThumb entry={dragging} lifted />)}
@@ -662,7 +680,7 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
 // One meal's place in a day row: a dinner (or breakfast, or lunch) that can
 // be dragged, or "+ Add" (a small chip when compact). Meals dragged here
 // land in it.
-function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
+function MealPlace({ date, meal, labelled, dishesAt, onAdd, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
   const dishes = dishesAt(meal);
   if (compact) {
@@ -677,17 +695,16 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = 
   return (
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
-      {/* Another recipe for it (a side): the + on its last dish, rather than
-          a "+ Dinner" under every planned day (docs/VISION.md). */}
-      {dishes.map((entry, i) => (
-        <DraggableDinner
-          key={entry.id}
-          entry={entry}
-          onRemove={onRemove}
-          onAddAnother={i === dishes.length - 1 ? () => onAdd(meal) : undefined}
-          meal={meal}
-        />
+      {dishes.map((entry) => (
+        <DraggableDinner key={entry.id} entry={entry} />
       ))}
+      {/* Another recipe for it (a side): a quiet + beside its dishes, rather
+          than a "+ Dinner" under every planned day (docs/VISION.md). */}
+      {dishes.length > 0 && (
+        <button className="plan-add-dish" onClick={() => onAdd(meal)} aria-label={`Add another recipe to ${meal}`}>
+          <PlusIcon />
+        </button>
+      )}
       {dishes.length === 0 && (
         <button className="plan-add" onClick={() => onAdd(meal)}>
           + Add {meal}
@@ -697,17 +714,11 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, onRemove, compact = 
   );
 }
 
-function DraggableDinner({
-  entry,
-  meal,
-  onRemove,
-  onAddAnother,
-}: {
-  entry: MealPlanEntry;
-  meal: Meal;
-  onRemove: (entry: MealPlanEntry) => void;
-  onAddAnother?: () => void;
-}) {
+// A planned dish as a soft chip: drag it by its dots to another day, or to
+// the bin that shows while dragging to take it off the plan (no ✕, so two
+// can share a row; the month view's day list keeps a ✕ for anyone who
+// can't drag).
+function DraggableDinner({ entry }: { entry: MealPlanEntry }) {
   const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id });
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
@@ -720,18 +731,19 @@ function DraggableDinner({
         <GripIcon />
       </button>
       <DinnerCard entry={entry} />
-      {onAddAnother && (
-        <button className="icon-button small" onClick={onAddAnother} aria-label={`Add another recipe to ${meal}`}>
-          <PlusIcon />
-        </button>
-      )}
-      <button
-        className="icon-button small"
-        onClick={() => onRemove(entry)}
-        aria-label={`Take ${entryLabel(entry)} off the plan`}
-      >
-        <CloseIcon />
-      </button>
+    </div>
+  );
+}
+
+// Shows at the bottom, over the tab bar, while a meal is being dragged.
+function DropBin() {
+  const { setNodeRef, isOver } = useDroppable({ id: BIN });
+  return (
+    <div ref={setNodeRef} className={`plan-bin ${isOver ? "over" : ""}`}>
+      <span className="plan-bin-inner">
+        <TrashIcon size={22} />
+        {isOver ? "Let go to take it off the plan" : "Drop here to take it off the plan"}
+      </span>
     </div>
   );
 }

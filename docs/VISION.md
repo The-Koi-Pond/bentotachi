@@ -207,6 +207,13 @@ compartments, "Add these to the shopping list" as its last one), the tab bar and
 boxes, tips, pop-ups and the chopstick switches stay plain; no tray inside
 a tray.
 
+**The plan's meals** (Xel, 2026-11-09, tried live): each planned dish is a
+soft jade chip (drag dots, a round picture close beside them, the name),
+side by side when the names fit. A quiet dashed "+" beside a meal's chips
+adds a side. There's no ✕ on them: dragging one shows a bin over the tab
+bar, and dropping it there takes it off the plan, with Undo. The month
+view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
+
 ## What it won't become
 
 - A social network: no public feed, followers or recipe sharing with

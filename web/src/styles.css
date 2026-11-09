@@ -1000,9 +1000,9 @@ main {
 .plan-day {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   min-height: 40px;
-  padding: 2px 8px 2px 12px;
+  padding: 2px 8px 2px 10px;
   transition: background 0.1s;
 }
 
@@ -1069,7 +1069,8 @@ main {
   flex: none;
   display: flex;
   flex-direction: column;
-  width: 52px;
+  /* Just wide enough for "Today" and "Nov 10". */
+  width: 46px;
   line-height: 1.2;
 }
 
@@ -1128,9 +1129,23 @@ main {
   border-color: var(--accent);
 }
 
-/* A meal's second recipe (and more), just under the first. */
-.dinner-slot + .dinner-slot {
-  margin-top: 6px;
+/* A meal's dishes as chips in a row, side by side when their names fit,
+   each on its own row when they don't. */
+.plan-meal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.plan-meal > .meal-label,
+.plan-meal > .plan-add {
+  flex-basis: 100%;
+}
+
+.plan-meal > .dinner-slot {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* "+ Add another" under a planned meal: a small chip, not a second row. */
@@ -1142,36 +1157,148 @@ main {
   border-radius: 999px;
 }
 
-/* A planned meal is one card: its drag handle a
-   slim soft-jade tab down the left edge, so it's clearly what moves it,
-   then the photo, the name and ×. */
+/* A planned dish is a soft jade chip: its drag dots, the picture close
+   beside them, the name, and + on the last one (the month view's day list
+   adds ✕). */
 .dinner-slot {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-right: 2px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  gap: 3px;
+  padding: 2px 12px 2px 0;
+  background: var(--jade-soft);
+  border-radius: 999px;
   overflow: hidden;
+}
+
+/* The month view's day list ends its chips with ✕: no extra room needed. */
+.selected-day .dinner-slot {
+  padding-right: 2px;
 }
 
 .dinner-slot .drag-handle {
   align-self: stretch;
-  width: 22px;
+  width: 16px;
   height: auto;
-  background: var(--jade-soft);
-  border-right: 1px solid var(--border);
+  opacity: 0.6;
   border-radius: 0;
 }
 
-/* Inside the card, so the outline isn't cut off by its edge. */
+/* Inside the chip, so the outline isn't cut off by its edge. */
 .dinner-slot .drag-handle:focus-visible {
   outline-offset: -3px;
 }
 
 .dinner-slot .dinner-card {
+  gap: 6px;
   padding: 0;
+}
+
+.dinner-slot .dinner-card img,
+.dinner-slot .dinner-no-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+/* "Add another recipe" beside a meal's chips: a small dashed circle, like
+   "+ Add dinner", quiet so the meals stand out. */
+.plan-add-dish {
+  flex: none;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.plan-add-dish svg {
+  width: 16px;
+  height: 16px;
+}
+
+.plan-add-dish:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-add-dish:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* A drawn bento on the jade chip: on white with a jade ring, so it shows. */
+.dinner-slot .stand-in {
+  background: var(--surface);
+  box-shadow: 0 0 0 1.5px var(--jade-strong);
+}
+
+.dinner-slot .icon-button {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+}
+
+/* ✕ (the month view's day list) in umeboshi: it takes something off. */
+.dinner-slot .icon-button[aria-label^="Take"] {
+  color: var(--accent);
+}
+
+/* The bin that rises over the tab bar while a meal is dragged: drop it in
+   to take it off the plan (with Undo). */
+.plan-bin {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  display: flex;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  background: var(--rim);
+  animation: bin-rise 0.15s ease-out;
+}
+
+.plan-bin-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+}
+
+.plan-bin.over .plan-bin-inner {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.plan-bin.over svg {
+  transform: rotate(-12deg) scale(1.15);
+}
+
+@keyframes bin-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-bin {
+    animation: none;
+  }
 }
 
 /* The original stays put (faded) while its copy follows your finger. */
@@ -1234,12 +1361,17 @@ main {
   white-space: nowrap;
 }
 
-/* The copy that follows your finger while dragging. */
+.dinner-card.lifted img,
+.dinner-card.lifted .dinner-no-photo {
+  border-radius: 50%;
+}
+
+/* The copy that follows your finger while dragging: the chip, lifted. */
 .dinner-card.lifted {
-  padding: 6px 10px 6px 6px;
-  background: var(--surface);
+  padding: 2px 12px 2px 2px;
+  background: var(--jade-soft);
   border: 1px solid var(--accent);
-  border-radius: 10px;
+  border-radius: 999px;
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
   cursor: grabbing;
 }
