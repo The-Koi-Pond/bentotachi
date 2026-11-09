@@ -3,7 +3,7 @@
 // everything" for the full form (PantryForms.tsx).
 import { useEffect, useRef } from "react";
 import type { PantryItem, PantryPacket, PantryStatus } from "./pb";
-import { nextPacket, packetGroups, type PacketDetails } from "./pantryPackets";
+import { groupText, nextPacket, packetGroups, type PacketDetails } from "./pantryPackets";
 import { describeExpiry } from "./expiry";
 import { placeOf } from "./pantryItem";
 
@@ -36,9 +36,7 @@ export default function PantryCard({
   const next = nextPacket(item, packets ?? []);
   const place = placeOf(item);
   // What's in stock is said here too, as the Simple layout's row hides it.
-  const inStock = packetGroups(packets ?? [], item.brand)
-    .map((group) => (group.count > 1 ? `${group.count} × ${group.label}` : group.label))
-    .join(", ");
+  const inStock = packetGroups(packets ?? [], item.brand).map(groupText).join(", ");
   const about = [
     inStock && `In stock: ${inStock}`,
     item.brand?.trim(),
@@ -51,8 +49,8 @@ export default function PantryCard({
     <div ref={ref} className="pantry-card" role="group" aria-label={`${item.name}: quick changes`}>
       <div className="pantry-card-quick">
         {packets && (
-          <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more packet${next.size ? `, ${next.size}` : ""}`}>
-            + 1 packet
+          <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more${next.size ? `, ${next.size}` : ""}`}>
+            + 1 more
             {next.size && <span className="pantry-card-size">{next.size}</span>}
           </button>
         )}

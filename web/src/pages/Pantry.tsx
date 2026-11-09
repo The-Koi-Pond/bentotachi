@@ -211,7 +211,7 @@ export default function Pantry() {
     const outWords = lastPacket
       ? `That was the last one: ${item.name} is out.`
       : cleared.length
-        ? `${item.name} is out, so its ${cleared.length === 1 ? "packet is" : `${cleared.length} packets are`} cleared.`
+        ? `${item.name} is out, so ${cleared.length === 1 ? "the one in stock is" : `the ${cleared.length} in stock are`} cleared.`
         : `${item.name} is out.`;
     const moved =
       putBack && norm(placeOf(item).location) !== norm(place)
@@ -263,7 +263,7 @@ export default function Pantry() {
     if (
       bought &&
       !(await askFirst(
-        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one.`,
+        `The shopping list already added ${packetLabel(bought) || "one"} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one.`,
         { yes: "I bought two", no: "It's the same one" }
       ))
     ) {
@@ -307,7 +307,7 @@ export default function Pantry() {
       setStatus(item, "out", true);
       return;
     }
-    undo.offer([packet.id], `Finished: ${packetLabel(packet)} of ${item.name}.`, async () => {
+    undo.offer([packet.id], `Finished: ${packetLabel(packet) || "one"} of ${item.name}.`, async () => {
       try {
         await pantryPackets().delete(packet.id);
         packets.removeLocally(packet.id);

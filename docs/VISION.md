@@ -96,6 +96,11 @@ Cheeky and silly wherever it can afford to be, while staying clear.
   shows a random one-liner each visit, from `SPLASH_LINES` in
   `web/src/fridgeDoor.ts`. Pure garnish, so they can be sillier than
   anywhere else; add more freely, one line each.
+- **Words** (Xel, 2026-11-09): never "packet" where people read it: the
+  pantry counts tins, jars and bottles too. Say it without a container:
+  "+ 1 more", "+ Add one", "How many in stock", "the 2 in stock are
+  cleared", "400 g of the 500 g one". (The code and database still call
+  them packets.)
 
 ## Look
 

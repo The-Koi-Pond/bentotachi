@@ -119,7 +119,7 @@ export function ScanResult({
                       void onAddScannedPacket(found).then((added) => setAddedPacket(added ? "added" : ""));
                     }}
                   >
-                    {addedPacket === "adding" ? "Adding…" : "+ Add this packet"}
+                    {addedPacket === "adding" ? "Adding…" : "+ Add this one"}
                   </button>
                 )}
               </div>

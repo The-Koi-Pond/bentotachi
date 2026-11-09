@@ -694,7 +694,7 @@ function PacketsField({
   return (
     <div className="packets-field" role="group" aria-labelledby={labelId}>
       <span className="label-text" id={labelId}>
-        Packets in stock <span className="optional">(optional)</span>
+        How many in stock <span className="optional">(optional)</span>
       </span>
       {packets.length > 0 && (
         <PacketCounters packets={packets} favouriteBrand={favouriteBrand} onUsed={onFinish} onMore={(more) => void onAdd(more)} />
@@ -708,7 +708,7 @@ function PacketsField({
             onKeyDown={enterAdds}
             maxLength={120}
             placeholder={favouriteBrand || "Brand"}
-            aria-label="The packet's brand"
+            aria-label="Its brand"
           />
           <input
             value={details.size}
@@ -716,7 +716,7 @@ function PacketsField({
             onKeyDown={enterAdds}
             maxLength={60}
             placeholder="Size, e.g. 1 kg"
-            aria-label="The packet's size"
+            aria-label="Its size"
           />
           <button type="button" className="button small" disabled={busy} onClick={() => void add()}>
             Add
@@ -735,7 +735,7 @@ function PacketsField({
               setAdding(true);
             }}
           >
-            + Add a packet
+            + Add one
           </button>
         </span>
       )}

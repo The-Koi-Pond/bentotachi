@@ -32,7 +32,6 @@ const PACKET_COUNT = /^\s*(\d+)\s*(?:\([^)]*\)\s*)?(?:cans?|tins?|packets?|packs
 // 10 g of a 500 g bag in mind.
 const CRUMBS = 0.05;
 
-const packetsWord = (n: number) => (n === 1 ? "1 packet" : `${n} packets`);
 
 // `lines` as the recipe has them (links are found by their words); amounts
 // are read at the size it was cooked (`scale`).
@@ -61,7 +60,7 @@ export function cookedUses(
     const use = ordered.length ? usePackets(item, itemLines, ordered, measures) : null;
     if (use) uses.push(use);
     else if (!ordered.length && item.status === "have")
-      uses.push({ item, title: item.name, note: "No packets counted: mark it Low?", ticked: false, finish: [], leave: null, status: "low" });
+      uses.push({ item, title: item.name, note: "None counted in stock: mark it Low?", ticked: false, finish: [], leave: null, status: "low" });
   }
   // On purpose: only when something with packets was used. A household that
   // doesn't count packets is never asked (docs/VISION.md); the "mark it
@@ -100,7 +99,7 @@ function usePackets(item: PantryItem, lines: string[], ordered: PantryPacket[], 
   if (leave && !finish.length) {
     return {
       item,
-      title: `${item.name}: ${amountLabel({ kind: first.kind, amount: used })} of the ${packetLabel(leave.packet)} packet`,
+      title: `${item.name}: ${amountLabel({ kind: first.kind, amount: used })} of the ${packetLabel(leave.packet) || "open"} one`,
       note: `About ${leave.left} left`,
       ticked: true,
       finish,
@@ -114,8 +113,8 @@ function usePackets(item: PantryItem, lines: string[], ordered: PantryPacket[], 
 function finished(item: PantryItem, finish: PantryPacket[], leave: Use["leave"], total: number): Use {
   const last = finish.length >= total;
   const title = leave
-    ? `${item.name}: ${packetsWord(finish.length)} and some of another`
-    : `${item.name}: ${finish.length} of ${packetsWord(total)}`;
+    ? `${item.name}: ${finish.length} and some of another`
+    : `${item.name}: ${finish.length} of ${total}`;
   const note = last ? "That's the last of it: marks it Out" : leave ? `About ${leave.left} left in the open one` : "";
   return { item, title, note, ticked: true, finish, leave, status: last ? "out" : null };
 }

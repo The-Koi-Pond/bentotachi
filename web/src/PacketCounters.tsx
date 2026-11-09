@@ -1,5 +1,5 @@
 import type { PantryPacket } from "./pb";
-import { packetGroups, type PacketDetails } from "./pantryPackets";
+import { groupText, packetGroups, type PacketDetails } from "./pantryPackets";
 
 // An item's packets in stock as counters, one per brand and size
 // ("− 3 × 400 g +", packetGroups): − uses up the oldest of them (the page
@@ -24,7 +24,7 @@ export default function PacketCounters({
           <button type="button" onClick={() => onUsed(group.packets[0])} aria-label={`Used one ${group.label}`} title="Used one">
             −
           </button>
-          <span>{group.count > 1 ? `${group.count} × ${group.label}` : group.label}</span>
+          <span>{groupText(group)}</span>
           <button
             type="button"
             onClick={() => onMore({ brand: group.packets[0].brand ?? "", size: group.packets[0].size ?? "" })}
