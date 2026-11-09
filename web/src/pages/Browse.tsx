@@ -5,6 +5,7 @@ import { browseAndSave, hasBuiltInBrowser, importBrowsedPage } from "../bentoBro
 import AlreadyHere from "../AlreadyHere";
 import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
+import { useUndo } from "../undo";
 import { CloseIcon } from "../icons";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { useSpell } from "../household";
@@ -46,21 +47,24 @@ export default function Browse() {
   // A recipe saved from the browser that's already here (AlreadyHere).
   const [duplicate, setDuplicate] = useState<{ id: string; title: string; page: { url: string; html: string } } | null>(null);
   const ours = useLiveRecords<SavedSite>("saved_sites");
+  const undo = useUndo();
   const [addingSite, setAddingSite] = useState(false);
-  const ourSites = [...(ours.items ?? [])].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-  );
+  const ourSites = [...(ours.items ?? [])]
+    .filter((site) => !undo.hidden.has(site.id))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 
-  async function removeSite(site: SavedSite) {
-    if (!window.confirm(`Remove “${site.name}” from our sites?`)) return;
+  // Gone at once, with Undo, rather than a question first.
+  function removeSite(site: SavedSite) {
     setError("");
-    ours.removeLocally(site.id);
-    try {
-      await savedSites().delete(site.id);
-    } catch (err) {
-      setError(errorMessage(err));
-      ours.reload();
-    }
+    undo.offer([site.id], `Removed “${site.name}”.`, async () => {
+      ours.removeLocally(site.id);
+      try {
+        await savedSites().delete(site.id);
+      } catch (err) {
+        setError(errorMessage(err));
+        ours.reload();
+      }
+    });
   }
 
   function search(event: FormEvent) {
@@ -187,7 +191,7 @@ export default function Browse() {
           )}
         </div>
         {ours.loadError && <p className="error">{ours.loadError}</p>}
-        {ours.items?.length === 0 && <p className="muted">{spell("No regulars yet. Got a favourite haunt? Add it here.")}</p>}
+        {ours.items && ourSites.length === 0 && <p className="muted">{spell("No regulars yet. Got a favourite haunt? Add it here.")}</p>}
         {ourSites.length > 0 && (
           <ul className="site-list">
             {ourSites.map((site) => (
@@ -200,7 +204,7 @@ export default function Browse() {
                 </SiteLink>
                 <button
                   className="icon-button small site-remove"
-                  onClick={() => void removeSite(site)}
+                  onClick={() => removeSite(site)}
                   aria-label={`Remove ${site.name}`}
                   title="Remove"
                 >
@@ -244,6 +248,7 @@ export default function Browse() {
           </>
         )}
       </p>
+      {undo.toast}
     </div>
   );
 }
