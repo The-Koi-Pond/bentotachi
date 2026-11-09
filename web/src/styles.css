@@ -987,8 +987,11 @@ main {
   border-radius: 8px;
 }
 
+/* Softened umeboshi words, so it reads as a button among the plain
+   compartments without shouting. */
 .plan-tray > .add-to-list {
   margin: 0;
+  color: color-mix(in srgb, var(--accent) 75%, var(--text));
   background: var(--surface);
   border: none;
   border-radius: 8px;
