@@ -1890,14 +1890,100 @@ li.divider-label {
   font-size: 0.85rem;
 }
 
-/* The scrolling list of recipes to choose from. */
+/* The scrolling list of recipes to choose from (and the pantry link
+   sheet's items): a bento tray, each a compartment. It scrolls inside the
+   sheet, so the note tray under it stays in view. */
 .chooser-list {
   flex: 1;
   min-height: 120px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   list-style: none;
-  padding: 0;
-  margin: 0 -6px;
+  padding: 4px;
+  margin: 0;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.chooser-list > li {
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+/* The chooser's search and its filters, one tray (like the Recipes
+   page's). */
+.chooser-search,
+.chooser-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.chooser-search > input,
+.chooser-note-row > input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.chooser-filters,
+.chooser-note-picks,
+.chooser-note-row {
+  display: flex;
+  gap: 4px;
+}
+
+.chooser-filters > button,
+.chooser-note-picks > button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chooser-filters > button[aria-pressed="true"] {
+  background: var(--jade-soft);
+}
+
+.chooser-filters > button:focus-visible,
+.chooser-note-picks > button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.chooser-note-row > .button {
+  border: none;
+  border-radius: 8px;
+}
+
+/* "Or just a note", in the note tray's rim. */
+.chooser-note {
+  padding-top: 0;
+  flex: none;
+}
+
+.chooser-note > h3 {
+  margin: 0;
+  padding: 7px 8px 1px;
+  font-size: 0.95rem;
+  color: var(--rim-text);
 }
 
 .chooser-list button {
@@ -1917,7 +2003,7 @@ li.divider-label {
 }
 
 .chooser-list button:hover {
-  background: var(--accent-soft);
+  background: var(--jade-soft);
 }
 
 /* "Linguine only" or "Any pasta will do", at the top of the link sheet. */
@@ -1989,37 +2075,52 @@ li.divider-label {
   font-size: 0.82rem;
 }
 
+/* "Planned Tue" and "Out of Rice" under a recipe: worth knowing, not
+   alarming, so not red. */
 .chooser-planned {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--muted);
 }
 
-/* "Out of Rice" under a recipe in the dinner chooser. */
 .chooser-out {
-  color: var(--out);
-  font-weight: 600;
+  color: color-mix(in srgb, #c25e00 80%, var(--muted));
 }
 
-/* "🎲 Surprise me" and the recipe count. */
+@media (prefers-color-scheme: dark) {
+  .chooser-out {
+    color: #e8a35c;
+  }
+}
+
+/* "🎲 Surprise me" and the recipe count, loose between the trays. */
 .chooser-tools {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-inline: var(--tray-inset);
 }
 
-/* Bento's random pick, above the list. */
+.chooser-tools .button.small {
+  min-height: 30px;
+  padding: 2px 12px;
+}
+
+/* Bento's random pick, above the list: a plum tray, so it stands out from
+   the jade ones, its line in the rim, the recipe and the buttons as
+   compartments. */
 .suggestion {
   display: flex;
+  flex: none;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 0 4px 4px;
   background: var(--accent-soft);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 
 .suggestion-label {
   margin: 0;
-  font-size: 0.85rem;
+  padding: 7px 8px 1px;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -2027,6 +2128,9 @@ li.divider-label {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 6px;
+  background: var(--surface);
+  border-radius: 8px;
 }
 
 .suggestion-recipe img,
@@ -2040,7 +2144,18 @@ li.divider-label {
 
 .suggestion-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+}
+
+.suggestion-actions > .button {
+  flex: 1;
+  min-height: 36px;
+  border: none;
+  border-radius: 8px;
+}
+
+.suggestion-actions > .button:not(.primary) {
+  background: var(--surface);
 }
 
 /* Month view */

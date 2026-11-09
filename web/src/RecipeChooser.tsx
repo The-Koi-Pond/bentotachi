@@ -145,6 +145,8 @@ export default function RecipeChooser({
     const out = checks.get(recipe.id)?.out ?? [];
     const planned = upcoming.get(recipe.id);
     const last = lastHad.get(recipe.id);
+    // Whether anything comes before "Out of …", for its " · ".
+    const lead = !!(time || twins.has(recipe.id) || average !== null || (recipe.site_rating && recipe.source_url));
     return (
       <span className="muted chooser-details">
         {/* Another recipe has this name: where this one's from first. */}
@@ -164,14 +166,16 @@ export default function RecipeChooser({
         )}
         {out.length > 0 && (
           <span className="chooser-out" title={`Out: ${out.map((item) => item.name).join(", ")}`}>
-            {" "}
+            {lead ? " · " : ""}
             {out.length === 1 ? `Out of ${out[0].name}` : `${out.length} things out`}
           </span>
         )}
         {planned ? (
-          <span className="chooser-planned"> Planned {formatDay(planned[0])}</span>
+          <span className="chooser-planned">
+            {lead || out.length > 0 ? " · " : ""}Planned {formatDay(planned[0])}
+          </span>
         ) : (
-          last && <span> · Had {timeAgo(last, localToday())}</span>
+          last && <span>{lead || out.length > 0 ? " · " : ""}Had {timeAgo(last, localToday())}</span>
         )}
       </span>
     );
@@ -219,59 +223,34 @@ export default function RecipeChooser({
           </button>
         </div>
 
-        {/* A note instead of a recipe. */}
-        <form
-          className="add-row"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (note.trim()) onNote(note.trim());
-          }}
-        >
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={100}
-            placeholder="Write a note"
-            aria-label={`Write a note for this ${meal} instead`}
-          />
-          <button className="button primary small" disabled={!note.trim()}>
-            Add
-          </button>
-        </form>
-        <div className="filter-chips" role="group" aria-label="Quick notes">
-          {NOTE_SUGGESTIONS.map((suggestion) => (
-            <button key={suggestion} onClick={() => onNote(suggestion)}>
-              <span aria-hidden="true">📝</span> {suggestion}
-            </button>
-          ))}
-        </div>
-
-        <p className="sheet-divider muted">or choose a recipe</p>
-
-        {/* Search and filters only once there are recipes to search. */}
+        {/* Recipes first, the main job (docs/VISION.md, "The dinner
+            chooser"): search and filters as one bento tray. Only once there
+            are recipes to search. */}
         {all?.length !== 0 && (
           <>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search names, tags or ingredients"
-              aria-label="Search recipes"
-            />
-            <div className="filter-chips">
-              <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-                <HeartIcon filled={favoritesOnly} size={14} /> {spell("Favourites")}
-              </button>
-              <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
-                <ZapIcon filled={quickOnly} size={14} /> Quick
-              </button>
-              <button
-                aria-pressed={haveOnly}
-                onClick={() => setHaveOnly(!haveOnly)}
-                title="Recipes where nothing in the pantry is out"
-              >
-                <span aria-hidden="true">🥕</span> We have it
-              </button>
+            <div className="chooser-search">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search names, tags or ingredients"
+                aria-label="Search recipes"
+              />
+              <div className="chooser-filters">
+                <button aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
+                  <HeartIcon filled={favoritesOnly} size={14} /> {spell("Favourites")}
+                </button>
+                <button aria-pressed={quickOnly} onClick={() => setQuickOnly(!quickOnly)}>
+                  <ZapIcon filled={quickOnly} size={14} /> Quick
+                </button>
+                <button
+                  aria-pressed={haveOnly}
+                  onClick={() => setHaveOnly(!haveOnly)}
+                  title="Recipes where nothing in the pantry is out"
+                >
+                  <span aria-hidden="true">🥕</span> We have it
+                </button>
+              </div>
             </div>
             <div className="chooser-tools">
               <button className="button small" onClick={surprise} disabled={shown.length === 0}>
@@ -293,6 +272,8 @@ export default function RecipeChooser({
           <p className="muted">No recipe for that one. Who says you need one? Add it as a note.</p>
         )}
 
+        {/* The surprise: a plum tray, so it stands out from the jade ones,
+            its line in the rim. */}
         {suggested && (
           <div className="suggestion" role="status">
             <p className="suggestion-label">{surprised.line || "How about…"}</p>
@@ -308,25 +289,59 @@ export default function RecipeChooser({
                 Plan this
               </button>
               <button className="button small" onClick={surprise} disabled={shown.length < 2}>
-                Another
+                <span aria-hidden="true">🎲</span> Another
               </button>
             </div>
           </div>
         )}
 
-        <ul className="chooser-list">
-          {shown.map((recipe) => (
-            <li key={recipe.id}>
-              <button onClick={() => onPick(recipe)}>
-                {photo(recipe)}
-                <span className="chooser-text">
-                  {title(recipe)}
-                  {details(recipe)}
-                </span>
+        {/* A tray of recipes, each a compartment; none when nothing
+            matches (the line above says so). */}
+        {shown.length > 0 && (
+          <ul className="chooser-list">
+            {shown.map((recipe) => (
+              <li key={recipe.id}>
+                <button onClick={() => onPick(recipe)}>
+                  {photo(recipe)}
+                  <span className="chooser-text">
+                    {title(recipe)}
+                    {details(recipe)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* A note instead of a recipe, last: its own tray. */}
+        <section className="chooser-note" aria-labelledby="chooser-note-title">
+          <h3 id="chooser-note-title">Or just a note</h3>
+          <form
+            className="chooser-note-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (note.trim()) onNote(note.trim());
+            }}
+          >
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={100}
+              placeholder="Write a note"
+              aria-label={`Write a note for this ${meal} instead`}
+            />
+            <button className="button primary small" disabled={!note.trim()}>
+              Add
+            </button>
+          </form>
+          <div className="chooser-note-picks" role="group" aria-label="Quick notes">
+            {NOTE_SUGGESTIONS.map((suggestion) => (
+              <button key={suggestion} onClick={() => onNote(suggestion)}>
+                {suggestion}
               </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </section>
       </div>
     </dialog>
   );

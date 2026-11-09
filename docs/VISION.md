@@ -233,6 +233,15 @@ adds a side. There's no ✕ on them: dragging one shows a bin over the tab
 bar, and dropping it there takes it off the plan, with Undo. The month
 view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 
+**The dinner chooser** (Xel, 2026-11-09, version A from live mock-ups):
+recipes first, the main job. Search and its three filters are one tray,
+then Surprise me and the count, then the recipes as compartments (the list
+scrolls inside the sheet), and "Or just a note" last, a tray of its own
+with the box and the quick notes, always in view. "Out of …" is a calm
+amber and "Planned …" plain grey: worth knowing, not alarming. A
+surprise pick is a plum tray (its line in the rim, the recipe, then
+Plan this and 🎲 Another as compartments), standing out from the jade.
+
 **The ⋮ menu and Settings** (Xel, 2026-11-09): the menu holds only what
 you reach for mid-task: your profile row, Keep screen on, Settings, and an
 update once one is waiting. Settings (its own page) holds what you set
