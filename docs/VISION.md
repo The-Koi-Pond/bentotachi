@@ -207,7 +207,9 @@ compartments, "Add these to the shopping list" as its last one; in the
 month view the weekdays on the rim, the month's days as compartments with
 today filled, other months' days as faint outlined ghosts of compartments
 (so they don't read like the weekday letters), then the chosen day's meals and
-the shopping button), the tab bar and the pantry's filter chips. Buttons, text
+the shopping button), the recipe shelves (each recipe a compartment, the
+last row filled out with recessed empty ones in the card layouts), the tab
+bar and the pantry's filter chips. Buttons, text
 boxes, tips, pop-ups and the chopstick switches stay plain; no tray inside
 a tray.
 

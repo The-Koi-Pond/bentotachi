@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   DndContext,
@@ -892,7 +892,9 @@ export default function RecipeList() {
               movable={editing && shelf.id !== OTHER}
               editLink={editing && shelf.id !== OTHER ? `/shelves?edit=${shelf.id}` : null}
             >
-              <ul className={gridClass}>{shelf.recipes.map((recipe) => tile(recipe))}</ul>
+              <ShelfGrid className={gridClass} count={shelf.recipes.length} fill={layout !== "list"}>
+                {shelf.recipes.map((recipe) => tile(recipe))}
+              </ShelfGrid>
             </Shelf>
           ))}
           {!editing && emptyShelves.length > 0 && (
@@ -927,6 +929,32 @@ export default function RecipeList() {
 
       {!editing && error && <p className="error">{error}</p>}
     </div>
+  );
+}
+
+// A shelf's recipes. In the card layouts its last row is filled out with
+// empty compartments, so a shelf is a whole bento tray (docs/VISION.md,
+// "Bento trays"); how many depends on how many fit across the screen.
+function ShelfGrid({ className, count, fill, children }: { className: string; count: number; fill: boolean; children: ReactNode }) {
+  const grid = useRef<HTMLUListElement>(null);
+  const [columns, setColumns] = useState(1);
+  useLayoutEffect(() => {
+    const element = grid.current;
+    if (!fill || !element) return;
+    const measure = () => setColumns(getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length);
+    measure();
+    const watcher = new ResizeObserver(measure);
+    watcher.observe(element);
+    return () => watcher.disconnect();
+  }, [fill]);
+  const empty = fill && columns > 1 && count % columns ? columns - (count % columns) : 0;
+  return (
+    <ul ref={grid} className={className}>
+      {children}
+      {Array.from({ length: empty }, (_, i) => (
+        <li key={`empty-${i}`} className="recipe-filler" aria-hidden="true" />
+      ))}
+    </ul>
   );
 }
 

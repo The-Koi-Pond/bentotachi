@@ -4881,15 +4881,12 @@ footer .person-name:focus-visible {
   outline-offset: 1px;
 }
 
-/* Recipes page shelves: one per category, each a drawer that opens and
-   closes, holding all its recipe cards. */
-/* Recipe shelves and pantry places are drawers:
-   one bordered card whose front (the header) is tinted soft jade, so a
-   stack of closed ones reads as a chest of drawers and an open one shows
-   its contents under its front, instead of a heading floating above. */
+/* Recipe shelves and pantry places: drawers that open and close, each a
+   bento tray with its name on the rim. A shelf's recipes are its
+   compartments (empty ones fill out the last row: .recipe-filler); a
+   place's subcategories are its (the rim between them: .pantry-sublabel
+   below). */
 .shelf,
-/* A bento tray: the place's name on the rim, its subcategories as
-   compartments (the rim between them: .pantry-sublabel below). */
 .pantry-place {
   display: flex;
   flex-direction: column;
@@ -4911,7 +4908,10 @@ footer .person-name:focus-visible {
 
 .pantry-place > h2,
 .pantry-place > h2 button,
-.pantry-place > h2 .place-count {
+.pantry-place > h2 .place-count,
+.shelf-head,
+.shelf-head button,
+.shelf-head .drawer-counts {
   color: var(--rim-text);
 }
 
@@ -4925,10 +4925,30 @@ footer .person-name:focus-visible {
   padding-left: 2px;
 }
 
-/* What's inside, under a line. */
+/* What's inside: the recipes as compartments on the rim. */
 .shelf > .recipe-grid {
-  padding: 6px 8px;
-  border-top: 1px solid var(--border);
+  gap: 5px;
+  padding: 0 0 5px;
+}
+
+.shelf .recipe-card {
+  border: none;
+  border-radius: 8px;
+}
+
+/* An empty compartment filling out a shelf's last row: a shade darker
+   than the rim, as if pressed in. */
+.recipe-filler {
+  list-style: none;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--rim-text) 10%, var(--rim));
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .recipe-filler {
+    background: color-mix(in srgb, black 30%, var(--rim));
+  }
 }
 
 .shelf-edit {
@@ -4975,10 +4995,6 @@ footer .person-name:focus-visible {
   border-radius: 12px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
   cursor: grabbing;
-}
-
-.shelf .recipe-grid {
-  padding-bottom: 4px;
 }
 
 .shelf-toggle {
