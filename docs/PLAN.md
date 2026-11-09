@@ -200,6 +200,9 @@ Not released yet:
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
+- Scanning something new into the pantry also counts the one in hand, with
+  the brand and size Open Food Facts gives ("Masterfoods 560 g"), so it's
+  in stock from the start.
 - The pantry never says "packet" (tins and bottles count too): "+ 1 more",
   "+ Add one", "How many in stock".
 - Fix: using something up and then adding a new one kept the old expiry

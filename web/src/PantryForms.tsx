@@ -3,7 +3,7 @@
 // stock). The fields' rules are in pantryFields.ts, the packets' in
 // pantryPackets.ts.
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode, type Ref } from "react";
-import { errorMessage, pantryItems, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
+import { errorMessage, pantryItems, pantryPackets, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
 import { useSpell, useStores } from "./household";
 import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
 import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
@@ -17,7 +17,8 @@ import { norm, placeOptions, subcategoryOptions, uniqueLabels } from "./pantryGr
 import { HelpBox, HelpButton, useHelp } from "./Help";
 import { editChanges, fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
-import { brandsToPickFrom, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
+import { brandsToPickFrom, packetToSave, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
+import { showError } from "./toast";
 import PacketCounters from "./PacketCounters";
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
@@ -542,22 +543,32 @@ export function AddPantryItem({
     const barcodes = barcode ? [barcode] : [];
     setBusy(true);
     setError("");
+    // What the scanned one is ("Masterfoods", "560 g"), from Open Food Facts.
+    const scannedDetails = barcode && product ? { brand: product.brand, size: tidySize(product.quantity) } : null;
     try {
-      onAdded(
-        await pantryItems().create({
-          ...record,
-          status: "have",
-          barcodes,
-          // What the scanned packet is, for the next one scanned.
-          ...(barcode &&
-            product && {
-              barcode_details: withDetails({}, barcode, { brand: product.brand, size: tidySize(product.quantity) }),
-            }),
-          // Without one, its photo is looked up online afterwards
-          // (useOnlinePhotos).
-          ...(photo && { photo, photo_link_tried: photoSources({ ...record, barcodes }) }),
-        })
-      );
+      const added = await pantryItems().create({
+        ...record,
+        status: "have",
+        barcodes,
+        // Remembered for the next one scanned.
+        ...(scannedDetails && { barcode_details: withDetails({}, barcode, scannedDetails) }),
+        // Without one, its photo is looked up online afterwards
+        // (useOnlinePhotos).
+        ...(photo && { photo, photo_link_tried: photoSources({ ...record, barcodes }) }),
+      });
+      onAdded(added);
+      // The one in hand is in stock too, so the new item's row says what it
+      // is ("Masterfoods 560 g") straight away, as "+ Add this one" does for
+      // an item already here.
+      if (scannedDetails && (scannedDetails.brand || scannedDetails.size)) {
+        try {
+          await pantryPackets().create(packetToSave({ item: added.id, ...scannedDetails, barcode, left: "" }));
+        } catch (err) {
+          // The item is saved either way; a server from before counting
+          // (no such collection) just doesn't count it.
+          if ((err as { status?: number }).status !== 404) showError(`Added, but not counted in stock: ${errorMessage(err)}`);
+        }
+      }
       setBarcode("");
       // Keep the places and subcategory chosen, so adding a whole shelf is
       // quick. Each item has its own expiry, store links, brand, note and
