@@ -640,7 +640,9 @@ main {
 .from-recipe,
 .add-notes,
 .small-print,
-.section-head:has(> h2) {
+.section-head:has(> h2),
+main > .stack > :is(h2, p),
+main > .stack > section > :is(h2, p) {
   padding-inline: var(--tray-inset);
 }
 
@@ -761,24 +763,29 @@ main {
   gap: 8px;
 }
 
-/* The pages' main boxes (Pantry, Shopping list, Browse): the button joined
-   onto the box's right end, one control rather than two. */
+/* The pages' main boxes (Pantry, Shopping list, Browse): a bento tray, the
+   box and its button side by side as compartments, one control rather
+   than two (like the Recipes page's search, .toolbar). */
 .add-row.joined {
-  gap: 0;
-  border-radius: 8px;
+  gap: 4px;
+  padding: 4px;
+  background: var(--rim);
+  border-radius: var(--radius);
 }
 
-.add-row.joined > :first-child,
-.add-row.joined > :first-child input {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+.add-row.joined > :first-child input,
+.add-row.joined > input:first-child {
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
 }
 
 .add-row.joined > .button {
   align-self: stretch;
   min-height: 0;
   padding-inline: 18px;
-  border-radius: 0 8px 8px 0;
+  border: none;
+  border-radius: 8px;
 }
 
 /* Typing in it (or tabbing to its button) outlines the whole thing, box
@@ -1818,20 +1825,24 @@ main {
 
 /* Browse */
 
+/* Browse's sites: a bento tray, each site a compartment. */
 .site-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   list-style: none;
-  padding: 0;
+  padding: 4px;
   margin: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--rim);
   border-radius: var(--radius);
+}
+
+.site-list li {
+  background: var(--surface);
+  border-radius: 8px;
   /* A tapped row's tint stays inside the rounded corners (on a phone, the
      tint stays after a tap). */
   overflow: hidden;
-}
-
-.site-list li + li {
-  border-top: 1px solid var(--border);
 }
 
 .site-row {
