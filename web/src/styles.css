@@ -967,14 +967,31 @@ main {
   vertical-align: -2px;
 }
 
-/* A bento tray: the weeks' names on the rim, each day a compartment. */
+/* A bento tray: the weeks' names on the rim, each day a compartment, and
+   "Add these to the shopping list" as the last one. */
+.plan-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
 .plan-days {
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow: hidden;
   background: var(--surface);
-  border: 5px solid var(--rim);
-  border-radius: var(--radius);
+  border-radius: 8px;
+}
+
+.plan-tray > .add-to-list {
+  margin: 0;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
 }
 
 .plan-day {
@@ -1000,7 +1017,8 @@ main {
 
 .plan-week h2 {
   margin: 0;
-  font-size: 0.85rem;
+  /* Pond Pebbles needs the size to read at all. */
+  font-size: 1.1rem;
   font-weight: 400;
   color: var(--rim-text);
 }

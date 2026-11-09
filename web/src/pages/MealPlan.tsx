@@ -284,6 +284,15 @@ export default function MealPlan() {
   }
 
   const isList = view === "list";
+  // After the plan, like "Add to shopping list" under a recipe's
+  // ingredients. Only with recipes planned from today on: that's what it
+  // shops for.
+  const shopButton = shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
+    <button className="button add-to-list" onClick={() => setShoppingOpen(true)}>
+      <CartIcon size={18} />
+      Add these to the shopping list
+    </button>
+  );
   const thisWeek = weekStart(today, firstDay);
   const atToday = isList ? chosenStart === null : month === monthStart(today);
   // The month view says which month; the list needs no label, as its week
@@ -377,29 +386,34 @@ export default function MealPlan() {
         onDragCancel={() => setDragging(null)}
       >
         {isList ? (
-          <ol className="plan-days">
-            {days.map((date, i) => (
-              <Fragment key={date}>
-                {/* "This week", "Next week": over the first day shown and
-                    each week's first day (the list starts at yesterday, so
-                    rarely on one). */}
-                {(i === 0 || date === weekStart(date, firstDay)) && (
-                  <li className="plan-week">
-                    <h2>{weekLabel(weekStart(date, firstDay))}</h2>
-                  </li>
-                )}
-                <DayRow
-                  date={date}
-                  today={today}
-                  meals={mealsOn(date)}
-                  labelled={meals.length > 1}
-                  dishesAt={(meal) => dishesAt(date, meal)}
-                  onAdd={(meal) => setPicking({ date, meal })}
-                  onRemove={remove}
-                />
-              </Fragment>
-            ))}
-          </ol>
+          // A bento tray: the days, then "Add these to the shopping list" as
+          // its last compartment.
+          <div className="plan-tray">
+            <ol className="plan-days">
+              {days.map((date, i) => (
+                <Fragment key={date}>
+                  {/* "This week", "Next week": over the first day shown and
+                      each week's first day (the list starts at yesterday, so
+                      rarely on one). */}
+                  {(i === 0 || date === weekStart(date, firstDay)) && (
+                    <li className="plan-week">
+                      <h2>{weekLabel(weekStart(date, firstDay))}</h2>
+                    </li>
+                  )}
+                  <DayRow
+                    date={date}
+                    today={today}
+                    meals={mealsOn(date)}
+                    labelled={meals.length > 1}
+                    dishesAt={(meal) => dishesAt(date, meal)}
+                    onAdd={(meal) => setPicking({ date, meal })}
+                    onRemove={remove}
+                  />
+                </Fragment>
+              ))}
+            </ol>
+            {shopButton}
+          </div>
         ) : (
           <>
             <MonthGrid
@@ -429,15 +443,8 @@ export default function MealPlan() {
         </DragOverlay>
       </DndContext>
 
-      {/* After the plan, like "Add to shopping list" under a recipe's
-          ingredients (it sat at the top until 2026-11-06). Only with recipes
-          planned from today on: that's what it shops for. */}
-      {shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
-        <button className="button add-to-list" onClick={() => setShoppingOpen(true)}>
-          <CartIcon size={18} />
-          Add these to the shopping list
-        </button>
-      )}
+      {/* The month view's, under the calendar (the list's is in its tray). */}
+      {!isList && shopButton}
 
       {picking && (
         <RecipeChooser

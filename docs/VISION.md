@@ -203,7 +203,7 @@ inside, and the chosen one filled. Used for groupings, not everything: a
 recipe's details box (details, tags, ratings, history, Time it), each
 pantry place (its name on the rim, subcategories as compartments), the
 shopping list (aisles as compartments), the plan (weeks on the rim, days as
-compartments), the tab bar and the pantry's filter chips. Buttons, text
+compartments, "Add these to the shopping list" as its last one), the tab bar and the pantry's filter chips. Buttons, text
 boxes, tips, pop-ups and the chopstick switches stay plain; no tray inside
 a tray.
 
