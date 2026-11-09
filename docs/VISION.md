@@ -33,9 +33,10 @@ These don't bend:
   move to another app. Bentotachi never holds recipes hostage. (Yummly shut
   down in December 2024 and its users' libraries went with it.)
 - **Support is optional** (decided 2026-11-01): a tip link (like Ko-fi) on
-  the website and GitHub, and a quiet one in the sideloaded app's menu.
-  Never in the Google Play app (Google pulls apps over donation links, and
-  its own billing would show Xel's address publicly), never a nag, and it
+  the website and GitHub. Not in the app at all since 2026-11-09 (it was
+  only ever in the sideloaded APK, which Xel likely won't hand out): never
+  in the Google Play app (Google pulls apps over donation links, and its
+  own billing would show Xel's address publicly), never a nag, and it
   never unlocks anything.
 - **Honest about AI.** AI helps make Bentotachi (code with Claude, first
   drafts of art with ChatGPT), and "How it's made" says so plainly. The
@@ -227,6 +228,15 @@ side by side when the names fit. A quiet dashed "+" beside a meal's chips
 adds a side. There's no ✕ on them: dragging one shows a bin over the tab
 bar, and dropping it there takes it off the plan, with Undo. The month
 view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
+
+**The ⋮ menu and Settings** (Xel, 2026-11-09): the menu holds only what
+you reach for mid-task: your profile row, Keep screen on, Settings, and an
+update once one is waiting. Settings (its own page) holds what you set
+once, in trays: Recipes (Quick means, nutrition, amounts in the method,
+step photos, shelves start closed), Your data (import and export,
+backups) and App (the server, checking for updates), with the "A Koi
+Pond app" credit quietly at the very bottom. The household and Log out
+(or "Join a household" on a phone) are on the Profile page.
 
 **The fridge door** (Xel, 2026-11-09, tried live): the splash line on a
 torn strip of masking tape, a little crooked, centred under the title

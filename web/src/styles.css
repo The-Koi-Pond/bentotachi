@@ -388,15 +388,6 @@ main {
   margin: 0;
 }
 
-.menu-note {
-  margin: 0;
-  padding: 6px 12px 8px;
-  color: var(--muted);
-  font-size: 0.88rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
-}
-
 .switch {
   position: relative;
   flex: none;
@@ -889,6 +880,105 @@ main > .stack > section:not(.tray-section) > :is(h2, p) {
   border: none;
   border-radius: 8px;
   overflow: clip;
+}
+
+/* Settings (pages/Settings.tsx), and the Profile page's household and
+   Log out: each setting a compartment, the whole row the switch or link. */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-list > li {
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.setting-row {
+  display: flex;
+  /* A row even as a <label> (Quick means), which stacks elsewhere. */
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+li.setting-row {
+  cursor: default;
+}
+
+.setting-row:hover:not(li) {
+  background: var(--jade-soft);
+}
+
+.setting-row:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.setting-row:disabled {
+  cursor: default;
+}
+
+.setting-row select {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.setting-row > svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* The Profile page's household and Log out sit on the page, not in a
+   tray, under the cards. */
+.profile-links > li {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* "A Koi Pond app" with a small Deki, quietly at the very bottom of
+   Settings. */
+.settings-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 4px 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.settings-credit img {
+  width: 22px;
+  height: auto;
+}
+
+.settings-credit:hover,
+.settings-credit:focus-visible {
+  color: var(--text);
 }
 
 /* The gap spaces a stack's paragraphs: without this the browser's own 1em
@@ -3846,26 +3936,6 @@ legend {
 }
 
 /* "Quick means [30 min or less]" in the settings menu. */
-.menu-setting {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 44px;
-  padding: 6px 12px;
-  font-weight: 400;
-}
-
-.menu-setting > span {
-  white-space: nowrap;
-}
-
-.menu-setting select {
-  width: auto;
-  min-height: 36px;
-  padding: 4px 8px;
-}
-
 .reaction-toggles {
   display: flex;
   align-items: center;
@@ -5112,32 +5182,6 @@ footer .person-name:focus-visible {
   background: var(--accent-soft);
 }
 
-/* "A Koi Pond app" with a small Deki, quietly at the bottom of the menu. */
-.menu-panel .menu-credit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  margin-top: 4px;
-  padding: 8px 12px 4px;
-  color: var(--muted);
-  font-size: 0.85rem;
-  text-decoration: none;
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 8px 8px;
-}
-
-.menu-panel .menu-credit img {
-  width: 22px;
-  height: auto;
-}
-
-.menu-panel .menu-credit:hover,
-.menu-panel .menu-credit:focus-visible {
-  color: var(--text);
-  background: var(--accent-soft);
-}
 
 /* Household page: everyone with an account. */
 .household-list {

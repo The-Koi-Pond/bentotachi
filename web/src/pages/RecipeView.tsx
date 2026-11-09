@@ -485,7 +485,7 @@ export default function RecipeView() {
     ["Total", totalMinutes(recipe)],
   ].filter(([, minutes]) => minutes) as [string, number][];
   let stepNumber = 0;
-  // "Amounts in the method" (⋮ menu): which steps show how much of what,
+  // "Amounts in the method" (Settings): which steps show how much of what,
   // from the ingredients at the recipe's chosen size (stepAmounts.ts).
   const amountPlan = stepAmountsOn
     ? planStepAmounts(recipe.steps ?? [], (recipe.ingredients ?? []).map((line) => scaleLine(line, scale)))
@@ -798,7 +798,7 @@ export default function RecipeView() {
       )}
       </div>
       )}
-      {/* Per serving, for people who turned on "Show nutrition" (the ⋮ menu):
+      {/* Per serving, for people who turned on "Show nutrition" (Settings):
           from the website's recipe data or a Paprika file, or typed in. */}
       {showNutrition && ((recipe.nutrition?.length ?? 0) > 0 || editing === "nutrition") && (
         <section className="nutrition">

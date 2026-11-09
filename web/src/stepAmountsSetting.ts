@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { remember, remembered } from "./phoneStorage.ts";
 
-// "Amounts in the method" (⋮ menu): whether a recipe's steps show how much
+// "Amounts in the method" (Settings): whether a recipe's steps show how much
 // of each ingredient they name (stepAmounts.ts). Off unless chosen, on this
 // device.
 const KEY = "bento.stepAmounts";

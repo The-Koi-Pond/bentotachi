@@ -32,7 +32,7 @@ import { sameTitle } from "../recipeTwins";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSpell } from "../household";
 
-// ⋮ → Import & export: bring in recipes from a Paprika file (Paprika,
+// ⋮ → Settings → Import & export: bring in recipes from a Paprika file (Paprika,
 // Mealie, Tandoor or another Bento make them), and save every recipe as one.
 export default function Export() {
   return (

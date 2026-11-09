@@ -43,7 +43,7 @@ export interface User extends RecordModel {
   color: string;
   // Their profile picture's file name, or "" for none (see Avatar.tsx).
   avatar: string;
-  // Whether recipes show their nutrition facts to them (the ⋮ menu's
+  // Whether recipes show their nutrition facts to them (Settings'
   // "Show nutrition"; off unless they turn it on).
   show_nutrition?: boolean;
   // "Bring step photos" from websites (import.pb.js). Missing on an older

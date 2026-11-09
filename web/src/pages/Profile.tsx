@@ -1,13 +1,15 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Link } from "react-router";
 import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, users, type User } from "../pb";
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
-import { erasePhone, isPhoneMode } from "../phoneMode";
+import { erasePhone, isPhoneMode, switchToServer } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
-import { useSpell } from "../household";
+import { ChevronIcon } from "../icons";
+import { useSingleUser, useSpell } from "../household";
 
 
 // Your own account: picture, name, username, color
@@ -27,8 +29,57 @@ export default function Profile() {
       <NameSection user={user} showUsername={!phone} />
       <ColorSection user={user} />
       {!phone && <PasswordSection user={user} />}
+      <HouseholdAndLeaving phone={phone} />
       <DeleteSection user={user} />
     </div>
+  );
+}
+
+// The household (who's in it, or its country, spoons and meals on your own)
+// and the way out: Log out, or on a phone-only Bento, which logs itself in,
+// the way to the household's server instead (where people look for a way
+// out). In the ⋮ menu before; here they're out of the way.
+function HouseholdAndLeaving({ phone }: { phone: boolean }) {
+  const singleUser = useSingleUser();
+  return (
+    <ul className="settings-list profile-links">
+      <li>
+        <Link to="/household" className="setting-row">
+          <span className="menu-item-text">
+            {phone ? "Country, spoons & meals" : singleUser ? "Share Bentotachi" : "Household"}
+            <span className="menu-item-detail">
+              {phone
+                ? "For store search, recipe hints and the plan"
+                : singleUser
+                  ? "Add someone to use it with you; country, spoons, meals"
+                  : "Who has an account; country, spoons, meals"}
+            </span>
+          </span>
+          <ChevronIcon />
+        </Link>
+      </li>
+      <li>
+        {phone ? (
+          <button type="button" className="setting-row" onClick={() => void switchToServer()}>
+            <span className="menu-item-text">
+              Join a household
+              <span className="menu-item-detail">Use the Bentotachi someone at home runs</span>
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="setting-row"
+            onClick={() => {
+              forgetOfflineCopy();
+              pb.authStore.clear();
+            }}
+          >
+            Log out
+          </button>
+        )}
+      </li>
+    </ul>
   );
 }
 
@@ -43,7 +94,7 @@ function DeleteSection({ user }: { user: User }) {
 
   async function remove() {
     const question = phone
-      ? "Delete everything in Bentotachi on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Backups.)"
+      ? "Delete everything in Bentotachi on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Settings → Backups.)"
       : `Delete your account, ${displayName(user)}? Your picture and ratings go with it. Recipes and list items you added stay for the household. This can't be undone.`;
     if (!(await askFirst(question, { yes: phone ? "Delete everything" : "Delete my account", danger: true }))) return;
     setBusy(true);

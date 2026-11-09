@@ -16,6 +16,7 @@ import Shelves from "./pages/Shelves";
 import Backups from "./pages/Backups";
 import Export from "./pages/Export";
 import Fridge from "./pages/Fridge";
+import Settings from "./pages/Settings";
 import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
 import { BookPlusIcon } from "./icons";
@@ -105,6 +106,7 @@ function Screens() {
           <Route path="/shopping" element={<ShoppingList />} />
           <Route path="/pantry" element={<Pantry />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/household" element={<Household />} />
           <Route path="/shelves" element={<Shelves />} />
           {/* Its old name, before shelves were called shelves everywhere. */}

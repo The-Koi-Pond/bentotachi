@@ -27,7 +27,7 @@ function takeJustRestored(): boolean {
   }
 }
 
-// ⋮ → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
+// ⋮ → Settings → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
 // this phone, so this is where it's saved somewhere safe, restored, or moved
 // to a real server.
 export default function Backups() {

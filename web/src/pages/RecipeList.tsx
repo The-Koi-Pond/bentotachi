@@ -856,7 +856,7 @@ export default function RecipeList() {
           {favoritesOnly && !quickOnly && !search.trim() && !filtering
             ? spell("No favourites yet. We won't tell the others. Open a recipe and tap its ♥ to save it here.")
             : quickOnly && !favoritesOnly && !search.trim() && !filtering
-              ? `No recipes fit the ${quickMinutes}-minute limit. Apparently they're not in a hurry. You can change the limit in the ⋮ menu.`
+              ? `No recipes fit the ${quickMinutes}-minute limit. Apparently they're not in a hurry. You can change the limit in ⋮ → Settings.`
               : search.trim()
                 ? `No recipe answers to “${search.trim()}”${filtering || favoritesOnly || quickOnly ? " with those filters" : ""}. We asked around.`
                 : "No recipe is all of those things at once. Try taking a filter off."}

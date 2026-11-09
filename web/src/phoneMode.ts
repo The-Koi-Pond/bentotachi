@@ -125,7 +125,7 @@ export async function leavePhoneMode(): Promise<boolean> {
   return true;
 }
 
-// "Join a household" (⋮ menu, and Backups): after asking, back to the login
+// "Join a household" (Profile, and Backups): after asking, back to the login
 // screen to connect to the household's server. What's on this phone stays,
 // and comes back with "Just me, on this phone".
 export async function switchToServer() {

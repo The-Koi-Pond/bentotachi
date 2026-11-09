@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 // Which category shelves on the Recipes page are open, on this device.
 // Normally every shelf starts open and the ones you close stay closed
-// (saved). With "Shelves start closed" on (⋮ menu), every shelf starts
+// (saved). With "Shelves start closed" on (Settings), every shelf starts
 // closed each time Bento opens; the ones you open stay open until then
 // (kept for this session only), so going into a recipe and back keeps
 // your place.

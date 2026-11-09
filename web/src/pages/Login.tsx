@@ -199,7 +199,7 @@ function PhoneSetupForm() {
         <p className="muted">
           {returning
             ? "Everything you added on this phone is still here, right where you left it."
-            : "Everything stays on this phone, so save a backup now and then (⋮ → Backups). To share with your household later: ⋮ → Join a household."}
+            : "Everything stays on this phone, so save a backup now and then (⋮ → Settings → Backups). To share with your household later: your profile → Join a household."}
         </p>
       </div>
       {!returning && (
@@ -313,8 +313,8 @@ function SetupForm({ server }: { server: string }) {
       <div className="setup-intro">
         <h2>Set up your Bentotachi</h2>
         <p className="muted">
-          This Bentotachi is brand new. Make your account first; you can add the rest of your household after, from the ⋮
-          menu.
+          This Bentotachi is brand new. Make your account first; you can add the rest of your household after, from your
+          profile (⋮ → your name).
         </p>
       </div>
       <label>

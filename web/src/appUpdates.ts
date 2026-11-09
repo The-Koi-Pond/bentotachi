@@ -53,8 +53,42 @@ export function useUpdateState(): UpdateState {
   return useSyncExternalStore(subscribe, () => state);
 }
 
-// The Google Play app never updates itself (Play's rules: Play does it), and
-// has no tip link. "npm run play" builds it with VITE_BENTO_PLAY=1
+// What the update button says: "Check for updates", or the update found.
+export function updateLabel(update: UpdateState): string {
+  if (update.status === "available") return update.latest.versionName ? `Update to ${update.latest.versionName}` : "Update Bentotachi";
+  if (update.status === "downloaded") return "Restart to update";
+  return "Check for updates";
+}
+
+// The small line under it.
+export function updateDetail(update: UpdateState): string {
+  switch (update.status) {
+    case "checking":
+      return "Checking…";
+    case "current":
+      return `As fresh as it gets (Bentotachi ${update.installed})`;
+    case "available":
+      return `You have ${update.installed}`;
+    case "installing":
+      return "Downloading…";
+    case "downloaded":
+      return "Downloaded, ready to install";
+    case "error":
+      return update.message;
+    default:
+      return "";
+  }
+}
+
+// The button's action for each state.
+export function updateAction(update: UpdateState): Promise<void> {
+  if (update.status === "available") return installUpdate();
+  if (update.status === "downloaded") return restartToUpdate();
+  return checkForUpdate();
+}
+
+// The Google Play app never updates itself (Play's rules: Play does it).
+// "npm run play" builds it with VITE_BENTO_PLAY=1
 // (scripts/play.mjs).
 export const canSelfUpdate = isAndroidApp && import.meta.env.VITE_BENTO_PLAY !== "1";
 export const updatesFromPlay = isAndroidApp && import.meta.env.VITE_BENTO_PLAY === "1";
@@ -81,7 +115,7 @@ async function askPlay(): Promise<PlayUpdateStatus | null> {
   } catch (err) {
     // Play's own reasons read like "Install Error(-10)", and a copy not
     // installed from Play always gets one, so the reason is logged and
-    // only the ⋮ menu's small line says it failed (the banner needs an
+    // only Settings' small line says it failed (the banner needs an
     // update to show).
     console.warn("Asking Google Play about updates failed", errorMessage(err));
     setState({ status: "error", message: "Couldn't ask Google Play about updates. Try again later.", installed });
