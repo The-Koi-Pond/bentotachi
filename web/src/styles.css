@@ -2946,6 +2946,7 @@ li.divider-label {
 }
 
 .kind-of-field input,
+.field-with-help input,
 .field-with-help select {
   font-weight: 400;
 }
@@ -4911,9 +4912,23 @@ legend {
    picture changes it; the round button on its corner removes it (or, with
    none yet, a camera says it can be added). */
 .profile-who {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px 16px;
+}
+
+/* The divider and My colour run under both. */
+.profile-who > .profile-divider,
+.profile-who > .profile-color {
+  grid-column: 1 / -1;
+}
+
+/* "My colour · Teal ?" on one line. */
+.field-head {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 8px;
 }
 
 .profile-avatar {

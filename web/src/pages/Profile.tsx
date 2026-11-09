@@ -9,6 +9,7 @@ import { erasePhone, isPhoneMode, switchToServer } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
 import { CameraIcon, ChevronIcon, CloseIcon } from "../icons";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSingleUser, useSpell } from "../household";
 
 
@@ -26,7 +27,6 @@ export default function Profile() {
     <div className="stack narrow profile">
       <h1>Profile</h1>
       <WhoSection user={user} phone={phone} />
-      <ColorSection user={user} />
       {!phone && <LoggingInSection user={user} />}
       <HouseholdAndLeaving phone={phone} />
       <DeleteSection user={user} />
@@ -151,10 +151,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-// You, at the top: your picture beside your display name, in one box.
-// Tapping the picture changes it; the small round button in its corner
-// takes it off (✕), or with no picture yet, says it can be added (📷).
+// You, at the top, in one box: your picture beside your display name, and
+// your colour under them. Tapping the picture changes it; the small round
+// button in its corner takes it off (✕), or with no picture yet, says it
+// can be added (📷).
 function WhoSection({ user, phone }: { user: User; phone: boolean }) {
+  const nameHelp = useHelp();
   const input = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name);
   const [busy, setBusy] = useState<"" | "picture" | "name">("");
@@ -245,11 +247,22 @@ function WhoSection({ user, phone }: { user: User; phone: boolean }) {
         />
       </div>
       <form className="stack profile-name-form" onSubmit={saveName}>
-        <label>
-          Display name
-          <span className="hint">Your name around Bentotachi, like on ratings and the dinner plan.</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder={phone ? "Your name" : user.username} />
-        </label>
+        <div className="field-with-help">
+          <span>
+            <label htmlFor="profile-name">Display name</label>
+            <HelpButton help={nameHelp} label="Where my name shows" />
+          </span>
+          <HelpBox help={nameHelp}>
+            <p>Your name around Bentotachi, like on ratings, the dinner plan and fridge notes.</p>
+          </HelpBox>
+          <input
+            id="profile-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={40}
+            placeholder={phone ? "Your name" : user.username}
+          />
+        </div>
         <div className="actions">
           <button className="button primary small" disabled={!!busy || !changed}>
             {busy === "name" ? "Saving…" : "Save"}
@@ -258,6 +271,8 @@ function WhoSection({ user, phone }: { user: User; phone: boolean }) {
         {busy === "picture" && <p className="muted small-note">Saving the picture…</p>}
         <Status status={status} />
       </form>
+      <hr className="profile-divider" />
+      <ColorPicker user={user} />
     </section>
   );
 }
@@ -278,6 +293,7 @@ function LoggingInSection({ user }: { user: User }) {
 }
 
 function UsernameForm({ user }: { user: User }) {
+  const help = useHelp();
   const [username, setUsername] = useState(user.username);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
@@ -308,10 +324,16 @@ function UsernameForm({ user }: { user: User }) {
 
   return (
     <form className="stack" onSubmit={save}>
-      <label>
-        Username
-        <span className="hint">Lowercase letters, numbers, dots, dashes and underscores.</span>
+      <div className="field-with-help">
+        <span>
+          <label htmlFor="profile-username">Username</label>
+          <HelpButton help={help} label="What a username can be" />
+        </span>
+        <HelpBox help={help}>
+          <p>What you log in with: lowercase letters, numbers, dots, dashes and underscores.</p>
+        </HelpBox>
         <input
+          id="profile-username"
           value={username}
           onChange={(e) => setUsername(cleanUsername(e.target.value))}
           maxLength={30}
@@ -321,7 +343,7 @@ function UsernameForm({ user }: { user: User }) {
           autoComplete="username"
           required
         />
-      </label>
+      </div>
       <div className="actions">
         <button className="button primary small" disabled={busy || !changed}>
           {busy ? "Saving…" : "Save"}
@@ -335,8 +357,9 @@ function UsernameForm({ user }: { user: User }) {
 // My color: marks your name and thumbs up around the app. Eight ready-made
 // ones, or any at all from the device's picker (the rainbow). Tap the chosen
 // one again for Bentotachi's usual plum (the accent).
-function ColorSection({ user }: { user: User }) {
+function ColorPicker({ user }: { user: User }) {
   const spell = useSpell();
+  const help = useHelp();
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const current = PERSON_COLORS.find((color) => color.value === user.color);
   // Any colour at all: the rainbow swatch opens the device's own picker.
@@ -363,45 +386,47 @@ function ColorSection({ user }: { user: User }) {
   }
 
   return (
-    <Section title={spell("My colour")}>
-      <div className="stack profile-color">
-        <span className="muted">
-          {current?.name ?? (custom ? spell("Your own colour") : "None (the app's plum)")}. It marks your name and thumbs up around the
-          app.
-        </span>
-        <div className="swatches" role="group" aria-label={spell("Choose my colour")}>
-          {PERSON_COLORS.map((color) => (
-            <button
-              key={color.value}
-              type="button"
-              className="swatch"
-              style={{ background: color.value }}
-              aria-label={color.name}
-              aria-pressed={color.value === user.color}
-              title={color.name}
-              onClick={() => void save({ color: color.value === user.color ? "" : color.value })}
-            />
-          ))}
+    <div className="stack profile-color">
+      <span className="field-head">
+        <strong>{spell("My colour")}</strong>
+        <span className="muted">{current?.name ?? (custom ? spell("Your own colour") : "None (the app's plum)")}</span>
+        <HelpButton help={help} label={spell("What my colour does")} />
+      </span>
+      <HelpBox help={help}>
+        <p>It marks your name and thumbs up around the app, and the paper of your notes on the fridge door.</p>
+      </HelpBox>
+      <div className="swatches" role="group" aria-label={spell("Choose my colour")}>
+        {PERSON_COLORS.map((color) => (
           <button
+            key={color.value}
             type="button"
-            className="swatch swatch-any"
-            style={custom ? ({ "--pick": user.color } as CSSProperties) : undefined}
-            aria-label={spell("Any colour")}
-            aria-pressed={custom}
-            title={spell("Any colour")}
-            onClick={() => {
-              const input = picker.current;
-              if (!input) return;
-              // showPicker where the browser has it; a click opens it elsewhere.
-              if (typeof input.showPicker === "function") input.showPicker();
-              else input.click();
-            }}
+            className="swatch"
+            style={{ background: color.value }}
+            aria-label={color.name}
+            aria-pressed={color.value === user.color}
+            title={color.name}
+            onClick={() => void save({ color: color.value === user.color ? "" : color.value })}
           />
-          <input ref={picker} type="color" className="swatch-picker" defaultValue={user.color || "#0c8599"} tabIndex={-1} aria-hidden="true" />
-        </div>
+        ))}
+        <button
+          type="button"
+          className="swatch swatch-any"
+          style={custom ? ({ "--pick": user.color } as CSSProperties) : undefined}
+          aria-label={spell("Any colour")}
+          aria-pressed={custom}
+          title={spell("Any colour")}
+          onClick={() => {
+            const input = picker.current;
+            if (!input) return;
+            // showPicker where the browser has it; a click opens it elsewhere.
+            if (typeof input.showPicker === "function") input.showPicker();
+            else input.click();
+          }}
+        />
+        <input ref={picker} type="color" className="swatch-picker" defaultValue={user.color || "#0c8599"} tabIndex={-1} aria-hidden="true" />
       </div>
       <Status status={status} />
-    </Section>
+    </div>
   );
 }
 
