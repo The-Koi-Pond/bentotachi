@@ -10,6 +10,7 @@ import {
   pb,
   personStyle,
   recipes,
+  useCurrentUser,
   type Note,
   type User,
 } from "../pb";
@@ -18,9 +19,21 @@ import { useUndo } from "../undo";
 import { usePlanMeals, useSingleUser } from "../household";
 import { isPhoneMode } from "../phoneMode";
 import { addDays, localToday, toStoredDate } from "../dates";
-import { happenings, newestCreated, noteAge, planSummary, randomSplash, shortList, type Happening } from "../fridgeDoor";
+import {
+  happenings,
+  magnetOf,
+  newestCreated,
+  noteAge,
+  noteWear,
+  planSummary,
+  randomSplash,
+  shortList,
+  type Happening,
+  type MagnetKind,
+} from "../fridgeDoor";
 import { markFridgeSeen } from "../fridgeSeen";
 import { CheckIcon } from "../icons";
+import { BenMood } from "../Brand";
 
 // The fridge door: the title opens it (App.tsx). A splash line, notes the
 // household leaves for each other, and what's been happening lately. On your
@@ -40,6 +53,20 @@ export default function Fridge() {
   }, [list.items]);
 
   const shown = [...(list.items ?? [])].filter((note) => !undo.hidden.has(note.id)).sort((a, b) => b.created.localeCompare(a.created));
+  // A note being peeled off (Done), for the moment before it's gone.
+  const [peeling, setPeeling] = useState<string | null>(null);
+  const now = new Date();
+
+  // Done: the note peels off, then is taken down (with Undo). Straight away
+  // for anyone who has the phone set to reduce motion.
+  function peel(note: Note) {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return takeDown(note);
+    setPeeling(note.id);
+    window.setTimeout(() => {
+      setPeeling(null);
+      takeDown(note);
+    }, 320);
+  }
 
   function takeDown(note: Note) {
     setError("");
@@ -61,43 +88,63 @@ export default function Fridge() {
         <p className="fridge-splash">{splash}</p>
       </div>
 
-      <NoteForm solo={solo} onPosted={list.upsert} />
-
       {list.loadError && <p className="error">{list.loadError}</p>}
       {error && <p className="error">{error}</p>}
-      {list.items && shown.length === 0 && (
-        // A dashed outline where the notes would go, so it doesn't float.
-        // The note box just above says what to do.
-        <p className="muted fridge-empty">Nothing on the fridge yet, just magnets.</p>
-      )}
-      {shown.length > 0 && (
-        <ul className="fridge-notes">
-          {shown.map((note) => (
-            <li
-              key={note.id}
-              className={`fridge-note paper-${paperOf(note.id)}`}
-              // The magnet in their colour (wood on your own).
-              style={solo ? undefined : personStyle(note.expand?.added_by)}
-            >
-              <p className="fridge-note-text">{note.text}</p>
-              <div className="fridge-note-meta">
-                <span className="muted">
-                  {!solo && note.expand?.added_by && (
-                    <>
-                      <Person user={note.expand.added_by} />
-                      {" · "}
-                    </>
-                  )}
-                  {noteAge(note.created, new Date())}
-                </span>
-                <button className="button small ghost" onClick={() => takeDown(note)} aria-label={`Take down “${note.text.slice(0, 40)}”`}>
-                  <CheckIcon /> Done
-                </button>
-              </div>
-            </li>
+      {/* The door itself (docs/VISION.md, "The fridge door"): an enamel
+          panel with a handle, a blank note to write on, the notes stuck on
+          it. */}
+      <div className="fridge-door">
+        <NoteForm solo={solo} onPosted={list.upsert} />
+        {list.items &&
+          (shown.length === 0 ? (
+            <div className="fridge-empty">
+              <span className="fridge-spare-magnets" aria-hidden="true">
+                <Magnet kind="plum" />
+                <Magnet kind="leaf" />
+                <Magnet kind="onigiri" />
+              </span>
+              <BenMood mood="ready" small />
+              <p className="muted">Nothing on the fridge yet. Suspiciously tidy.</p>
+            </div>
+          ) : (
+            <ul className="fridge-notes">
+              {shown.map((note) => {
+                // The note is on paper in its writer's colour; someone
+                // without one gets one of three papers.
+                const paper = personStyle(note.expand?.added_by);
+                return (
+                <li
+                  key={note.id}
+                  className={`fridge-note ${paper ? "person-paper" : `paper-${paperOf(note.id)}`} wear-${noteWear(note.created, now)} ${peeling === note.id ? "peeling" : ""}`}
+                  style={paper}
+                >
+                  <Magnet kind={magnetOf(note.id)} />
+                  <p className="fridge-note-text">{note.text}</p>
+                  <div className="fridge-note-meta">
+                    <span className="muted">
+                      {!solo && note.expand?.added_by && (
+                        <>
+                          <Person user={note.expand.added_by} />
+                          {" · "}
+                        </>
+                      )}
+                      {noteAge(note.created, now)}
+                    </span>
+                    <button
+                      className="button small ghost"
+                      onClick={() => peel(note)}
+                      disabled={peeling === note.id}
+                      aria-label={`Take down “${note.text.slice(0, 40)}”`}
+                    >
+                      <CheckIcon /> Done
+                    </button>
+                  </div>
+                </li>
+                );
+              })}
+            </ul>
           ))}
-        </ul>
-      )}
+      </div>
 
       {!solo && <Lately />}
       {undo.toast}
@@ -113,6 +160,40 @@ function paperOf(id: string): number {
   return sum % 3;
 }
 
+// A fridge magnet: a plum, a leaf, an onigiri, or a tiny Ben. Always in its
+// own colours: the note under it is in its writer's.
+function Magnet({ kind }: { kind: MagnetKind }) {
+  return (
+    <svg className={`fridge-magnet magnet-${kind}`} viewBox="0 0 24 24" aria-hidden="true">
+      {kind === "plum" && (
+        <>
+          <circle cx="12" cy="12" r="8" fill="#a82d4a" />
+          <ellipse cx="9.5" cy="9" rx="2.4" ry="1.6" fill="#fff" opacity="0.35" />
+        </>
+      )}
+      {kind === "leaf" && (
+        <>
+          <path d="M4 18C4 9 10 4 20 4c0 10-5 16-14 16z" fill="#5a9a8a" />
+          <path d="M6 18L16 8" stroke="#fff" strokeOpacity="0.4" strokeWidth="1.2" />
+        </>
+      )}
+      {(kind === "onigiri" || kind === "ben") && (
+        <>
+          <path d="M12 3c2 0 9 11 9 14s-3 4-9 4-9-1-9-4 7-14 9-14z" fill="#fffdf6" stroke="#3a2f28" strokeWidth="1.2" />
+          <rect x="8" y="14" width="8" height="7" rx="1" fill="#24312d" />
+          {kind === "ben" && (
+            <>
+              <circle cx="9.5" cy="11" r="1" fill="#3a2f28" />
+              <circle cx="14.5" cy="11" r="1" fill="#3a2f28" />
+              <ellipse cx="12" cy="16" rx="2" ry="1.6" fill="#3a2f28" />
+            </>
+          )}
+        </>
+      )}
+    </svg>
+  );
+}
+
 function Person({ user }: { user: User }) {
   return (
     <span className="person-name" style={personStyle(user)}>
@@ -125,6 +206,8 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // The blank note is your next one, so it's on your paper.
+  const paper = personStyle(useCurrentUser() ?? undefined);
 
   async function post(event: FormEvent) {
     event.preventDefault();
@@ -142,7 +225,8 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
   }
 
   return (
-    <form className="card stack fridge-form" onSubmit={post}>
+    // A fresh note waiting for words, the button under it (docs/VISION.md).
+    <form className={paper ? "fridge-form person-paper" : "fridge-form"} style={paper} onSubmit={post}>
       {/* No heading: the box says who it's for in its placeholder; the
           label stays for screen readers. */}
       <textarea

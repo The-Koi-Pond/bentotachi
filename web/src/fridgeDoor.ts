@@ -59,6 +59,25 @@ function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+// How worn a note looks, so stale reminders stand out without words: 0
+// fresh, 1 from 3 days old (a little faded, its corner curling), 2 from a
+// week (more so).
+export function noteWear(created: string, now: Date): 0 | 1 | 2 {
+  const days = (now.getTime() - storedTime(created).getTime()) / 86_400_000;
+  if (!(days >= 3)) return 0;
+  return days >= 7 ? 2 : 1;
+}
+
+// Which magnet holds a note up, from its id so it keeps it: mostly a plum,
+// some leaves and onigiri, and now and then a tiny Ben.
+export type MagnetKind = "plum" | "leaf" | "onigiri" | "ben";
+export function magnetOf(id: string): MagnetKind {
+  let sum = 0;
+  for (const char of id) sum += char.charCodeAt(0);
+  if (sum % 13 === 0) return "ben";
+  return (["plum", "plum", "plum", "leaf", "leaf", "onigiri"] as const)[sum % 6];
+}
+
 // "3 of the next 7 dinners are planned", counting from today, for the meals
 // the household plans.
 export function planSummary(entries: { date: string; meal?: string }[], today: string, meals: Meal[]): string {

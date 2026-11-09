@@ -1,7 +1,35 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { happenings, newestCreated, noteAge, planSummary, randomSplash, shortList, SPLASH_LINES, unreadNotes } from "../src/fridgeDoor.ts";
+import {
+  happenings,
+  magnetOf,
+  newestCreated,
+  noteAge,
+  noteWear,
+  planSummary,
+  randomSplash,
+  shortList,
+  SPLASH_LINES,
+  unreadNotes,
+} from "../src/fridgeDoor.ts";
+
+test("a note looks worn from 3 days, more so from a week", () => {
+  const now = new Date("2026-11-09T12:00:00Z");
+  assert.equal(noteWear("2026-11-09 08:00:00.000Z", now), 0);
+  assert.equal(noteWear("2026-11-06 13:00:00.000Z", now), 0);
+  assert.equal(noteWear("2026-11-06 11:00:00.000Z", now), 1);
+  assert.equal(noteWear("2026-11-01 12:00:00.000Z", now), 2);
+  assert.equal(noteWear("not a date", now), 0);
+});
+
+test("each note keeps its magnet, mostly plums, now and then Ben", () => {
+  assert.equal(magnetOf("abc123"), magnetOf("abc123"));
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < 2000; i++) counts[magnetOf(`note${i}x${i * 7}`)] = (counts[magnetOf(`note${i}x${i * 7}`)] ?? 0) + 1;
+  assert.ok(counts.plum > counts.leaf && counts.leaf > counts.onigiri, JSON.stringify(counts));
+  assert.ok(counts.ben > 0 && counts.ben < counts.onigiri, JSON.stringify(counts));
+});
 
 test("a splash line is one of the list, first to last", () => {
   assert.equal(randomSplash(() => 0), SPLASH_LINES[0]);

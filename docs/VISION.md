@@ -225,6 +225,20 @@ adds a side. There's no ✕ on them: dragging one shows a bin over the tab
 bar, and dropping it there takes it off the plan, with Undo. The month
 view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 
+**The fridge door** (Xel, 2026-11-09, tried live): a soft jade enamel
+panel with a handle down its right edge, everything below the splash line
+stuck on it. Each note is on paper in its writer's colour (from Settings;
+someone without one gets white, soft plum or peach), and the box to write
+in is a blank note in your own colour. Notes are held by fridge magnets in
+their own colours (mostly umeboshi plums, some leaves and onigiri, now and
+then a tiny Ben), sit in two loose columns, and peel off when Done (no
+animation for reduced motion). From 3 days a note fades and its corner
+curls, more so from a week. An empty door shows spare magnets, Ben, and
+"Suspiciously tidy."
+
+Removing something small (a note, one of our sites) happens at once with
+Undo, never the browser's own "Are you sure?" box.
+
 ## What it won't become
 
 - A social network: no public feed, followers or recipe sharing with

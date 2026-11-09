@@ -497,12 +497,78 @@ main {
   font-style: italic;
 }
 
-/* The note form: snug around its box and button,
-   like the recipe details card. Doubled up to beat .card and .stack,
-   which come later in this file. */
-.card.fridge-form {
-  padding: 14px;
+/* The door: an enamel panel with a handle down its right edge, everything
+   below the splash line stuck on it. */
+.fridge-door {
+  --door: var(--jade-soft);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 55vh;
+  padding: 22px 30px 22px 14px;
+  background: var(--door);
+  border: 1px solid var(--rim);
+  border-radius: 18px;
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.04);
+}
+
+.fridge-door::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  right: 9px;
+  width: 7px;
+  height: 120px;
+  background: linear-gradient(90deg, #c9c4b8, #f4f1ea 45%, #b3ad9f);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .fridge-door::after {
+    background: linear-gradient(90deg, #4a514e, #7d8582 45%, #3f4643);
+  }
+}
+
+/* The note form: a fresh note waiting for words, held by a wooden magnet,
+   its button under it. */
+.fridge-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  padding: 18px 12px 12px;
+  background: #fffbea;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.12);
+}
+
+.fridge-form::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: #a87a43;
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25), 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+.fridge-form textarea {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px dashed color-mix(in srgb, var(--text) 25%, transparent);
+  border-radius: 0;
+  padding-inline: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fridge-form {
+    background: #34312a;
+  }
 }
 
 /* The notes as paper stuck on a fridge: two
@@ -528,7 +594,8 @@ main {
   /* Room above it for its magnet. */
   margin-top: 8px;
   padding: 16px 12px 10px;
-  background: var(--jade-soft);
+  /* Not soft jade: that's the door. */
+  background: var(--surface);
   border-radius: 6px;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.12);
   transform: rotate(-1.4deg);
@@ -540,6 +607,65 @@ main {
 
 .fridge-note:nth-child(3n) {
   transform: rotate(-0.6deg);
+}
+
+/* Loose, like a real fridge: the right-hand notes sit a little lower, and
+   every third one leans out a bit. */
+.fridge-note:nth-child(even) {
+  margin-top: 22px;
+}
+
+.fridge-note:nth-child(5n) {
+  transform: rotate(2.2deg) translateX(3px);
+}
+
+/* Stale notes look it: a few days old, a little faded with a corner
+   curling; a week old, more so (noteWear in fridgeDoor.ts). */
+.fridge-note.wear-1 {
+  filter: saturate(0.7);
+}
+
+.fridge-note.wear-2 {
+  filter: saturate(0.4) brightness(0.97);
+}
+
+.fridge-note.wear-1::after,
+.fridge-note.wear-2::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(315deg, var(--door) 50%, rgb(0 0 0 / 0.16) 50%, rgb(255 255 255 / 0.3));
+  border-top-left-radius: 4px;
+}
+
+.fridge-note.wear-2::after {
+  width: 22px;
+  height: 22px;
+}
+
+/* Done: the note peels off its magnet and drops. */
+.fridge-note.peeling {
+  transform-origin: 50% 0;
+  animation: fridge-peel 320ms ease-in forwards;
+}
+
+@keyframes fridge-peel {
+  30% {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(14deg) translateY(40px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fridge-note.peeling {
+    animation: none;
+  }
 }
 
 .fridge-note.paper-1 {
@@ -556,28 +682,54 @@ main {
   }
 }
 
-/* The magnet. */
-.fridge-note::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  background: var(--person, #a87a43);
-  border-radius: 50%;
-  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25), 0 1px 2px rgb(0 0 0 / 0.25);
+/* Paper in its writer's colour (Settings), soft enough to read on; the
+   blank note too, in yours. */
+.fridge-note.person-paper,
+.fridge-form.person-paper {
+  background: color-mix(in srgb, var(--person) 22%, var(--surface));
 }
 
-/* No notes yet: a dashed outline where they'd go, like the plan's empty
-   "+ Add dinner" places. */
+@media (prefers-color-scheme: dark) {
+  .fridge-note.person-paper,
+  .fridge-form.person-paper {
+    background: color-mix(in srgb, var(--person) 30%, var(--surface));
+  }
+}
+
+/* The magnet (Magnet in pages/Fridge.tsx). */
+.fridge-magnet {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3));
+}
+
+/* No notes yet: a clean door, a few spare magnets, Ben looking for
+   something to read. */
 .fridge-empty {
-  margin: 0;
-  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: auto 0;
   text-align: center;
-  border: 1.5px dashed var(--border);
-  border-radius: var(--radius);
+}
+
+.fridge-empty p {
+  margin: 0;
+}
+
+.fridge-spare-magnets {
+  display: flex;
+  gap: 10px;
+}
+
+.fridge-spare-magnets .fridge-magnet {
+  position: static;
+  margin: 0;
 }
 
 .fridge-note-text {
