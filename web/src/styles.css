@@ -6744,21 +6744,20 @@ em.soft {
 .pantry-card-actions > .button {
   gap: 4px;
   min-height: 34px;
-  padding: 2px 11px;
-  font-size: 0.86rem;
+  padding: 2px 9px;
+  font-size: 0.85rem;
 }
 
 .pantry-card-edit {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  width: 34px;
+  height: 34px;
   margin-left: auto;
-  font-size: 0.86rem;
+  color: var(--accent);
 }
 
 .pantry-card-edit svg {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
 }
 
 .pantry-card-size {

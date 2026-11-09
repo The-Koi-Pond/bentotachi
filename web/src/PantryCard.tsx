@@ -79,9 +79,9 @@ export default function PantryCard({
             </button>
           </>
         )}
-        {/* Short, so all three fit one row on a phone. */}
-        <button className="link-button pantry-card-edit" onClick={onEditAll} aria-label="Edit everything">
-          <PencilIcon /> Edit
+        {/* Just a pencil, so all three fit one row on any phone. */}
+        <button className="icon-button pantry-card-edit" onClick={onEditAll} aria-label="Edit everything" title="Edit everything">
+          <PencilIcon />
         </button>
       </div>
       {other && packets && (
