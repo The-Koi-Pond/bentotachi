@@ -1661,12 +1661,16 @@ main {
   text-align: left;
 }
 
-/* Days of the months either side: bare rim with faint numbers, so they
-   don't look like today's filled compartment. */
+/* Days of the months either side: faint dashed ghosts of compartments, so
+   they read as neither today's filled one nor the weekday letters. */
 .month-cell.other-month .month-cell-button {
-  color: var(--rim-text);
+  color: color-mix(in srgb, var(--rim-text) 30%, transparent);
   background: none;
-  opacity: 0.55;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rim-text) 15%, transparent);
+}
+
+.month-cell.other-month .month-day {
+  font-weight: 500;
 }
 
 .month-cell.today .month-day {
