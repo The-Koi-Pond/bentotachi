@@ -2735,6 +2735,54 @@ legend {
   height: auto;
 }
 
+/* Soft on purpose, so it isn't noisy beside real photos: a ghost of a box,
+   a faint leaf, the plum and a big letter carry it. */
+.stand-in .bento-box {
+  fill: none;
+  stroke: rgb(0 0 0 / 0.1);
+  stroke-width: 1.4;
+}
+
+.stand-in .bento-lines {
+  fill: none;
+  stroke: rgb(0 0 0 / 0.09);
+  stroke-width: 1.6;
+}
+
+.stand-in .bento-baran {
+  fill: none;
+  stroke: #5a9a8a;
+  stroke-width: 1.6;
+  opacity: 0.35;
+}
+
+.stand-in .bento-plum {
+  fill: #a82d4a;
+}
+
+.stand-in .bento-letter {
+  font: 400 30px "Pond Pebbles", system-ui, sans-serif;
+  fill: rgb(58 47 40 / 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stand-in .bento-box {
+    stroke: rgb(255 255 255 / 0.12);
+  }
+
+  .stand-in .bento-lines {
+    stroke: rgb(255 255 255 / 0.1);
+  }
+
+  .stand-in .bento-plum {
+    fill: #ee7d92;
+  }
+
+  .stand-in .bento-letter {
+    fill: rgb(241 235 229 / 0.85);
+  }
+}
+
 /* Small thumbnails (the plan, the chooser): the box nearly fills them. */
 .dinner-no-photo.stand-in svg {
   width: 88%;

@@ -189,7 +189,8 @@ is a little jar (full, a little left, empty) instead of signal bars,
 keeping its words and colours; ticked shopping items get a brush stroke
 instead of a thin line; a round "Cooked" stamp sits beside "Last had"; a
 recipe without a photo shows a small drawn bento box with its first
-letter instead of 🍲; and two-way switches (Simple | Detailed, List |
+letter instead of 🍲 (kept soft after seeing it live: a faint box and
+leaf, the plum, and a big letter); and two-way switches (Simple | Detailed, List |
 Month…) show the chosen one with a wooden chopstick underline and the
 other faded, Xel's own design (instead of an iPhone-style pill).
 
