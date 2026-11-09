@@ -19,6 +19,7 @@ import { useUndo } from "../undo";
 import { showError, showToast } from "../toast";
 import { UNDO_SECONDS } from "../pendingDelete";
 import {
+  countsInStock,
   detailsFor,
   itemAfterPacket,
   justBought,
@@ -254,10 +255,10 @@ export default function Pantry() {
   }
 
   // A packet bought or found: on the item (itemAfterPacket says what that
-  // changes on it). Whether the packet was added. Within a few hours of the
+  // changes on it). The packet added, or null. Within a few hours of the
   // shopping list adding one to it (ticked bought), this is likely the same
   // bag being put away, so it asks first.
-  async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<boolean> {
+  async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<PantryPacket | null> {
     const remember = learnsBarcode(item, barcode, details);
     const bought = justBought(packetsOf(packets.items ?? [], item.id, undo.hidden));
     if (
@@ -269,25 +270,55 @@ export default function Pantry() {
     ) {
       // The same bag: nothing added, but a scanned barcode is still learned.
       if (remember) await save(item, { barcode_details: withDetails(item, barcode, details) }, "");
-      return false;
+      return null;
     }
+    let added: PantryPacket;
     try {
-      packets.upsert(
-        await pantryPackets().create(packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
-      );
+      added = await pantryPackets().create(packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode }));
+      packets.upsert(added);
     } catch (err) {
       showError(errorMessage(err));
-      return false;
+      return null;
     }
     const changes = itemAfterPacket(item, barcode, details);
     if (changes) await save(item, changes, "");
-    return true;
+    return added;
+  }
+
+  // A scan of a barcode an item already knows, when the household counts
+  // that item's stock (countsInStock): it's added by itself, no tap needed,
+  // with Undo in case it was only scanned to check. Undo takes it off, and
+  // puts back an Out it ended.
+  async function addScannedByItself(item: PantryItem, code: string) {
+    if (!packets.items || !countsInStock(item, packetsOf(packets.items, item.id, undo.hidden))) return;
+    const added = await addScannedPacket(item, code);
+    if (!added) return;
+    setScanned((current) => (current?.code === code ? { ...current, added: true } : current));
+    // "Masterfoods 560 g", but not "Nutella: Nutella 400 g".
+    const label = packetLabel({ brand: norm(added.brand ?? "") === norm(item.name) ? "" : added.brand, size: added.size });
+    showToast(`Added one to ${item.name}${label ? `: ${label}` : ""}.`, {
+      action: {
+        label: "Undo",
+        run: () =>
+          void (async () => {
+            try {
+              await pantryPackets().delete(added.id);
+              packets.removeLocally(added.id);
+              setScanned((current) => (current?.code === code ? { ...current, added: false } : current));
+              // Asked, not added to the list again: it was only Out before.
+              if (item.status === "out") await save(item, { status: "out" }, "", { ask_about_list: true });
+            } catch (err) {
+              showError(errorMessage(err));
+            }
+          })(),
+      },
+    });
   }
 
   // A scanned packet of something already in the pantry: its brand and size
   // are what the item remembers for the barcode, or else what Open Food
   // Facts says (asked once).
-  async function addScannedPacket(item: PantryItem, code: string): Promise<boolean> {
+  async function addScannedPacket(item: PantryItem, code: string): Promise<PantryPacket | null> {
     let looked: BarcodeProduct | null = null;
     if (!knowsBarcode(item, code)) {
       try {
@@ -348,10 +379,13 @@ export default function Pantry() {
     setAdding(false);
     setFromStore(null);
     setEditingScanned(false);
-    const known = !!itemWithBarcode(items ?? [], code);
+    const known = itemWithBarcode(items ?? [], code);
     const sure = typed || scanned?.code === code;
     setScanned({ code, looking: !known, product: null, lookupError: "", sure });
-    if (known) return;
+    if (known) {
+      void addScannedByItself(known, code);
+      return;
+    }
     let product: BarcodeProduct | null = null;
     let lookupError = "";
     try {
@@ -518,9 +552,9 @@ export default function Pantry() {
           onDelete={(item) => void remove(item).then((removed) => removed && setScanned(null))}
           onAddBarcodeTo={(item, brand) => void addBarcodeTo(item, scanned.code, brand ?? scanned.product?.brand ?? "")}
           packetsFor={packets.items && ((item) => packetsOf(packets.items ?? [], item.id, undo.hidden))}
-          onAddScannedPacket={(item) => addScannedPacket(item, scanned.code)}
+          onAddScannedPacket={(item) => addScannedPacket(item, scanned.code).then(Boolean)}
           onFinishPacket={finishPacket}
-          onAddTypedPacket={addPacket}
+          onAddTypedPacket={(item, details) => addPacket(item, details).then(Boolean)}
           onClose={() => setScanned(null)}
         />
       )}
@@ -663,7 +697,7 @@ export default function Pantry() {
                           item={item}
                           existing={items}
                           packets={packets.items && packetsOf(packets.items, item.id, undo.hidden)}
-                          onAddPacket={(details) => addPacket(item, details)}
+                          onAddPacket={(details) => addPacket(item, details).then(Boolean)}
                           onFinishPacket={(packet) => finishPacket(item, packet)}
                           onSaved={(saved) => {
                             pantry.upsert(saved);

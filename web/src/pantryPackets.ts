@@ -117,7 +117,16 @@ export function justBought<T extends Pick<PantryPacket, "bought_with" | "created
   return bought.sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
 }
 
-// What "+ 1 packet" adds: one like the item's usual packet (the last one
+// Whether the household counts this item's stock: some counted now, or a
+// usual one remembered from counting before (it's kept after they're all
+// used up). Scanning one of these adds it by itself; one nobody counts
+// isn't started on (counting stays each household's choice).
+export function countsInStock(item: Pick<PantryItem, "usual_packet">, packets: unknown[]): boolean {
+  const usual = item.usual_packet;
+  return packets.length > 0 || !!(usual && (usual.brand || usual.size));
+}
+
+// What "+ 1 more" adds: one like the item's usual packet (the last one
 // added, remembered after they're gone), else like its newest packet, else
 // one with its favourite brand and no size.
 export function nextPacket(

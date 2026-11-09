@@ -9,6 +9,9 @@ export interface Toast {
   id: number;
   text: string;
   error: boolean;
+  // One button at its end, like "Undo"; tapping it also puts the message
+  // away.
+  action?: { label: string; run: () => void };
 }
 
 // Long enough to read; an error a little longer.
@@ -24,9 +27,9 @@ function emit() {
   for (const listener of listeners) listener();
 }
 
-export function showToast(text: string, { error = false }: { error?: boolean } = {}) {
+export function showToast(text: string, { error = false, action }: { error?: boolean; action?: Toast["action"] } = {}) {
   if (!text) return;
-  current = { id: ++count, text, error };
+  current = { id: ++count, text, error, action };
   clearTimeout(timer);
   timer = setTimeout(hideToast, error ? ERROR_TOAST_MS : TOAST_MS);
   emit();

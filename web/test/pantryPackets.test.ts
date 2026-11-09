@@ -3,6 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   brandsToPickFrom,
+  countsInStock,
   detailsFor,
   itemAfterPacket,
   justBought,
@@ -195,4 +196,11 @@ test("an older item's several brands are offered to pick the favourite from", ()
   assert.deepEqual(brandsToPickFrom("Coles, coles"), []);
   assert.deepEqual(brandsToPickFrom("White Mill"), []);
   assert.deepEqual(brandsToPickFrom(""), []);
+});
+
+test("scanning adds by itself only to items whose stock is counted", () => {
+  assert.equal(countsInStock({ usual_packet: null }, [{}]), true, "some in stock now");
+  assert.equal(countsInStock({ usual_packet: { brand: "Masterfoods", size: "560 g" } }, []), true, "all used up, but counted before");
+  assert.equal(countsInStock({ usual_packet: { brand: "", size: "" } }, []), false, "an empty usual one doesn't count");
+  assert.equal(countsInStock({ usual_packet: null }, []), false, "never counted: left alone");
 });

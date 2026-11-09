@@ -6841,7 +6841,7 @@ em.soft {
   padding-left: 18px;
 }
 
-body:has(.undo-toast) .notice-toast {
+body:has(.undo-toast:not(.notice-toast)) .notice-toast {
   bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 72px);
 }
 

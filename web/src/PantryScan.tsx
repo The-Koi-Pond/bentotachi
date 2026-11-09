@@ -63,8 +63,10 @@ export function ScanResult({
   const [otherId, setOtherId] = useState("");
   // The scanned packet, once added (one scan, one packet).
   const [addedPacket, setAddedPacket] = useState<"" | "adding" | "added">("");
-  // Each scan (the same barcode again too) can add its packet.
-  useEffect(() => setAddedPacket(""), [scanned]);
+  // Each scan (the same barcode again too) can add its packet; on an item
+  // whose stock is counted, the scan already did (Pantry's
+  // addScannedByItself), and its Undo takes that back.
+  useEffect(() => setAddedPacket(scanned.added ? "added" : ""), [scanned]);
   const found = itemWithBarcode(items, scanned.code);
 
   if (found)
@@ -102,13 +104,14 @@ export function ScanResult({
               onOpened={(opened) => onOpened(found, opened)}
               onAddToList={() => onAddToList(found)}
             />
-            {/* Offered, never done by itself: counting packets is up to
-                each household (docs/VISION.md). */}
+            {/* Done by itself only for an item whose stock is counted;
+                otherwise offered, as counting stays each household's
+                choice (docs/VISION.md). */}
             {packetsFor && (
               <div className="actions">
                 {addedPacket === "added" ? (
                   <span className="muted small-note" role="status">
-                    Added this packet.
+                    Added one.
                   </span>
                 ) : (
                   <button

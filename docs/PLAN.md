@@ -200,6 +200,9 @@ Not released yet:
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
+- Scanning a barcode an item already knows adds one by itself when that
+  item's stock is counted ("Added one to American mustard: Masterfoods
+  560 g." with Undo); items nobody counts still offer "+ Add this one".
 - Scanning something new into the pantry also counts the one in hand, with
   the brand and size Open Food Facts gives ("Masterfoods 560 g"), so it's
   in stock from the start.

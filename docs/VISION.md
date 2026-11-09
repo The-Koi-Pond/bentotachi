@@ -319,3 +319,8 @@ that say what they do ("Delete", "Keep editing"); never the browser's own
 - 2026-11-02: the pantry never pushes stock-taking, but makes room for
   people who want it: Have / Low / Out by hand always works, and counting
   packets is there for whoever wants it, out of the way of everyone else.
+- 2026-11-09 (Xel): adding to the pantry should be effortless. Scanning
+  something new counts the one in hand (its brand and size from Open Food
+  Facts); scanning a barcode an item already knows adds one by itself, no
+  tap, when that item's stock is counted, with Undo on the bottom bar.
+  Items nobody counts aren't started on: they still offer "+ Add this one".

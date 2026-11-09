@@ -32,6 +32,8 @@ export interface Scanned {
   product: BarcodeProduct | null;
   lookupError: string;
   sure: boolean;
+  // Added to its item by itself (a known barcode on a counted item).
+  added?: boolean;
 }
 
 const NEW_OPTION = "__new__";
