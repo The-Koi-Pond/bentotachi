@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, users, type User } from "../pb";
 import Avatar from "../Avatar";
@@ -281,12 +281,26 @@ function NameSection({ user, showUsername }: { user: User; showUsername: boolean
   );
 }
 
-// My color: marks your name and thumbs up around the app. Tap the chosen one
-// again for Bentotachi's usual plum (the accent).
+// My color: marks your name and thumbs up around the app. Eight ready-made
+// ones, or any at all from the device's picker (the rainbow). Tap the chosen
+// one again for Bentotachi's usual plum (the accent).
 function ColorSection({ user }: { user: User }) {
   const spell = useSpell();
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const current = PERSON_COLORS.find((color) => color.value === user.color);
+  // Any colour at all: the rainbow swatch opens the device's own picker.
+  const custom = !!user.color && !current;
+  const picker = useRef<HTMLInputElement>(null);
+
+  // Saved once the picker closes ("change"), not on every drag through it
+  // (React's onChange would save each step).
+  useEffect(() => {
+    const input = picker.current;
+    if (!input) return;
+    const pick = () => void save({ color: input.value });
+    input.addEventListener("change", pick);
+    return () => input.removeEventListener("change", pick);
+  });
 
   async function save(change: Partial<User>) {
     setStatus(null);
@@ -301,7 +315,8 @@ function ColorSection({ user }: { user: User }) {
     <Section title={spell("My colour")}>
       <div className="stack profile-color">
         <span className="muted">
-          {current?.name ?? "None (the app's plum)"}. It marks your name and thumbs up around the app.
+          {current?.name ?? (custom ? spell("Your own colour") : "None (the app's plum)")}. It marks your name and thumbs up around the
+          app.
         </span>
         <div className="swatches" role="group" aria-label={spell("Choose my colour")}>
           {PERSON_COLORS.map((color) => (
@@ -316,6 +331,22 @@ function ColorSection({ user }: { user: User }) {
               onClick={() => void save({ color: color.value === user.color ? "" : color.value })}
             />
           ))}
+          <button
+            type="button"
+            className="swatch swatch-any"
+            style={custom ? ({ "--pick": user.color } as CSSProperties) : undefined}
+            aria-label={spell("Any colour")}
+            aria-pressed={custom}
+            title={spell("Any colour")}
+            onClick={() => {
+              const input = picker.current;
+              if (!input) return;
+              // showPicker where the browser has it; a click opens it elsewhere.
+              if (typeof input.showPicker === "function") input.showPicker();
+              else input.click();
+            }}
+          />
+          <input ref={picker} type="color" className="swatch-picker" defaultValue={user.color || "#0c8599"} tabIndex={-1} aria-hidden="true" />
         </div>
       </div>
       <Status status={status} />

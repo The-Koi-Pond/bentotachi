@@ -837,7 +837,7 @@ main {
 .small-print,
 .section-head:has(> h2),
 main > .stack > :is(h2, p),
-main > .stack > section:not(.tray-section) > :is(h2, p) {
+main > .stack > section:not(.tray-section, .card) > :is(h2, p) {
   padding-inline: var(--tray-inset);
 }
 
@@ -4069,7 +4069,8 @@ legend {
 .swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  /* Snug enough for all nine (the rainbow too) on one line on a phone. */
+  gap: 5px;
 }
 
 .swatch {
@@ -4091,6 +4092,29 @@ legend {
 .swatch:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* "Any colour": a rainbow, and once picked, that colour inside a rainbow
+   ring (Profile.tsx). */
+.swatch-any {
+  --rainbow: conic-gradient(#e03131, #e67700, #f2c94c, #2f9e44, #0c8599, #1c7ed6, #7048e8, #d6336c, #e03131);
+  background: var(--rainbow);
+}
+
+.swatch-any[aria-pressed="true"] {
+  border-color: transparent;
+  background: linear-gradient(var(--pick), var(--pick)) padding-box, var(--rainbow) border-box;
+}
+
+/* The device's own picker, opened by the rainbow swatch: kept beside it
+   (where the picker pops up from) but not seen or tapped itself. */
+.swatch-picker {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* "★ 4 average" followed by each person's pill. */
