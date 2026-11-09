@@ -197,6 +197,42 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
+(nothing yet)
+
+Released in 1.21.0 (2026-11-09, deployed the same day):
+
+- Bento trays (Xel, 2026-11-09): search boxes and their buttons, the tab
+  bar, pantry places and filters, shopping aisles, Browse's sites, recipe
+  shelves (the last row filled out with empty compartments) and the plan
+  as trays with compartments; a section's heading sits in its tray's rim;
+  group labels ("— Dairy —") centred on a faint line; page titles and
+  loose lines start where the compartments do.
+- The plan: each dish a soft chip with a round picture; drag one onto the
+  bin that appears over the tab bar to take it off (with Undo); a quiet +
+  beside a meal adds a side; the top says "8 – 21 November" with a Today
+  link; the month view is a tray, other months' days faded.
+- Surprise me is a little gacha: each roll says something different, rare
+  lines turn up now and then, and Ben joins in after a few rolls.
+- Tips behind a "?" open as a small pop-up over the page instead of
+  pushing everything down.
+- The fridge door: a jade door with a handle, the splash line on masking
+  tape, each note on paper in its writer's colour, held by a magnet
+  (plums, leaves, onigiri, now and then a tiny Ben), old notes fading and
+  curling, Done peeling a note off; an empty door says so.
+- A short ⋮ menu (your profile, Keep screen on, Settings, an update when
+  one is waiting) and a Settings page for the rest; the household and Log
+  out moved to Profile; no tip link in the app.
+- My colour: any colour from the device's picker, beside the eight.
+- The app's own "are you sure?" boxes instead of the browser's; removing a
+  pantry item or one of our sites happens at once, with Undo.
+- The page scrolls between the top bar and the tab bar, with a slim jade
+  scrollbar; the ⋮ menu scrolls itself on short screens; printing a
+  recipe prints all of it.
+- Shopping list: "Add from a recipe" is a book beside Add.
+- Recipe cards without a website leave that line blank instead of saying
+  "home recipe".
+- Dark mode: Pond Pebbles headings get a dark outline so they read on the
+  jade.
 - Compact, not airy (Xel, 2026-11-09): smaller text and spacing across
   the app, so a whole shopping list or eight days of the plan fit on one
   screen; the plan adds a second dish with a + beside the last one (no
