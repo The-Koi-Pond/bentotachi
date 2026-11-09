@@ -2,7 +2,7 @@ import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, pb, users } from "./pb";
 import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
 import { remember, remembered, rememberedJson } from "./phoneStorage";
-import { askFirst } from "./askFirst";
+import { askBetween, askFirst } from "./askFirst";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
 // the Android app (BentoLocalServerPlugin.java, mobile/bentoserver), so
@@ -103,20 +103,26 @@ export async function setUpPhone(name: string) {
 // or the next server's pages could show them as theirs when they can't load.
 // Shopping changes not sent yet (rare: the phone's own server was down) are
 // asked about: right to send to a server that has this phone's backup
-// restored (same records), wrong for anyone else's.
-export async function leavePhoneMode() {
+// restored (same records), wrong for anyone else's. Closing that question
+// without an answer (back, Escape) stays in phone-only mode with them kept.
+// Whether it left.
+export async function leavePhoneMode(): Promise<boolean> {
   const waiting = (readList(SHOPPING_QUEUE_KEY) ?? []).length;
-  const them = waiting === 1 ? "it" : "them";
-  const keepWaiting =
-    waiting > 0 &&
-    (await askFirst(
+  let keepWaiting = false;
+  if (waiting > 0) {
+    const them = waiting === 1 ? "it" : "them";
+    const answer = await askBetween(
       `This phone has ${waiting} shopping list ${waiting === 1 ? "change" : "changes"} that ${waiting === 1 ? "wasn't" : "weren't"} sent. ` +
         `Send ${them} to the server you're switching to? Only if that server has this phone's data (its backup restored there).`,
       { yes: `Send ${them}`, no: `Throw ${them} away` }
-    ));
+    );
+    if (answer === null) return false;
+    keepWaiting = answer === "yes";
+  }
   forgetOfflineCopy({ keepWaiting });
   remember(MODE_KEY, null);
   pb.authStore.clear();
+  return true;
 }
 
 // "Join a household" (⋮ menu, and Backups): after asking, back to the login
@@ -130,8 +136,7 @@ export async function switchToServer() {
     ))
   )
     return;
-  await leavePhoneMode();
-  window.location.reload();
+  if (await leavePhoneMode()) window.location.reload();
 }
 
 // "Delete my account" on a phone-only Bento: everything on this phone goes

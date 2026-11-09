@@ -43,6 +43,7 @@ export function UnsavedChangesGuard() {
     void askFirst("You have changes that aren't saved. Leave without saving them?", {
       yes: "Leave without saving",
       no: "Keep editing",
+      danger: true,
     }).then((leave) => {
       asking.current = false;
       if (leave) {
@@ -68,7 +69,11 @@ export function UnsavedChangesGuard() {
 
 // For Escape, which closes an editor: asks first if that would lose changes.
 export async function confirmDiscard(dirty: boolean): Promise<boolean> {
-  return !dirty || askFirst("Throw away the changes you've made here?", { yes: "Throw them away", no: "Keep editing" });
+  return !dirty || askFirst("Throw away the changes you've made here?", {
+    yes: "Throw them away",
+    no: "Keep editing",
+    danger: true,
+  });
 }
 
 // Whether anything on screen has unsaved changes: for changes that stay on

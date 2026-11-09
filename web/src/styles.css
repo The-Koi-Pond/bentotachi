@@ -696,6 +696,12 @@ main {
   }
 }
 
+/* The writer's name, on paper already in their colour: in the text colour,
+   or a dark colour on its own tint is too faint to read. */
+.fridge-note.person-paper .person-name {
+  color: var(--text);
+}
+
 /* The magnet (Magnet in pages/Fridge.tsx). */
 .fridge-magnet {
   position: absolute;
@@ -1368,9 +1374,11 @@ main > .stack > section > :is(h2, p) {
   padding-right: 2px;
 }
 
+/* Wide enough for a finger: in the week view it's the only way to move or
+   bin a dish. */
 .dinner-slot .drag-handle {
   align-self: stretch;
-  width: 16px;
+  width: 28px;
   height: auto;
   opacity: 0.6;
   border-radius: 0;

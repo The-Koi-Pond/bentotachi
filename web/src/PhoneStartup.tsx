@@ -61,7 +61,7 @@ export default function PhoneStartup({ children }: { children: ReactNode }) {
             {rescue && <p className={rescue.isError ? "error" : "success"}>{rescue.text}</p>}
             <button
               className="link-button"
-              onClick={() => void leavePhoneMode().then(() => window.location.reload())}
+              onClick={() => void leavePhoneMode().then((left) => left && window.location.reload())}
             >
               Connect to a server instead
             </button>

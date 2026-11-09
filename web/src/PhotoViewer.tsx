@@ -67,6 +67,8 @@ export default function PhotoViewer({
       // Not while choosing a step: some browsers change the choice with the
       // arrow keys too.
       if (count < 2 || event.target instanceof HTMLSelectElement) return;
+      // Nor under a question ("Remove this photo?"): it's about this one.
+      if (document.querySelector(".ask-dialog")) return;
       if (event.key === "ArrowLeft") go(-1);
       if (event.key === "ArrowRight") go(1);
     };

@@ -1,17 +1,24 @@
 // The app's own "are you sure?", in place of the browser's grey confirm box:
 // a small dialog with the question and two named buttons. Plain DOM, not
 // React, so code outside a page (phoneMode.ts) can ask too. Escape,
-// Android's back (androidBack.ts) and tapping outside all answer `no`.
+// Android's back (androidBack.ts) and tapping outside the box all close it
+// without an answer: askFirst counts that as `no`, askBetween says so.
 
 export interface AskOptions {
   yes: string;
   no?: string;
-  // A one-way action (deleting, replacing everything): the yes button is
-  // red, and the safe button has the focus, so a stray Enter backs out.
+  // A one-way action (deleting, throwing work away): the yes button is red,
+  // and the safe button has the focus, so a stray Enter backs out.
   danger?: boolean;
 }
 
-export function askFirst(question: string, { yes, no = "Cancel", danger = false }: AskOptions): Promise<boolean> {
+export async function askFirst(question: string, options: AskOptions): Promise<boolean> {
+  return (await askBetween(question, options)) === "yes";
+}
+
+// For a question where `no` also does something (throwing changes away),
+// so closing it without an answer can mean "never mind" instead.
+export function askBetween(question: string, { yes, no = "Cancel", danger = false }: AskOptions): Promise<"yes" | "no" | null> {
   return new Promise((resolve) => {
     const dialog = document.createElement("dialog");
     dialog.className = "ask-dialog";
@@ -24,15 +31,24 @@ export function askFirst(question: string, { yes, no = "Cancel", danger = false 
     buttons.append(noButton, yesButton);
     dialog.append(text, buttons);
 
-    let answer = false;
-    noButton.onclick = () => dialog.close();
-    yesButton.onclick = () => {
-      answer = true;
+    let answer: "yes" | "no" | null = null;
+    noButton.onclick = () => {
+      answer = "no";
       dialog.close();
     };
-    // A tap on the backdrop lands on the dialog itself, outside its box.
+    yesButton.onclick = () => {
+      answer = "yes";
+      dialog.close();
+    };
+    // A tap on the backdrop lands on the dialog itself, but so does one on
+    // the box's own padding (a near miss of a button): only a tap outside
+    // the box counts.
     dialog.onclick = (event) => {
-      if (event.target === dialog) dialog.close();
+      if (event.target !== dialog) return;
+      const box = dialog.getBoundingClientRect();
+      const inside =
+        event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+      if (!inside) dialog.close();
     };
     dialog.onclose = () => {
       dialog.remove();
