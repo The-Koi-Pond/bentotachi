@@ -228,7 +228,9 @@ adds a side. There's no ✕ on them: dragging one shows a bin over the tab
 bar, and dropping it there takes it off the plan, with Undo. The month
 view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 
-**The fridge door** (Xel, 2026-11-09, tried live): a soft jade enamel
+**The fridge door** (Xel, 2026-11-09, tried live): the splash line on a
+torn strip of masking tape, a little crooked, centred under the title
+(picked over poetry magnets and Ben saying it). A soft jade enamel
 panel with a handle down its right edge, everything below the splash line
 stuck on it. Each note is on paper in its writer's colour (from Settings;
 someone without one gets white, soft plum or peach), and the box to write

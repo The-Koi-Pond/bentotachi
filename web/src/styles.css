@@ -519,10 +519,29 @@ main {
   margin-bottom: 4px;
 }
 
+/* The splash line on a torn strip of masking tape, stuck on a little
+   crooked, in the middle (Xel's pick over poetry magnets and Ben saying
+   it). */
 .fridge-splash {
-  margin: 0;
-  color: var(--muted);
-  font-style: italic;
+  width: fit-content;
+  max-width: 100%;
+  margin: 6px auto 2px;
+  padding: 5px 16px 6px;
+  color: var(--rim-text);
+  font-size: 0.92rem;
+  text-align: center;
+  /* Two even lines when it wraps, not one word left on its own. */
+  text-wrap: balance;
+  background: color-mix(in srgb, #e9d9b0 85%, transparent);
+  transform: rotate(-1deg);
+  clip-path: polygon(0 8%, 3% 0, 97% 4%, 100% 0, 98% 50%, 100% 100%, 96% 94%, 4% 100%, 0 92%, 2% 50%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .fridge-splash {
+    color: #f1ebe2;
+    background: #5a5140;
+  }
 }
 
 /* The door: an enamel panel with a handle down its right edge, everything
