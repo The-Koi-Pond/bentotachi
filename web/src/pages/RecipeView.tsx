@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { confirmDelete, deleteRecipes } from "../recipeDeletion";
+import { askFirst } from "../askFirst";
 import {
   cookedLog,
   displayName,
@@ -207,9 +208,10 @@ export default function RecipeView() {
     if (!recipe?.source_url) return "";
     const site = siteHost(recipe.source_url);
     if (
-      !window.confirm(
-        `Re-import “${recipe.title}” from ${site}? Its ingredients, method, servings, times, description, the writer's notes and nutrition become the website's current version, replacing any changes made here. The name, your notes, ratings, photos and tags stay; pantry links and step photos follow the new wording where they can.`
-      )
+      !(await askFirst(
+        `Re-import “${recipe.title}” from ${site}? Its ingredients, method, servings, times, description, the writer's notes and nutrition become the website's current version, replacing any changes made here. The name, your notes, ratings, photos and tags stay; pantry links and step photos follow the new wording where they can.`,
+        { yes: "Re-import" }
+      ))
     )
       return "";
     let fresh: SiteRecipe | null = null;
@@ -224,7 +226,9 @@ export default function RecipeView() {
     // merged its pages): ask before replacing this one with it.
     if (
       looksDifferent(recipe.title, fresh.title) &&
-      !window.confirm(`The website's recipe is now called “${fresh.title}”. Replace “${recipe.title}” with it anyway?`)
+      !(await askFirst(`The website's recipe is now called “${fresh.title}”. Replace “${recipe.title}” with it anyway?`, {
+        yes: "Replace it",
+      }))
     )
       return "";
     const siteVersion = fresh;

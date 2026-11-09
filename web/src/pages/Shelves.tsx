@@ -4,6 +4,7 @@ import { errorMessage, recipeCategories, recipes, type Recipe, type RecipeCatego
 import { normaliseTag, sortCategories } from "../recipeCategories";
 import { forEveryone, useSingleUser } from "../household";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { askFirst } from "../askFirst";
 
 // The household's shelves on the Recipes page (stored as recipe
 // categories). Each is a name and the tags that count for it, so the many
@@ -76,7 +77,13 @@ function ShelfPage({ opened }: { opened: string }) {
   }
 
   async function remove(category: RecipeCategory): Promise<boolean> {
-    if (!window.confirm(`Delete the “${category.name}” shelf${forEveryone(singleUser)}? Its recipes keep their tags.`)) return false;
+    if (
+      !(await askFirst(`Delete the “${category.name}” shelf${forEveryone(singleUser)}? Its recipes keep their tags.`, {
+        yes: "Delete",
+        danger: true,
+      }))
+    )
+      return false;
     setBusy(true);
     setError("");
     try {

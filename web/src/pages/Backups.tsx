@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { errorMessage } from "../pb";
+import { askFirst } from "../askFirst";
 import {
   backUpPhone,
   lastBackup,
@@ -73,7 +74,13 @@ export default function Backups() {
   }
 
   async function restore() {
-    if (!window.confirm("Replace everything in Bentotachi on this phone with a backup? What's here now will be gone.")) return;
+    if (
+      !(await askFirst("Replace everything in Bentotachi on this phone with a backup? What's here now will be gone.", {
+        yes: "Replace everything",
+        danger: true,
+      }))
+    )
+      return;
     setBusy(true);
     setStatus(null);
     try {

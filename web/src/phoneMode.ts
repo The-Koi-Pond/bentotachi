@@ -2,6 +2,7 @@ import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, pb, users } from "./pb";
 import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
 import { remember, remembered, rememberedJson } from "./phoneStorage";
+import { askFirst } from "./askFirst";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
 // the Android app (BentoLocalServerPlugin.java, mobile/bentoserver), so
@@ -103,14 +104,16 @@ export async function setUpPhone(name: string) {
 // Shopping changes not sent yet (rare: the phone's own server was down) are
 // asked about: right to send to a server that has this phone's backup
 // restored (same records), wrong for anyone else's.
-export function leavePhoneMode() {
+export async function leavePhoneMode() {
   const waiting = (readList(SHOPPING_QUEUE_KEY) ?? []).length;
+  const them = waiting === 1 ? "it" : "them";
   const keepWaiting =
     waiting > 0 &&
-    window.confirm(
+    (await askFirst(
       `This phone has ${waiting} shopping list ${waiting === 1 ? "change" : "changes"} that ${waiting === 1 ? "wasn't" : "weren't"} sent. ` +
-        `Send ${waiting === 1 ? "it" : "them"} to the server you're switching to? Choose OK only if that server has this phone's data (its backup restored there). Cancel throws ${waiting === 1 ? "it" : "them"} away.`
-    );
+        `Send ${them} to the server you're switching to? Only if that server has this phone's data (its backup restored there).`,
+      { yes: `Send ${them}`, no: `Throw ${them} away` }
+    ));
   forgetOfflineCopy({ keepWaiting });
   remember(MODE_KEY, null);
   pb.authStore.clear();
@@ -119,14 +122,15 @@ export function leavePhoneMode() {
 // "Join a household" (⋮ menu, and Backups): after asking, back to the login
 // screen to connect to the household's server. What's on this phone stays,
 // and comes back with "Just me, on this phone".
-export function switchToServer() {
+export async function switchToServer() {
   if (
-    !window.confirm(
-      "Join your household's Bentotachi? What you've added on this phone stays here, and comes back if you choose “Just me, on this phone” again."
-    )
+    !(await askFirst(
+      "Join your household's Bentotachi? What you've added on this phone stays here, and comes back if you choose “Just me, on this phone” again.",
+      { yes: "Join a household" }
+    ))
   )
     return;
-  leavePhoneMode();
+  await leavePhoneMode();
   window.location.reload();
 }
 

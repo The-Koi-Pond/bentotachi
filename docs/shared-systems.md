@@ -66,7 +66,9 @@ they say otherwise.
   (`scaling.ts`). What a cooked recipe used up: `cookedUses`
   (`cookedUses.ts`), offered by `<UsedUpSheet>`.
 - Delete with Undo: `useUndo` (`undo.tsx`, rules in `pendingDelete.ts`).
-  Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
+  For small things (a note, a pantry item, one of our sites). Asking first,
+  for one-way or big things: `askFirst` (`askFirst.ts`), never
+  `window.confirm`; it works outside React too. Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
   the question from `deleteQuestion`, `deleteWarning.ts`).
 - Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
   (`unsavedChanges.ts`).

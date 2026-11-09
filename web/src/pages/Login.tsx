@@ -77,10 +77,7 @@ export default function Login() {
           <LoginForm server="" phone />
           <button
             className="link-button"
-            onClick={() => {
-              leavePhoneMode();
-              window.location.reload();
-            }}
+            onClick={() => void leavePhoneMode().then(() => window.location.reload())}
           >
             Connect to a server instead
           </button>

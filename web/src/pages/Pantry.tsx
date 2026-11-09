@@ -34,7 +34,6 @@ import {
 import { noteAge } from "../fridgeDoor";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
-import { forEveryone, useSingleUser } from "../household";
 import { useLiveRecords } from "../useLiveRecords";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
@@ -47,6 +46,7 @@ import PantryCard from "../PantryCard";
 import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
+import { askFirst } from "../askFirst";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
 import { onTheList } from "../shoppingMatch";
 
@@ -77,7 +77,6 @@ function saveClosedPlaces(closed: Set<string>) {
 
 export default function Pantry() {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
-  const singleUser = useSingleUser();
   const shopping = useLiveRecords<ShoppingItem>("shopping_items");
   // Not waited for: a server from before packets (a friend's older copy)
   // hasn't any, and the pantry works without them (packets.items stays null,
@@ -123,7 +122,7 @@ export default function Pantry() {
 
   // Opening a different add form (or a scan) throws away the one on screen;
   // with unsaved changes in it, ask first. `replaces`: whether it would.
-  const okToReplaceForm = (replaces: boolean) => !replaces || confirmDiscard(hasUnsavedChanges());
+  const okToReplaceForm = async (replaces: boolean) => !replaces || confirmDiscard(hasUnsavedChanges());
   // The add form is on screen (an empty pantry always shows it).
   const addFormOpen = adding || pantry.items?.length === 0;
 
@@ -134,11 +133,14 @@ export default function Pantry() {
     // Out of the address, so going back doesn't open the form again.
     setSearchParams({}, { replace: true });
     const replaces = !!scanned || addFormOpen;
-    if (!okToReplaceForm(replaces)) return;
-    setFromStore({ url: sharedStoreLink, name: searchParams.get("name") ?? "" });
-    setStartName("");
-    setScanned(null);
-    setAdding(true);
+    const name = searchParams.get("name") ?? "";
+    void okToReplaceForm(replaces).then((ok) => {
+      if (!ok) return;
+      setFromStore({ url: sharedStoreLink, name });
+      setStartName("");
+      setScanned(null);
+      setAdding(true);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedStoreLink]);
 
@@ -165,7 +167,8 @@ export default function Pantry() {
     const timer = window.setTimeout(() => setRunOut((current) => (current === runOut ? null : current)), UNDO_SECONDS * 1000);
     return () => window.clearTimeout(timer);
   }, [runOut, onlyUndo]);
-  const items = pantry.items;
+  // Less any just removed (Undo can still bring them back).
+  const items = pantry.items?.filter((item) => !undo.hidden.has(item.id));
   // Photos found online (Open Food Facts, store links), for items that
   // don't have one yet.
   useOnlinePhotos(items ?? NO_ITEMS);
@@ -264,9 +267,10 @@ export default function Pantry() {
     const bought = justBought(packetsOf(packets.items ?? [], item.id, undo.hidden));
     if (
       bought &&
-      !window.confirm(
-        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one. Add another anyway?`
-      )
+      !(await askFirst(
+        `The shopping list already added ${packetLabel(bought)} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one.`,
+        { yes: "I bought two", no: "It's the same one" }
+      ))
     ) {
       // The same bag: nothing added, but a scanned barcode is still learned.
       if (remember) await save(item, { barcode_details: withDetails(item, barcode, details) }, "");
@@ -348,7 +352,7 @@ export default function Pantry() {
     }
     // A scan replaces the add form, or the last scan's screen (even of the
     // same barcode: its form starts again).
-    if (!okToReplaceForm(addFormOpen || !!scanned)) return;
+    if (!(await okToReplaceForm(addFormOpen || !!scanned))) return;
     setAdding(false);
     setFromStore(null);
     setEditingScanned(false);
@@ -394,25 +398,27 @@ export default function Pantry() {
     }
   }
 
-  // Whether it was removed.
+  // Gone at once, with Undo, rather than a question first. Whether it was
+  // removed (always, now: a failed delete brings it back with an error).
   async function remove(item: PantryItem): Promise<boolean> {
-    if (!window.confirm(`Remove “${item.name}” from the pantry${forEveryone(singleUser)}?`)) return false;
     setError("");
-    try {
-      await pantryItems().delete(item.id);
+    setEditingId(null);
+    undo.offer([item.id], `Removed “${item.name}”.`, async () => {
       pantry.removeLocally(item.id);
-      setEditingId(null);
-      return true;
-    } catch (err) {
-      setError(errorMessage(err));
-      return false;
-    }
+      try {
+        await pantryItems().delete(item.id);
+      } catch (err) {
+        setError(errorMessage(err));
+        pantry.reload();
+      }
+    });
+    return true;
   }
 
   // The find-or-add box's Add (or Enter): a new item named what was typed.
   // A barcode number instead (typed, or a USB scanner's, which types it and
   // presses Enter) looks the barcode up, like scanning.
-  function findOrAdd(event: FormEvent) {
+  async function findOrAdd(event: FormEvent) {
     event.preventDefault();
     const typed = query.trim();
     if (/^[\d\s-]+$/.test(typed) && normaliseBarcode(typed)) {
@@ -421,7 +427,7 @@ export default function Pantry() {
       return;
     }
     // The same name again keeps the form that's open.
-    if (!okToReplaceForm(!!scanned || (addFormOpen && (!!fromStore || typed !== startName)))) return;
+    if (!(await okToReplaceForm(!!scanned || (addFormOpen && (!!fromStore || typed !== startName))))) return;
     setQuery("");
     setScanned(null);
     setFromStore(null);

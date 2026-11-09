@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router";
+import { askFirst } from "./askFirst";
 
 // Asking before unsaved changes are lost. Anything being typed into that
 // isn't saved yet (a recipe editor, a pantry item, a shelf, a password…)
@@ -34,12 +35,21 @@ export function UnsavedChangesGuard() {
     ({ currentLocation, nextLocation }) => unsaved.size > 0 && currentLocation.pathname !== nextLocation.pathname,
   );
 
+  // Asked once per blocked move: the effect runs again on every render.
+  const asking = useRef(false);
   useEffect(() => {
-    if (blocker.state !== "blocked") return;
-    if (window.confirm("You have changes that aren't saved. Leave without saving them?")) {
-      unsaved.clear();
-      blocker.proceed();
-    } else blocker.reset();
+    if (blocker.state !== "blocked" || asking.current) return;
+    asking.current = true;
+    void askFirst("You have changes that aren't saved. Leave without saving them?", {
+      yes: "Leave without saving",
+      no: "Keep editing",
+    }).then((leave) => {
+      asking.current = false;
+      if (leave) {
+        unsaved.clear();
+        blocker.proceed();
+      } else blocker.reset();
+    });
   }, [blocker]);
 
   useEffect(() => {
@@ -57,8 +67,8 @@ export function UnsavedChangesGuard() {
 }
 
 // For Escape, which closes an editor: asks first if that would lose changes.
-export function confirmDiscard(dirty: boolean): boolean {
-  return !dirty || window.confirm("Throw away the changes you've made here?");
+export async function confirmDiscard(dirty: boolean): Promise<boolean> {
+  return !dirty || askFirst("Throw away the changes you've made here?", { yes: "Throw them away", no: "Keep editing" });
 }
 
 // Whether anything on screen has unsaved changes: for changes that stay on

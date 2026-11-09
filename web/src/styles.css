@@ -1569,6 +1569,34 @@ main > .stack > section > :is(h2, p) {
   cursor: grabbing;
 }
 
+/* The app's own "are you sure?" (askFirst.ts): the question, then its two
+   buttons on the right, the yes last. */
+.ask-dialog {
+  width: min(380px, calc(100% - 32px));
+  padding: 18px 18px 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+
+.ask-dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.ask-dialog p {
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+.ask-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* The dinner chooser: a panel that slides up from the bottom. */
 .sheet {
   width: min(760px, 100%);

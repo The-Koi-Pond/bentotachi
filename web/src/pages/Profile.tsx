@@ -3,6 +3,7 @@ import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, users, ty
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
+import { askFirst } from "../askFirst";
 import { erasePhone, isPhoneMode } from "../phoneMode";
 import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
@@ -44,7 +45,7 @@ function DeleteSection({ user }: { user: User }) {
     const question = phone
       ? "Delete everything in Bentotachi on this phone: every recipe, photo, list and plan? This can't be undone. (To keep a copy, cancel and save a backup first: ⋮ → Backups.)"
       : `Delete your account, ${displayName(user)}? Your picture and ratings go with it. Recipes and list items you added stay for the household. This can't be undone.`;
-    if (!window.confirm(question)) return;
+    if (!(await askFirst(question, { yes: phone ? "Delete everything" : "Delete my account", danger: true }))) return;
     setBusy(true);
     setStatus(null);
     try {

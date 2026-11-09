@@ -2,6 +2,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { isAndroidApp } from "./pb";
 import { localToday } from "./dates";
 import { remember, remembered } from "./phoneStorage";
+import { askFirst } from "./askFirst";
 import type { StepTimer, TimerAlert } from "./stepTimers";
 
 // Step timers that ring with the phone locked or Bentotachi in the
@@ -67,8 +68,9 @@ export async function holdAlert(timer: StepTimer, ask: boolean): Promise<TimerAl
     if (!exact && ask && !askedToday()) {
       rememberAsked();
       if (
-        window.confirm(
-          "Want timers to ring on time when the phone is locked? Android will open a settings page: turn on “Allow setting alarms and reminders”, then come back."
+        await askFirst(
+          "Want timers to ring on time when the phone is locked? Android will open a settings page: turn on “Allow setting alarms and reminders”, then come back.",
+          { yes: "Open settings", no: "Not now" }
         )
       ) {
         exact = (await LocalNotifications.changeExactNotificationSetting()).exact_alarm === "granted";

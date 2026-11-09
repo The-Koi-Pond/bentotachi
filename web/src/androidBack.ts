@@ -12,7 +12,9 @@ export function setUpBackGesture() {
     // An open "?" tip closes first, as Escape would. (A browser too old for
     // popovers doesn't know :popover-open, and would throw on it.)
     const tip = "popover" in HTMLElement.prototype ? document.querySelector<HTMLElement>(":popover-open") : null;
-    const openDialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+    // The top one, when one opened over another (a question over the photo
+    // viewer): it's the last opened, so the last in the page.
+    const openDialog = [...document.querySelectorAll<HTMLDialogElement>("dialog[open]")].at(-1);
     if (tip) tip.hidePopover();
     // As Escape does: the pop-up hears "cancel" first and may refuse (one
     // that's still saving, like "Used anything up?").

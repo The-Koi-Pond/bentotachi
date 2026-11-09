@@ -236,8 +236,11 @@ animation for reduced motion). From 3 days a note fades and its corner
 curls, more so from a week. An empty door shows spare magnets, Ben, and
 "Suspiciously tidy."
 
-Removing something small (a note, one of our sites) happens at once with
-Undo, never the browser's own "Are you sure?" box.
+Removing something small (a note, a pantry item, one of our sites)
+happens at once with Undo. Something big or one-way (deleting a recipe,
+restoring a backup) asks first in the app's own small dialog, with buttons
+that say what they do ("Delete", "Keep editing"); never the browser's own
+"Are you sure?" box.
 
 ## What it won't become
 

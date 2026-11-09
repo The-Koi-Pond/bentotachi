@@ -3,6 +3,7 @@ import { errorMessage, recipeImageUrl, recipePhotoUrl, type Recipe } from "./pb"
 import { numberedSteps, stepKey } from "./recipePhotos";
 import { withoutSoftMarks } from "./softMarks";
 import { CloseIcon } from "./icons";
+import { askFirst } from "./askFirst";
 
 // A recipe's photo, full size, opened by tapping one on the recipe page:
 // ‹ › (or a swipe, or the arrow keys) goes through the others, and under it
@@ -164,9 +165,11 @@ export default function PhotoViewer({
               <button
                 className="button small danger"
                 disabled={!!busy}
-                onClick={() => {
-                  if (window.confirm("Remove this photo from the recipe?")) void run("Removing", () => onRemove(name));
-                }}
+                onClick={() =>
+                  void askFirst("Remove this photo from the recipe?", { yes: "Remove", danger: true }).then((remove) => {
+                    if (remove) void run("Removing", () => onRemove(name));
+                  })
+                }
               >
                 Remove
               </button>

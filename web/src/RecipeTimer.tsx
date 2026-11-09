@@ -14,6 +14,7 @@ import {
   type TimerState,
 } from "./cookTiming";
 import { remember, rememberedJson } from "./phoneStorage";
+import { askFirst } from "./askFirst";
 
 // "⏱ Time it" on a recipe: a prep-then-cook stopwatch to find out how long
 // the recipe really takes, then an offer to save that as its times. Kept on
@@ -85,8 +86,12 @@ export default function RecipeTimer({
     setError("");
   }
 
-  function stop() {
-    if (time.prep + time.cook > 60_000 && !window.confirm("Stop timing and forget it?")) return;
+  async function stop() {
+    if (
+      time.prep + time.cook > 60_000 &&
+      !(await askFirst("Stop timing and forget it?", { yes: "Stop and forget", no: "Keep timing" }))
+    )
+      return;
     forget();
   }
 

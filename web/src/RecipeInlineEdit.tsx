@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { errorMessage, type Recipe } from "./pb";
 import { PencilIcon } from "./icons";
 import ExtraTimesEditor, { fromRows, toRows } from "./ExtraTimesEditor";
@@ -93,7 +93,7 @@ export function TextEditor({
         rows={rows}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Escape" && confirmDiscard(dirty) && onCancel()}
+        onKeyDown={(e) => escapeToCancel(e, dirty, onCancel)}
         aria-label={label}
         autoFocus
       />
@@ -140,7 +140,7 @@ export function DetailsEditor({
     <form
       className="card stack inline-editor"
       onSubmit={submit}
-      onKeyDown={(e) => e.key === "Escape" && confirmDiscard(dirty) && onCancel()}
+      onKeyDown={(e) => escapeToCancel(e, dirty, onCancel)}
     >
       <label>
         Name
@@ -174,4 +174,12 @@ export function DetailsEditor({
       <SaveButtons busy={busy} error={error} onCancel={onCancel} />
     </form>
   );
+}
+
+// Escape closes the editor, asking first if that loses changes. On purpose:
+// preventDefault, or the same Escape would close the question as it opens.
+function escapeToCancel(event: KeyboardEvent, dirty: boolean, onCancel: () => void) {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  void confirmDiscard(dirty).then((discard) => discard && onCancel());
 }

@@ -4,6 +4,7 @@
 import { cookedLog, mealPlan, pb, recipeRatings, recipes, type Recipe } from "./pb";
 import { deleteQuestion } from "./deleteWarning";
 import { forEveryone } from "./household";
+import { askFirst } from "./askFirst";
 
 export async function confirmDelete(list: Pick<Recipe, "id" | "title">[], singleUser: boolean): Promise<boolean> {
   if (!list.length) return false;
@@ -23,7 +24,10 @@ export async function confirmDelete(list: Pick<Recipe, "id" | "title">[], single
   } catch {
     // Couldn't count: the question still warns it can't be undone.
   }
-  return window.confirm(deleteQuestion(list.map((recipe) => recipe.title), extras, forEveryone(singleUser)));
+  return askFirst(deleteQuestion(list.map((recipe) => recipe.title), extras, forEveryone(singleUser)), {
+    yes: "Delete",
+    danger: true,
+  });
 }
 
 // Deletes them one by one; says which went and which couldn't.
