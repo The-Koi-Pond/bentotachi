@@ -15,8 +15,13 @@
 onRecordUpdateRequest((e) => {
   const wasOut = e.record.original().get("status") === "out";
   const asks = [true, "true"].includes(e.requestInfo().body.ask_about_list);
-  e.next();
   const becameOut = !wasOut && e.record.get("status") === "out";
+  // Out means none left, so its expiry date (of what ran out) goes too, in
+  // the same save: however it's back in stock later (a packet added, Have
+  // picked, ticked off the list), it starts without the old date. The app's
+  // Undo of Out sends the date back.
+  if (becameOut) e.record.set("expires", "");
+  e.next();
   if (becameOut) {
     const name = String(e.record.get("name")).trim().toLowerCase();
     const waiting = e.app.findRecordsByFilter("shopping_items", "checked = false", "", 0, 0);

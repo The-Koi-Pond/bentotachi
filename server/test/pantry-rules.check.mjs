@@ -78,6 +78,19 @@ await api("PATCH", `/collections/shopping_items/records/${auto[0].id}`, { checke
 p = await api("GET", `/collections/pantry_items/records/${eggs.id}`);
 check("unticking it sets the pantry to Low", p.status === "low", p.status);
 
+// Used up, then a new one: the old expiry date goes when it runs out, so
+// the new one doesn't inherit it. Undo of Out sends the date back.
+const bicarb = await api("POST", "/collections/pantry_items/records", { name: "Bi-carb soda", status: "have", expires: "2026-12-01 00:00:00.000Z" });
+await api("PATCH", `/collections/pantry_items/records/${bicarb.id}`, { status: "out", ask_about_list: true });
+p = await api("GET", `/collections/pantry_items/records/${bicarb.id}`);
+check("running out clears its expiry date", p.status === "out" && p.expires === "", JSON.stringify(p.expires));
+await api("PATCH", `/collections/pantry_items/records/${bicarb.id}`, { status: "have", expires: "2026-12-01 00:00:00.000Z" });
+p = await api("GET", `/collections/pantry_items/records/${bicarb.id}`);
+check("undoing Out puts the expiry date back", p.status === "have" && p.expires.startsWith("2026-12-01"), JSON.stringify(p.expires));
+await api("PATCH", `/collections/pantry_items/records/${bicarb.id}`, { status: "low" });
+p = await api("GET", `/collections/pantry_items/records/${bicarb.id}`);
+check("going Low keeps the expiry date", p.expires.startsWith("2026-12-01"), JSON.stringify(p.expires));
+
 // More of something we still have (added from a recipe while the current one
 // is in date, or set back to Have by hand with a new date): ticking it off
 // leaves that date alone, since the older stock is still there.

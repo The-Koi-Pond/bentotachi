@@ -220,25 +220,30 @@ export default function Pantry() {
     const ask = runsOut && !isOnList(item);
     // Set just below, before Undo can be tapped.
     let outSaved: Promise<boolean> = Promise.resolve(false);
-    // Undo: the status it had (or `to`, picked instead), and its packets.
-    // It waits for the Out to reach the server first, or a slow Out could
-    // arrive after it and clear the packets again.
-    const restore = cleared.length
-      ? async (to: PantryStatus = item.status) => {
-          setRunOut(null);
-          if (!(await outSaved)) return;
-          if (!(await save(item, { status: to, opened: !!item.opened }, ""))) return;
-          try {
-            for (const packet of cleared) packets.upsert(await pantryPackets().create(packetToSave(packet)));
-          } catch (err) {
-            showError(errorMessage(err));
+    // Undo: the status it had (or `to`, picked instead), its packets and its
+    // expiry date (Out clears both, server/pb_hooks/pantry.pb.js). It waits
+    // for the Out to reach the server first, or a slow Out could arrive
+    // after it and clear them again.
+    const restore =
+      cleared.length || item.expires
+        ? async (to: PantryStatus = item.status) => {
+            setRunOut(null);
+            if (!(await outSaved)) return;
+            if (!(await save(item, { status: to, opened: !!item.opened, expires: item.expires }, ""))) return;
+            try {
+              for (const packet of cleared) packets.upsert(await pantryPackets().create(packetToSave(packet)));
+            } catch (err) {
+              showError(errorMessage(err));
+            }
           }
-        }
-      : undefined;
+        : undefined;
     if (ask || restore) setRunOut({ item, ask, restore, message: moved || outWords });
     // The server clears them; off the screen straight away.
     for (const packet of cleared) packets.removeLocally(packet.id);
-    outSaved = save(item, putBack ? { status, opened: false } : { status }, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {});
+    // Out clears the expiry date on the server too; here so it's gone from
+    // the screen at once.
+    const outChange = { status, ...(runsOut && { expires: "" }), ...(putBack && { opened: false }) };
+    outSaved = save(item, outChange, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {});
     void outSaved.then((saved) => {
       if (saved) return;
       // Didn't save: its question goes (not another item's asked since),

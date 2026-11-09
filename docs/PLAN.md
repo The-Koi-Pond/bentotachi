@@ -197,7 +197,12 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
-(nothing yet)
+- Short messages after a tap ("The scanner isn't ready yet", "already on
+  the list", "Moved to the Fridge", a failed delete) show at the bottom
+  like Undo, and go by themselves.
+- Fix: using something up and then adding a new one kept the old expiry
+  date. Running out now clears it (on the server, so every way back into
+  stock starts fresh); Undo of Out puts it back.
 
 Released in 1.22.0 (2026-11-09, deployed the same day):
 
