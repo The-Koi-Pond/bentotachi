@@ -35,6 +35,9 @@
   --rice-line: #3a2f28;
   --nori: #24312d;
   --rice-off: #c9cfcc;
+  /* A bento tray's rim, and words on it (docs/VISION.md, "Bento trays"). */
+  --rim: #b9d6cd;
+  --rim-text: #24312d;
   --radius: 12px;
   --tabbar-height: 60px;
   color-scheme: light;
@@ -73,6 +76,8 @@
     --rice-line: #f4efe4;
     --nori: #1c2624;
     --rice-off: #4a5653;
+    --rim: #2c4a44;
+    --rim-text: #e2efeb;
     color-scheme: dark;
   }
 }
@@ -174,9 +179,10 @@ main {
   display: flex;
   justify-content: center;
   height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  /* A bento tray: each tab a compartment, the current one filled. */
+  gap: 4px;
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  background: var(--rim);
 }
 
 .tabbar a {
@@ -191,10 +197,13 @@ main {
   font-weight: 600;
   color: var(--muted);
   text-decoration: none;
+  background: var(--surface);
+  border-radius: 8px;
 }
 
 .tabbar a.active {
   color: var(--accent);
+  background: var(--jade-soft);
 }
 
 .tabbar a:focus-visible {
@@ -770,13 +779,18 @@ main {
   box-shadow: inset 0 0 0 2px var(--accent-text);
 }
 
+/* A bento tray: each aisle a compartment (the rim between them below). */
 .shopping-list {
   list-style: none;
   padding: 0;
   margin: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 5px solid var(--rim);
   border-radius: var(--radius);
+}
+
+.shopping-list li.aisle-heading:not(:first-child) {
+  border-top: 5px solid var(--rim);
 }
 
 /* By aisle: a small heading row before each aisle's things (aisles.ts). */
@@ -953,12 +967,13 @@ main {
   vertical-align: -2px;
 }
 
+/* A bento tray: the weeks' names on the rim, each day a compartment. */
 .plan-days {
   list-style: none;
   padding: 0;
   margin: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 5px solid var(--rim);
   border-radius: var(--radius);
 }
 
@@ -972,30 +987,22 @@ main {
 }
 
 .plan-day + .plan-day {
-  border-top: 1px solid var(--border);
+  border-top: 3px solid var(--rim);
 }
 
-/* "This week", "Next week": a small heading over each week of the list. */
+/* "This week", "Next week": a small heading over each week of the list,
+   on the tray's rim. */
 .plan-week {
   /* The words in the middle of their bar. */
   padding: 7px 12px;
-  background: var(--bg);
-}
-
-.plan-week:first-child {
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-
-.plan-week + .plan-day,
-.plan-day + .plan-week {
-  border-top: 1px solid var(--border);
+  background: var(--rim);
 }
 
 .plan-week h2 {
   margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--rim-text);
 }
 
 /* Past nights step back without becoming hard to read: the day's name goes
@@ -1861,15 +1868,27 @@ main {
   border: 1px solid var(--border);
 }
 
-/* All · Low · Out · Use soon, then Open all / Close all as an arrow. */
+/* All · Low · Out · Use soon, then Open all / Close all as an arrow: a
+   bento tray, each a compartment, the chosen one filled. */
 .pantry-filters {
   align-items: center;
-  gap: 6px;
+  gap: 3px;
+  padding: 3px;
+  background: var(--rim);
+  border-radius: 11px;
 }
 
 .pantry-filters button {
   padding: 4px 11px;
   font-size: 0.88rem;
+  border-color: transparent;
+  border-radius: 8px;
+}
+
+.pantry-filters button[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--jade-soft);
+  border-color: transparent;
 }
 
 .filter-count {
@@ -1910,11 +1929,15 @@ main {
 }
 
 .pantry-place > .pantry-list {
-  margin: 0;
-  background: none;
+  margin: 0 0 5px;
+  overflow: hidden;
+  background: var(--surface);
   border: none;
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
+  border-radius: 8px;
+}
+
+.pantry-place .pantry-list > .pantry-sublabel:not(:first-child) {
+  border-top: 5px solid var(--rim);
 }
 
 .place-count {
@@ -3335,26 +3358,18 @@ legend {
   font-weight: 700;
 }
 
-/* How it's gone for us, in one card (RecipeView.tsx): the ratings, a line,
-   then when it was last had and next planned, beside "We cooked this". */
-/* Ratings and cooking history, in the recipe's one box under a line each. */
-.details-card .reactions {
-  padding: 6px 0 0;
-  background: none;
-  border: none;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
+/* "★ 4.8 from 2,341 ratings on taste.com.au": in the ratings' own
+   compartment, under the household's. */
+.details-card > .reactions:has(+ .site-rating) {
+  padding-bottom: 2px;
+  border-radius: 8px 8px 0 0;
 }
 
-/* "★ 4.8 from 2,341 ratings on taste.com.au", under the household's own. */
-.details-card .site-rating {
-  margin: -6px 0 0;
+.details-card > .site-rating {
+  margin-top: -5px;
+  padding-top: 0;
   font-size: 0.85rem;
-}
-
-.details-card .cook-history {
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
 }
 
 /* The "Cooked" stamp beside "Last had": a round seal, a little crooked,
@@ -3592,53 +3607,32 @@ legend {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  padding: 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+/* A bento tray: each part (the description, servings and times, tags,
+   ratings, cooking history, "⏱ Time it") in its own compartment. */
+.details-card > :not(.details-edit) {
+  margin: 0;
   padding: 8px 10px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: none;
+  border-radius: 8px;
 }
 
 .details-edit {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
 }
 
-.details-card .description-box {
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: 0;
-}
-
-/* After the description-box rule, so it wins when the description is first. */
+/* Room for the ✎ in the first compartment's corner. */
 .details-card .details-edit + * {
-  padding-right: 40px;
-}
-
-.details-card .description-box + .facts {
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-}
-
-.details-card .quick-tags {
-  margin: 0;
-}
-
-/* "⏱ Time it", then the running timer, is the box's last part (below a
-   line) rather than a box of its own inside it. */
-.details-card .timer-start-row {
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-}
-
-.details-card .recipe-timer {
-  padding: 6px 0 0;
-  background: none;
-  border: none;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
+  padding-right: 44px;
 }
 
 .facts dt {
@@ -4723,12 +4717,14 @@ footer .person-name:focus-visible {
    stack of closed ones reads as a chest of drawers and an open one shows
    its contents under its front, instead of a heading floating above. */
 .shelf,
+/* A bento tray: the place's name on the rim, its subcategories as
+   compartments (the rim between them: .pantry-sublabel below). */
 .pantry-place {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  padding: 0 5px;
+  background: var(--rim);
   border-radius: var(--radius);
 }
 
@@ -4739,9 +4735,13 @@ footer .person-name:focus-visible {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 10px 0 8px;
-  background: var(--jade-soft);
-  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+  padding: 0 5px 0 3px;
+}
+
+.pantry-place > h2,
+.pantry-place > h2 button,
+.pantry-place > h2 .place-count {
+  color: var(--rim-text);
 }
 
 /* Closed: the front is all there is. */
