@@ -6,6 +6,7 @@ import AlreadyHere from "../AlreadyHere";
 import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import { useUndo } from "../undo";
+import { showError } from "../toast";
 import { CloseIcon } from "../icons";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { useSpell } from "../household";
@@ -43,7 +44,6 @@ export default function Browse() {
     rememberSearch(value);
   };
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   // A recipe saved from the browser that's already here (AlreadyHere).
   const [duplicate, setDuplicate] = useState<{ id: string; title: string; page: { url: string; html: string } } | null>(null);
   const ours = useLiveRecords<SavedSite>("saved_sites");
@@ -55,13 +55,12 @@ export default function Browse() {
 
   // Gone at once, with Undo, rather than a question first.
   function removeSite(site: SavedSite) {
-    setError("");
     undo.offer([site.id], `Removed “${site.name}”.`, async () => {
       ours.removeLocally(site.id);
       try {
         await savedSites().delete(site.id);
       } catch (err) {
-        setError(errorMessage(err));
+        showError(errorMessage(err));
         ours.reload();
       }
     });
@@ -77,7 +76,6 @@ export default function Browse() {
   async function openInBento(event: MouseEvent, url: string) {
     if (!hasBuiltInBrowser) return;
     event.preventDefault();
-    setError("");
     setDuplicate(null);
     try {
       setSaving(true);
@@ -88,7 +86,7 @@ export default function Browse() {
       else if ("list" in saved.result) navigate("/add", { state: { list: saved.result.list } });
       else setDuplicate({ ...saved.result.duplicate, page: saved.page });
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -102,7 +100,7 @@ export default function Browse() {
       const result = await importBrowsedPage(duplicate.page, true);
       if ("id" in result) navigate(`/recipes/${result.id}`);
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
       setDuplicate(null);
     } finally {
       setSaving(false);
@@ -151,7 +149,6 @@ export default function Browse() {
           Saving the recipe, minus the life story…
         </p>
       )}
-      {error && <p className="error">{error}</p>}
       {duplicate && <AlreadyHere duplicate={duplicate} busy={saving} onAgain={() => void saveAgain()} />}
 
       {searched && (

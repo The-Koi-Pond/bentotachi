@@ -17,6 +17,7 @@ import Backups from "./pages/Backups";
 import Export from "./pages/Export";
 import Fridge from "./pages/Fridge";
 import Settings from "./pages/Settings";
+import Toaster from "./Toaster";
 import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
 import { BookPlusIcon } from "./icons";
@@ -121,6 +122,8 @@ function Screens() {
       </div>
       <StepTimerTray />
       <TabBar />
+      {/* Short messages after a tap, at the bottom (toast.ts). */}
+      <Toaster />
     </>
   );
 }

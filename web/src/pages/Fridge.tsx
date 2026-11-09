@@ -16,6 +16,7 @@ import {
 } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import { useUndo } from "../undo";
+import { showError } from "../toast";
 import { usePlanMeals, useSingleUser } from "../household";
 import { isPhoneMode } from "../phoneMode";
 import { addDays, localToday, toStoredDate } from "../dates";
@@ -45,7 +46,6 @@ export default function Fridge() {
   const solo = isPhoneMode() || singleUser;
   const list = useLiveRecords<Note>("notes", "added_by");
   const undo = useUndo();
-  const [error, setError] = useState("");
 
   // Opening the page (and staying on it while notes arrive) reads them.
   useEffect(() => {
@@ -69,13 +69,12 @@ export default function Fridge() {
   }
 
   function takeDown(note: Note) {
-    setError("");
     undo.offer([note.id], "Note's down, magnet's free.", async () => {
       list.removeLocally(note.id);
       try {
         await notesCollection().delete(note.id);
       } catch (err) {
-        setError(errorMessage(err));
+        showError(errorMessage(err));
         list.reload();
       }
     });
@@ -89,7 +88,6 @@ export default function Fridge() {
       </div>
 
       {list.loadError && <p className="error">{list.loadError}</p>}
-      {error && <p className="error">{error}</p>}
       {/* The door itself (docs/VISION.md, "The fridge door"): an enamel
           panel with a handle, a blank note to write on, the notes stuck on
           it. */}

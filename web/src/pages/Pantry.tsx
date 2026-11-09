@@ -16,6 +16,7 @@ import {
   type ShoppingItem,
 } from "../pb";
 import { useUndo } from "../undo";
+import { showError, showToast } from "../toast";
 import { UNDO_SECONDS } from "../pendingDelete";
 import {
   detailsFor,
@@ -96,9 +97,6 @@ export default function Pantry() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // The item whose quick card is open under its row (PantryCard.tsx).
   const [cardId, setCardId] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  // Says where an item went when it moved drawers ("Opened", or running out).
-  const [notice, setNotice] = useState("");
   // Something that just ran out (setStatus): "Put it on the shopping list?"
   // when it isn't on it (`ask`), and Undo when its packets were cleared
   // (`restore`). Stays until answered, or until something else runs out;
@@ -149,12 +147,6 @@ export default function Pantry() {
     remember(layoutKey(), next);
   }
 
-  // The notice goes away by itself after a few seconds.
-  useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), 5000);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
   const waiting = useMemo(() => (shopping.items ?? []).filter((item) => !item.checked), [shopping.items]);
   const isOnList = (item: PantryItem) => onTheList(item, waiting);
 
@@ -178,16 +170,15 @@ export default function Pantry() {
 
   // `also`: sent with the change but not kept (see setStatus). Whether it saved.
   async function save(item: PantryItem, patch: Partial<PantryItem>, movedTo: string, also = {}) {
-    setError("");
-    setNotice(movedTo);
+    // Says where it went when it moved drawers ("Opened", or running out).
+    if (movedTo) showToast(movedTo);
     pantry.upsert({ ...item, ...patch });
     try {
       await pantryItems().update(item.id, { ...patch, ...also });
       return true;
     } catch (err) {
       pantry.upsert(item);
-      setNotice("");
-      setError(errorMessage(err));
+      showError(errorMessage(err));
       return false;
     }
   }
@@ -240,7 +231,7 @@ export default function Pantry() {
           try {
             for (const packet of cleared) packets.upsert(await pantryPackets().create(packetToSave(packet)));
           } catch (err) {
-            setError(errorMessage(err));
+            showError(errorMessage(err));
           }
         }
       : undefined;
@@ -262,7 +253,6 @@ export default function Pantry() {
   // shopping list adding one to it (ticked bought), this is likely the same
   // bag being put away, so it asks first.
   async function addPacket(item: PantryItem, details: PacketDetails, barcode = ""): Promise<boolean> {
-    setError("");
     const remember = learnsBarcode(item, barcode, details);
     const bought = justBought(packetsOf(packets.items ?? [], item.id, undo.hidden));
     if (
@@ -281,7 +271,7 @@ export default function Pantry() {
         await pantryPackets().create(packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode })),
       );
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
       return false;
     }
     const changes = itemAfterPacket(item, barcode, details);
@@ -318,7 +308,7 @@ export default function Pantry() {
         packets.removeLocally(packet.id);
       } catch (err) {
         // Already gone (the item ran out meanwhile, clearing it) is fine.
-        if ((err as { status?: number }).status !== 404) setError(errorMessage(err));
+        if ((err as { status?: number }).status !== 404) showError(errorMessage(err));
       }
     });
   }
@@ -329,13 +319,12 @@ export default function Pantry() {
   }
 
   async function addToList(item: PantryItem) {
-    setError("");
     try {
       shopping.upsert(
         await shoppingItems().create({ text: item.name, checked: false, pantry_item: item.id, added_by: pb.authStore.record?.id })
       );
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     }
   }
 
@@ -344,10 +333,8 @@ export default function Pantry() {
   // Typed numbers aren't misread, and a scan matching the last one is sure.
   async function takeBarcode(text: string, typed = false) {
     const code = normaliseBarcode(text);
-    setError("");
-    setNotice("");
     if (!code) {
-      setError("That doesn't look like a barcode (8 to 14 digits).");
+      showError("That doesn't look like a barcode (8 to 14 digits).");
       return;
     }
     // A scan replaces the add form, or the last scan's screen (even of the
@@ -371,12 +358,11 @@ export default function Pantry() {
   }
 
   async function scan() {
-    setError("");
     try {
       const code = await scanBarcode();
       if (code) await takeBarcode(code);
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     }
   }
 
@@ -385,7 +371,6 @@ export default function Pantry() {
   // size. The favourite brand stays as it is: only people pick that. Then
   // the scan shows that item, offering "Add this packet".
   async function addBarcodeTo(item: PantryItem, code: string, brand: string) {
-    setError("");
     try {
       pantry.upsert(
         await pantryItems().update(item.id, {
@@ -394,21 +379,20 @@ export default function Pantry() {
         })
       );
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     }
   }
 
   // Gone at once, with Undo, rather than a question first. Whether it was
   // removed (always, now: a failed delete brings it back with an error).
   async function remove(item: PantryItem): Promise<boolean> {
-    setError("");
     setEditingId(null);
     undo.offer([item.id], `Removed “${item.name}”.`, async () => {
       pantry.removeLocally(item.id);
       try {
         await pantryItems().delete(item.id);
       } catch (err) {
-        setError(errorMessage(err));
+        showError(errorMessage(err));
         pantry.reload();
       }
     });
@@ -602,10 +586,9 @@ export default function Pantry() {
         </div>
       )}
 
-      {error && <p className="error">{error}</p>}
       {/* Gone by itself once it's no longer out, or someone puts it on the
           list meanwhile. */}
-      {stillAsking ? (
+      {stillAsking && (
         <p className="toast undo-toast" role="status">
           <span>
             {runOut.message}
@@ -635,12 +618,6 @@ export default function Pantry() {
             )}
           </span>
         </p>
-      ) : (
-        notice && (
-          <p className="toast" role="status">
-            {notice}
-          </p>
-        )
       )}
       {undo.toast}
       {items.length > 0 && shown.length === 0 && (

@@ -233,6 +233,15 @@ adds a side. There's no ✕ on them: dragging one shows a bin over the tab
 bar, and dropping it there takes it off the plan, with Undo. The month
 view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 
+**Messages** (Xel, 2026-11-09): a short message after a tap ("Moved to
+the Fridge.", "“Milk” is already on the list.", "The scanner isn't ready
+yet…", a delete that failed) shows at the bottom of the screen like Undo,
+goes by itself (an error a little later, with a plum stripe), and a tap
+puts it away; with an Undo bar showing it sits just above it. A form's own
+errors stay beside their box, and a page that can't load says so in
+place. A message that needs a link or a button of its own ("Open the
+list", the shelves' Undo) stays where it is for now.
+
 **The dinner chooser** (Xel, 2026-11-09, version A from live mock-ups):
 recipes first, the main job. Search and its three filters are one tray,
 then Surprise me and the count, then the recipes as compartments (the list

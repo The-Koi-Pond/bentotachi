@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { errorMessage, isAndroidApp, pb, recipeRatings, type Recipe } from "./pb";
+import { showError, showToast } from "./toast";
 import { CameraIcon, CopyIcon, DownloadIcon, MoreIcon, PrintIcon, ShareIcon, TrashIcon } from "./icons";
 import { recipeAsText } from "./recipeText";
 import { shareText } from "./shareReceiver";
@@ -43,7 +44,6 @@ export default function RecipeMenu({
   // (the panel closes when Android's picker covers the app).
   const photoInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState("");
-  const [message, setMessage] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   // Where the panel goes: from the ⋯ itself, kept on screen whether the ⋯
@@ -95,20 +95,13 @@ export default function RecipeMenu({
     };
   }, [open]);
 
-  // A short note that goes by itself (copied, saved, couldn't).
-  useEffect(() => {
-    if (!message) return;
-    const timer = window.setTimeout(() => setMessage(""), 5000);
-    return () => window.clearTimeout(timer);
-  }, [message]);
-
   async function run(label: string, action: () => Promise<void>) {
     setOpen(false);
     setBusy(label);
     try {
       await action();
     } catch (err) {
-      setMessage(errorMessage(err));
+      showError(errorMessage(err));
     } finally {
       setBusy("");
     }
@@ -117,9 +110,9 @@ export default function RecipeMenu({
   async function share() {
     try {
       const result = await shareText(recipe.title, recipeAsText(recipe, scale));
-      if (result === "copied") setMessage("Copied the recipe, ready to paste into a message for whoever asked for it.");
+      if (result === "copied") showToast("Copied the recipe, ready to paste into a message for whoever asked for it.");
     } catch {
-      setMessage("Couldn't share it from here. Try again, or select the text and copy it.");
+      showError("Couldn't share it from here. Try again, or select the text and copy it.");
     }
   }
 
@@ -128,7 +121,7 @@ export default function RecipeMenu({
     const name = `${fileNamePart(recipe.title) || "Recipe"}.paprikarecipes`;
     const { saved, missingPhotos } = await savePaprikaFile([recipe], ratings, pb.authStore.record?.id, name, () => {});
     if (saved) {
-      setMessage(
+      showToast(
         missingPhotos.length
           ? `Saved “${name}”, but a photo wouldn't load, so it's left out: try again to include it.`
           : `Saved “${name}”. Send it to anyone: Bentotachi, Paprika, Mealie and Tandoor can import it.`
@@ -196,7 +189,7 @@ export default function RecipeMenu({
             </button>
           )}
           {!offline && !editing && recipe.source_url && (
-            <button role="menuitem" onClick={() => void run("Re-importing", async () => setMessage(await onReimport()))}>
+            <button role="menuitem" onClick={() => void run("Re-importing", async () => showToast(await onReimport()))}>
               <span className="menu-item-text">
                 Re-import from the website
                 <span className="menu-item-detail">Its current ingredients and method; your notes and photos stay</span>
@@ -222,14 +215,9 @@ export default function RecipeMenu({
           const files = [...(event.target.files ?? [])];
           // So choosing the same photo again still counts.
           event.target.value = "";
-          if (files.length) void run("Adding photos", async () => setMessage(await onAddPhotos(files)));
+          if (files.length) void run("Adding photos", async () => showToast(await onAddPhotos(files)));
         }}
       />
-      {message && (
-        <p className="toast" role="status">
-          {message}
-        </p>
-      )}
     </div>
   );
 }

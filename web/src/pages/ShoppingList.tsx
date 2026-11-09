@@ -9,6 +9,7 @@ import { useUnsavedChanges } from "../unsavedChanges";
 import { PANTRY_KEY, SHOPPING_KEY, isOffline } from "../offline";
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
+import { showError, showToast } from "../toast";
 import { ensureLoginNow } from "../session";
 import { queueSender, setShoppingQueue, useShoppingQueue } from "../shoppingQueue";
 import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
@@ -37,9 +38,6 @@ export default function ShoppingList() {
   // Kept live, so changes made in the pantry show up here too.
   const pantry = useLiveRecords<PantryItem>("pantry_items", undefined, PANTRY_KEY);
   const pantryById = new Map((pantry.items ?? []).map((p) => [p.id, p]));
-  const [error, setError] = useState("");
-  // "Milk is already on the list", after typing something that is.
-  const [notice, setNotice] = useState("");
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
   const [fromRecipe, setFromRecipe] = useState(false);
@@ -102,14 +100,12 @@ export default function ShoppingList() {
     const value = text.trim();
     if (!value) return;
     setText("");
-    setError("");
-    setNotice("");
     // Already on the list: don't add it twice. Already bought (ticked):
     // put that one back instead.
     const same = shown.find((item) => sameThing({ text: value, pantryItem: "" }, item));
-    if (same && !same.checked) return setNotice(`“${same.text}” is already on the list.`);
+    if (same && !same.checked) return showToast(`“${same.text}” is already on the list.`);
     if (same) {
-      setNotice(`“${same.text}” is back on the list. That didn't last long.`);
+      showToast(`“${same.text}” is back on the list. That didn't last long.`);
       return toggle(same);
     }
     if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date()));
@@ -118,7 +114,7 @@ export default function ShoppingList() {
     } catch (err) {
       if (isOffline(err)) return keepForLater((queue) => queueAdd(queue, value, new Date()));
       setText(value);
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     }
   }
 
@@ -126,12 +122,11 @@ export default function ShoppingList() {
   // again would race the send (see mustWait), so wait a moment.
   function busySending(item: ShoppingItem): boolean {
     if (!mustWait(queueSender.isSending(), queue, item.id)) return false;
-    setNotice(`Still sending what you changed offline. Try “${item.text}” again in a moment.`);
+    showToast(`Still sending what you changed offline. Try “${item.text}” again in a moment.`);
     return true;
   }
 
   async function toggle(item: ShoppingItem) {
-    setError("");
     if (busySending(item)) return;
     const checked = !item.checked;
     if (offline || isUnsent(item.id)) return keepForLater((queue) => queueCheck(queue, item.id, checked, new Date()));
@@ -141,36 +136,33 @@ export default function ShoppingList() {
     } catch (err) {
       if (isOffline(err)) return keepForLater((queue) => queueCheck(queue, item.id, checked, new Date()));
       upsert(item);
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     }
   }
 
   async function remove(item: ShoppingItem) {
-    setError("");
     if (busySending(item)) return;
     // Added offline and not sent yet: just forget it.
     if (isUnsent(item.id)) return setQueue((queue) => queue.filter((change) => change.id !== item.id));
-    if (offline) return setError("Removing things needs a connection. Tick it off instead, and remove it later.");
+    if (offline) return showError("Removing things needs a connection. Tick it off instead, and remove it later.");
     undo.offer([item.id], `Removed “${item.text}”.`, async () => {
       removeLocally(item.id);
       try {
         await shoppingItems().delete(item.id);
       } catch (err) {
         upsert(item);
-        setError(errorMessage(err));
+        showError(errorMessage(err));
       }
     });
   }
 
   function clearTicked(ticked: ShoppingItem[]) {
-    setError("");
-    setNotice("");
     const plan = clearPlan(queueSender.isSending(), queue, ticked);
-    if (plan.wait) return setNotice("Still sending what you changed offline. Try Clear again in a moment.");
+    if (plan.wait) return showToast("Still sending what you changed offline. Try Clear again in a moment.");
     // Only things added offline and not sent yet: no connection needed, they
     // just leave the phone's queue.
     if (offline && plan.sent.length)
-      return setError("Clearing needs a connection. The ticked things can wait until you're back online.");
+      return showError("Clearing needs a connection. The ticked things can wait until you're back online.");
     const count = ticked.length;
     undo.offer(
       ticked.map((item) => item.id),
@@ -183,7 +175,7 @@ export default function ShoppingList() {
         const results = await Promise.allSettled(sent.map((item) => shoppingItems().delete(item.id)));
         const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
         if (failed) {
-          setError(`Couldn't clear everything: ${errorMessage(failed.reason)}`);
+          showError(`Couldn't clear everything: ${errorMessage(failed.reason)}`);
           reload();
         }
       }
@@ -252,12 +244,6 @@ export default function ShoppingList() {
         </button>
       </form>
       {fromRecipe && <RecipeShoppingSheet onClose={() => setFromRecipe(false)} />}
-      {error && <p className="error">{error}</p>}
-      {notice && (
-        <p className="muted" role="status">
-          {notice}
-        </p>
-      )}
 
       {toBuy.length === 0 && ticked.length === 0 && (
         <div className="with-ben">

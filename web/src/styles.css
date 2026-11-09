@@ -6829,6 +6829,22 @@ em.soft {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* toast.ts's short messages ("Moved to the Fridge."): a tap puts one away.
+   An error gets a plum stripe; with an Undo bar showing, the message sits
+   just above it rather than on top. */
+.notice-toast {
+  cursor: pointer;
+}
+
+.toast-error {
+  box-shadow: inset 5px 0 0 var(--accent), 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding-left: 18px;
+}
+
+body:has(.undo-toast) .notice-toast {
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 72px);
+}
+
 /* "Removed “Milk”. Undo": the button sits at the far end, in the toast's
    own text color so it's readable on it. */
 .undo-toast {

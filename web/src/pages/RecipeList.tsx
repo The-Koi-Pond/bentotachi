@@ -28,6 +28,7 @@ import {
   type RecipeRating,
   type User,
 } from "../pb";
+import { showError } from "../toast";
 import { formatMinutes, isQuick, totalMinutes } from "../format";
 import QuickTime from "../QuickTime";
 import {
@@ -165,7 +166,6 @@ export default function RecipeList() {
   // it, so taps still open drawers), or the keyboard (Space, arrows, Space).
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor));
   const [draggingShelf, setDraggingShelf] = useState<string | null>(null);
-  const [shelfError, setShelfError] = useState("");
 
   // A shelf dragged onto another takes its place, for the whole household.
   // Shown straight away; put back if the server says no.
@@ -174,13 +174,12 @@ export default function RecipeList() {
     const before = categories;
     const order = movedTo(categories, fromId, toId);
     if (order.every((category) => before.find((c) => c.id === category.id)?.position === category.position)) return;
-    setShelfError("");
     setCategories(order);
     try {
       setCategories(await saveCategoryOrder(order, before));
     } catch (err) {
       setCategories(before);
-      setShelfError(`Couldn't move the shelf: ${errorMessage(err)}`);
+      showError(`Couldn't move the shelf: ${errorMessage(err)}`);
     }
   }
 
@@ -874,7 +873,6 @@ export default function RecipeList() {
           }}
           onDragCancel={() => setDraggingShelf(null)}
         >
-          {shelfError && <p className="error">{shelfError}</p>}
           {/* Edit mode shows every shelf in its real order, empty ones as
               shut drawers with grips, so any can be moved or edited and
               lands where it's dropped. Otherwise the

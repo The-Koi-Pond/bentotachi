@@ -38,6 +38,7 @@ import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
+import { showError } from "../toast";
 import { useCountry, usePlanMeals } from "../household";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
@@ -110,7 +111,6 @@ export default function MealPlan() {
   const [picking, setPicking] = useState<Slot | null>(null);
   const [dragging, setDragging] = useState<MealPlanEntry | null>(null);
   const [shoppingOpen, setShoppingOpen] = useState(false);
-  const [error, setError] = useState("");
   // Removing a night shows "Undo" for a moment before it really happens.
   const undo = useUndo();
   const help = useHelp();
@@ -170,7 +170,6 @@ export default function MealPlan() {
   // Plans a meal: a recipe, or a note like "Take-away night" instead.
   async function add({ date, meal }: Slot, what: { recipe: Recipe } | { note: string }) {
     setPicking(null);
-    setError("");
     try {
       // A dish just removed goes first, so Undo can't bring it back beside.
       await undo.settle();
@@ -190,7 +189,7 @@ export default function MealPlan() {
       // A server from before several dishes per meal refuses a second one.
       const fields = (err as { response?: { data?: Record<string, { code?: string }> } }).response?.data ?? {};
       const notUnique = Object.values(fields).some((field) => field?.code === "validation_not_unique");
-      setError(
+      showError(
         notUnique
           ? `This Bentotachi server holds one dish per ${meal}. Once it's updated, sides can go with the main.`
           : errorMessage(err)
@@ -202,7 +201,6 @@ export default function MealPlan() {
   // or a whole meal (its picture dropped in the bin in the month view).
   function remove(...dishes: MealPlanEntry[]) {
     if (!dishes.length) return;
-    setError("");
     const what = dishes[0].expand?.recipe?.title ?? dishes[0].note;
     const more = dishes.length > 1 ? ` and ${dishes.length - 1} more` : "";
     undo.offer(dishes.map((dish) => dish.id), what ? `Removed “${what}”${more} from the plan.` : "Removed from the plan.", async () => {
@@ -210,7 +208,7 @@ export default function MealPlan() {
       try {
         for (const dish of dishes) await mealPlan().delete(dish.id);
       } catch (err) {
-        setError(errorMessage(err));
+        showError(errorMessage(err));
         plan.reload();
       }
     });
@@ -228,7 +226,6 @@ export default function MealPlan() {
     const others = bySlot.get(to) ?? [];
     const there = dropSwaps((bySlot.get(from) ?? []).length, others.length) ? others[0] : undefined;
     const target = parseSlot(to);
-    setError("");
     // Onto a place whose meal was just removed: that one goes first.
     await undo.settle();
     if (there) {
@@ -252,7 +249,7 @@ export default function MealPlan() {
         await mealPlan().update(moving.id, { date: toStoredDate(target.date), meal: target.meal });
       }
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
       plan.reload();
     }
   }
@@ -271,13 +268,12 @@ export default function MealPlan() {
     const dishes = drop.move;
     if (!dishes.length) return;
     const target = parseSlot(to);
-    setError("");
     await undo.settle();
     for (const dish of dishes) plan.upsert({ ...dish, date: toStoredDate(target.date), meal: target.meal });
     try {
       for (const dish of dishes) await mealPlan().update(dish.id, { date: toStoredDate(target.date), meal: target.meal });
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
       plan.reload();
     }
   }
@@ -399,7 +395,6 @@ export default function MealPlan() {
           ›
         </button>
       </div>
-      {error && <p className="error">{error}</p>}
 
       <DndContext
         sensors={sensors}

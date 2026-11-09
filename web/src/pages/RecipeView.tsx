@@ -19,6 +19,7 @@ import {
   type PantryPacket,
   type Recipe,
 } from "../pb";
+import { showError } from "../toast";
 import { coverNote, coversFor, stillToBuy, type Cover } from "../pantryStock";
 import { daysHad, nextPlanned } from "../cookHistory";
 import NoteList from "../NoteList";
@@ -140,7 +141,6 @@ export default function RecipeView() {
   const ratings = useRecipeRatings(id);
   // "We cooked this" days, shared by the history line and the timer.
   const cooked = useLiveRecords<CookedEntry>("cooked");
-  const [cookError, setCookError] = useState("");
   // "Used anything up?" open after cooking (UsedUpSheet).
   // `again`: it was already marked cooked today when this opened.
   const [usedUp, setUsedUp] = useState<{ again: boolean } | null>(null);
@@ -444,12 +444,11 @@ export default function RecipeView() {
   const cookedToday = (cooked.items ?? []).some((entry) => entry.recipe === current.id && datePart(entry.date) === localToday());
   async function markCooked(): Promise<boolean> {
     if (cookedToday) return true;
-    setCookError("");
     try {
       cooked.upsert(await cookedLog().create({ date: toStoredDate(localToday()), recipe: current.id, cooked_by: pb.authStore.record?.id }));
       return true;
     } catch (err) {
-      setCookError(`Couldn't mark it as cooked: ${errorMessage(err)}`);
+      showError(`Couldn't mark it as cooked: ${errorMessage(err)}`);
       return false;
     }
   }
@@ -461,14 +460,13 @@ export default function RecipeView() {
     if (await markCooked()) setUsedUp({ again });
   }
   async function undoCooked(entries: CookedEntry[]) {
-    setCookError("");
     try {
       for (const entry of entries) {
         await cookedLog().delete(entry.id);
         cooked.removeLocally(entry.id);
       }
     } catch (err) {
-      setCookError(`Couldn't undo it: ${errorMessage(err)}`);
+      showError(`Couldn't undo it: ${errorMessage(err)}`);
     }
   }
 
@@ -617,7 +615,6 @@ export default function RecipeView() {
               onCooked={() => void finishCooking()}
               onUndo={(entries) => void undoCooked(entries)}
             />
-            {cookError && <p className="error">{cookError}</p>}
             {/* Timing it while cooking, to save how long it really takes. */}
             {editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} />}
           </>

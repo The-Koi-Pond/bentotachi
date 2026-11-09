@@ -72,6 +72,9 @@ they say otherwise.
   the question from `deleteQuestion`, `deleteWarning.ts`).
 - Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
   (`unsavedChanges.ts`).
+- A short message after a tap, at the bottom: `showToast` / `showError`
+  (`toast.ts`, shown by `<Toaster />` in App.tsx), not a page's own
+  `error` line or timer. Undo has its own (`useUndo`).
 - Light or dark: Settings' choice (Auto, Light, Dark) rewrites the
   stylesheet's `@media (prefers-color-scheme: dark)` blocks (`theme.ts`).
   So dark styles go in such a block as usual, but code asks
