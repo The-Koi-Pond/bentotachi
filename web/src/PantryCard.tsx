@@ -10,6 +10,7 @@ import { describeExpiry } from "./expiry";
 import { placeOf } from "./pantryItem";
 import { norm } from "./pantryGroups";
 import PacketCounters from "./PacketCounters";
+import { PencilIcon } from "./icons";
 import type { PantryLayout } from "./PantryRow";
 import { useSpell } from "./household";
 
@@ -65,17 +66,24 @@ export default function PantryCard({
           <PacketCounters packets={packets} favouriteBrand={item.brand} onUsed={onUsed} onMore={onMore} />
         </span>
       )}
-      {packets && (
-        <div className="pantry-card-quick">
-          <button className="button pantry-card-more" onClick={() => onMore(next)} aria-label={`One more${next.size ? `, ${next.size}` : ""}`}>
-            + 1 more
-            {next.size && <span className="pantry-card-size">{next.size}</span>}
-          </button>
-          <button className="button" aria-expanded={other} onClick={() => setOther(!other)}>
-            Another brand
-          </button>
-        </div>
-      )}
+      {/* Adding, and the full form, on one row. */}
+      <div className="pantry-card-actions">
+        {packets && (
+          <>
+            <button className="button small" onClick={() => onMore(next)} aria-label={`One more${next.size ? `, ${next.size}` : ""}`}>
+              + 1 more
+              {next.size && <span className="pantry-card-size">· {next.size}</span>}
+            </button>
+            <button className="button small" aria-expanded={other} onClick={() => setOther(!other)}>
+              Another brand
+            </button>
+          </>
+        )}
+        {/* Short, so all three fit one row on a phone. */}
+        <button className="link-button pantry-card-edit" onClick={onEditAll} aria-label="Edit everything">
+          <PencilIcon /> Edit
+        </button>
+      </div>
       {other && packets && (
         <OtherBrand
           item={item}
@@ -86,12 +94,7 @@ export default function PantryCard({
           }}
         />
       )}
-      <div className="pantry-card-foot">
-        <span className="muted">{about}</span>
-        <button className="link-button" onClick={onEditAll}>
-          Edit everything
-        </button>
-      </div>
+      {about && <p className="muted pantry-card-about">{about}</p>}
     </div>
   );
 }

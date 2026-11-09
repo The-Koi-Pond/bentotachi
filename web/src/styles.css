@@ -6732,29 +6732,44 @@ em.soft {
   scroll-margin-bottom: 16px;
 }
 
-.pantry-card-quick {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+/* "+ 1 more · 400 g", "Another brand" and "Edit everything" on one row
+   (wrapping on a narrow phone), Edit everything at the far end. */
+.pantry-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
-.pantry-card-quick .button {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 0.95rem;
+.pantry-card-actions > .button {
+  gap: 4px;
+  min-height: 34px;
+  padding: 2px 11px;
+  font-size: 0.86rem;
 }
 
-.pantry-card-more {
-  flex-direction: column;
-  gap: 0;
-  line-height: 1.2;
+.pantry-card-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 0.86rem;
+}
+
+.pantry-card-edit svg {
+  width: 15px;
+  height: 15px;
 }
 
 .pantry-card-size {
-  display: block;
-  font-size: 0.78rem;
   font-weight: 400;
   color: var(--muted);
+}
+
+/* Where it lives and when it expires, quietly under the buttons. */
+.pantry-card-about {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
 }
 
 /* "Favourite: Masterfoods 560 g", so whoever's shopping knows which. */
@@ -6819,15 +6834,6 @@ em.soft {
   flex: 0 0 84px;
 }
 
-.pantry-card-foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px 12px;
-  margin-top: 10px;
-  font-size: 0.85rem;
-}
 
 .packets-field,
 .brand-pick {
