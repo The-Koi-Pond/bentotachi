@@ -155,7 +155,7 @@ export default function Browse() {
       {duplicate && <AlreadyHere duplicate={duplicate} busy={saving} onAgain={() => void saveAgain()} />}
 
       {searched && (
-        <section className="stack" aria-live="polite">
+        <section className="stack tray-section" aria-live="polite">
           <h2>Search “{searched}” on…</h2>
           <ul className="site-list">
             {ourSites.map((site) => (
@@ -179,7 +179,7 @@ export default function Browse() {
         </section>
       )}
 
-      <section className="stack">
+      <section className="stack tray-section">
         {/* "+ Add a site" on the heading's row; its form
             opens below, after the sites. */}
         <div className="section-head sites-head">
@@ -217,7 +217,7 @@ export default function Browse() {
         {addingSite && <AddSiteForm onAdded={ours.upsert} onClose={() => setAddingSite(false)} />}
       </section>
 
-      <section className="stack">
+      <section className="stack tray-section">
         <h2>Recipe sites</h2>
         <ul className="site-list">
           {RECIPE_SITES.map((site) => (

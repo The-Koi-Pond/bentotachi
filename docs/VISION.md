@@ -213,8 +213,11 @@ bar, the pantry's filter chips and the Recipes page's search with its tag,
 quick and favourite filters, Browse's sites, and the Pantry, Shopping and
 Browse search boxes (the Shopping list's has a book beside Add for "Add
 from a recipe", Xel's pick over a row of its own). Loose lines between
-trays ("6 recipes", "Got it") start where a tray's compartments do, not at
-the page's edge (`--tray-inset`). Buttons, text
+trays ("6 recipes") start where a tray's compartments do, not at the
+page's edge (`--tray-inset`). A section heading over a list goes inside
+the tray's top rim, with any button beside it, like a recipe shelf
+("Our sites", "Recipe sites", "Got it": `.tray-section`; Xel's pick over
+a tab or a ruled line). Buttons, text
 boxes, tips, pop-ups and the chopstick switches stay plain; no tray inside
 a tray.
 

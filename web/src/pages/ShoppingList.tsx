@@ -284,7 +284,7 @@ export default function ShoppingList() {
         ))}
 
       {ticked.length > 0 && (
-        <section className="stack">
+        <section className="stack tray-section">
           <div className="section-head">
             <h2>Got it</h2>
             <button className="button small" onClick={() => clearTicked(ticked)}>
