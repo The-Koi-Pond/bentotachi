@@ -1191,6 +1191,22 @@ li.setting-row {
   border-top: none;
 }
 
+/* A group's label inside a tray compartment ("Dairy", "Fruit & veg"):
+   centred on a faint line, "— Dairy —". The line runs behind; the word
+   sits on the compartment's own colour, so the gap fits the word. */
+li.divider-label {
+  /* Centred both as plain text (the pantry) and as a flex row (the
+     shopping list's rows are). */
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(var(--border), var(--border)) center / calc(100% - 64px) 1px no-repeat;
+}
+
+.divider-label > span {
+  padding: 0 10px;
+  background: var(--surface);
+}
+
 /* Rows kept fairly tight (2026-11-06), so more of the list fits on screen
    in the shop; the tick box and the label still make a big tap target. */
 .shopping-list li {

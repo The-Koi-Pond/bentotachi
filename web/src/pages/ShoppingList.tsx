@@ -275,8 +275,8 @@ export default function ShoppingList() {
           // One card, with a small heading row before each aisle's things.
           <ul className="shopping-list">
             {aisles.flatMap(({ aisle, things }) => [
-              <li key={aisle} className="aisle-heading">
-                {aisle}
+              <li key={aisle} className="aisle-heading divider-label">
+                <span>{aisle}</span>
               </li>,
               ...things.map(row),
             ])}

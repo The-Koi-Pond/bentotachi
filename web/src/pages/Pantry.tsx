@@ -670,8 +670,8 @@ export default function Pantry() {
                 {group.subgroups.map((sub) => [
                   // Items with no subcategory come first, without a heading.
                   sub.label && (
-                    <li key={sub.key} className="pantry-sublabel">
-                      {sub.label}
+                    <li key={sub.key} className="pantry-sublabel divider-label">
+                      <span>{sub.label}</span>
                     </li>
                   ),
                   ...sub.items.map((item) => (

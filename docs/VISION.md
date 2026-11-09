@@ -216,7 +216,10 @@ Browse search boxes (the Shopping list's has a book beside Add for "Add
 from a recipe", Xel's pick over a row of its own). Loose lines between
 trays ("6 recipes") and page titles ("Browse", a recipe's name) start
 where a tray's compartments do, not at the page's edge (`--tray-inset`);
-buttons and switches beside them still line up with the trays' edges. A section heading over a list goes inside
+buttons and switches beside them still line up with the trays' edges. A group's label inside a
+compartment (the pantry's "Dairy", the shopping list's "Fruit & veg") is
+centred on a faint line, "— Dairy —" (`.divider-label`, Xel's pick over
+plain centred or left). A section heading over a list goes inside
 the tray's top rim, with any button beside it, like a recipe shelf
 ("Our sites", "Recipe sites", "Got it": `.tray-section`; Xel's pick over
 a tab or a ruled line). Buttons, text
