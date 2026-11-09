@@ -8,6 +8,7 @@ import { ChevronIcon } from "../icons";
 import { canSelfUpdate, updateAction, updateDetail, updateLabel, updatesFromPlay, useUpdateState } from "../appUpdates";
 import deki from "../assets/deki.svg";
 import HouseholdSettings from "../HouseholdSettings";
+import { chooseTheme, useThemeChoice, type ThemeChoice } from "../theme";
 
 // ⋮ → Settings: what you set once and rarely touch, in bento trays by
 // what it's about (docs/VISION.md, "The ⋮ menu and Settings"). The menu
@@ -26,6 +27,15 @@ export default function Settings() {
   return (
     <div className="stack narrow">
       <h1>Settings</h1>
+
+      <section className="stack tray-section">
+        <h2>Appearance</h2>
+        <ul className="settings-list">
+          <li>
+            <ThemeSetting />
+          </li>
+        </ul>
+      </section>
 
       <section className="stack tray-section">
         <h2>Recipes</h2>
@@ -111,6 +121,33 @@ export default function Settings() {
       <a href="https://thekoipond.dev/" target="_blank" rel="noopener noreferrer" className="settings-credit">
         <img src={deki} alt="" width="22" height="23" />A Koi Pond app
       </a>
+    </div>
+  );
+}
+
+// Light or dark, on this device: Auto follows the phone's (or computer's)
+// own setting.
+const THEMES: { choice: ThemeChoice; label: string }[] = [
+  { choice: "auto", label: "Auto" },
+  { choice: "light", label: "Light" },
+  { choice: "dark", label: "Dark" },
+];
+
+function ThemeSetting() {
+  const theme = useThemeChoice();
+  return (
+    <div className="setting-row">
+      <span className="menu-item-text">
+        Light or dark
+        <span className="menu-item-detail">Auto follows your device</span>
+      </span>
+      <div className="view-switch" role="group" aria-label="Light or dark">
+        {THEMES.map(({ choice, label }) => (
+          <button key={choice} type="button" aria-pressed={theme === choice} onClick={() => chooseTheme(choice)}>
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

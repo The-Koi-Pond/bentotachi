@@ -6,15 +6,14 @@ import benHalo from "./assets/ben-halo.svg";
 import benReady from "./assets/ben-ready.svg";
 import benScream from "./assets/ben-scream.svg";
 import benSweat from "./assets/ben-sweat.svg";
+import { useDarkMode } from "./theme";
 
-// The "Bentotachi" title, in dark letters or (in dark mode) cream ones.
+// The "Bentotachi" title, in dark letters or (in dark mode) cream ones:
+// dark mode as chosen in Settings (theme.ts), which a <picture>'s media
+// can't follow.
 export function BentoTitle({ className }: { className?: string }) {
-  return (
-    <picture>
-      <source srcSet={titleDark} media="(prefers-color-scheme: dark)" />
-      <img src={title} alt="Bentotachi" className={className} />
-    </picture>
-  );
+  const dark = useDarkMode();
+  return <img src={dark ? titleDark : title} alt="Bentotachi" className={className} />;
 }
 
 // The onigiri, decorative (pair it with the title).

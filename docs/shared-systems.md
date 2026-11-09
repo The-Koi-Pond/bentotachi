@@ -72,6 +72,11 @@ they say otherwise.
   the question from `deleteQuestion`, `deleteWarning.ts`).
 - Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
   (`unsavedChanges.ts`).
+- Light or dark: Settings' choice (Auto, Light, Dark) rewrites the
+  stylesheet's `@media (prefers-color-scheme: dark)` blocks (`theme.ts`).
+  So dark styles go in such a block as usual, but code asks
+  `useDarkMode()`, never `matchMedia("(prefers-color-scheme: dark)")` or a
+  `<picture>`'s `media`, which would ignore the choice.
 - The page's scroll: screens scroll inside `.page-scroll` (App.tsx),
   between the top bar and the tab bar, not the window. Read or move it, or
   listen to it, with `pageScroller` / `pageScrollTarget` /

@@ -236,7 +236,8 @@ view's day list keeps an umeboshi ✕, so nobody has to drag to remove.
 **The ⋮ menu and Settings** (Xel, 2026-11-09): the menu holds only what
 you reach for mid-task: your profile row, Keep screen on, Settings, and an
 update once one is waiting. Settings (its own page) holds what you set
-once, in trays: Recipes (Quick means, nutrition, amounts in the method,
+once, in trays: Appearance (light or dark: Auto follows the device,
+or always Light or Dark, on this device), Recipes (Quick means, nutrition, amounts in the method,
 step photos, shelves start closed), Household (country, tablespoon,
 meals on the plan), Your data (import and export, backups) and App (the
 server, checking for updates), with the "A Koi Pond app" credit quietly
