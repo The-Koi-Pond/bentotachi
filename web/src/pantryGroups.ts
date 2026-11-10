@@ -3,7 +3,6 @@
 // Kept out of the page so the tests can load it (web/test/pantryGroups.test.ts).
 import type { PantryItem } from "./pb";
 import { daysUntil, expiryState, type ExpiryState } from "./expiry.ts";
-import { placeOf } from "./pantryItem.ts";
 
 export const norm = (text: string) => text.trim().toLowerCase();
 
@@ -43,12 +42,12 @@ const DEFAULT_PLACES: Record<string, string[]> = {
   Cupboard: ["Baking", "Spices", "Grains & pasta", "Tins & jars", "Oils & vinegars", "Snacks"],
 };
 
-type Placed = Pick<PantryItem, "location" | "subcategory" | "opened_location">;
+type Placed = Pick<PantryItem, "location" | "subcategory">;
 
 export function placeOptions(existing: Placed[]): string[] {
   return uniqueLabels([
     ...Object.keys(DEFAULT_PLACES),
-    ...existing.flatMap((i) => [i.location, i.opened_location ?? ""]),
+    ...existing.map((i) => i.location),
   ]);
 }
 
@@ -74,19 +73,18 @@ export interface Group<T> {
   subgroups: Subgroup<T>[];
 }
 
-type Groupable = Pick<PantryItem, "name" | "location" | "subcategory" | "opened_location" | "opened" | "kind_of">;
+type Groupable = Pick<PantryItem, "name" | "location" | "subcategory" | "kind_of">;
 
 // Place -> subcategory -> items. Spelling differences in case ("fridge" vs
 // "Fridge") land in the same group. Items with no place go last under
-// "Other"; items with no subcategory go first within their place. Opened
-// items go in their once-opened place (see placeOf). Kinds of one thing
-// (Linguine, Penne: kind_of "Pasta") sit together under that name instead
-// of their subcategory.
+// "Other"; items with no subcategory go first within their place. Kinds of
+// one thing (Linguine, Penne: kind_of "Pasta") sit together under that name
+// instead of their subcategory.
 export function groupItems<T extends Groupable>(items: T[]): Group<T>[] {
   const places = new Map<string, { label: string; subs: Map<string, { label: string; items: T[] }> }>();
   for (const item of items) {
-    const { location, subcategory: place } = placeOf(item);
-    const subcategory = item.kind_of?.trim() || place;
+    const location = item.location;
+    const subcategory = item.kind_of?.trim() || item.subcategory;
     const placeKey = norm(location);
     if (!places.has(placeKey)) places.set(placeKey, { label: location.trim() || "Other", subs: new Map() });
     const subs = places.get(placeKey)!.subs;
@@ -109,6 +107,36 @@ export function groupItems<T extends Groupable>(items: T[]): Group<T>[] {
           items: sub.items.sort((x, y) => byName(x.name, y.name)),
         })),
     }));
+}
+
+// A pantry place as the picker and the page's drawers know it: its key is
+// how items are grouped (lower case; "" for items with no place, "Other").
+export interface Place {
+  key: string;
+  label: string;
+}
+
+// The places to offer, in order: the household's own list ("Edit places",
+// empty until someone edits it), then places items are in that it doesn't
+// list (A to Z), then "Other" when some item has no place.
+export function placeList(saved: string[], items: Pick<PantryItem, "location">[]): Place[] {
+  const places: Place[] = [];
+  const add = (label: string) => {
+    if (label.trim() && !places.some((p) => p.key === norm(label))) places.push({ key: norm(label), label: label.trim() });
+  };
+  saved.forEach(add);
+  uniqueLabels(items.map((item) => item.location)).forEach(add);
+  if (items.some((item) => !item.location.trim())) places.push({ key: "", label: "Other" });
+  return places;
+}
+
+// The places with this one put back where it was (`at`, or the end when
+// that's past it or unknown), for Undo of a delete or merge. Already there
+// (another phone added it again): as it is.
+export function withPlaceBack(list: string[], label: string, at: number): string[] {
+  if (list.some((l) => norm(l) === norm(label))) return list;
+  const spot = at < 0 || at > list.length ? list.length : at;
+  return [...list.slice(0, spot), label, ...list.slice(spot)];
 }
 
 // Removes blanks and case-only duplicates (the first spelling wins, so the

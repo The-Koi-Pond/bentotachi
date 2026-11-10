@@ -22,8 +22,6 @@ export interface Fields {
   brand: string;
   // "3 cans", or "".
   note: string;
-  // Where it goes once opened, or "" for nowhere else.
-  openedLocation: string;
   // The group it's a kind of ("Pasta" for Linguine), or "".
   kindOf: string;
 }
@@ -38,7 +36,6 @@ type Saved = Pick<
   | "more_store_urls"
   | "brand"
   | "note"
-  | "opened_location"
   | "kind_of"
 >;
 
@@ -59,7 +56,6 @@ export function fieldsOf(item?: Partial<Saved>): Fields {
     storeUrls: links.length ? links : [""],
     brand: item?.brand ?? "",
     note: item?.note ?? "",
-    openedLocation: item?.opened_location ?? "",
     kindOf: item?.kind_of ?? "",
   };
 }
@@ -77,7 +73,6 @@ export function recordFrom(fields: Fields): ItemRecord | null {
     ...storeLinkFields(links),
     brand: fields.brand.trim(),
     note: fields.note.trim(),
-    opened_location: fields.openedLocation.trim(),
     kind_of: fields.kindOf.trim(),
   };
 }
@@ -86,16 +81,12 @@ export function recordFrom(fields: Fields): ItemRecord | null {
 // with the item as the form opened, so a housemate's change made meanwhile
 // (a new expiry, a scanned barcode) isn't put back.
 export function editChanges(
-  start: Partial<Saved> & Pick<PantryItem, "barcodes" | "opened">,
+  start: Partial<Saved> & Pick<PantryItem, "barcodes">,
   record: ItemRecord,
   barcodes: string[]
 ): Record<string, unknown> {
   const before = recordFrom(fieldsOf(start)) ?? {};
-  return changedFields(
-    // Nowhere else to keep it once opened: it's just in its place.
-    { ...record, barcodes, opened: record.opened_location ? !!start.opened : false },
-    { ...before, barcodes: barcodesOf(start), opened: !!start.opened }
-  );
+  return changedFields({ ...record, barcodes }, { ...before, barcodes: barcodesOf(start) });
 }
 
 // Another item already called this (ignoring capitals and spaces), if any.

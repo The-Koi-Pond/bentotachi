@@ -28,7 +28,7 @@ const onList = (pantryItem, text) =>
   api(token, "POST", "/collections/shopping_items/records", { text, checked: false, pantry_item: pantryItem.id });
 const tick = (row, checked) => api(token, "PATCH", `/collections/shopping_items/records/${row.id}`, { checked });
 
-// A packet with a size or brand becomes the item's usual packet.
+// The first packet with a size or brand becomes the item's usual packet.
 const flour = await item("Restock flour");
 await api(token, "POST", "/collections/pantry_packets/records", { item: flour.id, brand: "White Mill", size: "1 kg" });
 const remembered = (await getItem(flour.id)).usual_packet;
@@ -49,7 +49,7 @@ check("unticking takes that packet back off", (await packetsOf(flour.id)).length
 
 // Bought while some is still in: one more packet.
 await api(token, "POST", "/collections/pantry_packets/records", { item: flour.id, brand: "Coles", size: "2 kg" });
-check("the newest packet added becomes the usual one", (await getItem(flour.id)).usual_packet?.brand === "Coles");
+check("a later one doesn't replace the usual one (only a person does)", (await getItem(flour.id)).usual_packet?.brand === "White Mill");
 await tick(row, true);
 check("buying more while some is in adds one more", (await packetsOf(flour.id)).length === 2);
 await tick(row, false);
@@ -75,4 +75,4 @@ check("an item that never had packets gets none when bought", (await packetsOf(s
 
 // A packet with no brand or size doesn't replace the usual one.
 await api(token, "POST", "/collections/pantry_packets/records", { item: flour.id });
-check("a packet with no brand or size leaves the usual one", (await getItem(flour.id)).usual_packet?.brand === "Coles");
+check("a packet with no brand or size leaves the usual one", (await getItem(flour.id)).usual_packet?.brand === "White Mill");

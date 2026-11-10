@@ -7,17 +7,25 @@ import {
   matchesPantrySearch,
   needsChecking,
   needsUsingSoon,
+  placeList,
   placeOptions,
   subcategoryOptions,
   uniqueLabels,
+  withPlaceBack,
 } from "../src/pantryGroups.ts";
+
+test("a place's Undo puts it back where it was, in the list as it is now", () => {
+  // Another phone added Garage meanwhile: it stays.
+  assert.deepEqual(withPlaceBack(["Pantry", "Garage", "Freezer"], "Fridge", 0), ["Fridge", "Pantry", "Garage", "Freezer"]);
+  assert.deepEqual(withPlaceBack(["Pantry"], "Fridge", 5), ["Pantry", "Fridge"]);
+  // Already back (ignoring capitals): not twice.
+  assert.deepEqual(withPlaceBack(["fridge", "Pantry"], "Fridge", 1), ["fridge", "Pantry"]);
+});
 
 const item = (name: string, location: string, subcategory = "", extra = {}) => ({
   name,
   location,
   subcategory,
-  opened_location: "",
-  opened: false,
   ...extra,
 });
 
@@ -59,14 +67,19 @@ test("items with no place go last, under Other", () => {
   assert.deepEqual(groups.map((g) => g.label), ["Cupboard", "Other"]);
 });
 
-test("an opened item sits in its once-opened place", () => {
-  const groups = groupItems([item("Sauce", "Cupboard", "Tins & jars", { opened_location: "Fridge", opened: true })]);
-  assert.deepEqual(groups.map((g) => [g.label, g.subgroups[0].label]), [["Fridge", ""]]);
+test("the place picker's places: the household's list in its order, then the rest, then Other", () => {
+  const items = [item("Ice", "freezer"), item("Milk", "Fridge"), item("Wine", "Wine rack"), item("Mystery", "")];
+  assert.deepEqual(
+    placeList(["Chest freezer", "Fridge"], items).map((p) => p.label),
+    ["Chest freezer", "Fridge", "freezer", "Wine rack", "Other"],
+    "an empty listed place stays; a listed one isn't repeated"
+  );
+  assert.deepEqual(placeList([], [item("Milk", "Fridge")]), [{ key: "fridge", label: "Fridge" }], "no Other without an item with no place");
 });
 
 test("places offered: the starters plus the household's own, once each", () => {
-  const places = placeOptions([item("Ice", "freezer"), item("Wine", "Wine rack", "", { opened_location: "Door shelf" })]);
-  assert.deepEqual(places, ["Cupboard", "Door shelf", "Freezer", "Fridge", "Wine rack"]);
+  const places = placeOptions([item("Ice", "freezer"), item("Wine", "Wine rack")]);
+  assert.deepEqual(places, ["Cupboard", "Freezer", "Fridge", "Wine rack"]);
 });
 
 test("subcategories offered belong to the chosen place", () => {

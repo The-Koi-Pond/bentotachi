@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { errorMessage, pantryItems, type PantryItem } from "./pb";
 import { familiesOf, familyLinkValue, familyStatus, suggestedName, type Family, type IngredientLink } from "./pantryLinks";
 import { CloseIcon } from "./icons";
-import { placeOf } from "./pantryItem";
 import { matchesPantrySearch } from "./pantryGroups";
 import { sameName } from "./pantryFields";
 
@@ -163,8 +162,8 @@ export default function PantryLinkSheet({
                   <span className="chooser-title">{item.name}</span>
                   <span className="muted chooser-details">
                     {STATUS_LABEL[item.status]}
-                    {placeOf(item).location && ` · ${placeOf(item).location}`}
-                    {placeOf(item).subcategory && ` · ${placeOf(item).subcategory}`}
+                    {item.location && ` · ${item.location}`}
+                    {item.subcategory && ` · ${item.subcategory}`}
                   </span>
                 </span>
               </button>

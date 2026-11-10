@@ -21,7 +21,22 @@ onRecordUpdateRequest((e) => {
   // picked, ticked off the list), it starts without the old date. The app's
   // Undo of Out sends the date back.
   if (becameOut) e.record.set("expires", "");
+  const typedDate = e.record.getString("expires");
+  const datesItself =
+    !becameOut && Object.prototype.hasOwnProperty.call(e.requestInfo().body, "expires") && !!typedDate && typedDate !== e.record.original().getString("expires");
   e.next();
+  // Labels keep the item's date (pantry_labels.js). One added while it was
+  // Out (the edit form adds one before saving it as back in stock) didn't
+  // count then, so it's summed up now it's back.
+  try {
+    const labels = require(`${__hooks}/pantry_labels.js`);
+    if (datesItself) labels.dateOnOldest(e.app, e.record.id, typedDate);
+    // Summed up after a typed date too: with every label dated, theirs
+    // stand, and the item agrees with them.
+    if (datesItself || (wasOut && e.record.get("status") !== "out")) labels.sumUp(e.app, e.record.id);
+  } catch (err) {
+    e.app.logger().warn("Couldn't keep the pantry item's use-by date", "error", String(err));
+  }
   if (becameOut) {
     const name = String(e.record.get("name")).trim().toLowerCase();
     const waiting = e.app.findRecordsByFilter("shopping_items", "checked = false", "", 0, 0);
@@ -116,11 +131,12 @@ onRecordAfterUpdateSuccess((e) => {
   e.next();
 }, "shopping_items");
 
-// A packet added with a brand or size becomes its item's usual packet: what
-// ticking it off the shopping list (see above) and the app's "+ 1 more" add
-// next time. Not one of another brand than the item's favourite (bought
-// because the favourite was out): that's a stand-in, and the next one
-// bought should be the favourite again.
+// An item's usual packet (its favourite brand and size) is what ticking it
+// off the shopping list (see above) and the app's "+ 1 more" add. Only a
+// person changes it once it's set ("☆ Make favourite" on a label, which
+// saves the item); the first one counted with a brand or size sets it, so
+// there's one to start from. Not one of another brand than the item's
+// favourite (bought because the favourite was out): that's a stand-in.
 onRecordAfterCreateSuccess((e) => {
   const brand = e.record.getString("brand");
   const size = e.record.getString("size");
@@ -140,15 +156,58 @@ onRecordAfterCreateSuccess((e) => {
       try {
         usual = JSON.parse(item.getString("usual_packet") || "null");
       } catch (err) {
-        // Not readable JSON: replaced below.
+        // Not readable JSON: counts as none, replaced below.
       }
-      if (!usual || usual.brand !== brand || usual.size !== size) {
+      if (!usual || !(usual.brand || usual.size)) {
         item.set("usual_packet", { brand: brand, size: size });
         e.app.save(item);
       }
     } catch (err) {
       e.app.logger().warn("Couldn't remember the usual packet", "error", String(err));
     }
+  }
+  e.next();
+}, "pantry_packets");
+
+// Labels (each one in stock) keep their item's use-by date as the soonest of
+// theirs (pantry_labels.js), whoever changes them. An item's first label
+// takes over the item's own date: until now it was about what's in, and
+// that's this one. Not on an Out item: its date is about what's gone (and
+// Out's Undo puts labels back first, each with its own dates).
+onRecordAfterCreateSuccess((e) => {
+  try {
+    const labels = require(`${__hooks}/pantry_labels.js`);
+    const itemId = e.record.getString("item");
+    const others = e.app.findRecordsByFilter("pantry_packets", "item = {:item} && id != {:id}", "", 1, 0, {
+      item: itemId,
+      id: e.record.id,
+    });
+    const item = e.app.findRecordById("pantry_items", itemId);
+    if (!others.length && item.getString("status") !== "out" && !e.record.getString("expires") && item.getString("expires")) {
+      e.record.set("expires", item.getString("expires"));
+      e.app.save(e.record);
+    }
+    labels.sumUp(e.app, itemId);
+  } catch (err) {
+    e.app.logger().warn("Couldn't keep the pantry item's use-by date", "error", String(err));
+  }
+  e.next();
+}, "pantry_packets");
+
+onRecordAfterUpdateSuccess((e) => {
+  try {
+    require(`${__hooks}/pantry_labels.js`).sumUp(e.app, e.record.getString("item"));
+  } catch (err) {
+    e.app.logger().warn("Couldn't keep the pantry item's use-by date", "error", String(err));
+  }
+  e.next();
+}, "pantry_packets");
+
+onRecordAfterDeleteSuccess((e) => {
+  try {
+    require(`${__hooks}/pantry_labels.js`).sumUp(e.app, e.record.getString("item"));
+  } catch (err) {
+    e.app.logger().warn("Couldn't keep the pantry item's use-by date", "error", String(err));
   }
   e.next();
 }, "pantry_packets");

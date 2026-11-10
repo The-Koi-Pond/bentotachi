@@ -2,6 +2,7 @@
 // category when it has any of the category's tags (ignoring capitals and
 // spaces at the ends); it can be on several shelves. Recipes on none go on
 // "Everything else".
+import { moved } from "./listOrder.ts";
 
 // The "Everything else" shelf's id (for remembering it's closed).
 export const OTHER = "other";
@@ -56,9 +57,7 @@ export function movedTo<C extends Category>(categories: C[], fromId: string, toI
   const from = order.findIndex((c) => c.id === fromId);
   const to = order.findIndex((c) => c.id === toId);
   if (from < 0 || to < 0 || from === to) return order;
-  const [moving] = order.splice(from, 1);
-  order.splice(to, 0, moving);
-  return order.map((category, position) => ({ ...category, position }));
+  return moved(order, from, to).map((category, position) => ({ ...category, position }));
 }
 
 // Every shelf in order, then "Everything else" (left out when it's empty).

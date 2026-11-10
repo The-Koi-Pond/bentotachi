@@ -78,7 +78,96 @@ const usualNow = (await api(token, "GET", `/collections/pantry_items/records/${m
 check("a stand-in brand doesn't replace the usual one", usualNow?.brand === "Masterfoods" && usualNow?.size === "560 g", JSON.stringify(usualNow));
 await api(token, "POST", "/collections/pantry_packets/records", { item: mustard.id, brand: "masterfoods", size: "250 g" });
 const usualSmaller = (await api(token, "GET", `/collections/pantry_items/records/${mustard.id}`)).usual_packet;
-check("...but the favourite in another size does", usualSmaller?.size === "250 g", JSON.stringify(usualSmaller));
+check("...nor does the favourite in another size", usualSmaller?.size === "560 g", JSON.stringify(usualSmaller));
+// Picking the favourite ("☆ Make favourite") is the app saving the item.
+await api(token, "PATCH", `/collections/pantry_items/records/${mustard.id}`, { usual_packet: { brand: "Masterfoods", size: "250 g" } });
+await api(token, "POST", "/collections/pantry_packets/records", { item: mustard.id, brand: "Masterfoods", size: "560 g" });
+const picked = (await api(token, "GET", `/collections/pantry_items/records/${mustard.id}`)).usual_packet;
+check("a favourite someone picked stays picked", picked?.size === "250 g", JSON.stringify(picked));
+
+// Labels: each one in stock has its own use-by, opened and bought date; the
+// item's use-by is the soonest of theirs (pantry_labels.js).
+const itemNow = (id) => api(token, "GET", `/collections/pantry_items/records/${id}`);
+const jam = await api(token, "POST", "/collections/pantry_items/records", { name: `Jam ${run}`, status: "have", expires: "2026-12-20 00:00:00.000Z" });
+const first = await api(token, "POST", "/collections/pantry_packets/records", { item: jam.id, brand: "Bonne", size: "370 g" });
+const firstNow = await api(token, "GET", `/collections/pantry_packets/records/${first.id}`);
+check("the first label takes over the item's use-by date", firstNow.expires.startsWith("2026-12-20"), firstNow.expires);
+const second = await api(token, "POST", "/collections/pantry_packets/records", { item: jam.id, brand: "Bonne", size: "370 g", expires: "2026-11-30 00:00:00.000Z" });
+check("the item's date is the soonest label's", (await itemNow(jam.id)).expires.startsWith("2026-11-30"), (await itemNow(jam.id)).expires);
+const openedOne = await api(token, "PATCH", `/collections/pantry_packets/records/${second.id}`, { opened: "2026-11-09 10:00:00.000Z" });
+check("a label keeps the day it was opened", openedOne.opened.startsWith("2026-11-09"), openedOne.opened);
+await api(token, "DELETE", `/collections/pantry_packets/records/${second.id}`);
+const afterUse = await itemNow(jam.id);
+check("using up the soonest one: back to the other's date", afterUse.expires.startsWith("2026-12-20"), afterUse.expires);
+await api(token, "POST", "/collections/pantry_packets/records", { item: jam.id, expires: "2026-11-25 00:00:00.000Z" });
+await api(token, "PATCH", `/collections/pantry_items/records/${jam.id}`, { status: "out", ask_about_list: true });
+const outJam = await itemNow(jam.id);
+const jamLabels = await api(token, "GET", `/collections/pantry_packets/records?filter=${encodeURIComponent(`item = "${jam.id}"`)}`);
+check("running out clears its labels and its date, without one coming back", outJam.expires === "" && jamLabels.items.length === 0, JSON.stringify([outJam.expires, jamLabels.items.length]));
+// Out's Undo: the labels go back first, while it's still Out, each with its
+// own dates, then the item's status and date.
+const putBack = await api(token, "POST", "/collections/pantry_packets/records", { item: jam.id, expires: "2026-12-01 00:00:00.000Z" });
+const stillOut = await itemNow(jam.id);
+const boughtOne = await api(token, "POST", "/collections/pantry_packets/records", { item: jam.id, bought: "2026-11-02 00:00:00.000Z" });
+check("a label keeps the day it was bought", boughtOne.bought.startsWith("2026-11-02"), boughtOne.bought);
+check("a label put back on an Out item keeps its date, and the item stays dateless", putBack.expires.startsWith("2026-12-01") && stillOut.expires === "", JSON.stringify([putBack.expires, stillOut.expires]));
+const undone = await api(token, "PATCH", `/collections/pantry_items/records/${jam.id}`, { status: "have", expires: "2026-12-01 00:00:00.000Z" });
+const undoneLabels = await packetsOf(jam.id);
+check(
+  "...then the item back in stock with its date: the labels keep theirs",
+  (await itemNow(jam.id)).expires.startsWith("2026-12-01") && undoneLabels.filter((l) => l.expires).length === 1,
+  JSON.stringify([undone.expires, undoneLabels.map((l) => l.expires)])
+);
+
+// A label's use-by changed later (the date box on a label, "+ Use-by" after
+// a scan) brings the item's along.
+const beans = await item("Beans");
+const tin = await packet(beans.id, "Heinz", "420 g");
+await api(token, "PATCH", `/collections/pantry_packets/records/${tin.id}`, { expires: "2027-01-10 00:00:00.000Z" });
+const datedBeans = await itemNow(beans.id);
+check("a label's use-by given later becomes the item's, and marks it dated", datedBeans.expires.startsWith("2027-01-10") && datedBeans.dates_used === true, JSON.stringify([datedBeans.expires, datedBeans.dates_used]));
+
+// One added with a use-by while the item is Out (the edit form adds it, then
+// saves the item as back in stock): the item gets its date once it's back.
+await api(token, "PATCH", `/collections/pantry_items/records/${beans.id}`, { status: "out", ask_about_list: true });
+await api(token, "POST", "/collections/pantry_packets/records", { item: beans.id, brand: "Heinz", size: "420 g", expires: "2027-02-01 00:00:00.000Z" });
+await api(token, "PATCH", `/collections/pantry_items/records/${beans.id}`, { status: "have" });
+const backBeans = await itemNow(beans.id);
+check("a dated label added while Out gives the item its date once it's back", backBeans.expires.startsWith("2027-02-01"), backBeans.expires);
+
+// An older app sets the item's own date, with labels counted: it goes on the
+// oldest label, so the next label change doesn't wipe it.
+const oats = await item("Oats");
+const oldest = await packet(oats.id, "Uncle Tobys", "1 kg");
+const newer = await packet(oats.id, "Uncle Tobys", "1 kg");
+await api(token, "PATCH", `/collections/pantry_items/records/${oats.id}`, { expires: "2026-12-20 00:00:00.000Z" });
+await api(token, "PATCH", `/collections/pantry_packets/records/${newer.id}`, { left: "half" });
+const oatsNow = await itemNow(oats.id);
+const oldestNow = await api(token, "GET", `/collections/pantry_packets/records/${oldest.id}`);
+check(
+  "an older app's date for the item survives the next label change, on its oldest label",
+  oatsNow.expires.startsWith("2026-12-20") && oldestNow.expires.startsWith("2026-12-20"),
+  JSON.stringify([oatsNow.expires, oldestNow.expires])
+);
+
+// ...but never over a label's own date: with every label dated, theirs
+// stand, and the item says the soonest of them.
+const tea = await item("Tea");
+await api(token, "POST", "/collections/pantry_packets/records", { item: tea.id, expires: "2026-11-15 00:00:00.000Z" });
+await api(token, "PATCH", `/collections/pantry_items/records/${tea.id}`, { expires: "2026-11-20 00:00:00.000Z" });
+const teaNow = await itemNow(tea.id);
+const teaLabels = await packetsOf(tea.id);
+check(
+  "an older app's date doesn't replace a label's own, and the item keeps the labels' date",
+  teaNow.expires.startsWith("2026-11-15") && teaLabels[0]?.expires.startsWith("2026-11-15"),
+  JSON.stringify([teaNow.expires, teaLabels.map((l) => l.expires)])
+);
+
+// A stand-in as the very first one counted doesn't become the usual one.
+const sauce = await api(token, "POST", "/collections/pantry_items/records", { name: `Sauce ${run}`, status: "have", brand: "Masterfoods" });
+await api(token, "POST", "/collections/pantry_packets/records", { item: sauce.id, brand: "Heinz", size: "500 ml" });
+const sauceUsual = (await itemNow(sauce.id)).usual_packet;
+check("a stand-in brand counted first doesn't become the usual one", !sauceUsual?.brand && !sauceUsual?.size, JSON.stringify(sauceUsual));
 
 const guest = await api("", "GET", "/collections/pantry_packets/records");
 check("someone not logged in sees no packets", guest.items.length === 0);

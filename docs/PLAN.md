@@ -218,6 +218,35 @@ Not released yet:
 - Fix: using something up and then adding a new one kept the old expiry
   date. Running out now clears it (on the server, so every way back into
   stock starts fresh); Undo of Out puts it back.
+- Pantry places: tap the Pantry title to show just one place (Fridge,
+  Freezer, a new "Chest freezer"…), or all of them; each phone remembers
+  its pick. Searching still looks everywhere. "Edit places…" adds,
+  renames and deletes places, kept for the whole household (a database
+  change, household_pantry_places, adds where they're kept).
+- Products we buy: each pantry item remembers the brands and sizes it's
+  had, each with its barcodes and store links, in one list in its edit
+  form, with a ★ on the favourite (what "+ 1 more" and the shopping list
+  add; only a person changes it). The quick card and the In stock tray
+  add any of them with one tap, or "+ New…". Scanning a known barcode
+  still adds one by itself; on items someone has dated, the message also
+  offers "+ Use-by". A database change (pantry_products) fills in each
+  item's products from what it knows already: try it on a copy of a real
+  backup before deploying (.claude/rules/pi.md). Older app versions keep
+  working: what they add or take off is folded into products on the
+  server.
+- No more "once opened, keep in" place: an item stays in its own place,
+  and each label says whether it's opened.
+- Bentotachi's own calendar for every date (use-by, opened, the day to
+  cook a recipe): the date big with a pencil to type it, the month with a
+  list of years and ‹ ›, then the days.
+- Pantry labels: each one in stock has its own bought, use-by and opened
+  date, listed under the item ("Bon Maman 360 g · opened · expires in 2
+  days", or "bought 12 days ago" when it has no use-by);
+  tap one to change it, − when it's used up; "+ Add one" takes a use-by
+  too. The item's badge and "use soon" follow the soonest label. A
+  database change (pantry_packets_dates) moves each item's current date
+  and opened state onto its oldest one in stock: try it on a copy of a
+  real backup before deploying (.claude/rules/pi.md).
 
 Released in 1.22.0 (2026-11-09, deployed the same day):
 

@@ -151,6 +151,8 @@ they say otherwise.
 
 ## Screen pieces
 
+- Any date box: `<DateField>` (`DateField.tsx`), never `<input type="date">`;
+  its month grid and typed-date reading are `calendar.ts`.
 - `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
   `PhotoViewer.tsx`. Screen stays on: `useWakeLock`. A pantry level (Have /
@@ -160,9 +162,21 @@ they say otherwise.
   a 5px rim around compartments of `--surface` with 8px corners; see the
   recipe box, pantry places, shopping list, plan and tab bar in
   `styles.css`, and docs/VISION.md "Bento trays" for where they go.
-- A pantry item's packets as "− 3 × 400 g +": `<PacketCounters>`
-  (`PacketCounters.tsx`, grouping by `packetGroups`); what "+ 1 packet"
-  adds: `nextPacket` (`pantryPackets.ts`). An item's quick card:
+- A pantry item's labels (each one in stock, with its use-by and opened):
+  `<StockLabels>` (`StockLabels.tsx`, grouping by `packetGroups`, the small
+  words by `labelMeta`); the item's own date as their soonest:
+  `server/pb_hooks/pantry_labels.js`. What "+ 1 more" adds: `nextPacket`
+  (`pantryPackets.ts`). A pantry item's products (brand, size, barcodes,
+  links; the favourite): `pantryProducts.ts` in the app, its list in the
+  edit form `<ProductsField>`; the server's rules, which also keep the
+  item's barcodes and store links from them and fold in older apps'
+  changes: `server/pb_hooks/pantry_products.js`. A store link box:
+  `<StoreLinkField>` (`StoreLinkField.tsx`). A calendar asked for without
+  a date box: `<DateDialog>` (`DateField.tsx`). The pantry's place picker
+  (its title): `<PlacePicker>` (`PlacePicker.tsx`). Moving one thing to
+  where another is, as dragging does (shelves, places): `moved`
+  (`listOrder.ts`). A message with a second
+  button: `showToast(text, { action, extra })`. An item's quick card:
   `<PantryCard>`. Packet rules (`pantryPackets.ts`): a packet as saved or
   put back `packetToSave`, the last one making it Out `lastPacketRunsOut`,
   what adding one changes on the item `itemAfterPacket` / `learnsBarcode`.

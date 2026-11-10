@@ -11,8 +11,10 @@ import {
   lastPacketRunsOut,
   learnsBarcode,
   nextPacket,
-  otherBrands,
+  boughtDay,
   groupText,
+  labelMeta,
+  preferredChanges,
   packetGroups,
   packetLabel,
   packetToSave,
@@ -70,17 +72,36 @@ test("Out's Undo keeps a packet's shopping row only while unticking could still 
   assert.equal(untickCanTakeBack({ bought_with: "", created: "2026-11-08 11:30:00.000Z" }, now), false);
 });
 
+// The day this moment falls on, on this computer's calendar ("2026-11-09"),
+// worked out here rather than by the code being tested.
+function localDay(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 test("a packet put back keeps what's left, and its shopping row only within the hour", () => {
   const now = new Date("2026-11-08T12:00:00Z");
   const base = { item: "rice", brand: "Sunrice", size: "1 kg", barcode: "123" };
   assert.deepEqual(packetToSave({ ...base, left: "300 g", bought_with: "s1", created: "2026-11-08 11:30:00.000Z" }, now), {
     ...base,
     left: "300 g",
+    bought: `${localDay("2026-11-08T11:30:00Z")} 00:00:00.000Z`,
     bought_with: "s1",
   });
-  assert.deepEqual(packetToSave({ ...base, left: "", bought_with: "s1", created: "2026-11-05 11:30:00.000Z" }, now), base);
-  // A new one has neither.
+  assert.deepEqual(packetToSave({ ...base, left: "", bought_with: "s1", created: "2026-11-05 11:30:00.000Z" }, now), {
+    ...base,
+    bought: `${localDay("2026-11-05T11:30:00Z")} 00:00:00.000Z`,
+  });
+  // A new one has neither, nor a bought day (it's today's).
   assert.deepEqual(packetToSave(base, now), base);
+});
+
+test("a label put back (Out's Undo) keeps its dates, and the day it was really bought", () => {
+  const base = { item: "rice", brand: "Sunrice", size: "1 kg", barcode: "", left: "" };
+  const dates = { expires: "2026-12-14 00:00:00.000Z", opened: "2026-11-09 08:00:00.000Z", bought: "2026-11-02 00:00:00.000Z" };
+  assert.deepEqual(packetToSave({ ...base, ...dates, created: "2026-11-03 01:00:00.000Z" }), { item: "rice", brand: "Sunrice", size: "1 kg", barcode: "", ...dates });
+  // No bought day given: the day it was added, not the day it's put back.
+  assert.equal(packetToSave({ ...base, created: "2026-10-28 23:30:00.000Z" }).bought, `${localDay("2026-10-28T23:30:00Z")} 00:00:00.000Z`);
 });
 
 test("finishing the last packet on screen makes the item Out, unless it's Out already", () => {
@@ -100,8 +121,10 @@ test("adding a packet: an Out item is in stock again, and a new barcode with det
   assert.deepEqual(itemAfterPacket({ ...fresh, status: "out" }, CODE, details), { status: "have", barcode_details: { [CODE]: details } });
   // Low stays a judgement: a packet added doesn't change it.
   assert.equal(itemAfterPacket({ ...fresh, status: "low" }, "", details), null);
-  // Known already, or nothing to remember: not learned.
-  assert.equal(learnsBarcode({ barcode_details: { [CODE]: { brand: "Coles" } } }, CODE, details), false);
+  // Known already, or nothing to remember: not learned. Known only by its
+  // brand: its size is.
+  assert.equal(learnsBarcode({ barcode_details: { [CODE]: { brand: "Coles", size: "2 kg" } } }, CODE, details), false);
+  assert.equal(learnsBarcode({ barcode_details: { [CODE]: { brand: "Coles" } } }, CODE, details), true);
   assert.equal(learnsBarcode(fresh, CODE, { brand: " ", size: "" }), false);
   assert.equal(itemAfterPacket(fresh, CODE, { brand: "", size: "" }), null);
 });
@@ -206,13 +229,87 @@ test("an older item's several brands are offered to pick the favourite from", ()
   assert.deepEqual(brandsToPickFrom(""), []);
 });
 
-test("another brand's quick picks: what it's had, not the favourite, each once", () => {
+test("a label says if it's opened and when it expires, and whether that's soon", () => {
+  const now = new Date(2026, 10, 9, 12, 0);
+  assert.deepEqual(labelMeta({ expires: "2026-11-11 00:00:00.000Z", opened: "2026-11-03 10:00:00.000Z" }, now), {
+    text: "opened · expires in 2 days",
+    soon: true,
+  });
+  assert.deepEqual(labelMeta({ expires: "2026-12-14 00:00:00.000Z", opened: "" }, now).soon, false);
+  assert.deepEqual(labelMeta({ expires: "", opened: "" }, now), { text: "", soon: false });
+  assert.deepEqual(labelMeta({ expires: "2026-11-01 00:00:00.000Z" }, now).soon, true, "past counts too");
+});
+
+test("a label's bought day: the one given, else the day it was added", () => {
+  assert.equal(boughtDay({ bought: "2026-11-02 00:00:00.000Z", created: "2026-11-05 01:00:00.000Z" }), "2026-11-02");
+  // Added at midday UTC: 6 Nov in Kiritimati, where the tests run too.
+  assert.equal(boughtDay({ created: "2026-11-05 12:00:00.000Z" }), localDay("2026-11-05T12:00:00Z"));
+  assert.equal(boughtDay({}), "");
+});
+
+test("without a use-by date, a label says how long ago it was bought", () => {
+  const now = new Date(2026, 10, 9, 12, 0);
+  assert.equal(labelMeta({ bought: "2026-10-28 00:00:00.000Z" }, now).text, "bought 12 days ago");
+  assert.equal(labelMeta({ bought: "2026-11-09 00:00:00.000Z", opened: "2026-11-09 00:00:00.000Z" }, now).text, "opened · bought today");
+  assert.equal(
+    labelMeta({ bought: "2026-10-28 00:00:00.000Z", expires: "2026-12-14 00:00:00.000Z" }, now).text.includes("bought"),
+    false,
+    "the use-by says more"
+  );
+});
+
+test("making one the favourite sets the usual one, and the brand when it's another", () => {
+  assert.deepEqual(preferredChanges({ brand: "Nutella" }, { brand: "Nutella", size: "750 g" }), {
+    usual_packet: { brand: "Nutella", size: "750 g" },
+  });
+  assert.deepEqual(preferredChanges({ brand: "Nutella" }, { brand: " Bon Maman", size: "360 g" }), {
+    usual_packet: { brand: "Bon Maman", size: "360 g" },
+    brand: "Bon Maman",
+  });
+  assert.deepEqual(preferredChanges({ brand: "Coles, White Mill" }, { brand: "White Mill", size: "1 kg" }), {
+    usual_packet: { brand: "White Mill", size: "1 kg" },
+    brand: "White Mill",
+  }, "an older item's list of brands becomes the one picked");
+  assert.deepEqual(preferredChanges({ brand: "Nutella" }, { brand: "", size: "1 kg" }), {
+    usual_packet: { brand: "", size: "1 kg" },
+  }, "no brand on the label: the favourite brand stays");
+});
+
+test("a barcode's brand and size come from the product it's on first", () => {
   const item = {
-    brand: "Masterfoods",
-    barcode_details: { "9300000000002": { brand: "Heinz", size: "500 g" }, "9300000000019": { brand: "masterfoods", size: "560 g" } },
+    products: [{ brand: "Nutella", size: "400 g", barcodes: ["3017620422003"], links: [] }, { brand: "", size: "", barcodes: ["111"], links: [] }],
+    barcode_details: { "3017620422003": { brand: "Old", size: "1 kg" }, "222": { brand: "Heinz", size: "500 g" } },
   };
-  assert.deepEqual(otherBrands(item, [{ brand: "Coles" }, { brand: "Masterfoods" }, { brand: " heinz " }, { brand: "" }]), ["Coles", "heinz"]);
-  assert.deepEqual(otherBrands({ brand: "", barcode_details: null }, []), []);
+  assert.deepEqual(detailsFor(item, "3017620422003"), { brand: "Nutella", size: "400 g" });
+  assert.deepEqual(detailsFor(item, "222"), { brand: "Heinz", size: "500 g" }, "an older app's details still count");
+  assert.equal(knowsBarcode(item, "111"), false, "on a product with no name: not known");
+});
+
+test("a barcode known only by its brand is still looked up, for its size, and keeps that brand", () => {
+  const item = { products: [{ brand: "Heinz", size: "", barcodes: ["333"], links: [] }] };
+  assert.equal(knowsBarcode(item, "333"), false);
+  assert.deepEqual(detailsFor(item, "333", { brand: "Heinz Australia", quantity: "500ml" }), { brand: "Heinz", size: "500 ml" });
+  // Nothing found (or no connection): the brand it knows.
+  assert.deepEqual(detailsFor(item, "333", null), { brand: "Heinz", size: "" });
+});
+
+test("labels with their own date or opened group only with the same", () => {
+  const groups = packetGroups([
+    { brand: "", size: "400 g", expires: "2026-12-14 00:00:00.000Z" },
+    { brand: "", size: "400 g", expires: "2026-12-14 00:00:00.000Z" },
+    { brand: "", size: "400 g", expires: "2026-12-14 00:00:00.000Z", opened: "2026-11-03 10:00:00.000Z" },
+    { brand: "", size: "400 g" },
+  ]);
+  assert.deepEqual(groups.map((g) => g.count), [2, 1, 1]);
+});
+
+test("labels group by the day they were bought, given or the day added, so Out's Undo shows them as before", () => {
+  const added = { brand: "", size: "1 kg", left: "", created: "2026-10-29 01:00:00.000Z" };
+  const later = { brand: "", size: "1 kg", left: "", created: "2026-11-06 01:00:00.000Z" };
+  assert.deepEqual(packetGroups([added, later]).map((g) => g.count), [1, 1]);
+  // Put back by Undo: a new record, with the day it was bought given.
+  const putBack = { ...added, created: "2026-11-10 01:00:00.000Z", bought: packetToSave({ item: "r", barcode: "", ...added }).bought };
+  assert.deepEqual(packetGroups([added, putBack]).map((g) => g.count), [2]);
 });
 
 test("scanning adds by itself only to items whose stock is counted", () => {

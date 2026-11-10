@@ -1,25 +1,7 @@
-// Where a pantry item shows, and its brands (see the pantry_opened_notes
-// migration).
+// A pantry item's brands, store links and photo sources.
 import { barcodesOf } from "./barcodes.ts";
 import { normaliseSiteUrl } from "./recipeSites.ts";
 import { storeFor } from "./stores.ts";
-
-interface Placed {
-  location: string;
-  subcategory: string;
-  opened_location?: string;
-  opened?: boolean;
-}
-
-// Opened, and it has an "once opened" place: it's there now, straight inside
-// that place (its subcategory belongs to its own place). Otherwise its own
-// place.
-export function placeOf(item: Placed): { location: string; subcategory: string } {
-  const openedPlace = (item.opened_location ?? "").trim();
-  if (item.opened && openedPlace && openedPlace.toLowerCase() !== item.location.trim().toLowerCase())
-    return { location: openedPlace, subcategory: "" };
-  return { location: item.location, subcategory: item.subcategory };
-}
 
 // "Coles, White Mill" -> ["Coles", "White Mill"]: the brand field of items
 // from before favourite brands, which listed every brand bought.

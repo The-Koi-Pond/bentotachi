@@ -42,25 +42,34 @@ export function refreshHousehold() {
 
 // The household's settings record (household_settings, one per Bento): its
 // country, which decides the grocery stores offered and the units hints
-// use, what its tablespoon holds, and which meals its plan shows. null
-// until loaded.
+// use, what its tablespoon holds, which meals its plan shows, and its
+// pantry places. null until loaded.
 interface Settings {
   id: string;
   country: string;
   tablespoon: number;
   plan_meals: string[];
+  pantry_places: string[];
 }
 let settings: Settings | null = null;
 let askingSettings = false;
 
-function setSettings(next: { id: string; country: string; tablespoon?: number; plan_meals?: string[] } | null) {
-  settings = next && {
-    id: next.id,
-    country: next.country,
-    tablespoon: next.tablespoon ?? 0,
+type SavedSettings = { id: string; country: string; tablespoon?: number; plan_meals?: string[]; pantry_places?: unknown };
+
+function settingsFrom(saved: SavedSettings): Settings {
+  return {
+    id: saved.id,
+    country: saved.country,
+    tablespoon: saved.tablespoon ?? 0,
     // A server from before meals has no plan_meals: dinner only.
-    plan_meals: next.plan_meals ?? [],
+    plan_meals: saved.plan_meals ?? [],
+    // A server from before it: none listed, so the places items are in.
+    pantry_places: Array.isArray(saved.pantry_places) ? saved.pantry_places.filter((p): p is string => typeof p === "string") : [],
   };
+}
+
+function setSettings(next: SavedSettings | null) {
+  settings = next && settingsFrom(next);
   for (const listener of listeners) listener();
 }
 
@@ -68,7 +77,7 @@ async function saveSettings(current: Settings | null, patch: Partial<Omit<Settin
   const saved = current
     ? await pb.collection("household_settings").update(current.id, patch)
     : await pb.collection("household_settings").create(patch);
-  setSettings({ id: saved.id, country: saved.country, tablespoon: saved.tablespoon, plan_meals: saved.plan_meals });
+  setSettings(saved as unknown as SavedSettings);
 }
 
 function loadSettings() {
@@ -78,14 +87,13 @@ function loadSettings() {
     .getList(1, 1, { sort: "created" })
     .then(async (page) => {
       const record = page.items[0];
-      if (record?.country)
-        return setSettings({ id: record.id, country: record.country, tablespoon: record.tablespoon, plan_meals: record.plan_meals });
+      if (record?.country) return setSettings(record as unknown as SavedSettings);
       // A brand-new Bento: start from this browser's guess, and keep it.
       const country = browserCountry();
       const saved = record
         ? await pb.collection("household_settings").update(record.id, { country })
         : await pb.collection("household_settings").create({ country });
-      setSettings({ id: saved.id, country: saved.country, tablespoon: saved.tablespoon, plan_meals: saved.plan_meals });
+      setSettings(saved as unknown as SavedSettings);
     })
     .catch(() => {})
     .finally(() => {
@@ -133,6 +141,46 @@ export function useTablespoon(): [number, (ml: number) => Promise<void>] {
   }, [current]);
   return [current?.tablespoon === 20 ? 20 : 15, (tablespoon) => saveSettings(current, { tablespoon })];
 }
+
+// The pantry places the household keeps, in its order, even while empty
+// ("Edit places", PlacePicker.tsx); [] until someone edits them. A change
+// is made to the list as the server has it at that moment: this copy is
+// loaded once, and a phone open since the morning would otherwise save over
+// another phone's new (empty) place or order.
+export function usePantryPlaces(): [string[], (change: (places: string[]) => string[]) => Promise<void>] {
+  const current = useSyncExternalStore(subscribe, () => settings);
+  useEffect(() => {
+    if (current === null) loadSettings();
+  }, [current]);
+  return [
+    current?.pantry_places ?? [],
+    // Shown at once (a dragged place stays where it was dropped), put back
+    // if the server says no.
+    async (change) => {
+      // What's on screen now (an edit a moment ago included), not this
+      // render's copy.
+      const shown = settings;
+      if (shown) setSettings({ ...shown, pantry_places: change(shown.pantry_places) });
+      // One after another: two quick edits both reading the list before
+      // either saved would save only the second.
+      const saving = placeSaves.then(async () => {
+        const page = await pb.collection("household_settings").getList(1, 1, { sort: "created" });
+        const fresh = page.items[0] ? settingsFrom(page.items[0] as unknown as SavedSettings) : null;
+        await saveSettings(fresh, { pantry_places: change(fresh?.pantry_places ?? []) });
+      });
+      placeSaves = saving.catch(() => {
+        // Its own caller shows the error; the next edit still goes ahead.
+      });
+      try {
+        await saving;
+      } catch (err) {
+        setSettings(shown);
+        throw err;
+      }
+    },
+  ];
+}
+let placeSaves: Promise<void> = Promise.resolve();
 
 // The meals the plan shows, in plan order: just dinner until the household
 // chooses more (or until loaded, or offline).

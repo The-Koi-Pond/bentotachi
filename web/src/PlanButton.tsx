@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { errorMessage, mealPlan, pb, type Recipe } from "./pb";
 import { formatDay, localToday, toStoredDate } from "./dates";
 import { CalendarIcon } from "./icons";
+import DateField from "./DateField";
 import { usePlanMeals } from "./household";
 import { MEAL_NAMES, type Meal } from "./meals";
 
@@ -57,13 +58,7 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
         <div className="plan-popup">
           {open && (
             <form className="add-row" onSubmit={submit}>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                aria-label="Day to cook it"
-                required
-              />
+              <DateField label="Day to cook it" value={date} onChange={setDate} required />
               {meals.length > 1 && (
                 <select value={meal} onChange={(e) => setChosenMeal(e.target.value as Meal)} aria-label="Which meal">
                   {meals.map((m) => (

@@ -22,7 +22,6 @@ export function ScanResult({
   isOnList,
   onEdit,
   onStatus,
-  onOpened,
   onAddToList,
   onScanAgain,
   onSure,
@@ -34,6 +33,7 @@ export function ScanResult({
   onAddScannedPacket,
   onAddTypedPacket,
   onFinishPacket,
+  onSavePacket,
   onClose,
 }: {
   scanned: Scanned;
@@ -42,7 +42,6 @@ export function ScanResult({
   isOnList: (item: PantryItem) => boolean;
   onEdit: (editing: boolean) => void;
   onStatus: (item: PantryItem, status: PantryStatus) => void;
-  onOpened: (item: PantryItem, opened: boolean) => void;
   onAddToList: (item: PantryItem) => void;
   onScanAgain: () => void;
   onSure: () => void;
@@ -58,15 +57,16 @@ export function ScanResult({
   onAddScannedPacket: (item: PantryItem) => Promise<boolean>;
   onAddTypedPacket: (item: PantryItem, details: PacketDetails) => Promise<boolean>;
   onFinishPacket: (item: PantryItem, packet: PantryPacket) => void;
+  onSavePacket: (packet: PantryPacket, changes: Partial<PantryPacket>) => Promise<boolean>;
   onClose: () => void;
 }) {
   const [otherId, setOtherId] = useState("");
   // The scanned packet, once added (one scan, one packet).
-  const [addedPacket, setAddedPacket] = useState<"" | "adding" | "added">("");
+  const [addedPacket, setAddedPacket] = useState<"" | "adding" | "added">(scanned.added ? "added" : scanned.adding ? "adding" : "");
   // Each scan (the same barcode again too) can add its packet; on an item
   // whose stock is counted, the scan already did (Pantry's
   // addScannedByItself), and its Undo takes that back.
-  useEffect(() => setAddedPacket(scanned.added ? "added" : ""), [scanned]);
+  useEffect(() => setAddedPacket(scanned.added ? "added" : scanned.adding ? "adding" : ""), [scanned]);
   const found = itemWithBarcode(items, scanned.code);
 
   if (found)
@@ -85,6 +85,7 @@ export function ScanResult({
             packets={packetsFor?.(found) ?? null}
             onAddPacket={(details) => onAddTypedPacket(found, details)}
             onFinishPacket={(packet) => onFinishPacket(found, packet)}
+            onSavePacket={onSavePacket}
             onSaved={onSaved}
             onCancel={() => onEdit(false)}
             onDelete={() => onDelete(found)}
@@ -98,10 +99,9 @@ export function ScanResult({
               onList={isOnList(found)}
               packets={packetsFor?.(found) ?? []}
               onFinishPacket={(packet) => onFinishPacket(found, packet)}
-              onAddPacket={(details) => void onAddTypedPacket(found, details)}
+              onSavePacket={onSavePacket}
               onEdit={() => onEdit(true)}
               onStatus={(status) => onStatus(found, status)}
-              onOpened={(opened) => onOpened(found, opened)}
               onAddToList={() => onAddToList(found)}
             />
             {/* Done by itself only for an item whose stock is counted;

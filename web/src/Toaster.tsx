@@ -7,20 +7,26 @@ import { hideToast, useToast } from "./toast";
 export default function Toaster() {
   const toast = useToast();
   if (!toast) return null;
-  const { action } = toast;
+  const { action, extra } = toast;
   if (action)
     return (
       <p key={toast.id} className="toast notice-toast undo-toast" role="status">
         <span>{toast.text}</span>
-        <button
-          className="link-button"
-          onClick={() => {
-            hideToast();
-            action.run();
-          }}
-        >
-          {action.label}
-        </button>
+        {[extra, action].map(
+          (button) =>
+            button && (
+              <button
+                key={button.label}
+                className="link-button"
+                onClick={() => {
+                  hideToast();
+                  button.run();
+                }}
+              >
+                {button.label}
+              </button>
+            )
+        )}
       </p>
     );
   return (

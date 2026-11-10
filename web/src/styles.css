@@ -1174,8 +1174,11 @@ li.setting-row {
   border-radius: var(--radius);
 }
 
+/* Aisles share the one compartment, split only by their centred label's
+   faint line (.divider-label), not the rim as well. */
 .shopping-list li.aisle-heading:not(:first-child) {
-  border-top: 5px solid var(--rim);
+  border-top: none;
+  padding-top: 8px;
 }
 
 /* By aisle: a small heading row before each aisle's things (aisles.ts). */
@@ -2324,9 +2327,11 @@ li.divider-label {
   flex-wrap: wrap;
 }
 
-.plan-popup input[type="date"] {
-  flex: 1 1 9rem;
-  min-width: 0;
+/* A set width: the popup fits its contents, and a date box has none of its
+   own (it shrinks to fit wherever it is). */
+.plan-popup .date-field {
+  flex: 1 1 10rem;
+  min-width: 10rem;
 }
 
 .plan-popup select,
@@ -2529,17 +2534,6 @@ li.divider-label {
   color: var(--out);
 }
 
-.date-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.date-row input {
-  flex: 1;
-  min-width: 0;
-}
-
 /* The pantry's find-or-add box: looks like one text box, with Clear and
    Scan inside it. */
 .find-box {
@@ -2660,8 +2654,11 @@ li.divider-label {
   border-radius: 8px;
 }
 
+/* A place's subcategories share its one compartment, split only by their
+   centred label's faint line (.divider-label), not the rim as well. */
 .pantry-place .pantry-list > .pantry-sublabel:not(:first-child) {
-  border-top: 5px solid var(--rim);
+  border-top: none;
+  padding-top: 8px;
 }
 
 .place-count {
@@ -2713,17 +2710,27 @@ li.divider-label {
   padding: 2px 6px 2px 14px;
 }
 
+/* Detailed: the photo beside the name and level, then the labels and store
+   links across the whole row, under the photo too. The photo sits closer
+   to the edge than Simple's names. */
 .pantry-row.detailed {
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  padding-left: 8px;
 }
 
-.pantry-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.pantry-row.detailed > .pantry-stock,
+.pantry-row.detailed > .pantry-extra {
+  grid-column: 1 / -1;
 }
+
+.pantry-row.detailed > .pantry-stock {
+  margin: 0 0 4px;
+}
+
 
 .pantry-top {
   display: flex;
@@ -6702,88 +6709,160 @@ em.soft {
   color: var(--text);
 }
 
-/* "Opened → Fridge" on things kept somewhere else once opened. Pressed:
-   it's open (and shown in that place); tap again to undo. */
-.opened-toggle {
-  min-height: 32px;
-  padding: 2px 12px;
+/* An item's labels (StockLabels.tsx): each one in stock as a soft jade
+   strip, "Bon Maman 360 g · opened · expires in 2 days", with − at its end.
+   Tapping the words opens that one underneath. */
+.pantry-stock {
+  margin-top: 6px;
+}
+
+.stock-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stock-label {
+  border-radius: 8px;
+  background: var(--jade-soft);
+}
+
+.stock-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.stock-label-what {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  min-height: 36px;
+  padding: 6px 4px 6px 10px;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+  text-align: left;
   color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  background: none;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-/* Normal text, not jade, on the jade tint: jade text there is just under
-   4.5:1 in light mode. */
-.opened-toggle[aria-pressed="true"] {
-  background: var(--jade-soft);
-  border-color: var(--jade-strong);
-  color: var(--text);
+.stock-label-what strong {
   font-weight: 600;
 }
 
-/* Packets in stock: "In stock: White Mill 1 kg ✕ · Coles 2 kg ✕" under a
-   Detailed row (and in the edit form). Tapping one finishes it. */
-/* "In stock:" then its chips, which wrap in their own column so a second
-   line starts under the first chip, not under the label. */
-.pantry-packets {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.pantry-packets-label {
-  flex: none;
-  /* Level with the first row of chips. */
-  line-height: 32px;
-  font-size: 0.82rem;
+.stock-label-meta {
   color: var(--muted);
 }
 
-.pantry-packets-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  min-width: 0;
+/* To use soon, or past it: the expiry badges' amber, mixed with the text
+   colour so it reads on the jade in light mode as well as dark. */
+.stock-label-meta.soon {
+  color: color-mix(in srgb, var(--low) 55%, var(--text));
+  font-weight: 600;
 }
 
-/* "− 3 × 400 g +": a packet counter (PacketCounters.tsx). The − and + are
-   big enough to hit on a phone, and apart, so one isn't taken for the
-   other. */
-.packet-counter {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  font-size: 0.85rem;
-  color: var(--text);
-  background: var(--accent-soft);
-  border-radius: 999px;
+.stock-label-what:focus-visible,
+.stock-label-use:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -2px;
 }
 
-.packet-counter span {
-  padding: 0 2px;
-  white-space: nowrap;
-}
-
-.packet-counter button {
+.stock-label-use {
+  flex: none;
   width: 32px;
   height: 32px;
   font: inherit;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--accent);
-  background: none;
-  border: none;
-  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
   cursor: pointer;
 }
 
-.packet-counter button:focus-visible {
+/* One label up close: brand and size, use-by and opened, two to a row. */
+.stock-label-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 4px 4px;
+  padding: 10px;
+  font-size: 0.85rem;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.stock-label-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.stock-label-editor input {
+  min-width: 0;
+  font-weight: 400;
+}
+
+/* A date box with a one-tap date ("Today") joined to its end: one box, a
+   line between the two. */
+.date-joined {
+  display: flex;
+}
+
+.date-joined > .date-field {
+  flex: 1;
+  min-width: 0;
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.date-quick {
+  flex: none;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+}
+
+.date-quick:focus-visible {
   outline: 3px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: -3px;
+}
+
+.stock-label-wide,
+.stock-label-barcode,
+.stock-label-actions {
+  grid-column: 1 / -1;
+}
+
+.stock-label-barcode {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.stock-label-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* An item's quick card, open under its row (PantryCard.tsx). */
@@ -6798,8 +6877,7 @@ em.soft {
   scroll-margin-bottom: 16px;
 }
 
-/* "+ 1 more · 400 g", "Another brand" and "Edit everything" on one row
-   (wrapping on a narrow phone), Edit everything at the far end. */
+/* "+ 1 more · ★ Nutella 400 g" with the pencil at the far end. */
 .pantry-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -6807,10 +6885,11 @@ em.soft {
   gap: 6px;
 }
 
-.pantry-card-actions > .button {
+.pantry-card-actions > .button,
+.pantry-card-products > .button {
   gap: 4px;
   min-height: 34px;
-  padding: 2px 9px;
+  padding: 2px 10px;
   font-size: 0.85rem;
 }
 
@@ -6826,9 +6905,36 @@ em.soft {
   height: 18px;
 }
 
+/* The favourite's name on "+ 1 more": lighter than the words before it,
+   in the button's own colour (muted grey wouldn't read on the accent). */
 .pantry-card-size {
   font-weight: 400;
+  opacity: 0.85;
+}
+
+/* "Or another we've had", then each as a one-tap "+ Nutella 750 g", and
+   "+ New…". */
+.pantry-card-head {
+  margin: 10px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--muted);
+}
+
+.pantry-card-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pantry-card-head + .pantry-card-products {
+  margin-top: 0;
+}
+
+.pantry-card-new {
+  color: var(--accent);
+  border-style: dashed;
 }
 
 /* Where it lives and when it expires, quietly under the buttons. */
@@ -6837,52 +6943,16 @@ em.soft {
   font-size: 0.85rem;
 }
 
-/* "Favourite: Masterfoods 560 g", so whoever's shopping knows which. */
-.pantry-card-preferred {
+.pantry-card > .pantry-stock {
   margin: 0 0 8px;
-  font-size: 0.88rem;
-  color: var(--muted);
 }
 
-.pantry-card-preferred strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.pantry-card > .pantry-packets {
-  margin-bottom: 8px;
-}
-
-/* "Another brand": the brands it's had as quick picks, then brand, size
-   and Add on one line. */
+/* "+ New…": brand, size and Add on one line. */
 .pantry-card-other {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
-}
-
-.pantry-card-picks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.pantry-card-picks button {
-  min-height: 32px;
-  padding: 2px 12px;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.pantry-card-picks button[aria-pressed="true"] {
-  background: var(--jade-soft);
-  border-color: var(--jade-strong);
 }
 
 .pantry-card-other-row {
@@ -6899,7 +6969,6 @@ em.soft {
   flex: 0 0 84px;
 }
 
-
 .packets-field,
 .brand-pick {
   display: flex;
@@ -6910,6 +6979,12 @@ em.soft {
 
 .packets-field .label-text {
   font-weight: 600;
+}
+
+/* The labels and the add form across the whole tray, like on the row. */
+.packets-field > .stock-labels,
+.packets-field > .packet-add {
+  align-self: stretch;
 }
 
 .brand-pick {
@@ -6923,17 +6998,10 @@ em.soft {
   width: 100%;
 }
 
+/* Adding one: a label's editor on its own, with the jade around it. */
 .packet-add {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-}
-
-.packet-add input {
-  flex: 1 1 8em;
-  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--jade-soft);
 }
 
 /* A scanned number nothing has, big enough to check against the packet. */
@@ -6985,6 +7053,16 @@ body:has(.undo-toast:not(.notice-toast)) .notice-toast {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+/* The message takes the room, so two buttons ("+ Use-by", "Undo") sit
+   together at the end, a little closer to each other. */
+.undo-toast > span:first-child {
+  flex: 1 1 auto;
+}
+
+.undo-toast > .link-button + .link-button {
+  margin-left: -4px;
 }
 
 /* Answers side by side ("Add it", "Not now", maybe "Undo"); on a narrow
@@ -7176,4 +7254,576 @@ body:has(.undo-toast:not(.notice-toast)) .notice-toast {
   a {
     color: inherit;
   }
+}
+
+/* A date box (DateField.tsx): looks like the other boxes, the date and a
+   calendar icon; tapping it opens the calendar. */
+.date-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 10px 7px 12px;
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.date-field svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* Half a narrow phone's width: the date matters more than the icon. */
+.date-field {
+  container-type: inline-size;
+}
+
+@container (max-width: 135px) {
+  .date-field svg {
+    display: none;
+  }
+}
+
+/* One line, cut with "…" if it really can't fit. */
+.date-field > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-field-empty {
+  color: var(--muted);
+}
+
+/* The calendar, over the page under its box (above when there's no room). */
+.date-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 14px 12px 10px;
+  width: min(328px, calc(100vw - 16px));
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
+}
+
+/* Old browsers: right under the box instead. */
+.date-pop.date-inline {
+  position: static;
+  margin-top: 6px;
+}
+
+/* On its own (DateDialog): in the middle of the screen, the page dimmed. */
+.date-pop.date-dialog {
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+}
+
+.date-dialog::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.calendar-label {
+  margin: 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* The chosen date, big, with the pencil to type it instead. */
+.calendar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 0 6px 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-date {
+  flex: 1;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.calendar-typing {
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.calendar-typing[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.calendar-error {
+  margin: -2px 4px 6px;
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+/* "December 2026 ▾" on the left, ‹ › on the right. */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.calendar-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 4px 8px 4px 6px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.calendar-caret {
+  display: inline-flex;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+
+.calendar-month[aria-expanded="true"] .calendar-caret {
+  transform: rotate(-90deg);
+}
+
+.calendar-arrows {
+  display: flex;
+  gap: 2px;
+}
+
+.calendar-back svg {
+  transform: scaleX(-1);
+}
+
+/* The days: seven columns, round buttons, today ringed, the chosen one
+   filled. */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  justify-items: center;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.calendar-day {
+  width: 40px;
+  height: 40px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  background: var(--jade-soft);
+}
+
+.calendar-day.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calendar-day[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.calendar-day:focus-visible,
+.calendar-year:focus-visible,
+.calendar-month:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The years, three to a row, scrolling, this year in the accent. */
+.calendar-years {
+  /* The years' own positions, for scrolling the chosen one to the middle. */
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.calendar-year {
+  min-height: 40px;
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.calendar-year.this-year {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calendar-year[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+  font-weight: 600;
+}
+
+/* Clear on the far left, Cancel and OK on the right. */
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendar-clear {
+  margin-right: auto;
+}
+
+/* "Products we buy" (ProductsField.tsx): each product a jade strip like the
+   labels, ☆/★ at its start, its name with its barcode and stores under it;
+   tapping the name opens it underneath. */
+.products-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product {
+  border-radius: 8px;
+  background: var(--jade-soft);
+}
+
+.product-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 2px;
+}
+
+.product-star {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.product-star.on {
+  color: var(--accent);
+}
+
+.product-star:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.product-what {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-height: 44px;
+  padding: 6px 10px 6px 2px;
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.product-what strong {
+  font-weight: 600;
+}
+
+.product-what span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.product-star:focus-visible,
+.product-what:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* One product opened up, like a label opened up: brand and size side by
+   side, then barcodes and store links across. */
+.product-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 4px 4px;
+  padding: 10px;
+  font-size: 0.85rem;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.products-field > .product-editor {
+  margin: 0;
+  border: 1px solid var(--jade-soft);
+}
+
+.product-editor > label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.product-editor input {
+  min-width: 0;
+  font-weight: 400;
+}
+
+.product-wide,
+.product-actions {
+  grid-column: 1 / -1;
+}
+
+.product-codes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-codes .label-text {
+  width: 100%;
+  font-weight: 600;
+}
+
+.product-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A small red link at the end, not a big button: rarely wanted. */
+.product-remove {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.products-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* In stock's "Add one": the products as one-tap chips. */
+.stock-add {
+  align-self: stretch;
+}
+
+/* The pantry's title as a place picker (PlacePicker.tsx): "Fridge ⌄". */
+.place-title {
+  margin: 0;
+}
+
+.place-title > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.place-title > button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.place-title-caret {
+  display: inline-flex;
+  margin-top: 4px;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+
+.place-title > button[aria-expanded="true"] .place-title-caret {
+  transform: rotate(-90deg);
+}
+
+/* Its list: just the names, as wide as the longest, the shown one tinted. */
+.place-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  min-width: 160px;
+  max-width: calc(100vw - 16px);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 6px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
+}
+
+.place-menu.place-menu-inline {
+  position: absolute;
+  z-index: 20;
+}
+
+.place-menu > button {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.place-menu > button[aria-current="true"] {
+  font-weight: 600;
+  background: var(--jade-soft);
+}
+
+.place-menu > button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.place-menu hr {
+  margin: 4px 6px;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.place-menu .place-edit-button {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* "Edit places": each name in its box with 🗑 beside it, then a box to add
+   one, then Done. */
+.place-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.place-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.place-row input {
+  flex: 1;
+  min-width: 0;
+  width: 12em;
+}
+
+.place-delete {
+  flex: none;
+  color: var(--danger);
+}
+
+/* Its grip; the place being dragged lifts above the rest, and the one it
+   would take the spot of is outlined, like the recipe shelves. */
+.place-handle {
+  width: 28px;
+  height: 40px;
+  color: var(--muted);
+  touch-action: none;
+}
+
+.place-row {
+  border-radius: 8px;
+}
+
+.place-row.dragging {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+
+.place-row.drop-here {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.place-edit-done {
+  align-self: flex-end;
+  margin-top: 2px;
 }

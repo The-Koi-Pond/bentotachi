@@ -2,7 +2,7 @@
 // or Detailed rows). The rows, forms and scanning screens are their own
 // files (PantryRow, PantryForms, PantryScan); the sorting rules are in
 // pantryGroups.ts.
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import {
   errorMessage,
@@ -34,19 +34,23 @@ import {
   type PacketDetails,
 } from "../pantryPackets";
 import { noteAge } from "../fridgeDoor";
+import { toStoredDate } from "../dates";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
-import { placeOf } from "../pantryItem";
-import { groupItems, matchesPantrySearch, needsChecking, needsUsingSoon, norm } from "../pantryGroups";
+import { groupItems, matchesPantrySearch, needsChecking, needsUsingSoon, norm, placeList, withPlaceBack, type Place } from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
 import PantryCard from "../PantryCard";
 import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
+import { DateDialog } from "../DateField";
+import PlacePicker from "../PlacePicker";
+import { usePantryPlaces } from "../household";
+import { moved } from "../listOrder";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
@@ -75,6 +79,14 @@ function savedClosedPlaces(): Set<string> {
 }
 function saveClosedPlaces(closed: Set<string>) {
   remember(CLOSED_PLACES_KEY, JSON.stringify([...closed]));
+}
+
+// The place the page shows (PlacePicker), on this device; null (every
+// place) until someone picks one, so nothing seems missing at first.
+const PLACE_KEY = "bento.pantryPlace";
+function savedPlace(): Place | null {
+  const saved = rememberedJson(PLACE_KEY) as Partial<Place> | null;
+  return saved && typeof saved.key === "string" && typeof saved.label === "string" ? { key: saved.key, label: saved.label } : null;
 }
 
 export default function Pantry() {
@@ -115,6 +127,10 @@ export default function Pantry() {
   // app ("#/pantry?add=<link>").
   const [fromStore, setFromStore] = useState<{ url: string; name: string } | null>(null);
   const [scanned, setScanned] = useState<Scanned | null>(null);
+  const [place, setPlace] = useState<Place | null>(savedPlace);
+  const [savedPlaces, savePlaces] = usePantryPlaces();
+  // The one just scanned in, while "+ Use-by" asks for its date.
+  const [dating, setDating] = useState<{ packet: PantryPacket; what: string } | null>(null);
   const [editingScanned, setEditingScanned] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const sharedStoreLink = searchParams.get("add");
@@ -162,6 +178,12 @@ export default function Pantry() {
   }, [runOut, onlyUndo]);
   // Less any just removed (Undo can still bring them back).
   const items = pantry.items?.filter((item) => !undo.hidden.has(item.id));
+  // For a place edit's Undo, seconds later: the places items are in by then
+  // (the edit moved them), not when the edit began.
+  const latestItems = useRef(items);
+  useEffect(() => {
+    latestItems.current = items;
+  });
   // Photos found online (Open Food Facts, store links), for items that
   // don't have one yet.
   useOnlinePhotos(items ?? NO_ITEMS);
@@ -170,9 +192,9 @@ export default function Pantry() {
   if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Counting the tins…</p>;
 
   // `also`: sent with the change but not kept (see setStatus). Whether it saved.
-  async function save(item: PantryItem, patch: Partial<PantryItem>, movedTo: string, also = {}) {
-    // Says where it went when it moved drawers ("Opened", or running out).
-    if (movedTo) showToast(movedTo);
+  async function save(item: PantryItem, patch: Partial<PantryItem>, message: string, also = {}) {
+    // Says what changed, when it isn't plain on the screen.
+    if (message) showToast(message);
     pantry.upsert({ ...item, ...patch });
     try {
       await pantryItems().update(item.id, { ...patch, ...also });
@@ -203,8 +225,6 @@ export default function Pantry() {
       return;
     }
     const runsOut = status === "out";
-    const putBack = runsOut && item.opened;
-    const place = item.location.trim();
     // A packet finished a moment ago stays finished (its Undo goes), so
     // this Undo only brings back what Out cleared.
     if (runsOut) void undo.settle();
@@ -214,10 +234,6 @@ export default function Pantry() {
       : cleared.length
         ? `${item.name} is out, so ${cleared.length === 1 ? "the one in stock is" : `the ${cleared.length} in stock are`} cleared.`
         : `${item.name} is out.`;
-    const moved =
-      putBack && norm(placeOf(item).location) !== norm(place)
-        ? `${outWords} It's back in ${place ? `the ${place}` : "Other"}, ready for the next one.`
-        : "";
     const ask = runsOut && !isOnList(item);
     // Set just below, before Undo can be tapped.
     let outSaved: Promise<boolean> = Promise.resolve(false);
@@ -230,21 +246,24 @@ export default function Pantry() {
         ? async (to: PantryStatus = item.status) => {
             setRunOut(null);
             if (!(await outSaved)) return;
-            if (!(await save(item, { status: to, opened: !!item.opened, expires: item.expires }, ""))) return;
+            // Labels first, each with its own dates, while the item is still
+            // Out: back in stock first, the first label back would take over
+            // the item's date (pantry.pb.js), right or not.
             try {
               for (const packet of cleared) packets.upsert(await pantryPackets().create(packetToSave(packet)));
             } catch (err) {
               showError(errorMessage(err));
             }
+            await save(item, { status: to, expires: item.expires }, "");
           }
         : undefined;
-    if (ask || restore) setRunOut({ item, ask, restore, message: moved || outWords });
+    if (ask || restore) setRunOut({ item, ask, restore, message: outWords });
     // The server clears them; off the screen straight away.
     for (const packet of cleared) packets.removeLocally(packet.id);
     // Out clears the expiry date on the server too; here so it's gone from
     // the screen at once.
-    const outChange = { status, ...(runsOut && { expires: "" }), ...(putBack && { opened: false }) };
-    outSaved = save(item, outChange, ask || restore ? "" : moved, runsOut ? { ask_about_list: true } : {});
+    const outChange = { status, ...(runsOut && { expires: "" }) };
+    outSaved = save(item, outChange, "", runsOut ? { ask_about_list: true } : {});
     void outSaved.then((saved) => {
       if (saved) return;
       // Didn't save: its question goes (not another item's asked since),
@@ -274,7 +293,9 @@ export default function Pantry() {
     }
     let added: PantryPacket;
     try {
-      added = await pantryPackets().create(packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode }));
+      added = await pantryPackets().create(
+        packetToSave({ item: item.id, brand: details.brand.trim(), size: details.size.trim(), barcode, expires: toStoredDate(details.expires ?? "") })
+      );
       packets.upsert(added);
     } catch (err) {
       showError(errorMessage(err));
@@ -285,18 +306,43 @@ export default function Pantry() {
     return added;
   }
 
+  // Changes to one label (its brand, size, use-by or opened); the server
+  // brings the item's summary along (pb_hooks/pantry_labels.js). Whether it
+  // saved.
+  async function savePacket(packet: PantryPacket, changes: Partial<PantryPacket>): Promise<boolean> {
+    try {
+      packets.upsert(await pantryPackets().update(packet.id, changes));
+      return true;
+    } catch (err) {
+      showError(errorMessage(err));
+      return false;
+    }
+  }
+
   // A scan of a barcode an item already knows, when the household counts
   // that item's stock (countsInStock): it's added by itself, no tap needed,
   // with Undo in case it was only scanned to check. Undo takes it off, and
   // puts back an Out it ended.
   async function addScannedByItself(item: PantryItem, code: string) {
     if (!packets.items || !countsInStock(item, packetsOf(packets.items, item.id, undo.hidden))) return;
+    // Set before the scan's screen first shows, so "+ Add this one" can't
+    // add a second one meanwhile.
+    setScanned((current) => (current?.code === code ? { ...current, adding: true } : current));
     const added = await addScannedPacket(item, code);
+    setScanned((current) => (current?.code === code ? { ...current, adding: false, added: !!added } : current));
     if (!added) return;
-    setScanned((current) => (current?.code === code ? { ...current, added: true } : current));
-    // "Masterfoods 560 g", but not "Nutella: Nutella 400 g".
-    const label = packetLabel({ brand: norm(added.brand ?? "") === norm(item.name) ? "" : added.brand, size: added.size });
-    showToast(`Added one to ${item.name}${label ? `: ${label}` : ""}.`, {
+    // "Added Nutella 400 g.", "Added Masterfoods 560 g to American mustard.":
+    // the item named unless the product's name says it already.
+    const label = packetLabel(added);
+    const words = !label
+      ? `Added one to ${item.name}.`
+      : norm(label).includes(norm(item.name))
+        ? `Added ${label}.`
+        : `Added ${label} to ${item.name}.`;
+    showToast(words, {
+      // Only where the household dates this item: scanning stays one step
+      // for everyone else (docs/VISION.md, "Products we buy").
+      ...(item.dates_used && { extra: { label: "+ Use-by", run: () => setDating({ packet: added, what: norm(label).includes(norm(item.name)) ? label : [item.name, label].filter(Boolean).join(", ") }) } }),
       action: {
         label: "Undo",
         run: () =>
@@ -347,11 +393,6 @@ export default function Pantry() {
         if ((err as { status?: number }).status !== 404) showError(errorMessage(err));
       }
     });
-  }
-
-  function setOpened(item: PantryItem, opened: boolean) {
-    const moved = placeOf({ ...item, opened }).location.trim();
-    void save(item, { opened }, `${item.name} is now in ${moved ? `the ${moved}` : "Other"}.`);
   }
 
   async function addToList(item: PantryItem) {
@@ -463,22 +504,134 @@ export default function Pantry() {
   const asking = !!runOut?.ask && !!ranOut && !isOnList(ranOut);
   const stillAsking = !!runOut && ranOut?.status === "out" && (asking || !!runOut.restore);
 
-  const lowCount = items.filter((i) => i.status === "low").length;
-  const outCount = items.filter((i) => i.status === "out").length;
-  const soonCount = items.filter((i) => needsUsingSoon(i)).length;
-  const shown = items.filter(
+  // One place picked: just its items, unless searching ("where did we put
+  // the peas?" looks everywhere).
+  const searching = !!query.trim();
+  const onePlace = !!place && !searching;
+  const scoped = onePlace ? items.filter((i) => norm(i.location) === place.key) : items;
+  const places = placeList(savedPlaces, items);
+  // A place just picked that's gone meanwhile (another phone deleted it) is
+  // still offered while it's the one shown.
+  if (place && !places.some((p) => p.key === place.key)) places.push(place);
+  const choosePlace = (chosen: Place | null) => {
+    setPlace(chosen);
+    remember(PLACE_KEY, chosen ? JSON.stringify(chosen) : null);
+  };
+  // The household's places as it keeps them (every one but "Other"), from
+  // a saved list.
+  const listedFrom = (saved: string[], withItems = items) =>
+    placeList(saved, withItems ?? [])
+      .filter((p) => p.key !== "")
+      .map((p) => p.label);
+  const listed = listedFrom(savedPlaces);
+  // `change`: what the edit does to the list, made to the server's latest
+  // (usePantryPlaces), with the places items are in now. A name twice is
+  // kept once.
+  async function keepPlaces(change: (list: string[]) => string[]): Promise<boolean> {
+    try {
+      await savePlaces((saved) =>
+        change(listedFrom(saved, latestItems.current)).filter((label, i, all) => all.findIndex((l) => norm(l) === norm(label)) === i)
+      );
+      return true;
+    } catch (err) {
+      showError(errorMessage(err));
+      return false;
+    }
+  }
+
+  // "Edit places": a new one, kept while empty, and shown.
+  async function addPlace(label: string) {
+    const known = places.find((p) => p.key === norm(label));
+    if (!known && !(await keepPlaces((list) => (list.some((l) => norm(l) === norm(label)) ? list : [...list, label])))) return;
+    choosePlace(known ?? { key: norm(label), label });
+  }
+
+  // A new name for a place: every item in it moves too, with Undo. A name
+  // another place has already merges the two, so that's asked first.
+  async function renamePlace(from: Place, label: string) {
+    const into = places.find((p) => p.key === norm(label) && p.key !== from.key);
+    if (
+      into &&
+      !(await askFirst(`There's already a ${into.label}. Move everything from the ${from.label} into it?`, {
+        yes: `Move into ${into.label}`,
+        no: "Cancel",
+      }))
+    )
+      return;
+    const target = into ? into.label : label;
+    const at = listed.findIndex((l) => norm(l) === from.key);
+    // Undo is a change too, made to the latest list: another phone's places
+    // since then stay.
+    const unrename = (list: string[]) => (into ? withPlaceBack(list, from.label, at) : list.map((l) => (norm(l) === norm(target) ? from.label : l)));
+    const renamed = (list: string[]) => (into ? list.filter((l) => norm(l) !== from.key) : list.map((l) => (norm(l) === from.key ? target : l)));
+    if (!(await keepPlaces(renamed))) return;
+    const moving = (items ?? []).filter((i) => norm(i.location) === from.key);
+    const showing = place?.key === from.key;
+    if (showing) choosePlace({ key: norm(target), label: target });
+    for (const item of moving) if (!(await save(item, { location: target }, ""))) return;
+    showToast(into ? `Moved everything from the ${from.label} into the ${target}.` : `Renamed ${from.label} to ${target}.`, {
+      action: {
+        label: "Undo",
+        run: () =>
+          void (async () => {
+            await keepPlaces(unrename);
+            if (showing) choosePlace(from);
+            for (const item of moving) if (!(await save(item, { location: item.location }, ""))) return;
+          })(),
+      },
+    });
+  }
+
+  // A place dragged to where another is, in "Edit places".
+  function movePlace(fromKey: string, toKey: string) {
+    void keepPlaces((list) => {
+      const keys = list.map(norm);
+      return moved(list, keys.indexOf(fromKey), keys.indexOf(toKey));
+    });
+  }
+
+  // 🗑 on a place: what's in it moves to Other (no place), asked first when
+  // there's something, with Undo.
+  async function deletePlace(gone: Place) {
+    const moving = (items ?? []).filter((i) => norm(i.location) === gone.key);
+    const count = moving.length === 1 ? "The 1 thing in it moves" : `The ${moving.length} things in it move`;
+    if (moving.length && !(await askFirst(`Delete ${gone.label}? ${count} to Other.`, { yes: "Delete", no: "Cancel", danger: true }))) return;
+    const at = listed.findIndex((l) => norm(l) === gone.key);
+    if (!(await keepPlaces((list) => list.filter((l) => norm(l) !== gone.key)))) return;
+    const showing = place?.key === gone.key;
+    if (showing) choosePlace(null);
+    for (const item of moving) if (!(await save(item, { location: "", subcategory: "" }, ""))) return;
+    showToast(`Deleted ${gone.label}.`, {
+      action: {
+        label: "Undo",
+        run: () =>
+          void (async () => {
+            await keepPlaces((list) => withPlaceBack(list, gone.label, at));
+            if (showing) choosePlace(gone);
+            for (const item of moving) if (!(await save(item, { location: item.location, subcategory: item.subcategory }, ""))) return;
+          })(),
+      },
+    });
+  }
+
+  const lowCount = scoped.filter((i) => i.status === "low").length;
+  const outCount = scoped.filter((i) => i.status === "out").length;
+  const soonCount = scoped.filter((i) => needsUsingSoon(i)).length;
+  const shown = scoped.filter(
     (i) =>
       (filter === "all" ? true : filter === "soon" ? needsUsingSoon(i) : i.status === filter) && matchesPantrySearch(i, query),
   );
-  const groups = groupItems(shown);
+  // In the household's order of places (placeList), not A to Z.
+  const groups = groupItems(shown).sort((a, b) => places.findIndex((p) => p.key === a.key) - places.findIndex((p) => p.key === b.key));
   // A scanned barcode brings its own form (see ScanResult).
   const showForm = !scanned && (adding || items.length === 0);
 
   // A filter or a search shows its (short) results with every place open.
-  const narrowed = filter !== "all" || !!query.trim();
+  const narrowed = filter !== "all" || searching;
   // Places start open, and the ones you close stay closed on this device
-  // (2026-11-06; they used to all start closed on every visit).
-  const isOpen = (key: string) => narrowed || !closedPlaces.has(key);
+  // (2026-11-06; they used to all start closed on every visit). One place
+  // picked is always open: the title says which.
+  const isOpen = (key: string) => onePlace || narrowed || !closedPlaces.has(key);
   const closePlaces = (next: Set<string>) => {
     setClosedPlaces(next);
     saveClosedPlaces(next);
@@ -495,7 +648,15 @@ export default function Pantry() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        <h1>Pantry</h1>
+        {items.length > 0 ? <PlacePicker
+            places={places}
+            current={place}
+            onPick={choosePlace}
+            onAdd={(label) => void addPlace(label)}
+            onRename={renamePlace}
+            onDelete={(gone) => void deletePlace(gone)}
+            onMove={movePlace}
+          /> : <h1>Pantry</h1>}
         <div className="view-switch" role="group" aria-label="Layout">
           <button aria-pressed={layout === "simple"} onClick={() => changeLayout("simple")}>
             Simple
@@ -540,7 +701,6 @@ export default function Pantry() {
           isOnList={isOnList}
           onEdit={setEditingScanned}
           onStatus={setStatus}
-          onOpened={setOpened}
           onAddToList={addToList}
           onScanAgain={() => void scan()}
           onSure={() => setScanned({ ...scanned, sure: true })}
@@ -554,8 +714,19 @@ export default function Pantry() {
           packetsFor={packets.items && ((item) => packetsOf(packets.items ?? [], item.id, undo.hidden))}
           onAddScannedPacket={(item) => addScannedPacket(item, scanned.code).then(Boolean)}
           onFinishPacket={finishPacket}
+          onSavePacket={savePacket}
           onAddTypedPacket={(item, details) => addPacket(item, details).then(Boolean)}
           onClose={() => setScanned(null)}
+        />
+      )}
+
+      {dating && (
+        <DateDialog
+          label={`Use by: ${dating.what}`}
+          onDone={(date) => {
+            if (date) void savePacket(dating.packet, { expires: toStoredDate(date) });
+            setDating(null);
+          }}
         />
       )}
 
@@ -566,6 +737,8 @@ export default function Pantry() {
           existing={items}
           fromStore={fromStore}
           startName={startName}
+          // Added while one place is shown: it goes there.
+          startPlace={onePlace && place ? (place.key ? place.label : "") : ""}
           onScan={canScan && items.length === 0 ? () => void scan() : undefined}
           onAdded={(item) => {
             pantry.upsert(item);
@@ -597,7 +770,7 @@ export default function Pantry() {
         <div className="filter-chips pantry-filters" role="group" aria-label="Show">
           {(
             [
-              ["all", "All", items.length],
+              ["all", "All", scoped.length],
               ["low", "Low", lowCount],
               ["out", "Out", outCount],
               ["soon", "Use soon", soonCount],
@@ -612,7 +785,7 @@ export default function Pantry() {
               {label} <span className="filter-count">{count}</span>
             </button>
           ))}
-          {!narrowed && (
+          {!narrowed && !onePlace && (
             <button
               className={`open-all ${allOpen ? "all-open" : ""}`}
               aria-label={allOpen ? "Close all places" : "Open all places"}
@@ -661,7 +834,9 @@ export default function Pantry() {
       {undo.toast}
       {items.length > 0 && shown.length === 0 && (
         <p className="muted">
-          {query.trim()
+          {onePlace && scoped.length === 0
+            ? `Nothing in the ${place.label} yet. Type a name above and tap Add.`
+            : query.trim()
             ? `No “${query.trim()}” in the pantry${filter === "all" ? "" : " with that filter"}, unless it's hiding behind the rice. Tap Add to put it in.`
             : `${filter === "soon" ? "Nothing needs using up soon." : `Nothing is marked “${filter}”.`} Nice.`}
         </p>
@@ -674,13 +849,16 @@ export default function Pantry() {
         const toCheck = placeItems.filter((i) => needsChecking(i)).length;
         return (
           <section key={group.key} className="pantry-place">
-            <h2>
-              <DrawerToggle open={isOpen(group.key)} onToggle={() => toggleDrawer(group.key)} className="place-toggle">
-                <span className="drawer-label">{group.label}</span>
-                <span className="place-count">{placeItems.length}</span>
-                {toCheck > 0 && <span className="badge to-check">{toCheck} to check</span>}
-              </DrawerToggle>
-            </h2>
+            {/* One place picked: the title names it, so no drawer heading. */}
+            {!onePlace && (
+              <h2>
+                <DrawerToggle open={isOpen(group.key)} onToggle={() => toggleDrawer(group.key)} className="place-toggle">
+                  <span className="drawer-label">{group.label}</span>
+                  <span className="place-count">{placeItems.length}</span>
+                  {toCheck > 0 && <span className="badge to-check">{toCheck} to check</span>}
+                </DrawerToggle>
+              </h2>
+            )}
             {isOpen(group.key) && (
               <ul className="pantry-list">
                 {group.subgroups.map((sub) => [
@@ -699,6 +877,7 @@ export default function Pantry() {
                           packets={packets.items && packetsOf(packets.items, item.id, undo.hidden)}
                           onAddPacket={(details) => addPacket(item, details).then(Boolean)}
                           onFinishPacket={(packet) => finishPacket(item, packet)}
+                          onSavePacket={savePacket}
                           onSaved={(saved) => {
                             pantry.upsert(saved);
                             setEditingId(null);
@@ -714,11 +893,10 @@ export default function Pantry() {
                             onList={isOnList(item)}
                             packets={packetsOf(packets.items ?? [], item.id, undo.hidden)}
                             onFinishPacket={(packet) => finishPacket(item, packet)}
-                            onAddPacket={(details) => void addPacket(item, details)}
+                            onSavePacket={savePacket}
                             expanded={cardId === item.id}
                             onEdit={() => setCardId((open) => (open === item.id ? null : item.id))}
                             onStatus={(status) => setStatus(item, status)}
-                            onOpened={(opened) => setOpened(item, opened)}
                             onAddToList={() => addToList(item)}
                           />
                           {cardId === item.id && (
@@ -728,6 +906,7 @@ export default function Pantry() {
                               layout={layout}
                               onMore={(details) => void addPacket(item, details)}
                               onUsed={(packet) => finishPacket(item, packet)}
+                              onSavePacket={savePacket}
                               onEditAll={() => {
                                 setCardId(null);
                                 setEditingId(item.id);

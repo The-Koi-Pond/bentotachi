@@ -125,7 +125,7 @@ export async function runTests() {
     nodeTests("server tests", root, ["server/test/*.test.js"]);
     nodeTests("web tests", web, ["test/*.test.ts"]);
     for (const zone of ["Pacific/Kiritimati", "Pacific/Pago_Pago"])
-      nodeTests(`date tests in ${zone}`, web, ["test/dates.test.ts", "test/expiry.test.ts"], { TZ: zone });
+      nodeTests(`date tests in ${zone}`, web, ["test/dates.test.ts", "test/expiry.test.ts", "test/pantryPackets.test.ts"], { TZ: zone });
     await serverChecks();
   } catch (err) {
     if (!(err instanceof TestsFailed)) throw err;

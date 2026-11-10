@@ -8,7 +8,6 @@ import {
   MOST_STORE_LINKS,
   PHOTO_REMOVED,
   photoSources,
-  placeOf,
   storeLinkFields,
   storeLinksOf,
   wantsOnlinePhoto,
@@ -107,23 +106,6 @@ test("a link picked in a store replaces that store's link, else fills a gap, els
 test("what was tried fits in photo_link_tried", () => {
   const long = `https://www.example.com/${"a".repeat(2100)}`;
   assert.equal(photoSources({ barcodes: [CODE], store_url: long }).length, 2000);
-});
-
-test("an opened item shows in its once-opened place", () => {
-  const sauce = { location: "Cupboard", subcategory: "Tins & jars", opened_location: "Fridge", opened: false };
-  assert.deepEqual(placeOf(sauce), { location: "Cupboard", subcategory: "Tins & jars" });
-  assert.deepEqual(placeOf({ ...sauce, opened: true }), { location: "Fridge", subcategory: "" });
-});
-
-test("opened without a once-opened place (or the same place) stays put", () => {
-  assert.deepEqual(placeOf({ location: "Cupboard", subcategory: "Baking", opened: true }), {
-    location: "Cupboard",
-    subcategory: "Baking",
-  });
-  assert.deepEqual(placeOf({ location: "Fridge", subcategory: "Dairy", opened_location: "fridge ", opened: true }), {
-    location: "Fridge",
-    subcategory: "Dairy",
-  });
 });
 
 test("older items' brands are a comma list", () => {

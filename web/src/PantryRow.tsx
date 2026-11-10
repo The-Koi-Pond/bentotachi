@@ -8,11 +8,10 @@
 // on the list, a dashed "+ cart" button when it's low or out and isn't.
 import { useState } from "react";
 import { pantryPhotoUrl, type PantryItem, type PantryPacket, type PantryStatus } from "./pb";
-import type { PacketDetails } from "./pantryPackets";
-import PacketCounters from "./PacketCounters";
+import StockLabels from "./StockLabels";
 import { CartIcon, LevelJar } from "./icons";
 import { describeExpiry, shortExpiry } from "./expiry";
-import { itemExpiry, norm } from "./pantryGroups";
+import { itemExpiry } from "./pantryGroups";
 import { brandBesideName, storeLinksOf } from "./pantryItem";
 import StoreLink from "./StoreLink";
 
@@ -26,11 +25,10 @@ export default function PantryRow({
   onList,
   packets = [],
   onFinishPacket,
-  onAddPacket,
+  onSavePacket,
   expanded,
   onEdit,
   onStatus,
-  onOpened,
   onAddToList,
 }: {
   item: PantryItem;
@@ -39,14 +37,13 @@ export default function PantryRow({
   // Its packets in stock, oldest first (pantryPackets.ts).
   packets?: PantryPacket[];
   onFinishPacket: (packet: PantryPacket) => void;
-  onAddPacket: (details: PacketDetails) => void;
+  onSavePacket: (packet: PantryPacket, changes: Partial<PantryPacket>) => Promise<boolean>;
   // Tapping the name: the pantry page opens its card (PantryCard.tsx), a
   // scan result its full form. `expanded`: its card is open (said to screen
   // readers).
   expanded?: boolean;
   onEdit: () => void;
   onStatus: (status: PantryStatus) => void;
-  onOpened: (opened: boolean) => void;
   onAddToList: () => void;
 }) {
   const detailed = layout === "detailed";
@@ -106,9 +103,6 @@ export default function PantryRow({
       </div>
     );
 
-  // Only for things kept somewhere else once opened, while we have some.
-  const openedPlace = (item.opened_location ?? "").trim();
-  const canOpen = !!openedPlace && norm(openedPlace) !== norm(item.location) && item.status !== "out";
   const storeLinks = storeLinksOf(item);
   return (
     <div className="pantry-row detailed">
@@ -127,37 +121,23 @@ export default function PantryRow({
           {item.name.trim().charAt(0).toUpperCase()}
         </span>
       )}
-      <div className="pantry-body">
-        <div className="pantry-top">
-          {name}
-          {end}
-        </div>
-        {packets.length > 0 && (
-          <span className="pantry-packets" role="group" aria-label={`${item.name} in stock`}>
-            <span className="pantry-packets-label" aria-hidden="true">
-              In stock:
-            </span>
-            <PacketCounters packets={packets} favouriteBrand={item.brand} onUsed={onFinishPacket} onMore={onAddPacket} />
-          </span>
-        )}
-        {(canOpen || storeLinks.length > 0) && (
-          <span className="pantry-extra">
-            {canOpen && (
-              <button
-                className="opened-toggle"
-                aria-pressed={!!item.opened}
-                onClick={() => onOpened(!item.opened)}
-                title={item.opened ? `Tap to put it back in ${item.location || "Other"}, unopened` : undefined}
-              >
-                {item.opened ? "Opened" : `Opened → ${openedPlace}`}
-              </button>
-            )}
-            {storeLinks.map((link) => (
-              <StoreLink key={link} url={link} itemName={item.name} />
-            ))}
-          </span>
-        )}
+      <div className="pantry-top">
+        {name}
+        {end}
       </div>
+      {/* Across the whole row, under the photo too. */}
+      {packets.length > 0 && (
+        <div className="pantry-stock" role="group" aria-label={`${item.name} in stock`}>
+          <StockLabels packets={packets} onUsed={onFinishPacket} onSave={onSavePacket} />
+        </div>
+      )}
+      {storeLinks.length > 0 && (
+        <span className="pantry-extra">
+          {storeLinks.map((link) => (
+            <StoreLink key={link} url={link} itemName={item.name} />
+          ))}
+        </span>
+      )}
     </div>
   );
 }

@@ -224,7 +224,9 @@ where a tray's compartments do, not at the page's edge (`--tray-inset`);
 buttons and switches beside them still line up with the trays' edges. A group's label inside a
 compartment (the pantry's "Dairy", the shopping list's "Fruit & veg") is
 centred on a faint line, "— Dairy —" (`.divider-label`, Xel's pick over
-plain centred or left). A section heading over a list goes inside
+plain centred or left), and that line is the only divider: a place's
+groups (and the list's aisles) share one compartment, no rim between them
+too. A section heading over a list goes inside
 the tray's top rim, with any button beside it, like a recipe shelf
 ("Our sites", "Recipe sites", "Got it": `.tray-section`; Xel's pick over
 a tab or a ruled line). Buttons, text
@@ -324,16 +326,82 @@ that say what they do ("Delete", "Keep editing"); never the browser's own
   Facts); scanning a barcode an item already knows adds one by itself, no
   tap, when that item's stock is counted, with Undo on the bottom bar.
   Items nobody counts aren't started on: they still offer "+ Add this one".
+- **Pantry places** (2026-11-09, Xel, after Paprika 4's locations): the
+  pantry's title is a picker, "Pantry ⌄" for every place or one place
+  ("Fridge ⌄") so the page shows just that, without its drawer heading.
+  The list is only the names (no counts or tick column), the shown one
+  tinted, in the household's own order, then "Edit places…": each with a
+  grip to drag it into another spot (like the recipe shelves), its name in
+  a box to rename it (every item in it moves too; a name another place has
+  merges the two, asked first), 🗑 to delete one (what's in it goes to
+  Other, asked first), and a box to add one ("Chest freezer"). All with
+  Undo. The household's list is kept with its settings, so an empty place
+  stays and every phone sees the same. Each phone remembers its pick and
+  starts on every place, so nothing seems missing at first.
+  Searching and scanning still look everywhere; the filters count the
+  place shown; adding while in one place starts the item there.
+- **Products we buy** (2026-11-09, Xel): a pantry item works in three
+  layers, each optional, each building on the last. The item ("Nutella",
+  its place, Have / Low / Out) is all most people touch. Its products are
+  what the household buys ("Nutella 400 g ★", "Bon Maman 360 g"), each
+  with its barcodes and store links; the ★ is the favourite, what "+ 1
+  more" and the shopping list add. Its labels are each one actually in
+  stock (see "Pantry labels"). Products remember themselves: the first
+  time a brand and size turn up (a scan, "+ New…", a label changed), the
+  server keeps it, so next time it's one tap; a barcode the lookup knows
+  nothing about is a product "Not named yet" until someone names it. A
+  product can have more than one barcode (special packs, imports, new
+  packaging); a new one of a known product joins it by itself.
+- 2026-11-09 (Xel): scanning stays one step. Scanning a barcode an item
+  knows adds one by itself, no question, when its stock is counted ("Added
+  Nutella 400 g." with Undo). Only on items someone has dated before does
+  the message also offer "+ Use-by", which opens the calendar; ignoring it
+  is fine. Households that never date things never see it.
 - 2026-11-09 (Xel): an item's quick card holds only what its row can't do
-  (the row's pill already sets Have / Low / Out): "Favourite: Masterfoods
-  560 g" so whoever's shopping knows which to get, what's in stock (as
-  counters when the Simple row hides them), "+ 1 more" (the favourite) and
-  "Another brand" (one bought instead, the brands it's had as quick
-  picks), and Edit everything. A stand-in brand never takes over: "+ 1
-  more" and the shopping list keep adding the favourite.
+  (the row's pill already sets Have / Low / Out): "+ 1 more · ★ Nutella
+  400 g" (so whoever's shopping knows which), then "Or another we've had"
+  with each other product as a one-tap "+ Nutella 750 g", and "+ New…" for
+  a brand or size it hasn't had (the brand left empty is the favourite's).
+  What's in stock shows as labels when the Simple row hides them, and the
+  pencil opens Edit everything. Adding more never changes the favourite:
+  only a person does, with the ★ in "Products we buy". Removing the ★
+  product leaves none until someone stars another (or, as for a new item,
+  the next one counted becomes it). A product removed or renamed stays
+  that way: what older fields still say about it doesn't bring it back.
 - **Pantry item edit form** (2026-11-09, Xel's pick of three): its photo
   beside its name (tap the photo to change it), then trays: Storage (place,
-  subcategory, expires), Buying (favourite brand, store link) and In stock.
-  "+ More details" holds the rarely needed ones (a kind of, note, once
-  opened, barcodes), and starts open when one of the first three is set.
-  How-to tips sit behind "?" (the store link's too).
+  subcategory, expires when nobody counts it), Products we buy (each
+  product with ☆/★ to pick the favourite; tap one for its brand, size,
+  barcodes and store links; "+ Add a product" and "Scan one") and In stock
+  (the labels, then "Add one" as the same one-tap products, and "+ New…").
+  "+ More details" holds a kind of and a note, and starts open when one is
+  set. How-to tips sit behind "?" (the store link's too).
+- **Date picker** (2026-11-09, Xel): every date box opens Bentotachi's own
+  calendar, not the phone's. Top: what the date is ("Use by") and the
+  chosen date big ("Tue, 3 Nov 2026"), with a pencil to type it instead
+  (in the phone's order, dd/mm/yyyy here). Then "November 2026 ▾" on the
+  left (tap for a list of years) and ‹ › on the right for the months, then
+  the days (the week starting on the household's first day, today ringed,
+  the chosen day filled). Clear (where a date is optional), Cancel and OK
+  at the bottom. The box itself shows "3 Nov 2026" and a calendar icon.
+- **Pantry labels** (2026-11-09, Xel): each one actually in stock is a
+  label with everything about that one: brand, size, bought, use-by,
+  opened (with the day), barcode. Labels show under the item, across the
+  whole row ("Bon Maman 360 g · opened · expires in 2 days", tinted when
+  soon; without a use-by, "bought 12 days ago") with − to use one up;
+  tapping one opens it to change, tapping it again closes it. No Done or
+  "Used it up" buttons (Xel): each change saves as it's made (a date when
+  picked, brand or size when its box is left), and − already uses one up.
+  Product editors work the same, with a small "Remove this product" link
+  rather than big buttons. Labels always name the brand, the
+  favourite too. Bought is the day it was added unless someone changes it,
+  so nobody has to fill it in. The item's own use-by is the soonest
+  label's, kept by the server. An item nobody counts keeps one use-by of
+  its own; its first label takes that over.
+- 2026-11-09 (Xel): no more "once opened, keep in" place. An item stays in
+  its own place, opened or not; whether one is open, and since when, is on
+  its label. Moving the whole item put sealed jars on the wrong shelf, and
+  the extra place field, "Opened → Fridge" button and "back in the
+  Cupboard" message cost more than they helped. A note ("fridge once
+  opened") covers the reminder. The old opened_location and opened fields
+  stay in the database, unused.

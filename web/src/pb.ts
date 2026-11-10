@@ -108,12 +108,23 @@ export const shoppingItems = () => pb.collection<ShoppingItem>("shopping_items")
 
 export type PantryStatus = "have" | "low" | "out";
 
+// One product a pantry item's household buys: "Nutella 400 g", its barcodes
+// and its pages in online stores. Brand and size are "" until known.
+export interface PantryProduct {
+  brand: string;
+  size: string;
+  barcodes: string[];
+  links: string[];
+}
+
 export interface PantryItem extends RecordModel {
   name: string;
   status: PantryStatus;
   location: string;
   subcategory: string;
-  // "2026-11-02 00:00:00.000Z", or "" for no date. See expiry.ts.
+  // "2026-11-02 00:00:00.000Z", or "" for no date. See expiry.ts. Its own
+  // when nobody counts it, else its labels' soonest, kept by the server
+  // (pb_hooks/pantry_labels.js).
   expires: string;
   // Its product page in an online store (see stores.ts), or "": the first
   // of its store links. More of them (another store's page) are in
@@ -133,15 +144,19 @@ export interface PantryItem extends RecordModel {
   // The group it's a kind of ("Pasta" for Linguine), or "" (see
   // pantryLinks.ts and the pantry_kind_of migration).
   kind_of?: string;
-  // The last packet added's brand and size, kept after the packets are
-  // gone: what buying it again adds (pantry_usual_packet migration).
+  // The favourite product's brand and size: what "+ 1 more" and the shopping
+  // list add (pantry_usual_packet migration). Only a person changes it once
+  // set (server/pb_hooks/pantry.pb.js).
   usual_packet?: { brand?: string; size?: string } | null;
+  // The products the household buys (pantry_products migration; see
+  // pantryProducts.ts). barcodes, store_url and more_store_urls are kept
+  // from them by the server, so this app saves products, not those.
+  products?: PantryProduct[] | null;
+  // Someone has given it, or one of its labels, a use-by date: after a
+  // scan the app offers "+ Use-by".
+  dates_used?: boolean;
   // Anything worth writing down, like "3 cans", or "".
   note?: string;
-  // Where it goes once opened, like "Fridge", or "". While opened it shows
-  // there (see placeOf in pantryItem.ts).
-  opened_location?: string;
-  opened?: boolean;
   // Its photo's file name, or "" (see pantryPhoto.ts and pantryPhotoUrl).
   photo?: string;
   // The barcodes and store links last looked up online for its photo, so
@@ -168,6 +183,14 @@ export interface PantryPacket extends RecordModel {
   // What's left once cooking used part of it ("100 g"), or "" when it's full
   // (pantry_packets_left migration).
   left?: string;
+  // Its own use-by date, and the day it was opened ("" while sealed), as
+  // PocketBase dates (pantry_packets_dates migration). The item's use-by is
+  // the soonest of them, kept by the server (pb_hooks/pantry_labels.js).
+  expires?: string;
+  opened?: string;
+  // The day it was bought, when someone said; otherwise it's the day it was
+  // added (boughtDay, pantryPackets.ts).
+  bought?: string;
   created: string;
 }
 

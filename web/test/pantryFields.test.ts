@@ -15,7 +15,6 @@ test("a new item's form starts blank, with one empty store link box", () => {
     storeUrls: [""],
     brand: "",
     note: "",
-    openedLocation: "",
     kindOf: "",
   });
 });
@@ -30,7 +29,6 @@ test("an item's form holds what it has saved, and saves it back unchanged", () =
     more_store_urls: [WOOLIES],
     brand: "Lea & Perrins",
     note: "Big bottle",
-    opened_location: "Fridge",
     kind_of: "Sauce",
   };
   const fields = fieldsOf(saved);
@@ -78,9 +76,7 @@ const milk = {
   more_store_urls: [],
   brand: "",
   note: "",
-  opened_location: "",
   barcodes: ["9300633603161"],
-  opened: false,
 };
 
 test("an edit sends only what was changed in the form, so a housemate's change meanwhile stays", () => {
@@ -95,10 +91,4 @@ test("an edit with nothing changed sends nothing", () => {
 test("an edit sends a barcode added in the form", () => {
   const codes = ["9300633603161", "9310036000017"];
   assert.deepEqual(editChanges(milk, recordFrom(fieldsOf(milk))!, codes), { barcodes: codes });
-});
-
-test("clearing where it goes once opened also stops it being opened", () => {
-  const opened = { ...milk, opened_location: "Fridge door", opened: true };
-  const record = recordFrom({ ...fieldsOf(opened), openedLocation: "" })!;
-  assert.deepEqual(editChanges(opened, record, opened.barcodes), { opened_location: "", opened: false });
 });

@@ -1,26 +1,38 @@
 // A pantry item's Add and Edit forms, and their fields (name, places, expiry,
-// store links, favourite brand, note, photo, barcodes, and the packets in
-// stock). The fields' rules are in pantryFields.ts, the packets' in
-// pantryPackets.ts.
+// store links, favourite brand, note, photo, the products we buy and what's
+// in stock). The fields' rules are in pantryFields.ts, the packets' in
+// pantryPackets.ts, the products' in pantryProducts.ts.
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { errorMessage, pantryItems, pantryPackets, pantryPhotoUrl, type PantryItem, type PantryPacket } from "./pb";
-import { useSpell, useStores } from "./household";
-import { productNameFromTitle, productNameFromUrl, storeName, storeSearchUrl, type Store } from "./stores";
-import { hasBuiltInBrowser, pickPageLink } from "./bentoBrowser";
-import StoreLogo from "./StoreLogo";
+import { useSpell } from "./household";
+import { productNameFromTitle, productNameFromUrl, storeName } from "./stores";
 import { CameraIcon, CloseIcon } from "./icons";
 import { usePreviewUrl } from "./pantryPhoto";
 import { useUnsavedChanges } from "./unsavedChanges";
-import { barcodesOf, normaliseBarcode, withBarcode } from "./barcodes";
-import { canScan, scanBarcode, type BarcodeProduct } from "./scanner";
-import { brandsOf, cleanStoreLinks, MOST_STORE_LINKS, PHOTO_REMOVED, photoSources, withPickedLink } from "./pantryItem";
+import { barcodesOf } from "./barcodes";
+import type { BarcodeProduct } from "./scanner";
+import { brandsOf, cleanStoreLinks, PHOTO_REMOVED, photoSources } from "./pantryItem";
 import { norm, placeOptions, subcategoryOptions, uniqueLabels } from "./pantryGroups";
 import { HelpBox, HelpButton, useHelp } from "./Help";
 import { editChanges, fieldsOf, recordFrom, sameName, STORE_LINK_TYPO, type Fields } from "./pantryFields";
 import PantryPhotoField, { type PhotoChoice } from "./PantryPhotoField";
-import { brandsToPickFrom, packetToSave, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
+import { brandsToPickFrom, packetToSave, preferredChanges, tidySize, withDetails, type PacketDetails } from "./pantryPackets";
 import { showError } from "./toast";
-import PacketCounters from "./PacketCounters";
+import StockLabels from "./StockLabels";
+import DateField from "./DateField";
+import StoreLinkField from "./StoreLinkField";
+import ProductsField from "./ProductsField";
+import {
+  cleanProducts,
+  otherProducts,
+  preferredProduct,
+  productName,
+  productsOf,
+  productSources,
+  sameKind,
+  usualOf,
+  withServerAdditions,
+} from "./pantryProducts";
 
 // A barcode just scanned (or typed): what Open Food Facts says it is, once
 // looked up (null if it doesn't know), for ones not in the pantry yet.
@@ -33,8 +45,10 @@ export interface Scanned {
   product: BarcodeProduct | null;
   lookupError: string;
   sure: boolean;
-  // Added to its item by itself (a known barcode on a counted item).
+  // Added to its item by itself (a known barcode on a counted item), or
+  // being added (so it isn't offered to add by hand meanwhile).
   added?: boolean;
+  adding?: boolean;
 }
 
 const NEW_OPTION = "__new__";
@@ -281,8 +295,7 @@ const withCurrent = (options: string[], value: string) =>
   value.trim() && !options.some((o) => norm(o) === norm(value)) ? [...options, value.trim()] : options;
 
 // The rest of an item's fields, in the add form's order: its group ("A kind
-// of"), note, favourite brand, where it goes once opened, expiry and store
-// links. The edit form sorts the same pieces into trays (EditPantryItem).
+// of"), note, favourite brand, expiry and store links. The edit form sorts the same pieces into trays (EditPantryItem).
 type FieldProps = { existing: PantryItem[]; fields: Fields; onChange: (patch: Partial<Fields>) => void };
 
 function MoreItemFields(props: FieldProps) {
@@ -291,7 +304,6 @@ function MoreItemFields(props: FieldProps) {
       <KindOfField {...props} />
       <NoteField {...props} />
       <BrandField {...props} />
-      <OpenedField {...props} />
       <ExpiresField {...props} />
       <StoreLinkFor {...props} />
     </>
@@ -381,20 +393,6 @@ function BrandField({ fields, onChange }: FieldProps) {
   );
 }
 
-function OpenedField({ existing, fields, onChange }: FieldProps) {
-  const places = placeOptions(existing);
-  return (
-    <CategorySelect
-      label="Once opened, keep in"
-      value={fields.openedLocation}
-      options={withCurrent(places, fields.openedLocation)}
-      emptyLabel="The same place"
-      newLabel="+ New place…"
-      newPlaceholder="New place, e.g. Door shelf"
-      onChange={(openedLocation) => onChange({ openedLocation })}
-    />
-  );
-}
 
 function ExpiresField({ fields, onChange }: FieldProps) {
   return (
@@ -402,14 +400,8 @@ function ExpiresField({ fields, onChange }: FieldProps) {
       <span className="label-text">
         Expires <span className="optional">(optional)</span>
       </span>
-      <span className="date-row">
-        <input type="date" value={fields.expires} onChange={(e) => onChange({ expires: e.target.value })} />
-        {fields.expires && (
-          <button type="button" className="button ghost small" onClick={() => onChange({ expires: "" })}>
-            No date
-          </button>
-        )}
-      </span>
+      {/* The calendar's Clear takes the date off. */}
+      <DateField label="Expires" value={fields.expires} onChange={(expires) => onChange({ expires })} />
     </label>
   );
 }
@@ -425,123 +417,6 @@ function StoreLinkFor({ fields, onChange }: FieldProps) {
   );
 }
 
-// "Store links": the item's product pages, like Coles' page for our exact
-// Worcestershire sauce, and Woolworths' too (up to 5, one box each). In the
-// Android app, "Find on Coles" opens Bento's browser on the store's search;
-// open the product and tap "Link this item" (it replaces the item's Coles
-// link, if it has one; see withPickedLink). In a web browser, the store
-// opens in a new tab to copy the address from.
-function StoreLinkField({
-  name,
-  value,
-  onChange,
-}: {
-  name: string;
-  value: string[];
-  onChange: (urls: string[]) => void;
-}) {
-  // Its own for each form: an Add and an Edit form can be open together.
-  const labelId = useId();
-  const help = useHelp();
-  const [error, setError] = useState("");
-  const stores = useStores();
-  const boxes = value.length ? value : [""];
-  const several = boxes.length > 1;
-
-  async function find(store: Store) {
-    setError("");
-    try {
-      const picked = await pickPageLink(storeSearchUrl(store, name));
-      if (picked) onChange(withPickedLink(boxes, picked.url));
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-  }
-
-  const remove = (index: number) => {
-    const rest = boxes.filter((_, i) => i !== index);
-    onChange(rest.length ? rest : [""]);
-  };
-
-  return (
-    <div className="store-link-field" role="group" aria-labelledby={labelId}>
-      {/* How to get one is a tip, behind its "?" (docs/VISION.md, Voice). */}
-      <span className="field-head">
-        <span className="label-text" id={labelId}>
-          {several ? "Store links" : "Store link"} <span className="optional">(optional)</span>
-        </span>
-        <HelpButton help={help} label="How to link a store's page" />
-      </span>
-      <HelpBox help={help}>
-        <p>
-          {!stores.length
-            ? "A shop's page for this product, copied from your browser."
-            : hasBuiltInBrowser
-              ? "Find it in a store, open the product, then tap Link this item."
-              : "Search a store, open the product, then copy its address into here."}
-        </p>
-      </HelpBox>
-      {boxes.map((box, index) => (
-        <span className="store-link-box" key={index}>
-          {/* Plain text (with the web address keyboard), so "coles.com.au/…"
-              without https:// isn't blocked by the browser; it's fixed up on save. */}
-          <input
-            inputMode="url"
-            value={box}
-            onChange={(e) => onChange(boxes.map((other, i) => (i === index ? e.target.value : other)))}
-            placeholder={stores.length ? `https://www.${stores[index % stores.length].host}/…` : "https://…"}
-            aria-label={several ? `Store link ${index + 1}` : "Store link"}
-            autoCapitalize="none"
-            autoCorrect="off"
-          />
-          {(box || several) && (
-            <button
-              type="button"
-              className="button ghost small"
-              aria-label={several ? `Remove store link ${index + 1}` : "Remove the store link"}
-              onClick={() => remove(index)}
-            >
-              ✕
-            </button>
-          )}
-        </span>
-      ))}
-      <div className="store-buttons">
-        {stores.map((store) =>
-          hasBuiltInBrowser ? (
-            <button
-              key={store.name}
-              type="button"
-              className="button small"
-              disabled={!name.trim()}
-              onClick={() => void find(store)}
-            >
-              Find on <StoreLogo store={store} />
-            </button>
-          ) : (
-            <a
-              key={store.name}
-              className={`button small ${name.trim() ? "" : "disabled"}`}
-              href={name.trim() ? storeSearchUrl(store, name) : undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-disabled={!name.trim()}
-            >
-              Search <StoreLogo store={store} /> ↗
-            </a>
-          )
-        )}
-        {boxes.length < MOST_STORE_LINKS && boxes.every((box) => box.trim()) && (
-          <button type="button" className="button ghost small" onClick={() => onChange([...boxes, ""])}>
-            + Another store
-          </button>
-        )}
-      </div>
-      {error && <p className="error">{error}</p>}
-    </div>
-  );
-}
-
 // The starting name for an item from a store page: the page's product name
 // (tidied), else words from its address.
 function nameFromStore(picked: { url: string; name: string }): string {
@@ -553,6 +428,7 @@ export function AddPantryItem({
   fromStore,
   fromBarcode,
   startName = "",
+  startPlace = "",
   onAdded,
   onUseExisting,
   onScanAgain,
@@ -567,6 +443,8 @@ export function AddPantryItem({
   fromBarcode?: Scanned;
   // Or a name typed in the pantry's find-or-add box.
   startName?: string;
+  // The place it goes, when the pantry shows just one.
+  startPlace?: string;
   onAdded: (item: PantryItem) => void;
   // For a scanned barcode named like an item already in the pantry: put the
   // barcode (and brand) on that item instead.
@@ -585,6 +463,7 @@ export function AddPantryItem({
     name: fromStore ? nameFromStore(fromStore) : (product?.name ?? startName),
     storeUrls: [fromStore?.url ?? ""],
     brand: product?.brand ?? "",
+    location: startPlace,
   }));
   // The item already in the pantry with the name typed, once Add finds it.
   const [duplicate, setDuplicate] = useState<PantryItem | null>(null);
@@ -757,11 +636,11 @@ export function AddPantryItem({
           )
         }
       />
-      {!more && (
-        <button type="button" className="link-button more-details" onClick={() => setMore(true)}>
-          + More details (brand, note, expiry, store links)
-        </button>
-      )}
+      {/* Opens the rest, and closes them again (what's typed in them is
+          kept, and saved). */}
+      <button type="button" className="link-button more-details" aria-expanded={more} onClick={() => setMore(!more)}>
+        {more ? "− Fewer details" : "+ More details (brand, note, expiry, store links)"}
+      </button>
       {error && <p className="error">{error}</p>}
       {error && duplicate && barcode && onUseExisting && (
         <div className="actions">
@@ -789,26 +668,34 @@ export function AddPantryItem({
   );
 }
 
-// Packets in stock, in an item's edit form. They change straight away (each
-// is its own record), not on Save: counters (PacketCounters.tsx) for the
-// ones there, "+ Add a packet" for a new brand or size.
+// What's in stock, in an item's edit form. It changes straight away (each
+// one is its own record), not on Save: labels (StockLabels.tsx) for the ones
+// there, "+ Add one" for another, with its brand, size and use-by.
 function PacketsField({
+  item,
   packets,
   favouriteBrand,
   onAdd,
   onFinish,
+  onSave,
   inTray = false,
 }: {
+  // Its products, for adding one with a tap.
+  item: Pick<PantryItem, "products" | "usual_packet">;
   packets: PantryPacket[];
   favouriteBrand: string;
   // Whether it was added.
   onAdd: (details: PacketDetails) => Promise<boolean>;
   onFinish: (packet: PantryPacket) => void;
+  onSave: (packet: PantryPacket, changes: Partial<PantryPacket>) => Promise<boolean>;
   // In the edit form's "In stock" tray, whose rim names it already.
   inTray?: boolean;
 }) {
   const labelId = useId();
+  const spell = useSpell();
   const [adding, setAdding] = useState(false);
+  const preferredOne = preferredProduct(item);
+  const picks = [...(preferredOne ? [preferredOne] : []), ...otherProducts(item)];
   const [details, setDetails] = useState<PacketDetails>({ brand: "", size: "" });
   const [busy, setBusy] = useState(false);
 
@@ -836,52 +723,82 @@ function PacketsField({
         </span>
       )}
       {packets.length > 0 && (
-        <PacketCounters packets={packets} favouriteBrand={favouriteBrand} onUsed={onFinish} onMore={(more) => void onAdd(more)} />
+        <StockLabels packets={packets} onUsed={onFinish} onSave={onSave} />
       )}
       {adding ? (
-        <span className="packet-add">
-          <input
-            autoFocus
-            value={details.brand}
-            onChange={(e) => setDetails({ ...details, brand: e.target.value })}
-            onKeyDown={enterAdds}
-            maxLength={120}
-            placeholder={favouriteBrand || "Brand"}
-            aria-label="Its brand"
-          />
-          <input
-            value={details.size}
-            onChange={(e) => setDetails({ ...details, size: e.target.value })}
-            onKeyDown={enterAdds}
-            maxLength={60}
-            placeholder="Size, e.g. 1 kg"
-            aria-label="Its size"
-          />
-          <button type="button" className="button small" disabled={busy} onClick={() => void add()}>
-            Add
-          </button>
-          <button type="button" className="button ghost small" onClick={() => setAdding(false)}>
-            Cancel
-          </button>
-        </span>
+        // Laid out like a label opened up (StockLabels.tsx).
+        <div className="stock-label-editor packet-add" role="group" aria-label="Add one">
+          <label>
+            Brand
+            <input
+              autoFocus
+              value={details.brand}
+              onChange={(e) => setDetails({ ...details, brand: e.target.value })}
+              onKeyDown={enterAdds}
+              maxLength={120}
+              placeholder={favouriteBrand}
+            />
+          </label>
+          <label>
+            Size
+            <input
+              value={details.size}
+              onChange={(e) => setDetails({ ...details, size: e.target.value })}
+              onKeyDown={enterAdds}
+              maxLength={60}
+              placeholder="like 1 kg"
+            />
+          </label>
+          <label>
+            Use by
+            <DateField label="Use by" value={details.expires ?? ""} onChange={(expires) => setDetails({ ...details, expires })} />
+          </label>
+          <div className="stock-label-actions">
+            <button type="button" className="button ghost small" onClick={() => setAdding(false)}>
+              Cancel
+            </button>
+            <button type="button" className="button primary small" disabled={busy} onClick={() => void add()}>
+              Add
+            </button>
+          </div>
+        </div>
       ) : (
-        <span>
-          <button
-            type="button"
-            className="button ghost small"
-            onClick={() => {
-              setDetails({ brand: favouriteBrand, size: "" });
-              setAdding(true);
-            }}
-          >
-            + Add one
-          </button>
-        </span>
+        // One of its products with a tap (the favourite first, ★), or
+        // "+ New…" for another brand or size, with a use-by if wanted.
+        <div className="stock-add">
+          {picks.length > 0 && <p className="pantry-card-head">Add one</p>}
+          <div className="pantry-card-products">
+            {picks.map((product) => (
+              <button
+                key={`${product.brand}|${product.size}`}
+                type="button"
+                className={product === preferredOne ? "button primary small" : "button small"}
+                onClick={() => void onAdd({ brand: product.brand, size: product.size })}
+              >
+                +{" "}
+                {product === preferredOne && (
+                  <span title={spell("Favourite")}>★ </span>
+                )}
+                {productName(product)}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="button small ghost pantry-card-new"
+              onClick={() => {
+                setDetails({ brand: favouriteBrand, size: "" });
+                setAdding(true);
+              }}
+            >
+              {picks.length ? "+ New…" : "+ Add one"}
+            </button>
+          </div>
+        </div>
       )}
       {/* In the tray, the − and + speak for themselves. */}
       {!inTray && (
         <span className="hint">
-          {packets.length ? "− when one's used up, + for one more. These change straight away." : "Only if you'd like to count them."}
+          {packets.length ? "Tap one for its use-by date or to mark it opened; − when it's used up. These change straight away." : "Only if you'd like to count them."}
         </span>
       )}
     </div>
@@ -894,6 +811,7 @@ export function EditPantryItem({
   packets,
   onAddPacket,
   onFinishPacket,
+  onSavePacket,
   onSaved,
   onCancel,
   onDelete,
@@ -905,6 +823,7 @@ export function EditPantryItem({
   packets?: PantryPacket[] | null;
   onAddPacket?: (details: PacketDetails) => Promise<boolean>;
   onFinishPacket?: (packet: PantryPacket) => void;
+  onSavePacket?: (packet: PantryPacket, changes: Partial<PantryPacket>) => Promise<boolean>;
   onSaved: (item: PantryItem) => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -912,32 +831,22 @@ export function EditPantryItem({
   // The item as the form opened: saving sends only what differs from it.
   const [start] = useState(item);
   const [fields, setFields] = useState<Fields>(() => fieldsOf(item));
-  const [barcodes, setBarcodes] = useState(() => barcodesOf(item));
+  const [products, setProducts] = useState(() => productsOf(item));
+  const [preferred, setPreferred] = useState(() => usualOf(item));
   const [photo, setPhoto] = useState<PhotoChoice>(undefined);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [opened] = useState(() => JSON.stringify([fields, barcodes]));
-  useUnsavedChanges(JSON.stringify([fields, barcodes]) !== opened || photo !== undefined);
+  const [opened] = useState(() => JSON.stringify([fields, products, preferred]));
+  useUnsavedChanges(JSON.stringify([fields, products, preferred]) !== opened || photo !== undefined);
   const change = (patch: Partial<Fields>) => setFields((previous) => ({ ...previous, ...patch }));
   const [photoOpen, setPhotoOpen] = useState(false);
   // "More details" starts open when one of them is set, so nothing set is
-  // hidden. Barcodes don't count: most scanned items have one.
-  const [more, setMore] = useState(() => !!(item.kind_of?.trim() || item.note?.trim() || item.opened_location?.trim()));
+  // hidden.
+  const [more, setMore] = useState(() => !!(item.kind_of?.trim() || item.note?.trim()));
   const preview = usePreviewUrl(photo);
   const shownPhoto = photo === null ? "" : photo ? preview : pantryPhotoUrl(item);
-
-  async function scanAnother() {
-    setError("");
-    try {
-      const code = normaliseBarcode((await scanBarcode()) ?? "");
-      if (!code) return;
-      const other = existing.find((i) => i.id !== item.id && barcodesOf(i).includes(code));
-      if (other) setError(`That barcode is already on “${other.name}”.`);
-      else setBarcodes(withBarcode({ barcodes }, code));
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-  }
+  // Where its photo can be looked up: its products' barcodes and links.
+  const sources = productSources(products, preferred);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -947,21 +856,42 @@ export function EditPantryItem({
       return;
     }
     const record = recordFrom(fields);
-    if (!record) {
+    const cleaned = cleanProducts(products);
+    if (!record || !cleaned) {
       setError(STORE_LINK_TYPO);
       return;
     }
+    const startUsual = usualOf(start);
+    const newFavourite = !!preferred && !(startUsual && sameKind(preferred, startUsual));
+    // Its ★ product removed: no favourite, nor the favourite brand that
+    // came with it.
+    const noFavourite = !preferred && !!startUsual;
+    const productsChanged = JSON.stringify(cleaned) !== JSON.stringify(productsOf(start));
+    const sending = productsChanged ? withServerAdditions(cleaned, productsOf(start), productsOf(item)) : productsOf(item);
+    const saving = productSources(sending, preferred);
+    const changes = editChanges(start, record, barcodesOf(start));
+    // With labels (the first may have been added in this form) Expires is
+    // hidden: each label has its own date, and a date for the item would go
+    // onto the oldest (server/pb_hooks/pantry.pb.js).
+    if (packets?.length) delete changes.expires;
     setBusy(true);
     setError("");
     try {
       const saved = await pantryItems().update(item.id, {
-        ...editChanges(start, record, barcodes),
+        // Barcodes and store links follow the products, on the server.
+        ...changes,
+        ...(productsChanged && { products: sending }),
+        ...(newFavourite && preferred && preferredChanges(start, preferred)),
+        ...(noFavourite && { usual_packet: null, ...(norm(start.brand) === norm(startUsual?.brand ?? "") && { brand: "" }) }),
         // A photo chosen here: these barcodes and links count as tried. No
         // photo: never looked up by itself again, so a removed photo stays
         // removed (wantsOnlinePhoto).
         ...(photo !== undefined && {
           photo,
-          photo_link_tried: photo === null ? PHOTO_REMOVED : photoSources({ ...record, barcodes }),
+          photo_link_tried:
+            photo === null
+              ? PHOTO_REMOVED
+              : photoSources({ barcodes: saving.barcodes, store_url: saving.links[0] ?? "", more_store_urls: saving.links.slice(1) }),
         }),
       });
       onSaved(saved);
@@ -1000,8 +930,8 @@ export function EditPantryItem({
         <PantryPhotoField
           bare
           savedUrl={pantryPhotoUrl(item)}
-          barcodes={barcodes}
-          storeUrls={cleanStoreLinks(fields.storeUrls) ?? []}
+          barcodes={sources.barcodes}
+          storeUrls={cleanStoreLinks(sources.links) ?? []}
           choice={photo}
           onChoose={setPhoto}
         />
@@ -1010,26 +940,28 @@ export function EditPantryItem({
         <h2>Storage</h2>
         <div className="tray-body">
           <PlaceFields existing={existing} fields={fields} onChange={change} />
-          <ExpiresField existing={existing} fields={fields} onChange={change} />
+          {/* With labels, each has its own (In stock below). */}
+          {!packets?.length && <ExpiresField existing={existing} fields={fields} onChange={change} />}
         </div>
       </section>
       <section className="stack tray-section">
-        <h2>Buying</h2>
+        <h2>Products we buy</h2>
         <div className="tray-body">
-          <BrandField existing={existing} fields={fields} onChange={change} />
-          <StoreLinkFor existing={existing} fields={fields} onChange={change} />
+          <ProductsField item={item} existing={existing} products={products} preferred={preferred} onChange={setProducts} onPrefer={setPreferred} />
         </div>
       </section>
-      {packets && onAddPacket && onFinishPacket && (
+      {packets && onAddPacket && onFinishPacket && onSavePacket && (
         <section className="stack tray-section">
           <h2>In stock</h2>
           <div className="tray-body">
             <PacketsField
               inTray
+              item={item}
               packets={packets}
               favouriteBrand={brandsToPickFrom(item.brand).length ? "" : item.brand.trim()}
               onAdd={onAddPacket}
               onFinish={onFinishPacket}
+              onSave={onSavePacket}
             />
           </div>
         </section>
@@ -1042,30 +974,6 @@ export function EditPantryItem({
         <div className="stack">
           <KindOfField existing={existing} fields={fields} onChange={change} />
           <NoteField existing={existing} fields={fields} onChange={change} />
-          <OpenedField existing={existing} fields={fields} onChange={change} />
-          {(barcodes.length > 0 || canScan) && (
-            <div className="barcode-list">
-              <span className="label-text">Barcodes</span>
-              {barcodes.map((code) => (
-                <span key={code} className="barcode-chip">
-                  {code}
-                  <button
-                    type="button"
-                    className="chip-remove"
-                    aria-label={`Remove barcode ${code}`}
-                    onClick={() => setBarcodes(barcodes.filter((other) => other !== code))}
-                  >
-                    ✕
-                  </button>
-                </span>
-              ))}
-              {canScan && (
-                <button type="button" className="button small" onClick={() => void scanAnother()}>
-                  <span className="button-mark" aria-hidden="true">📷</span> Add one
-                </button>
-              )}
-            </div>
-          )}
         </div>
       )}
       {error && <p className="error">{error}</p>}

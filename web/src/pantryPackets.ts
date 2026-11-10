@@ -6,11 +6,15 @@
 import type { PantryItem, PantryPacket } from "./pb";
 import { norm } from "./pantryGroups.ts";
 import { brandsOf } from "./pantryItem.ts";
-import { storedTime } from "./dates.ts";
+import { datePart, localToday, storedTime, timeAgo, toStoredDate } from "./dates.ts";
+import { daysUntil, describeExpiry, expiryState } from "./expiry.ts";
+import { productWithBarcode } from "./pantryProducts.ts";
 
 export interface PacketDetails {
   brand: string;
   size: string;
+  // Its use-by day ("2026-12-14"), when it's added with one.
+  expires?: string;
 }
 
 type Packet = Pick<PantryPacket, "id" | "item" | "brand" | "size" | "created">;
@@ -29,22 +33,32 @@ export function groupText(group: { count: number; label: string }): string {
   return group.count > 1 ? `${group.count} × ${group.label}` : group.label;
 }
 
-// An item's packets as counters, one per brand and size ("− 3 × 400 g +"):
-// the label leaves out the item's favourite brand (it's under the name
-// already), and `packets` are oldest first, so the first is the one to use
-// up. In the order each kind was first added.
-export function packetGroups<T extends Pick<PantryPacket, "brand" | "size" | "left">>(
+// An item's packets grouped, one group per brand, size and state ("3 ×
+// 400 g"): the label leaves out the item's favourite brand (it's under the
+// name already), and `packets` are oldest first, so the first is the one to
+// use up. In the order each kind was first added. Ones with their own
+// use-by date or opened (labels, docs/VISION.md), or bought on another day
+// (boughtDay: given, or the day added), only group with the same.
+export interface PacketGroup<T> {
+  label: string;
+  count: number;
+  packets: T[];
+}
+
+export function packetGroups<
+  T extends Pick<PantryPacket, "brand" | "size" | "left"> & Partial<Pick<PantryPacket, "expires" | "opened" | "bought" | "created">>,
+>(
   packets: T[],
   favouriteBrand = ""
-): { label: string; count: number; packets: T[] }[] {
-  const groups = new Map<string, { label: string; count: number; packets: T[] }>();
+): PacketGroup<T>[] {
+  const groups = new Map<string, PacketGroup<T>>();
   for (const packet of packets) {
     const brand = norm(packet.brand ?? "") === norm(favouriteBrand) ? "" : packet.brand ?? "";
     // A partly used one (cooking left "100 g") is its own counter.
     const left = (packet.left ?? "").trim();
     const base = packetLabel({ brand, size: packet.size });
     const label = left ? [base, `about ${left} left`].filter(Boolean).join(", ") : base;
-    const key = `${norm(brand)}|${norm(packet.size ?? "")}|${norm(left)}`;
+    const key = `${norm(brand)}|${norm(packet.size ?? "")}|${norm(left)}|${(packet.expires ?? "").slice(0, 10)}|${packet.opened ? "open" : ""}|${boughtDay(packet)}`;
     const group = groups.get(key) ?? { label, count: 0, packets: [] };
     group.count += 1;
     group.packets.push(packet);
@@ -65,7 +79,8 @@ export function untickCanTakeBack(packet: Pick<PantryPacket, "bought_with" | "cr
 // One put back keeps what's left of it, and the shopping row that bought it
 // only while unticking that row could still take it back.
 export function packetToSave(
-  packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left"> & Partial<Pick<PantryPacket, "bought_with" | "created">>,
+  packet: Pick<PantryPacket, "item" | "brand" | "size" | "barcode" | "left"> &
+    Partial<Pick<PantryPacket, "bought_with" | "created" | "expires" | "opened" | "bought">>,
   now = new Date()
 ) {
   return {
@@ -74,6 +89,11 @@ export function packetToSave(
     size: packet.size,
     barcode: packet.barcode,
     ...(packet.left && { left: packet.left }),
+    ...(packet.expires && { expires: packet.expires }),
+    ...(packet.opened && { opened: packet.opened }),
+    // One put back is a new record (added today): the day it was really
+    // bought goes with it, or it would say "bought today".
+    ...((packet.bought || packet.created) && { bought: packet.bought || toStoredDate(boughtDay(packet)) }),
     ...(packet.created && untickCanTakeBack({ bought_with: packet.bought_with, created: packet.created }, now) && { bought_with: packet.bought_with }),
   };
 }
@@ -117,24 +137,44 @@ export function justBought<T extends Pick<PantryPacket, "bought_with" | "created
   return bought.sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
 }
 
-// Brands this item has had besides its favourite, for "Another brand"'s
-// quick picks: from what's in stock and the barcodes it knows, first seen
-// first, each once.
-export function otherBrands(
-  item: Pick<PantryItem, "brand" | "barcode_details">,
-  packets: Pick<PantryPacket, "brand">[]
-): string[] {
-  const preferred = new Set(brandsOf(item.brand ?? "").map(norm));
-  const seen = new Set<string>();
-  const brands: string[] = [];
-  const all = [...packets.map((packet) => packet.brand ?? ""), ...Object.values(item.barcode_details ?? {}).map((details) => details.brand ?? "")];
-  for (const raw of all) {
-    const brand = raw.trim();
-    if (!brand || preferred.has(norm(brand)) || seen.has(norm(brand))) continue;
-    seen.add(norm(brand));
-    brands.push(brand);
-  }
-  return brands;
+// The day a label was bought ("2026-11-02"): the one someone gave, else
+// the day it was added, on this phone's calendar. "" if neither is known.
+export function boughtDay(packet: Partial<Pick<PantryPacket, "bought" | "created">>): string {
+  if (packet.bought) return datePart(packet.bought);
+  const added = storedTime(packet.created ?? "");
+  return Number.isNaN(added.getTime()) ? "" : localToday(added);
+}
+
+// The small words after a label: "opened · expires 16 Nov" (the expiry
+// wording is expiry.ts's), and whether that's soon (or past), to tint it.
+// Without a use-by date, how long ago it was bought ("bought 12 days ago")
+// says how fresh it is instead.
+export function labelMeta(
+  packet: Partial<Pick<PantryPacket, "expires" | "opened" | "bought" | "created">>,
+  now = new Date()
+): { text: string; soon: boolean } {
+  const expiry = describeExpiry(packet.expires ?? "", now);
+  const days = daysUntil(packet.expires ?? "", now);
+  const bought = boughtDay(packet);
+  const age = !expiry && bought ? `bought ${timeAgo(bought, localToday(now))}` : "";
+  const parts = [packet.opened ? "opened" : "", expiry && expiry.charAt(0).toLowerCase() + expiry.slice(1), age].filter(Boolean);
+  return { text: parts.join(" · "), soon: days !== null && expiryState(days) !== "later" };
+}
+
+// What making this brand and size the favourite changes on the item: its
+// usual one, and its favourite brand when the brand is another (or it had
+// an older item's list of brands). Only a person does this; adding more
+// never changes the favourite (server/pb_hooks/pantry.pb.js).
+export function preferredChanges(
+  item: Pick<PantryItem, "brand">,
+  details: PacketDetails
+): Pick<PantryItem, "usual_packet"> & Partial<Pick<PantryItem, "brand">> {
+  const brand = details.brand.trim();
+  const size = details.size.trim();
+  return {
+    usual_packet: { brand, size },
+    ...(brand && norm(brand) !== norm(item.brand ?? "") && { brand }),
+  };
 }
 
 // Whether the household counts this item's stock: some counted now, or a
@@ -146,9 +186,9 @@ export function countsInStock(item: Pick<PantryItem, "usual_packet">, packets: u
   return packets.length > 0 || !!(usual && (usual.brand || usual.size));
 }
 
-// What "+ 1 more" adds: one like the item's usual packet (the last one
-// added, remembered after they're gone), else like its newest packet, else
-// one with its favourite brand and no size.
+// What "+ 1 more" adds: one like the item's usual packet (its favourite
+// brand and size, kept after they're all gone), else like its newest
+// packet, else one with its favourite brand and no size.
 export function nextPacket(
   item: Pick<PantryItem, "brand" | "usual_packet">,
   packets: Pick<PantryPacket, "brand" | "size">[]
@@ -156,7 +196,7 @@ export function nextPacket(
   const usual = item.usual_packet;
   if (usual && (usual.brand || usual.size)) return { brand: usual.brand ?? "", size: usual.size ?? "" };
   // The newest one in stock, but not a stand-in of another brand than the
-  // favourite ("Another brand"): the next one should be the favourite.
+  // favourite ("+ Brand/Size"): the next one should be the favourite.
   const preferred = brandsOf(item.brand ?? "").map(norm);
   const newest = [...packets].reverse().find((packet) => !preferred.length || !(packet.brand ?? "").trim() || preferred.includes(norm(packet.brand ?? "")));
   if (newest) return { brand: newest.brand ?? "", size: newest.size ?? "" };
@@ -171,23 +211,35 @@ export function packetsOf<T extends Packet>(all: T[], itemId: string, hidden: Se
     .sort((a, b) => a.created.localeCompare(b.created) || a.id.localeCompare(b.id));
 }
 
+// What the item remembers a barcode is: the named product it's on, else (an
+// item an older app saved since) its barcode_details. null if neither knows.
+function knownDetails(item: Pick<PantryItem, "barcode_details" | "products">, code: string): PacketDetails | null {
+  const product = productWithBarcode(item, code);
+  if (product && (product.brand || product.size)) return { brand: product.brand, size: product.size };
+  const known = item.barcode_details?.[code];
+  return known && (known.brand || known.size) ? { brand: known.brand ?? "", size: known.size ?? "" } : null;
+}
+
 // What a packet with this barcode is: what the item remembers for it, else
-// what Open Food Facts said (`looked`), else nothing.
+// what Open Food Facts said (`looked`), else nothing. Remembered with a
+// brand but no size (an older item made from a scan): the brand it
+// remembers, with the size Open Food Facts says.
 export function detailsFor(
-  item: Pick<PantryItem, "barcode_details">,
+  item: Pick<PantryItem, "barcode_details" | "products">,
   code: string,
   looked?: { brand?: string; quantity?: string } | null,
 ): PacketDetails {
-  const known = item.barcode_details?.[code];
-  if (knowsBarcode(item, code)) return { brand: known?.brand ?? "", size: known?.size ?? "" };
+  const known = knownDetails(item, code);
+  if (known?.size) return known;
   // Cut to what a packet's brand holds (120), as sizes are (tidySize).
-  return { brand: (looked?.brand ?? "").trim().slice(0, 120), size: tidySize(looked?.quantity ?? "") };
+  const size = tidySize(looked?.quantity ?? "");
+  return known ? { brand: known.brand, size } : { brand: (looked?.brand ?? "").trim().slice(0, 120), size };
 }
 
-// Whether the item already remembers this barcode's brand or size.
-export function knowsBarcode(item: Pick<PantryItem, "barcode_details">, code: string): boolean {
-  const known = item.barcode_details?.[code];
-  return !!known && !!(known.brand || known.size);
+// Whether the item already remembers what this barcode is, size included:
+// one known only by its brand is still looked up, for its size.
+export function knowsBarcode(item: Pick<PantryItem, "barcode_details" | "products">, code: string): boolean {
+  return !!knownDetails(item, code)?.size;
 }
 
 // The item's barcode details with this barcode's added (or replaced). The
