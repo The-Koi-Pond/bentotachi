@@ -1025,6 +1025,11 @@ li.setting-row {
   margin: 0;
 }
 
+.small-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 .success {
   color: var(--success);
   margin: 0;
@@ -3345,6 +3350,13 @@ legend {
   cursor: default;
 }
 
+/* Something drawn as a button that can't be disabled itself (a link, a
+   file picker's label), not usable now. */
+.button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* A row of buttons, lined up on the right: the main one (Save, Add…) last,
    in the right-hand corner, with Cancel just before it. Delete, Remove or
    Reset go first with .push-left, away on the left. */
@@ -4013,11 +4025,14 @@ legend {
   border-radius: var(--radius);
 }
 
+/* On very narrow screens the buttons wrap onto a second line rather than
+   sticking out. */
 .reaction-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -4150,11 +4165,12 @@ legend {
   outline-offset: 1px;
 }
 
-/* "Quick means [30 min or less]" in the settings menu. */
+/* Thumbs up, thumbs down and the heart, at the reaction row's end. */
 .reaction-toggles {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
+  margin-left: auto;
 }
 
 /* Each person's stars as a small pill in their color. */
@@ -5251,6 +5267,9 @@ span.avatar-corner {
 
 /* "Coles ↗": a pantry item's product page (pantry rows and the shopping list). */
 .store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex: none;
   align-self: flex-start;
   font-size: 0.85rem;
@@ -5294,27 +5313,11 @@ span.avatar-corner {
   min-width: 0;
 }
 
-.button.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.small-note {
-  margin: 0;
-  font-size: 0.85rem;
-}
-
 /* A store's logo standing in for its name (Coles, Woolworths). */
 .store-logo {
   display: inline-block;
   vertical-align: middle;
   border-radius: 5px;
-}
-
-.store-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .store-buttons .button {
@@ -5432,20 +5435,10 @@ button.rating-pill:focus-visible {
 }
 
 /* Stars plus thumbs up, thumbs down and (without a photo) the heart: a
-   little narrower each, so the row fits a phone. On very narrow screens
-   the buttons wrap onto a second line rather than sticking out. */
-.reaction-row {
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
+   little narrower each, so the row fits a phone (.reaction-row wraps on
+   very narrow screens rather than sticking out). */
 .reactions .onigiri-picker button {
   width: 31px;
-}
-
-.reaction-toggles {
-  gap: 0;
-  margin-left: auto;
 }
 
 .reaction-toggles .thumb-toggle,
