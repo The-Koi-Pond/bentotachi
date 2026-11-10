@@ -277,6 +277,38 @@ export function pantryCheck(
 const AMOUNT_WORDS =
   /^(\d+([./]\d+)?|[½¼¾⅓⅔⅛]|\d+[½¼¾⅓⅔⅛]|a|an|about|cups?|tbsps?|tablespoons?|tsps?|teaspoons?|g|grams?|kg|ml|l|litres?|liters?|oz|ounces?|lbs?|pounds?|tins?|cans?|packets?|pinch(es)?|handfuls?|cloves?|large|small|medium|of|-|–)$/i;
 
+// Words that leave a thing what it is on a shopping list ("1 cup whole
+// milk", "2 L full cream milk", "basmati rice"), besides amounts. Products
+// with their own name ("cream cheese", "coconut milk") are told apart by
+// findMention already.
+const PLAIN_KIND_WORDS = new Set(
+  "whole skim skimmed full lite light low fat reduced warm cold chilled softened thickened unsalted salted organic free range basmati jasmine".split(" ") // not on screen
+);
+
+// Whether a line is just this name with an amount ("300ml milk", "2 cups
+// milk, warmed", "Milk 2L"): only amounts or plain describing words around
+// the name, before a note (after a comma or bracket). Not "Milk
+// chocolate", "garlic bread" or "evaporated milk": other things, named
+// after it.
+export function isJustThis(line: string, name: string): boolean {
+  // "Full cream" is one describing word here, though "cream" before a name
+  // is usually another product ("cream cheese").
+  const main = line.split(/[,(]/)[0].replace(/\bfull[\s-]+cream\b/gi, "full");
+  const at = findMention(main, name);
+  if (!at) return false;
+  const words = (text: string) =>
+    text
+      .toLowerCase()
+      .split(/[\s/]+/)
+      .map((word) => word.replace(/^[^\p{L}\d½¼¾⅓⅔⅛]+|[^\p{L}\d½¼¾⅓⅔⅛]+$/gu, ""))
+      .filter(Boolean);
+  const amount = (word: string) => AMOUNT_WORDS.test(word) || AMOUNT_BEFORE.test(word);
+  return (
+    words(main.slice(0, at.start)).every((word) => amount(word) || ANY_KIND_BEFORE.has(word) || PLAIN_KIND_WORDS.has(word)) &&
+    words(main.slice(at.end)).every(amount)
+  );
+}
+
 // A starting name for a new pantry item, from the line:
 // "2 large onions, diced" -> "Onions"; "1 tin chickpeas" -> "Chickpeas".
 export function suggestedName(line: string): string {

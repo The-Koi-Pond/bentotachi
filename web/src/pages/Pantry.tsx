@@ -54,7 +54,7 @@ import { moved } from "../listOrder";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
-import { onTheList } from "../shoppingMatch";
+import { onTheList, onTheListAs } from "../shoppingMatch";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -396,8 +396,17 @@ export default function Pantry() {
     });
   }
 
+  // On the list already under another wording ("300ml milk" from a recipe):
+  // that row is linked to the item (so ticking it brings the pantry back,
+  // as for a row with its exact name) instead of adding a second one.
   async function addToList(item: PantryItem) {
+    const as = onTheListAs(item, waiting);
     try {
+      if (as) {
+        if (!as.pantry_item) shopping.upsert(await shoppingItems().update(as.id, { pantry_item: item.id }));
+        showToast(`Already on the list as “${as.text}”.`);
+        return;
+      }
       shopping.upsert(
         await shoppingItems().create({ text: item.name, checked: false, pantry_item: item.id, added_by: pb.authStore.record?.id })
       );
