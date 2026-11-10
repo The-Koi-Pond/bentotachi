@@ -1,7 +1,7 @@
 // A recipe without a photo: a small drawn bento box with its first letter
 // (docs/VISION.md, "Bento touches"), on one of a few soft colours picked
 // from its name, so the same recipe looks the same everywhere. Its colours
-// are in styles.css (.stand-in), so the box can stay quieter than the letter.
+// are in styles/recipe-list.css (.stand-in), so the box can stay quieter than the letter.
 export default function RecipeStandIn({ title, className }: { title: string; className: string }) {
   const letter = (Array.from(title.trim())[0] ?? "").toUpperCase();
   const shade = Array.from(title).reduce((sum, char) => sum + (char.codePointAt(0) ?? 0), 0) % 5;

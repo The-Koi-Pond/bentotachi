@@ -1,0 +1,262 @@
+/* The date box and its calendar (DateField.tsx).
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* A date box (DateField.tsx): looks like the other boxes, the date and a
+   calendar icon; tapping it opens the calendar. */
+.date-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 10px 7px 12px;
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.date-field svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* Half a narrow phone's width: the date matters more than the icon. */
+.date-field {
+  container-type: inline-size;
+}
+
+@container (max-width: 135px) {
+  .date-field svg {
+    display: none;
+  }
+}
+
+/* One line, cut with "…" if it really can't fit. */
+.date-field > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-field-empty {
+  color: var(--muted);
+}
+
+/* The calendar, over the page under its box (above when there's no room). */
+.date-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 14px 12px 10px;
+  width: min(328px, calc(100vw - 16px));
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
+}
+
+/* Old browsers: right under the box instead. */
+.date-pop.date-inline {
+  position: static;
+  margin-top: 6px;
+}
+
+/* On its own (DateDialog): in the middle of the screen, the page dimmed. */
+.date-pop.date-dialog {
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+}
+
+.date-dialog::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.calendar-label {
+  margin: 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* The chosen date, big, with the pencil to type it instead. */
+.calendar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 0 6px 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-date {
+  flex: 1;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.calendar-typing {
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.calendar-typing[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.calendar-error {
+  margin: -2px 4px 6px;
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+/* "December 2026 ▾" on the left, ‹ › on the right. */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.calendar-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 4px 8px 4px 6px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.calendar-caret {
+  display: inline-flex;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s;
+}
+
+.calendar-month[aria-expanded="true"] .calendar-caret {
+  transform: rotate(-90deg);
+}
+
+.calendar-arrows {
+  display: flex;
+  gap: 2px;
+}
+
+.calendar-back svg {
+  transform: scaleX(-1);
+}
+
+/* The days: seven columns, round buttons, today ringed, the chosen one
+   filled. */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  justify-items: center;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.calendar-day {
+  width: 40px;
+  height: 40px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  background: var(--jade-soft);
+}
+
+.calendar-day.today {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calendar-day[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.calendar-day:focus-visible,
+.calendar-year:focus-visible,
+.calendar-month:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The years, three to a row, scrolling, this year in the accent. */
+.calendar-years {
+  /* The years' own positions, for scrolling the chosen one to the middle. */
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.calendar-year {
+  min-height: 40px;
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.calendar-year.this-year {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calendar-year[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent);
+  font-weight: 600;
+}
+
+/* Clear on the far left, Cancel and OK on the right. */
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendar-clear {
+  margin-right: auto;
+}

@@ -47,7 +47,7 @@ const percent = (n: number) => `${Math.round(n * 100) / 100}%`;
 // (transform), then clips it back to its own box (clip-path), so it never
 // spills over the page, in every browser. The clip is in the img's own
 // (unscaled) terms: the part that, once enlarged, fills the box. Its round
-// corners follow --photo-radius (set in styles.css), shrunk to match.
+// corners follow --photo-radius (set in styles/recipe.css and plan.css), shrunk to match.
 export function framingStyle(framing: Framing): Record<string, string> {
   const { x, y, zoom } = framing;
   const style: Record<string, string> = { objectPosition: `${percent(x)} ${percent(y)}` };

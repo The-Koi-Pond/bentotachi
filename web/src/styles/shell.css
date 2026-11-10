@@ -1,0 +1,502 @@
+/* What's around every screen: the top bar and its menu, the tab bar, the
+   step-timer tray, toasts and the offline note.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* The top bar, then the screens scrolling under it, ending where the tab
+   bar starts, so the scrollbar runs beside neither (pageScroll.ts). Not
+   position: fixed, which would trap the plan's bin and the menus under the
+   tab bar. A slim jade scrollbar. */
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--tabbar-height) - env(safe-area-inset-bottom));
+  height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom));
+}
+
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--rim-text) 35%, var(--rim)) transparent;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  /* Room at the bottom so the timers and Undo messages never cover the
+     last thing on the page. */
+  padding: 8px 10px calc(var(--timer-tray-height, 0px) + 32px);
+}
+
+/* Bottom tab bar */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  /* A bento tray: each tab a compartment, the current one filled. */
+  gap: 4px;
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  background: var(--rim);
+}
+
+.tabbar a {
+  flex: 1;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.tabbar a.active {
+  color: var(--accent);
+  background: var(--jade-soft);
+}
+
+.tabbar a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.topbar {
+  /* Stays put: the page scrolls under it (.page-scroll). Above everything
+     on the page, including card hearts, so its menu opens over them. */
+  position: relative;
+  flex: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 12px 3px 16px;
+  padding-top: max(3px, env(safe-area-inset-top));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The top bar's buttons (Manage, +, ⋮): all the same small circle with the
+   same size icon, so the orange + doesn't look bigger than the rest. */
+.topbar .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.topbar .icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Settings menu */
+
+.menu {
+  position: relative;
+}
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 260px;
+  /* On a short screen it scrolls itself, so its last items (Log out) never
+     end up under the tab bar. */
+  max-height: calc(100vh - var(--tabbar-height) - env(safe-area-inset-bottom) - 64px);
+  max-height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom) - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+}
+
+.menu-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.menu-panel button:hover {
+  background: var(--accent-soft);
+}
+
+.menu-panel button:disabled {
+  cursor: default;
+}
+
+/* "Bento 1.3 is ready [Update] [Later]" */
+.update-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.update-banner p {
+  margin: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.brand:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The drawn title in the top bar: as tall as the buttons beside it, so it
+   reads well without making the bar any taller. */
+.brand-title {
+  display: block;
+  height: 36px;
+  width: auto;
+}
+
+/* A sticky note stuck to the end of the title: says the title opens the
+   fridge door. A square of soft jade paper, tilted, held by a wooden magnet
+   (the chopsticks' wood); scribbled lines on it, or the number of new
+   notes in plum. */
+.brand {
+  gap: 7px;
+  text-decoration: none; /* the count is text inside the link */
+}
+
+.brand-note {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 4px;
+  background: var(--jade-soft);
+  border: 1px solid rgb(90 154 138 / 0.45);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.14);
+  transform: rotate(7deg);
+  transition: transform 120ms ease-out;
+}
+
+/* The magnet. */
+.brand-note::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  background: #a87a43;
+  border-radius: 50%;
+  box-shadow: inset 0 -1.5px 0 rgb(0 0 0 / 0.25);
+}
+
+.brand-note-lines {
+  width: 14px;
+  height: 9px;
+  margin-top: 3px;
+  background: repeating-linear-gradient(to bottom, var(--jade-strong) 0 1.5px, transparent 1.5px 4px);
+  opacity: 0.55;
+}
+
+.brand-note-count {
+  margin-top: 3px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* Straightens a little under the pointer, like it's being looked at. */
+.brand:hover .brand-note {
+  transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-note {
+    transition: none;
+  }
+}
+
+/* The running timers, floating just above the tab bar on every page
+   (StepTimerTray.tsx). Toasts and the page's end move up to make room. */
+.timer-tray {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 8px);
+  z-index: 40;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+}
+
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px 2px 10px;
+  border-radius: 8px;
+}
+
+/* Not "done": that's ticked-off ingredients, crossed out. */
+.timer-row.finished {
+  background: var(--accent-soft);
+}
+
+.timer-what {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.timer-recipe {
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* One line, cut short like the recipe's name above it: a long heading
+   ("Sauce · Step 1") would otherwise wrap and fill the tray. */
+.timer-step {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timer-left {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-row.finished .timer-left {
+  color: var(--accent);
+}
+
+/* "Offline. Showing the recipes saved on this phone…" */
+.offline-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: var(--accent-soft);
+  border-radius: 12px;
+}
+
+.offline-note .button {
+  flex: none;
+}
+
+/* The shopping list's own heading and its "2 changes waiting to sync" each
+   take a line, around the explanation. */
+.offline-heading,
+.offline-waiting {
+  display: block;
+}
+
+.offline-heading {
+  margin-bottom: 2px;
+}
+
+.offline-waiting {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* The top of the ⋮ menu: your picture and name, opening Profile. */
+.menu-panel .menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+
+.menu-panel .menu-profile:hover,
+.menu-panel .menu-profile:focus-visible {
+  background: var(--accent-soft);
+}
+
+.menu-profile .menu-item-text {
+  flex: 1;
+}
+
+.menu-profile svg {
+  color: var(--muted);
+}
+
+/* The ⋮ menu's Household link, styled like its buttons. */
+.menu-panel .menu-link {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.menu-panel .menu-link:hover,
+.menu-panel .menu-link:focus-visible {
+  background: var(--accent-soft);
+}
+
+/* A short message that floats above the tab bar for a few seconds, like
+   where a pantry item moved to. */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 12px);
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  color: var(--bg);
+  background: var(--text);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* toast.ts's short messages ("Moved to the Fridge."): a tap puts one away.
+   An error gets a plum stripe. With a page's Undo bars showing, Toaster.tsx
+   lifts the message above them rather than on top. */
+.notice-toast {
+  cursor: pointer;
+}
+
+.toast-error {
+  box-shadow: inset 5px 0 0 var(--accent), 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding-left: 18px;
+}
+
+/* Two bars at once on a page (Pantry's "X is out" and an Undo): stacked
+   where one would be, the newer on top of the older, never over it. */
+.toast-stack {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 12px);
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast-stack > .toast {
+  position: static;
+  margin: 0;
+  max-width: none;
+  pointer-events: auto;
+}
+
+/* "Removed “Milk”. Undo": the button sits at the far end, in the toast's
+   own text color so it's readable on it. */
+.undo-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* The message takes the room, so two buttons ("+ Use-by", "Undo") sit
+   together at the end, a little closer to each other. */
+.undo-toast > span:first-child {
+  flex: 1 1 auto;
+}
+
+.undo-toast > .link-button + .link-button {
+  margin-left: -4px;
+}
+
+/* Answers side by side ("Add it", "Not now", maybe "Undo"); on a narrow
+   phone they go under the message, on the right, rather than squeezing it. */
+.toast-actions {
+  flex: none;
+  display: flex;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.undo-toast:has(.toast-actions) {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.undo-toast:has(.toast-actions) > span:first-child {
+  flex: 1 1 12em;
+}
+
+.undo-toast .link-button {
+  flex: none;
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--bg);
+  font-weight: 700;
+  text-decoration: underline;
+}

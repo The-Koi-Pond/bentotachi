@@ -4,7 +4,20 @@ import App from "./App";
 import PhoneStartup from "./PhoneStartup";
 import { isPhoneMode } from "./phoneMode";
 import { setUpBackGesture } from "./androidBack";
-import "./styles.css";
+// The stylesheets, in the order they must load: when two rules tie, the later
+// file wins (docs/shared-systems.md, "Styles").
+import "./styles/base.css";
+import "./styles/shell.css";
+import "./styles/fridge.css";
+import "./styles/browse.css";
+import "./styles/shopping.css";
+import "./styles/plan.css";
+import "./styles/pantry.css";
+import "./styles/recipe-list.css";
+import "./styles/recipe.css";
+import "./styles/dates.css";
+import "./styles/settings.css";
+import "./styles/print.css";
 import { applyTheme, savedTheme } from "./theme";
 
 setUpBackGesture();

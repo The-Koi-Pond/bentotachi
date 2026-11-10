@@ -1,0 +1,94 @@
+/* Browse (pages/Browse.tsx): the lists of recipe sites.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* "Our sites": the same height while "+ Add a site" hides for its form. */
+.sites-head {
+  min-height: 36px;
+}
+
+/* Browse */
+
+/* Browse's sites: a bento tray, each site a compartment. */
+.site-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.site-list li {
+  background: var(--surface);
+  border-radius: 8px;
+  /* A tapped row's tint stays inside the rounded corners (on a phone, the
+     tint stays after a tap). */
+  overflow: hidden;
+}
+
+.site-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 5px 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-row:hover {
+  background: var(--accent-soft);
+}
+
+.site-row:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.site-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-name {
+  font-weight: 600;
+}
+
+.site-about,
+.site-note {
+  font-size: 0.88rem;
+}
+
+.site-note {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.site-go {
+  flex: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+
+/* Our own sites on the Browse tab: the link, then a ✕ to remove it. */
+.site-saved {
+  display: flex;
+  align-items: center;
+}
+
+.site-saved .site-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-saved .site-remove {
+  flex: none;
+  margin-right: 8px;
+  color: var(--muted);
+}

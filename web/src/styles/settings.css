@@ -1,0 +1,476 @@
+/* Settings, Profile, Household, Backups and logging in.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* Settings (pages/Settings.tsx), and the Profile page's household and
+   Log out: each setting a compartment, the whole row the switch or link. */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-list > li {
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.setting-row {
+  display: flex;
+  /* A row even as a <label> (Quick means), which stacks elsewhere. */
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+li.setting-row {
+  cursor: default;
+}
+
+.setting-row:hover:not(li) {
+  background: var(--jade-soft);
+}
+
+.setting-row:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.setting-row:disabled {
+  cursor: default;
+}
+
+.setting-row select {
+  width: auto;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.setting-row > svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* The Profile page's household and Log out sit on the page, not in a
+   tray, under the cards. */
+.profile-links > li {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* "A Koi Pond app" with a small Deki, quietly at the very bottom of
+   Settings. */
+.settings-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 4px 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.settings-credit img {
+  width: 22px;
+  height: auto;
+}
+
+.settings-credit:hover,
+.settings-credit:focus-visible {
+  color: var(--text);
+}
+
+/* Login */
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.login .login-card {
+  width: min(400px, 100%);
+}
+
+/* The onigiri above the drawn title on the login screen. */
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.login-brand h1 {
+  margin: 0;
+  line-height: 0;
+}
+
+.login-logo {
+  width: 150px;
+  height: auto;
+}
+
+.login-title {
+  height: 64px;
+  width: auto;
+}
+
+/* The tagline under the title: a plain sentence, never an uppercase,
+   letter-spaced list of words (an AI-made look; docs/VISION.md). */
+.login-tagline {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-style: italic;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Color swatches (Profile > My color). */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  /* Snug enough for all nine (the rainbow too) on one line on a phone. */
+  gap: 5px;
+}
+
+.swatch {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-height: 0;
+  padding: 0;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+.swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.swatch:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* "Any colour": a rainbow, and once picked, that colour inside a rainbow
+   ring (Profile.tsx). */
+.swatch-any {
+  --rainbow: conic-gradient(#e03131, #e67700, #f2c94c, #2f9e44, #0c8599, #1c7ed6, #7048e8, #d6336c, #e03131);
+  background: var(--rainbow);
+}
+
+.swatch-any[aria-pressed="true"] {
+  border-color: transparent;
+  background: linear-gradient(var(--pick), var(--pick)) padding-box, var(--rainbow) border-box;
+}
+
+/* The device's own picker, opened by the rainbow swatch: kept beside it
+   (where the picker pops up from) but not seen or tapped itself. */
+.swatch-picker {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Profile page: the picture beside your name and its buttons. */
+/* Profile's top box: your picture beside your display name. Tapping the
+   picture changes it; the round button on its corner removes it (or, with
+   none yet, a camera says it can be added). */
+.profile-who {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px 16px;
+}
+
+/* The divider and My colour run under both. */
+.profile-who > .profile-divider,
+.profile-who > .profile-color {
+  grid-column: 1 / -1;
+}
+
+/* A box with its Save beside it (Profile's name and username): one row
+   instead of a box, then a row for the button. */
+.inline-save {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.inline-save > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.inline-save > .button {
+  flex: none;
+  min-height: 0;
+}
+
+/* Profile's Log out and Delete my account: actions, centred, with an icon
+   where one fits. */
+.profile-action {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-action .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A setting with something under its row (Settings → Household: the
+   country's stores, the plan's meal chips). */
+.setting-block > .setting-row {
+  cursor: default;
+}
+
+.setting-block > .setting-row:hover {
+  background: transparent;
+}
+
+.setting-block .menu-item-text label {
+  display: inline;
+  font-weight: 400;
+}
+
+.setting-note {
+  margin: 0;
+  padding: 0 12px 10px;
+}
+
+.profile-avatar {
+  position: relative;
+  flex: none;
+}
+
+.avatar-change {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.avatar-change:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.avatar-change:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.avatar-corner {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+}
+
+button.avatar-corner {
+  cursor: pointer;
+}
+
+button.avatar-corner:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button.avatar-corner svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The camera only says what tapping the picture does. */
+span.avatar-corner {
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.profile-name-form {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Between the username and the password in "Logging in". */
+.profile-divider {
+  width: 100%;
+  margin: 6px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.profile-color {
+  gap: 10px;
+}
+
+
+/* Household page: everyone with an account. */
+.household-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px;
+}
+
+.household-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.household-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.household-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.household-username {
+  font-size: 0.85rem;
+}
+
+/* "Alex can log in now. Tell them:" */
+.added-person {
+  border-color: var(--have);
+}
+
+.login-details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.login-details dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.login-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* "Set up your Bento" on a brand-new server. */
+.setup-intro h2 {
+  margin: 0 0 4px;
+}
+
+.setup-intro p {
+  margin: 0;
+}
+
+/* Household page: the country's store logos after "Stores:". */
+.country-stores {
+  margin: 0;
+}
+
+.country-stores .store-logo {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* Under "Bento on this phone" on the first login screen: the smaller
+   choice, connecting to a household's server. */
+/* A new app's first question: two big, equal choices (Login.tsx). */
+.login-question {
+  margin: 8px 0 0;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.login-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.login-choice:hover {
+  border-color: var(--accent);
+}
+
+.login-choice:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.login-choice-title {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* "Starting Bento…" while the phone's own server starts. */
+.phone-startup {
+  align-items: center;
+  text-align: center;
+}
+
+/* The phone account's long password on the Backups page. */
+.phone-password {
+  word-break: break-all;
+}
+
+/* "No backup yet" on a phone-only Bento's Recipes page: like the offline
+   note, with Later and Back up side by side. */
+.backup-nudge {
+  flex-wrap: wrap;
+}
+
+.nudge-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

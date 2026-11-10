@@ -1,0 +1,1625 @@
+/* One recipe (pages/RecipeView.tsx, RecipeEdit.tsx): photos, ratings,
+   ingredients, steps and timers, scaling, tags, and editing.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* A recipe's own name is typed by people (accents, ×…): the plain font. */
+.recipe .title-row h1 {
+  font: 700 1.45rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: normal;
+}
+
+/* "Makes  − 6 +" above the ingredients (ScaleControl.tsx), in a small card,
+   then "Scaled from 4. … Reset" once it's changed. */
+.scale-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 4px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.scale-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scale-label {
+  font-weight: 600;
+}
+
+.scale-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.scale-control .icon-button {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.scale-control .icon-button:disabled {
+  color: var(--border);
+  cursor: default;
+}
+
+.scale-value {
+  min-width: 3.5em;
+  padding: 0 4px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scale-note {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.scale-note .link-button {
+  font-size: inherit;
+}
+
+/* The recipe page's Ingredients · Method · Notes (RecipeJumpBar.tsx): just
+   above the ingredients, then stuck at the top of the scrolling page,
+   under the top bar, on the page's own background so the recipe scrolls
+   away under it. */
+.recipe-jump {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  /* Edge to edge: the page's side padding (main), taken back. */
+  margin: -4px -10px;
+  padding: 4px 10px;
+  background: var(--bg);
+}
+
+.recipe-jump .view-switch button {
+  padding: 2px 16px;
+}
+
+/* Recipe page */
+
+.hero,
+.photo-preview {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.photo-preview {
+  max-width: 300px;
+}
+
+/* Ratings, favorites and thumbs up */
+
+/* The household's ratings (OnigiriIcon in icons.tsx); an empty one is just
+   its outline. */
+.onigiri {
+  flex: none;
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.onigiri-rice {
+  fill: var(--rice);
+  stroke: var(--rice-line);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.onigiri-nori {
+  fill: var(--nori);
+}
+
+.onigiri.off .onigiri-rice {
+  fill: none;
+  stroke: var(--rice-off);
+}
+
+.onigiri.off .onigiri-nori {
+  fill: var(--rice-off);
+}
+
+/* A website's own rating: grey ★, so it's never taken for the household's
+   onigiri (a card shows it until someone here rates the recipe). */
+.site-star {
+  color: var(--muted);
+}
+
+.reactions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* On very narrow screens the buttons wrap onto a second line rather than
+   sticking out. */
+.reaction-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+
+.onigiri-picker {
+  display: flex;
+  flex: none;
+}
+
+.onigiri-picker button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.onigiri-picker button:focus-visible,
+.favorites-button:focus-visible,
+.heart-toggle:focus-visible,
+.thumb-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* Heart beside "What we think": outline when off, filled pink when on. */
+.heart-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--heart);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.heart-toggle:hover {
+  background: var(--accent-soft);
+}
+
+/* Over the recipe photo: in its top-right corner, hanging a little off the
+   edge like a badge, on a round white backdrop. */
+.hero-wrap {
+  position: relative;
+}
+
+.heart-toggle.on-photo {
+  position: absolute;
+  /* Above the photo (and on cards, above the card that comes after it). */
+  z-index: 1;
+  top: -8px;
+  right: -8px;
+  background: rgb(255 255 255 / 0.95);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+/* Not a favorite yet: a quiet grey heart. Its circle is solid, as half of
+   it sits off the photo. */
+.heart-toggle.on-photo[aria-pressed="false"] {
+  color: #8a827c;
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+
+.heart-toggle.on-photo[aria-pressed="false"]:hover,
+.heart-toggle.on-photo[aria-pressed="false"]:focus-visible {
+  color: var(--heart);
+}
+
+/* Thumbs up, thumbs down and the heart, at the reaction row's end. */
+.reaction-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-left: auto;
+}
+
+/* Each person's stars as a small pill in their color. */
+.rating-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--person, var(--accent));
+  border-radius: 999px;
+}
+
+/* Their name, cut short with "…" if it's long. */
+.rating-pill-name {
+  max-width: 7em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+/* "★ 4.8 from 2,341 ratings on taste.com.au": in the ratings' own
+   compartment, under the household's. */
+.details-card > .reactions:has(+ .site-rating) {
+  padding-bottom: 2px;
+  border-radius: 8px 8px 0 0;
+}
+
+.details-card > .site-rating {
+  margin-top: -5px;
+  padding-top: 0;
+  font-size: 0.85rem;
+  border-radius: 0 0 8px 8px;
+}
+
+/* The "Cooked" stamp beside "Last had": a round seal, a little crooked,
+   as if pressed by hand. */
+.hanko {
+  flex: none;
+  display: grid;
+  place-content: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 3.5px var(--accent);
+  color: var(--accent);
+  font: 400 0.6rem/1.05 "Pond Pebbles", system-ui, sans-serif;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-9deg);
+  opacity: 0.9;
+}
+
+.hanko-date {
+  font-size: 0.85rem;
+}
+
+/* Thumbs up beside "What we think": grey outline when off, filled in your
+   own color (or the orange, if you haven't picked one) when on. */
+.thumb-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.thumb-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.thumb-toggle[aria-pressed="true"] {
+  color: var(--person, var(--accent));
+}
+
+/* "★ 4 average" followed by each person's pill. */
+.rating-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.description-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.description-box.expandable {
+  cursor: pointer;
+}
+
+.description {
+  margin: 0;
+  /* Keep line breaks typed into hand-written descriptions. */
+  white-space: pre-line;
+}
+
+.description.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+/* The title beside Plan, Edit and Share, wrapping onto more lines; on a
+   very narrow phone the buttons move under it instead of squeezing it. */
+.title-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+/* On a phone the title gets its own line, with Plan, Edit and Share under
+   it, rather than squeezed into a narrow column beside them. */
+.title-row h1 {
+  flex: 1 1 12rem;
+}
+
+.title-row .button {
+  flex: none;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* A recipe's servings and times, in even columns. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+}
+
+/* "Import “Export… .paprikarecipes”?" on Import & export, for a Paprika file
+   opened with Bentotachi from Files, email or chat (Export.tsx). */
+.opened-file {
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.opened-file p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Nutrition per serving (RecipeView.tsx, for people who turned on "Show
+   nutrition"): a small label-like card, a row each, name left and amount
+   right. */
+.nutrition-note {
+  margin: -4px 0 8px;
+  font-size: 0.85rem;
+}
+
+.nutrition-list {
+  margin: 0;
+  padding: 4px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.nutrition-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.nutrition-list > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.nutrition-list dt {
+  color: var(--muted);
+}
+
+.nutrition-list dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* About a recipe, in one card (RecipeView.tsx): the description, a line,
+   the servings and times, then "⏱ Time it". The ✎ sits in the top-right
+   corner, so whatever comes first leaves room for it. */
+.details-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+/* A bento tray: each part (the description, servings and times, tags,
+   ratings, cooking history, "⏱ Time it") in its own compartment. */
+.details-card > :not(.details-edit) {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.details-edit {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+/* Room for the ✎ in the first compartment's corner. */
+.details-card .details-edit + * {
+  padding-right: 44px;
+}
+
+.facts dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Tags and the "+" after them: the same height and pill shape. */
+.tags li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  background: var(--jade-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.recipe section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipe section > p {
+  margin: 0;
+}
+
+.checklist,
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checklist label {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  font-weight: 400;
+  padding: 1px 0;
+  cursor: pointer;
+}
+
+/* A site's category page, to tick which recipes to add (RecipePicker). */
+.recipe-picker h2 {
+  margin: 0;
+}
+
+.picker-all {
+  align-self: flex-start;
+}
+
+.picker-list label {
+  align-items: center;
+  padding: 4px 0;
+}
+
+.picker-photo {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--accent-soft);
+}
+
+.picker-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-state {
+  flex: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* An ingredient with its pantry status on the right. */
+.ingredient-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ingredient-row label {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-dot {
+  flex: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.status-dot.status-have {
+  background: var(--have);
+}
+
+.status-dot.status-low {
+  background: var(--low);
+}
+
+.status-dot.status-out {
+  background: var(--out);
+}
+
+/* "● Have" beside an ingredient. A dotted outline means Bento guessed. */
+/* Quiet (2026-11-06), so the ingredient stays the thing you read: the
+   pantry's level bars and the word in small grey, no outline; only Out is
+   in colour, as something missing is worth noticing while cooking. One
+   width, starting at the same place, so the bars line up down the list. */
+.pantry-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 64px;
+  min-height: 30px;
+  margin-top: 3px;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* A link Bento guessed: a dotted line under the word. */
+.pantry-chip.guessed {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.pantry-chip.status-out {
+  color: var(--out);
+}
+
+.pantry-chip:hover {
+  background: var(--accent-soft);
+}
+
+
+/* Faint, so lines like "water" stay quiet. */
+.pantry-link-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 3px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.pantry-link-button:hover,
+.pantry-link-button:focus-visible {
+  opacity: 1;
+  background: var(--accent-soft);
+}
+
+.pantry-chip:focus-visible,
+.pantry-link-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.list-heading {
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* Each step is a card holding its text (a button: tap to tick it off) and
+   any timers under the text, so they belong to their step rather than
+   floating between cards. */
+.steps > li:not(.list-heading) {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.step {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.step.done,
+.steps > li:has(.step.done) .step-timers {
+  opacity: 0.55;
+}
+
+/* "⏱ 10 min" inside a step that mentions a time, under its text and lined
+   up with it (the card's padding, the number and the gap: 14 + 28 + 12). */
+.step-timers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 14px 12px 54px;
+}
+
+.timer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.timer-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.timer-chip:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.step-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.notes {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* "✓ Finished" at the end of a recipe's method. */
+.finished-cooking {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+/* "Enough: 2 × 500 g" under a recipe line while choosing what to buy. */
+.pick-note {
+  font-size: 0.8rem;
+}
+
+/* A rating pill with thumbs-down reasons: a button that shows them. */
+button.rating-pill {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.rating-pill[aria-expanded="true"] {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--person, var(--accent));
+}
+
+button.rating-pill:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Thumbs-down reasons as tags ("baked pineapple"). */
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.reason-tag button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: -6px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.reason-tag button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Your own reasons, under the stars, while your thumbs down is on. */
+.reasons-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.reasons-question {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Someone's reasons, shown after tapping their pill. */
+.dislike-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: var(--bg);
+  border-left: 3px solid var(--person, var(--accent));
+  border-radius: 8px;
+}
+
+/* Stars plus thumbs up, thumbs down and (without a photo) the heart: a
+   little narrower each, so the row fits a phone (.reaction-row wraps on
+   very narrow screens rather than sticking out). */
+.reactions .onigiri-picker button {
+  width: 31px;
+}
+
+.reaction-toggles .thumb-toggle,
+.reaction-toggles .heart-toggle {
+  width: 38px;
+}
+
+/* The + at the end of your reasons, and the small box it turns into. */
+.reason-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.reason-add.with-text {
+  padding: 0 12px 0 8px;
+}
+
+.reason-add svg {
+  width: 16px;
+  height: 16px;
+}
+
+.reason-add:hover,
+.reason-add:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.reason-typing {
+  padding: 0;
+  border-color: var(--accent);
+}
+
+.reason-typing input {
+  width: 11em;
+  min-height: 28px;
+  padding: 2px 12px;
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  outline: none;
+}
+
+footer .person-name {
+  text-decoration: none;
+}
+
+footer .person-name:hover,
+footer .person-name:focus-visible {
+  text-decoration: underline;
+}
+
+/* The shelf form's "+ Add 'one-pot'" stays under the box it adds from. */
+.add-typed-tag {
+  align-self: flex-start;
+}
+
+.category-suggestions {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+/* Recipe form: tappable tags under the tag box. */
+.tag-field {
+  gap: 10px;
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tag-suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-suggestion-row .tag-panel-label {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+}
+
+/* Tags the recipe itself mentions: outlined, to stand out from the rest. */
+.tag-chip.suggested {
+  border-color: var(--jade-strong);
+  font-weight: 600;
+}
+
+/* "Add to shopping list" under a recipe's ingredients. */
+.add-to-list {
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* All / Missing from pantry / Choose…, where "Add to shopping list" was. */
+.add-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.section-edit {
+  flex: none;
+}
+
+.inline-editor .hint {
+  margin: 0;
+}
+
+.add-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+
+/* Quick tags: "+" after a recipe's tags, and × on each while open. */
+.tags .tag-add,
+.tags .tag-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tags .tag-add {
+  color: var(--accent);
+  font-weight: 700;
+  background: none;
+  border: 1px dashed var(--accent);
+}
+
+.tags .tag-add.open {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-style: solid;
+}
+
+.tags .tag-add:focus-visible,
+.tags .tag-remove:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.quick-tag-panel {
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Photo framer: drag the photo inside a card-shaped frame, zoom with the
+   slider. touch-action: none so dragging doesn't scroll the page. */
+.framer-frame {
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.framer-frame:active {
+  cursor: grabbing;
+}
+
+.framer-frame:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.framer-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.framer-zoom {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.framer-zoom input {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+/* The photos on a recipe page open full size when tapped (PhotoViewer). */
+.hero {
+  cursor: zoom-in;
+}
+
+.hero-button,
+.hero-slide,
+.step-photo {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: zoom-in;
+}
+
+.hero-button {
+  width: 100%;
+}
+
+/* Several photos at the top (HeroPhotos.tsx): swiped sideways, each the
+   same shape, with dots under them. */
+.hero-strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: var(--radius);
+}
+
+.hero-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+.hero-strip .hero {
+  aspect-ratio: 3 / 2;
+  height: auto;
+  max-height: 380px;
+}
+
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hero-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.hero-dots span.on {
+  background: var(--accent);
+}
+
+/* A step's photos, under its text, lined up with it like its timers. */
+.step-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 14px 12px 54px;
+}
+
+.step-photo img {
+  display: block;
+  width: 140px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* A photo full size (PhotoViewer.tsx): dark around it, what can be done
+   with it underneath. */
+.photo-viewer {
+  width: min(900px, 100%);
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 18px;
+}
+
+.photo-viewer::backdrop {
+  background: rgb(0 0 0 / 0.8);
+}
+
+.photo-viewer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+}
+
+.photo-viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.photo-viewer-frame {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  background: #111;
+  border-radius: 10px;
+}
+
+.photo-viewer-frame img {
+  display: block;
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.photo-viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photo-viewer-nav.prev {
+  left: 8px;
+}
+
+.photo-viewer-nav.next {
+  right: 8px;
+}
+
+.photo-viewer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-viewer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photo-step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.photo-step select {
+  font-weight: 400;
+}
+
+.photo-adjust {
+  align-self: flex-start;
+}
+
+.photo-preview {
+  aspect-ratio: 3 / 2;
+}
+
+/* How round each zoomed photo's clip is (photoFraming.ts): the same as its
+   own corners. Cards and the framer's frame are clipped by their box. */
+.hero,
+.photo-preview {
+  --photo-radius: var(--radius);
+}
+
+/* A zoomed photo is enlarged in place (photoFraming.ts), and browsers keep
+   room for the enlarged size even though it's clipped back, which could
+   make the page scroll sideways. The boxes around photos clip it instead.
+   (overflow: hidden first for browsers without clip.) */
+.hero-clip,
+.card-photo,
+.cell-thumb-wrap,
+.dinner-card,
+.chooser-list button,
+.photo-preview-box {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* Just the recipe page's photo (not its heart, which hangs off the edge). */
+.hero-clip {
+  display: block;
+  border-radius: var(--radius);
+}
+
+.hero-clip .hero {
+  display: block;
+}
+
+.photo-preview-box {
+  display: block;
+  max-width: 300px;
+  border-radius: var(--radius);
+}
+
+/* Recipe timer (RecipeTimer.tsx): "⏱ Time it" under the times, then a card
+   with a prep and a cook clock. */
+.timer-start-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.timer-start {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.recipe-timer {
+  gap: 10px;
+}
+
+/* ■ Stop, ⏸ Pause, ▶ Resume: the symbol, then the word. */
+.recipe-timer .actions .button {
+  gap: 7px;
+}
+
+.timer-stages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.timer-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.timer-stage.current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.timer-stage.later {
+  opacity: 0.55;
+}
+
+.timer-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.timer-clock {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-stage.done-stage .timer-clock {
+  font-size: 1.15rem;
+  padding-top: 6px;
+}
+
+.timer-paused {
+  margin: 0;
+}
+
+.timer-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.timer-result {
+  margin: 0;
+  font-weight: 600;
+}
+
+.recipe-timer p.muted {
+  margin: 0;
+}
+
+.timer-rounding {
+  font-weight: 400;
+  font-size: 0.88rem;
+}
+
+/* "Last had … · We cooked this" under the ratings on a recipe page. */
+.cook-history {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cook-history .plan-history {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.cook-history .plan-history p {
+  margin: 0;
+}
+
+/* "4 days ago · 3 times", smaller, under "Last had Mon, Nov 2". */
+.cook-history .plan-history-detail {
+  font-size: 0.8rem;
+}
+
+/* On its own line, "yesterday" starts with a capital. */
+.cook-history .plan-history-detail::first-letter {
+  text-transform: uppercase;
+}
+
+.cooked-button {
+  flex: none;
+}
+
+.cooked-undo {
+  flex: none;
+  font-size: 0.88rem;
+}
+
+/* Extra times like "Cool 420 = 7 h ✕" under Prep / Cook / Total in the
+   recipe editors. */
+.extra-times {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.extra-time {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.8rem 3.2rem 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.extra-time-hint {
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+/* Room for "1440" without the up/down arrows (phones don't show them). */
+.extra-time input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.extra-time input[type="number"]::-webkit-inner-spin-button,
+.extra-time input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* A recipe text box with B / I / U above it (FormatTextarea.tsx). The
+   buttons come after the box in the page, so they're moved up here. */
+.format-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.format-bar {
+  order: -1;
+  display: flex;
+  gap: 4px;
+}
+
+.format-button {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.format-button:hover {
+  background: var(--accent-soft);
+}
+
+.format-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.format-bold {
+  font-weight: 800;
+}
+
+.format-soft {
+  font-style: italic;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.format-underline {
+  text-decoration: underline;
+}
+
+/* Author's notes as separate boxes, like the method (NoteList.tsx). */
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-list p {
+  margin: 0;
+}
+
+.note-item {
+  display: flex;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.note-lines,
+.note-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.note-text {
+  padding: 4px 0;
+}
+
+/* A dash or bullet: a dot in the same place as a step's number. */
+.note-bullet {
+  flex: none;
+  width: 28px;
+  height: 1.5em;
+  display: grid;
+  place-items: center;
+}
+
+.note-bullet::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--jade-strong);
+}
+
+/* The recipe's ⋯ menu: wide enough for its notes, and Delete in red. */
+.recipe-menu {
+  /* Placed on the screen from where the ⋯ is (RecipeMenu.tsx sets the
+     side, width and height), above the sticky bars, scrolling inside when
+     the space is short. */
+  position: fixed;
+  z-index: 20;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.recipe-menu .danger-item {
+  color: var(--danger);
+}
+
+/* Ingredients and Method as cards of their own, like the
+   cards above them. Inside, the scaling box and the steps become light
+   rows instead of cards in a card. Not "recipe-card": that's the recipe
+   list's cards, which this padding squeezed. */
+.recipe-panel {
+  padding: 6px 10px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.recipe-panel .scale-row {
+  background: var(--bg);
+  border-color: transparent;
+}
+
+.recipe-panel .steps {
+  gap: 0;
+}
+
+.recipe-panel .steps > li:not(.list-heading) {
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.recipe-panel .steps > li:not(.list-heading) + li:not(.list-heading) {
+  border-top: 1px solid var(--border);
+}
+
+.recipe-panel .step {
+  padding: 6px 0;
+}
+
+/* Lined up with the step's text: the number and the gap (28 + 12). Its
+   photos too, under the timers. */
+.recipe-panel .step-photos {
+  margin: -4px 0 12px 40px;
+}
+
+.recipe-panel .step-timers {
+  margin: -6px 0 12px 40px;
+}

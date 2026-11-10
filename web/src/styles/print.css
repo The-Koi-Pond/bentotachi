@@ -1,0 +1,85 @@
+/* Printing a recipe: just the recipe, no bars or buttons.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* Printing a recipe: black on white, just the recipe. The bars, buttons,
+   ratings, tags, cooking history and pantry links stay on screen; steps
+   keep their numbers (they're buttons on screen, so they're kept). */
+@media print {
+  :root {
+    --bg: #fff;
+    --surface: #fff;
+    --text: #000;
+    --muted: #444;
+    --border: #bbb;
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* The whole recipe on paper, not just what fits on screen. */
+  .app-frame,
+  .page-scroll {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .topbar,
+  .tabbar,
+  .timer-tray,
+  .toast,
+  .update-banner,
+  .title-actions,
+  .reactions,
+  .quick-tags,
+  .cook-history,
+  .scale-row,
+  .step-timers,
+  .recipe-jump,
+  .add-notes,
+  .heart-toggle,
+  .recipe button:not(.step),
+  .recipe input[type="checkbox"] {
+    display: none !important;
+  }
+
+  .ingredient-row label {
+    padding: 2px 0;
+  }
+
+  .hero-wrap {
+    max-width: 60%;
+  }
+
+  .step {
+    padding: 4px 0;
+    border: none;
+    break-inside: avoid;
+  }
+
+  .steps > li:not(.list-heading),
+  .recipe-panel .steps > li:not(.list-heading) + li:not(.list-heading) {
+    border: none;
+  }
+
+  .recipe-panel {
+    padding: 0;
+    border: none;
+  }
+
+  .ingredient-row {
+    break-inside: avoid;
+  }
+
+  a {
+    color: inherit;
+  }
+}

@@ -104,7 +104,7 @@ export function BookIcon() {
 }
 
 // An onigiri: the household's rating (5 of them), filled or empty. Drawn
-// for Bentotachi (not Lucide); colours from styles.css (--rice, --nori).
+// for Bentotachi (not Lucide); colours from styles/base.css (--rice, --nori).
 // Website ratings stay ★, so the two are never confused.
 export function OnigiriIcon({ size = 14, filled = true }: { size?: number; filled?: boolean }) {
   return (
@@ -269,7 +269,7 @@ export function CloseIcon() {
 }
 
 // A pantry level as a little jar: full (Have), a little left (Low), or empty
-// with its lid off (Out). Coloured by styles.css (.level-jar-*).
+// with its lid off (Out). Coloured by styles/pantry.css (.level-jar-*).
 export function LevelJar({ level, size = 18 }: { level: "have" | "low" | "out"; size?: number }) {
   const filled = { have: 11, low: 4, out: 0 }[level];
   return (

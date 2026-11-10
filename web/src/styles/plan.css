@@ -1,0 +1,934 @@
+/* The meal plan (pages/MealPlan.tsx): week list, month grid, the recipe
+   chooser and the week's shopping sheet.
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* The date range (or month) and the ‹ Today › buttons. */
+/* ‹ 8–21 November ›: the arrows at the ends, what's shown in the middle,
+   "Today" under it once you've moved away. */
+.plan-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-step {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.plan-range {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.plan-range strong {
+  font-size: 1.05rem;
+}
+
+.plan-range .link-button {
+  font-size: 0.85rem;
+}
+
+/* A bento tray: the weeks' names on the rim, each day a compartment, and
+   "Add these to the shopping list" as the last one. */
+.plan-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.plan-days {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+/* Softened umeboshi words, so it reads as a button among the plain
+   compartments without shouting. */
+.plan-tray > .add-to-list {
+  margin: 0;
+  color: color-mix(in srgb, var(--accent) 75%, var(--text));
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.plan-day {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 2px 8px 2px 10px;
+  transition: background 0.1s;
+}
+
+.plan-day + .plan-day {
+  border-top: 3px solid var(--rim);
+}
+
+/* "This week", "Next week": a small heading over each week of the list,
+   on the tray's rim. */
+.plan-week {
+  /* The words in the middle of their bar. */
+  padding: 7px 12px;
+  background: var(--rim);
+}
+
+.plan-week h2 {
+  margin: 0;
+  /* Pond Pebbles needs the size to read at all. */
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--rim-text);
+}
+
+/* Past nights step back without becoming hard to read: the day's name goes
+   grey and photos fade, but the dinner's name keeps full contrast. */
+.plan-day.past .plan-date strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.plan-day.past img,
+.plan-day.past .dinner-no-photo {
+  opacity: 0.6;
+}
+
+.plan-day.today .plan-date strong {
+  color: var(--accent);
+}
+
+/* The place a dragged meal would land on. */
+.plan-meal.drop-here {
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
+/* Several meals a day: the empty ones as small chips in one row
+   ("+ Breakfast  + Lunch") after the planned ones. */
+.plan-empty-meals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.plan-meal.compact .plan-add {
+  width: auto;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.86rem;
+  border-radius: 999px;
+}
+
+.plan-date {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  /* Just wide enough for "Today" and "Nov 10". */
+  width: 46px;
+  line-height: 1.2;
+}
+
+.plan-date span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* A day's meals, one under another (just dinner unless the household plans
+   breakfast or lunch too, when each gets a small label above it). */
+.plan-meals {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selected-day .plan-meal + .plan-meal {
+  margin-top: 8px;
+}
+
+.meal-label {
+  display: block;
+  margin: 2px 0 1px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+/* "+1" beside a month day's number: it has more meals than the one shown. */
+.month-more {
+  margin-left: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.plan-add {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  color: var(--muted);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.plan-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* A meal's dishes as chips in a row, side by side when their names fit,
+   each on its own row when they don't. */
+.plan-meal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.plan-meal > .meal-label,
+.plan-meal > .plan-add {
+  flex-basis: 100%;
+}
+
+.plan-meal > .dinner-slot {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* "+ Add another" under a planned meal: a small chip, not a second row. */
+.plan-add.another {
+  width: auto;
+  min-height: 26px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+}
+
+/* A planned dish is a soft jade chip: its drag dots, the picture close
+   beside them, the name, and + on the last one (the month view's day list
+   adds ✕). */
+.dinner-slot {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 12px 2px 0;
+  background: var(--jade-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* The month view's day list ends its chips with ✕: no extra room needed. */
+.selected-day .dinner-slot {
+  padding-right: 2px;
+}
+
+/* Wide enough for a finger: in the week view it's the only way to move or
+   bin a dish. */
+.dinner-slot .drag-handle {
+  align-self: stretch;
+  width: 28px;
+  height: auto;
+  opacity: 0.6;
+  border-radius: 0;
+}
+
+/* Inside the chip, so the outline isn't cut off by its edge. */
+.dinner-slot .drag-handle:focus-visible {
+  outline-offset: -3px;
+}
+
+.dinner-slot .dinner-card {
+  gap: 6px;
+  padding: 0;
+}
+
+.dinner-slot .dinner-card img,
+.dinner-slot .dinner-no-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+/* "Add another recipe" beside a meal's chips: a small dashed circle, like
+   "+ Add dinner", quiet so the meals stand out. */
+.plan-add-dish {
+  flex: none;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.plan-add-dish svg {
+  width: 16px;
+  height: 16px;
+}
+
+.plan-add-dish:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-add-dish:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* A drawn bento on the jade chip: on white with a jade ring, so it shows. */
+.dinner-slot .stand-in {
+  background: var(--surface);
+  box-shadow: 0 0 0 1.5px var(--jade-strong);
+}
+
+.dinner-slot .icon-button {
+  min-width: 26px;
+  min-height: 26px;
+}
+
+/* ✕ (the month view's day list) in umeboshi: it takes something off. */
+.dinner-slot .icon-button[aria-label^="Take"] {
+  color: var(--accent);
+}
+
+/* The bin that rises over the tab bar while a meal is dragged: drop it in
+   to take it off the plan (with Undo). */
+.plan-bin {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  display: flex;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  background: var(--rim);
+  animation: bin-rise 0.15s ease-out;
+}
+
+.plan-bin-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+}
+
+.plan-bin.over .plan-bin-inner {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.plan-bin.over svg {
+  transform: rotate(-12deg) scale(1.15);
+}
+
+@keyframes bin-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-bin {
+    animation: none;
+  }
+}
+
+/* The original stays put (faded) while its copy follows your finger. */
+.dinner-slot.dragging {
+  opacity: 0.35;
+}
+
+/* Only the handle starts a drag, so scrolling the list still works. */
+.drag-handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:focus-visible,
+.plan-add:focus-visible,
+.dinner-card:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dinner-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.dinner-card img,
+.dinner-no-photo {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.dinner-no-photo {
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+}
+
+.dinner-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dinner-card.lifted img,
+.dinner-card.lifted .dinner-no-photo {
+  border-radius: 50%;
+}
+
+/* The copy that follows your finger while dragging: the chip, lifted. */
+.dinner-card.lifted {
+  padding: 2px 12px 2px 2px;
+  background: var(--jade-soft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+}
+
+/* Note nights ("Take-away night") have a paper tile instead of a photo. */
+.dinner-no-photo.note {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+}
+
+.note-card .dinner-title {
+  font-style: italic;
+}
+
+.chooser-count {
+  align-self: center;
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+/* The scrolling list of recipes to choose from (and the pantry link
+   sheet's items): a bento tray, each a compartment. It scrolls inside the
+   sheet, so the note tray under it stays in view. */
+.chooser-list {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.chooser-list > li {
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+/* The chooser's search and its filters, one tray (like the Recipes
+   page's). */
+.chooser-search,
+.chooser-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.chooser-search > input,
+.chooser-note-row > input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.chooser-filters,
+.chooser-note-picks,
+.chooser-note-row {
+  display: flex;
+  gap: 4px;
+}
+
+.chooser-filters > button,
+.chooser-note-picks > button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.chooser-filters > button[aria-pressed="true"] {
+  background: var(--jade-soft);
+}
+
+.chooser-filters > button:focus-visible,
+.chooser-note-picks > button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.chooser-note-row > .button {
+  border: none;
+  border-radius: 8px;
+}
+
+/* "Or just a note", in the note tray's rim. */
+.chooser-note {
+  padding-top: 0;
+  flex: none;
+}
+
+.chooser-note > h3 {
+  margin: 0;
+  padding: 7px 8px 1px;
+  font-size: 0.95rem;
+  color: var(--rim-text);
+}
+
+.chooser-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 6px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.chooser-list button:hover {
+  background: var(--jade-soft);
+}
+
+.chooser-list button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.chooser-list img,
+.chooser-list .dinner-no-photo {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.chooser-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chooser-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.chooser-heart {
+  display: inline-flex;
+  color: var(--heart);
+}
+
+.chooser-details {
+  font-size: 0.82rem;
+}
+
+/* "Planned Tue" and "Out of Rice" under a recipe: worth knowing, not
+   alarming, so not red. */
+.chooser-planned {
+  color: var(--muted);
+}
+
+.chooser-out {
+  color: color-mix(in srgb, #c25e00 80%, var(--muted));
+}
+
+@media (prefers-color-scheme: dark) {
+  .chooser-out {
+    color: #e8a35c;
+  }
+}
+
+/* "🎲 Surprise me" and the recipe count, loose between the trays. */
+.chooser-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: var(--tray-inset);
+}
+
+.chooser-tools .button.small {
+  min-height: 30px;
+  padding: 2px 12px;
+}
+
+/* Bento's random pick, above the list: a plum tray, so it stands out from
+   the jade ones, its line in the rim, the recipe and the buttons as
+   compartments. */
+.suggestion {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px 4px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.suggestion-label {
+  margin: 0;
+  padding: 7px 8px 1px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.suggestion-recipe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.suggestion-recipe img,
+.suggestion-recipe .dinner-no-photo {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.suggestion-actions > .button {
+  flex: 1;
+  min-height: 36px;
+  border: none;
+  border-radius: 8px;
+}
+
+.suggestion-actions > .button:not(.primary) {
+  background: var(--surface);
+}
+
+/* Month view */
+
+/* In the plan's bento tray (.plan-tray): the weekdays on the rim, each day
+   a compartment. */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.month-weekday {
+  padding: 1px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--rim-text);
+}
+
+.month-cell {
+  border-radius: 7px;
+}
+
+.month-cell-button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 1 / 1.15;
+  padding: 3px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.month-cell-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.month-day {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: left;
+}
+
+/* Days of the months either side: faint dashed ghosts of compartments, so
+   they read as neither today's filled one nor the weekday letters. */
+.month-cell.other-month .month-cell-button {
+  color: color-mix(in srgb, var(--rim-text) 30%, transparent);
+  background: none;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--rim-text) 15%, transparent);
+}
+
+.month-cell.other-month .month-day {
+  font-weight: 500;
+}
+
+.month-cell.today .month-day {
+  color: var(--accent);
+}
+
+/* Today is the filled compartment. */
+.month-cell.today .month-cell-button {
+  background: var(--jade-soft);
+}
+
+.month-cell.selected .month-cell-button {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* The day a dragged dinner would land on. */
+.month-cell.drop-here .month-cell-button {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* The dinner picture fills the rest of the day. Dragging it doesn't scroll. */
+.cell-thumb-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  touch-action: none;
+  cursor: grab;
+}
+
+.cell-thumb-wrap.dragging {
+  opacity: 0.35;
+}
+
+.cell-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.cell-thumb.dinner-no-photo {
+  font-size: 1rem;
+}
+
+/* The copy that follows your finger while dragging in the month view. */
+.cell-thumb.lifted {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  cursor: grabbing;
+}
+
+/* The chosen day's meals: the month tray's compartment under the days. */
+.selected-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.selected-day h2 {
+  font-size: 1rem;
+}
+
+/* "📅 Plan" on a recipe page, and its little pop-up. */
+/* The Plan popup hangs from the whole title row, at its right edge, rather
+   than from Plan, Edit and ⋯: on a phone those sit at the left, under the
+   title, and a popup right-aligned to them ran off the screen. */
+.title-actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.title-actions .button {
+  gap: 6px;
+}
+
+.plan-popup {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.plan-popup p {
+  margin: 0;
+}
+
+/* Day and meal side by side, the button below them when there's no room:
+   squeezed onto one line, the meal shrank to an empty sliver (a tester). */
+.plan-popup .add-row {
+  flex-wrap: wrap;
+}
+
+/* A set width: the popup fits its contents, and a date box has none of its
+   own (it shrinks to fit wherever it is). */
+.plan-popup .date-field {
+  flex: 1 1 10rem;
+  min-width: 10rem;
+}
+
+.plan-popup select,
+.plan-popup .button {
+  flex: none;
+  width: auto;
+}
+
+.chooser-list .status-dot {
+  margin: 0 6px;
+}
+
+.chooser-list button[aria-pressed="true"] {
+  background: var(--accent-soft);
+}
+
+/* "Shop for the planned dinners" panel. */
+.week-dinners {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.week-list {
+  margin: 0;
+}
+
+.week-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.week-row-for {
+  font-size: 0.8rem;
+}
+
+.week-row-state {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.week-row-state.status-out {
+  color: var(--out);
+}
+
+.suggestion .dinner-no-photo {
+  background: var(--surface);
+}
+
+/* "Last had 2 weeks ago" on a recipe page. */
+.plan-history {
+  margin: -4px 0 0;
+  font-size: 0.88rem;
+}
+
+.cell-thumb {
+  --photo-radius: 5px;
+}
+
+.chooser-list img {
+  --photo-radius: 8px;
+}

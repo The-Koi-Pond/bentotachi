@@ -133,7 +133,7 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
 - Detailed versions where there's room, simple ones where it's small (the
   app icon, next to the title).
 
-**Colours** (the app's own, in `web/src/styles.css`; light and dark):
+**Colours** (the app's own, in `web/src/styles/base.css`; light and dark):
 
 | | Light | Dark |
 |---|---|---|

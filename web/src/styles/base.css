@@ -1,0 +1,1263 @@
+/* The shared look: colours, type, and the pieces every screen is built
+   from (buttons, forms, cards, trays, sheets, chips, help).
+   One of the stylesheets main.tsx loads, in the order listed there: when two
+   rules tie, the later file wins, so a new file goes in that list on purpose. */
+
+/* Light is "tea-rice": a near-white with a hint of jade, and an umeboshi
+   (pickled plum) accent, chosen 2026-11-04 to stop looking like the
+   cream-and-clay "Claude look" (C:\Projects\TheKoiPond\AI-DESIGN-TELLS.md).
+   Plum on white: 6.7; plum on the background: 6.1. */
+:root {
+  --bg: #f3f6f4;
+  --surface: #ffffff;
+  --text: #2b2420;
+  --muted: #5f6b67;
+  --border: #d8dddb;
+  --accent: #a82d4a;
+  --accent-text: #ffffff;
+  --accent-soft: #f4e4e7; /* plum text on it: 5.45 */
+  /* Jade, the second accent (the title's leaf): "done, have, on" (tags,
+     ticks, switches that are on, good news, pantry "have"). Plum stays
+     for "do this, selected, now": buttons, links, the selected thing. */
+  --jade-soft: #e2efeb;
+  --jade-strong: #3f7668;
+  --jade-strong-text: #ffffff;
+  --danger: #b3261e;
+  --success: #3f7668;
+  /* Pantry statuses. */
+  --have: #3f7668;
+  --low: #e0a100;
+  --out: #c62828;
+  --gold: #e0a100;
+  --heart: #d6336c;
+  /* The household's ratings are onigiri: rice, its
+     outline, the nori, and an empty one's outline. */
+  --rice: #fffdf6;
+  --rice-line: #3a2f28;
+  --nori: #24312d;
+  --rice-off: #c9cfcc;
+  /* A bento tray's rim, and words on it (docs/VISION.md, "Bento trays"). */
+  --rim: #b9d6cd;
+  --rim-text: #24312d;
+  /* Loose lines between trays start where a tray's compartments do. */
+  --tray-inset: 8px;
+  --radius: 12px;
+  --tabbar-height: 60px;
+  color-scheme: light;
+}
+
+/* Dark mode is "pond at night" (The Koi Pond's BRAND.md, chosen 2026-11-01):
+   the pond at night, a teal-tinted near-black, as bright as the warm stone
+   it replaced, so every contrast ratio stayed the same. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141b1b;
+    --surface: #202928;
+    --text: #f1ebe5;
+    --muted: #a9b3ae;
+    --border: #34403e;
+    --accent: #ee7d92; /* on the background: 6.6, dark text on it: 6.6 */
+    --accent-text: #141b1b;
+    --accent-soft: #33282c; /* plum text on it: 5.39 */
+    --jade-soft: #1d3330;
+    --jade-strong: #7fbfae;
+    --jade-strong-text: #141b1b;
+    /* More orange than the pink-plum accent, so errors don't look like links.
+       On the background: 7.6; on cards: 6.4. */
+    --danger: #ff8a65;
+    --success: #7fbfae;
+    --have: #7fbfae;
+    --low: #ffca28;
+    --out: #ef5350;
+    --gold: #ffca28;
+    --heart: #f06595;
+    --rice: #f4efe4;
+    --rice-line: #f4efe4;
+    --nori: #1c2624;
+    --rice-off: #4a5653;
+    --rim: #2c4a44;
+    --rim-text: #e2efeb;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* When the phone or computer asks for less motion, nothing slides or fades:
+   switches and highlights change straight away. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Pond Pebbles, The Koi Pond's own display font (a copy of the studio's,
+   the-koi-pond.github.io/font). For page titles only, never body text
+   (BRAND.md); it has no accented letters, so never for anything people
+   type, like recipe names. */
+@font-face {
+  font-family: "Pond Pebbles";
+  src: url("../assets/PondPebbles.woff2") format("woff2");
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  /* Compact on purpose (docs/VISION.md, "Compact, not airy"). */
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1,
+h2 {
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* Page titles ("Dinner plan", "Pantry"…) in Pond Pebbles. */
+h1 {
+  font: 400 1.8rem/1.1 "Pond Pebbles", system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+/* Section headings on a page ("Ingredients", "Got it"), shelf and pantry
+   place names: Pond Pebbles too (docs/VISION.md, "Bento touches"). Not in
+   pop-ups, whose titles are often a recipe's own name. A letter the font
+   doesn't have (accents) falls back to the phone's font by itself. */
+main h2:not(dialog *),
+.shelf-toggle,
+.pantry-place h2 button {
+  font-family: "Pond Pebbles", system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Light Pond Pebbles on dark looks thinner than dark on light: in dark mode
+   the headings get a dark outline (tight shadows) to stand off the rim. */
+@media (prefers-color-scheme: dark) {
+  main h2:not(dialog *) .drawer-label,
+  main h2:not(dialog *):not(:has(.drawer-label)) {
+    text-shadow:
+      -1px 0 0 rgb(0 0 0 / 0.6),
+      1px 0 0 rgb(0 0 0 / 0.6),
+      0 -1px 0 rgb(0 0 0 / 0.6),
+      0 1px 0 rgb(0 0 0 / 0.6),
+      0 1px 3px rgb(0 0 0 / 0.48);
+  }
+}
+
+/* Counts and badges beside them stay in the phone's font: small text. */
+.shelf-toggle .drawer-counts,
+.pantry-place h2 .place-count,
+.pantry-place h2 .badge {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.icon-button[aria-expanded="true"] {
+  background: var(--accent-soft);
+}
+
+/* Filled orange circle: the main action (+), or Manage while it's on. */
+.icon-button.primary,
+.icon-button.primary:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.icon-button:focus-visible,
+.menu-panel button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.menu-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s;
+}
+
+/* Jade means "done, have, on"; orange keeps "do this, selected, now"
+   (The Koi Pond's BRAND.md). A switch that's on is calm, so it's jade. */
+[aria-checked="true"] > .switch {
+  background: var(--jade-strong);
+}
+
+[aria-checked="true"] > .switch::after {
+  transform: translateX(16px);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Loose lines between bento trays ("6 recipes · Close all shelves",
+   "Got it", "From recipetineats.com") don't reach past where a tray's
+   compartments start (docs/VISION.md). */
+.list-options,
+.shelf-empty-line,
+.add-notes,
+.small-print,
+.section-head:has(> h2),
+main > .stack > :is(h2, p),
+main > .stack > section:not(.tray-section, .card) > :is(h2, p) {
+  padding-inline: var(--tray-inset);
+}
+
+/* Page titles ("Browse", a recipe's name) too: on the left only, so a
+   switch or buttons beside one still line up with the trays' right edge.
+   Not the recipe editor's, which is inside its card already. */
+main h1:not(.card h1) {
+  padding-inline-start: var(--tray-inset);
+}
+
+/* A section as one bento tray: its heading (and a button beside it) in the
+   tray's top rim, like a recipe shelf or a pantry place, and what follows
+   as compartments (Browse's sites, the shopping list's "Got it"). */
+.stack.tray-section {
+  gap: 5px;
+  padding: 0 5px 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.tray-section > h2,
+.tray-section > .section-head {
+  margin: 0;
+  padding: 7px 8px 0;
+  color: var(--rim-text);
+}
+
+.tray-section > .section-head > h2 {
+  color: var(--rim-text);
+}
+
+/* A button in the rim beside the heading ("+ Add a site", "Clear ticked
+   items"): slim, so the rim stays a rim rather than a toolbar. */
+.tray-section > .section-head .button.small {
+  min-height: 28px;
+  padding: 1px 12px;
+  font-size: 0.85rem;
+}
+
+.tray-section > p {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+/* The lists inside are compartments already: no tray of their own. */
+.tray-section > .site-list {
+  gap: 5px;
+  padding: 0;
+  background: none;
+}
+
+.tray-section > .shopping-list {
+  border: none;
+  border-radius: 8px;
+  overflow: clip;
+}
+
+/* The gap spaces a stack's paragraphs: without this the browser's own 1em
+   margin came on top, 33px around every grey intro line (2026-11-06).
+   :where keeps it weaker than any class that sets a margin on purpose. */
+:where(.stack) > p {
+  margin: 0;
+}
+
+.narrow {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* 20px felt airy on a phone. */
+  padding: 16px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  margin: 0;
+}
+
+.small-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.success {
+  color: var(--success);
+  margin: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-head .button {
+  gap: 6px;
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* The pages' main boxes (Pantry, Shopping list, Browse): a bento tray, the
+   box and its button side by side as compartments, one control rather
+   than two (like the Recipes page's search, .toolbar). */
+.add-row.joined {
+  gap: 4px;
+  padding: 4px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+.add-row.joined > :first-child input,
+.add-row.joined > input:first-child {
+  background: var(--surface);
+  border: none;
+  border-radius: 8px;
+}
+
+.add-row.joined > .button {
+  align-self: stretch;
+  min-height: 0;
+  padding-inline: 18px;
+  border: none;
+  border-radius: 8px;
+}
+
+/* Typing in it (or tabbing to its button) outlines the whole thing, box
+   and button together, instead of the box alone. The small ✕ and 📷
+   inside Pantry's box get their own ring instead (below). */
+.add-row.joined:has(input:focus-visible, > .button:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.add-row.joined .find-box button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: 6px;
+}
+
+.add-row.joined input:focus-visible,
+.add-row.joined .find-box:has(input:focus-visible),
+.add-row.joined .button:focus-visible {
+  outline: none;
+}
+
+/* Tabbed to the button (a keyboard): a ring inside it, so it's clear the
+   button is the one in focus, not the box. */
+.add-row.joined .button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-text);
+}
+
+/* Two-way switches (Simple | Detailed, List | Month…): the chosen one bold
+   with a wooden chopstick under it, the other faded (Xel's design,
+   docs/VISION.md "Bento touches"). */
+.view-switch {
+  display: flex;
+  padding: 2px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.view-switch button {
+  position: relative;
+  min-height: 32px;
+  padding: 2px 12px 6px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.view-switch button[aria-pressed="true"],
+.view-switch button[aria-current="true"] {
+  color: var(--text);
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* The chopstick: plain wood, a touch thicker at one end. */
+.view-switch button[aria-pressed="true"]::after,
+.view-switch button[aria-current="true"]::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 4px;
+  background: #a87a43;
+  border-radius: 3px 2px 2px 3px;
+  clip-path: polygon(0 0, 100% 25%, 100% 75%, 0 100%);
+}
+
+.view-switch button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.help-box svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+/* The app's own "are you sure?" (askFirst.ts): the question, then its two
+   buttons on the right, the yes last. */
+.ask-dialog {
+  width: min(380px, calc(100% - 32px));
+  padding: 18px 18px 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+
+.ask-dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.ask-dialog p {
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+.ask-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* The dinner chooser: a panel that slides up from the bottom. */
+.sheet {
+  width: min(760px, 100%);
+  max-width: 100%;
+  max-height: 88vh;
+  margin: auto auto 0;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: none;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25);
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.sheet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 88vh;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sheet-head h2 {
+  font-size: 1.1rem;
+}
+
+/* "or choose a recipe", between the note box and the recipe search. */
+.sheet-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.sheet-divider::before,
+.sheet-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.filter-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chips button {
+  min-height: 36px;
+  padding: 4px 14px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filter-chips button[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.filter-chips button.plain {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Collapsible drawers (Pantry places, Recipes shelves) */
+
+.drawer-toggle {
+  display: flex;
+  /* Badges move under the name when there isn't room beside it. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.drawer-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.place-toggle {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+
+.chevron {
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: transform 0.15s;
+}
+
+.drawer-toggle[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+.drawer-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 6px;
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.badge {
+  white-space: nowrap;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* The pantry's find-or-add box: looks like one text box, with Clear and
+   Scan inside it. */
+.find-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.find-box:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.find-box input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+}
+
+.find-box input:focus-visible {
+  outline: none;
+}
+
+.find-clear,
+.find-scan {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.find-scan {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.pantry-name:focus-visible,
+.link-button:focus-visible,
+.filter-chips button:focus-visible,
+.status-meter:has(select:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.link-button {
+  align-self: flex-start;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* A tray's fields sit in one compartment. */
+.tray-section > .tray-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.icon-button.small {
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+}
+
+.hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 400;
+}
+
+/* The "?" beside a heading or box (Help.tsx), and the tip it opens right
+   underneath. */
+/* A 22 px circle with a bigger area to tap (::before). */
+.help-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  vertical-align: middle;
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.help-button::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+}
+
+/* Ingredients and Method on the Edit page (RecipeEdit's LinesField): laid
+   out like a label around its box. */
+.lines-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.lines-field > span > label {
+  display: inline;
+}
+
+/* A pantry field with its "?" beside the label ("A kind of", "Where it
+   lives"). */
+.kind-of-field,
+.field-with-help {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.kind-of-field > span > label,
+.field-with-help > span > label {
+  display: inline;
+}
+
+.kind-of-field input,
+.field-with-help input,
+.field-with-help select {
+  font-weight: 400;
+}
+
+.help-button[aria-expanded="true"] {
+  color: var(--accent);
+}
+
+.help-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.help-box {
+  margin: 6px 0 2px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
+/* As a bubble over the page (Help.tsx places it), pointing at its "?". */
+.help-box.help-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(320px, calc(100vw - 16px));
+  /* The pointer sticks out above (or below) the bubble. */
+  overflow: visible;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+
+.help-pop::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: calc(var(--pointer, 20px) - 6px);
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.help-pop.above::before {
+  top: auto;
+  bottom: -6px;
+  transform: rotate(225deg);
+}
+
+.help-box p {
+  margin: 0;
+}
+
+.help-box p + p {
+  margin-top: 6px;
+}
+
+/* Forms */
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  width: 100%;
+}
+
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--jade-strong); /* ticked = done: jade */
+}
+
+input[type="file"] {
+  padding: 8px;
+}
+
+select {
+  min-height: 44px;
+  cursor: pointer;
+}
+
+select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.button:focus-visible,
+.step:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.search {
+  font-size: 1.05rem;
+  padding: 12px 14px;
+}
+
+/* Buttons */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* A decorative mark before a button's words ("📷 Scan"), hidden from screen
+   readers. Buttons are flex boxes, which drop the space after it. */
+.button-mark {
+  margin-inline-end: 0.35em;
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.button.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+
+.button.small {
+  min-height: 36px;
+  padding: 4px 14px;
+  font-size: 0.92rem;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Something drawn as a button that can't be disabled itself (a link, a
+   file picker's label), not usable now. */
+.button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* A row of buttons, lined up on the right: the main one (Save, Add…) last,
+   in the right-hand corner, with Cancel just before it. Delete, Remove or
+   Reset go first with .push-left, away on the left. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.push-left {
+  margin-right: auto;
+}
+
+.empty {
+  text-align: center;
+  align-items: center;
+}
+
+/* The onigiri in a mood (Brand.tsx): on empty screens, and small beside a
+   message (.with-ben). */
+.ben-mood {
+  display: block;
+  width: 120px;
+  height: auto;
+}
+
+.ben-mood.small {
+  flex: none;
+  width: 72px;
+}
+
+.with-ben {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.with-ben > p {
+  margin: 0;
+}
+
+/* A person's name in their color. */
+.person-name {
+  font-weight: 700;
+  color: var(--person, var(--accent));
+}
+
+.small-print {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-size: 0.92rem;
+}
+
+.small-print p {
+  margin: 0;
+}
+
+/* Buttons on their own at a card's or list's end sit at the right
+   (2026-11-06), like Save; only Delete and the like stay at the left. */
+.end-button {
+  align-self: flex-end;
+}
+
+/* Profile pictures, or a first letter on the person's color. */
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-initial {
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--person, var(--accent));
+}
+
+/* "My colour · Teal ?" on one line. */
+.field-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A field's name with "(optional)" beside it, on one line. */
+.label-text {
+  display: block;
+}
+
+.optional {
+  font-size: 0.85em;
+  font-weight: 400;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+/* A box with a ✕ inside on the right that empties it (Add recipe's link). */
+.clearable {
+  position: relative;
+}
+
+.clearable input {
+  padding-right: 48px;
+}
+
+/* Our own ✕ instead of Chrome's (Android's web view), not both. */
+.clearable input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Browse's search box, beside its Search button. */
+.add-row .clearable {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-row .clearable input {
+  width: 100%;
+}
+
+.clearable .clear-field {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.clearable .clear-field:hover,
+.clearable .clear-field:focus-visible {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.clearable .clear-field:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Recipe shelves and pantry places: drawers that open and close, each a
+   bento tray with its name on the rim. A shelf's recipes are its
+   compartments (empty ones fill out the last row: .recipe-filler); a
+   place's subcategories are its (the rim between them: .pantry-sublabel
+   below). */
+.shelf,
+.pantry-place {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 5px;
+  background: var(--rim);
+  border-radius: var(--radius);
+}
+
+/* Its front: the name (which opens and closes it); in Edit mode, the grip
+   to drag it before that and "Edit shelf" after. */
+.shelf-head,
+.pantry-place > h2 {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 5px 0 3px;
+}
+
+.pantry-place > h2,
+.pantry-place > h2 button,
+.pantry-place > h2 .place-count,
+.shelf-head,
+.shelf-head button,
+.shelf-head .drawer-counts {
+  color: var(--rim-text);
+}
+
+/* Closed: the front is all there is. */
+.shelf-head:last-child,
+.pantry-place > h2:last-child {
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.field-label {
+  font-weight: 600;
+}
+
+/* Recipe text in *asterisks*: soft grey italics (see SoftText.tsx). */
+em.soft {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* A file picker that looks like the buttons beside it: the real input is
+   kept (for keyboards and screen readers) but out of sight. */
+.file-button {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.file-button:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Something to act on, but not an error ("No backup saved yet"). */
+.warning-text {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Icon-only buttons beside a recipe's title (its ⋯, RecipeMenu.tsx). */
+.button.icon-only {
+  padding: 8px 10px;
+}
