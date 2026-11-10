@@ -197,6 +197,10 @@ Changes already live in the browser version, not yet in a published APK
 
 Not released yet:
 
+(nothing yet)
+
+Released in 1.23.0 (2026-11-10, deployed the same day):
+
 - Short messages after a tap ("The scanner isn't ready yet", "already on
   the list", "Moved to the Fridge", a failed delete) show at the bottom
   like Undo, and go by themselves.
@@ -247,6 +251,10 @@ Not released yet:
   database change (pantry_packets_dates) moves each item's current date
   and opened state onto its oldest one in stock: try it on a copy of a
   real backup before deploying (.claude/rules/pi.md).
+- Fixes from the pantry review: Edit places opens again after its
+  questions; "Other" can't be a place's name; correcting a label's size
+  moves its barcode along; a settings change before the settings loaded
+  no longer makes a second settings record.
 
 Released in 1.22.0 (2026-11-09, deployed the same day):
 
