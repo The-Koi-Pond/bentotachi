@@ -184,7 +184,7 @@ they say otherwise.
   tray (things that belong together): the `--rim` / `--rim-text` colours,
   a 5px rim around compartments of `--surface` with 8px corners; see the
   recipe box, pantry places, shopping list, plan and tab bar in
-  `styles.css`, and docs/VISION.md "Bento trays" for where they go.
+  `styles/`, and docs/VISION.md "Bento trays" for where they go.
 - "Label" means two things: on screen, a packet in stock (its "label" chip,
   docs/VISION.md); in code, also a group's display text (`packetGroups`'
   `.label`). A packet's brand and size as words: `packetName`
@@ -208,6 +208,64 @@ they say otherwise.
   put back `packetToSave`, the last one making it Out `lastPacketRunsOut`,
   what adding one changes on the item `itemAfterPacket` / `learnsBarcode`.
 
+## Styles (`web/src/styles/`)
+
+- One stylesheet per screen, loaded by `main.tsx` in a fixed order: `base`
+  (colours, type, and the pieces every screen shares: buttons, forms,
+  cards, trays, sheets, chips, help), `shell` (top bar, menu, tab bar,
+  timer tray, toasts), then `fridge`, `browse`, `shopping`, `plan`,
+  `pantry`, `recipe-list`, `recipe`, `dates`, `settings`, `print`.
+- A screen's styles go in its own file. A new piece two screens use goes
+  in `base.css`, not a copy in each. Some older shared pieces still live
+  in the file of the screen they began on, among them: tag chips
+  (`.tag-chip`), the no-photo box (`.stand-in`) and the quick-recipe mark
+  (`.quick-time`) in `recipe-list.css`; site rows (`.site-list`,
+  `.site-row`) in `browse.css`; the pantry dot beside an ingredient
+  (`.status-dot`) in `recipe.css`; the drag handle (`.drag-handle`) and
+  the gathered-ingredients list (`.week-list`) in `plan.css`; list
+  dividers (`.divider-label`) in `shopping.css`; store logos
+  (`.store-logo`) in `pantry.css`. So grep for a class before assuming
+  where it is.
+- The order matters: when two rules of the same weight style one element,
+  the later file wins. So a screen's rule can adjust a piece from
+  `base.css` (`.pantry-card-actions > .button`), but a rule in `base.css`
+  can't out-vote a screen's, and a rule in an earlier screen's file can't
+  out-vote a piece kept in a later one (`plan.css` adjusts `.stand-in`
+  only with a heavier selector, `.dinner-slot .stand-in`). Don't reorder
+  the imports or move a rule to another file without checking what it
+  then loses to or beats. Every stylesheet is imported in `main.tsx`,
+  nowhere else.
+- After a change that should look the same (moving, merging or tidying
+  rules), or to see exactly what a restyle touches: `npm run style-check`
+  (in `web`; `web/scripts/style-check.mjs`). It lists what differs between
+  the committed stylesheets and the files as they are; `-- --quick` for
+  phone width in light only, `-- --from <commit or tag>` for another
+  starting point. How it works: it builds the app into a temporary folder
+  and opens every screen in a hidden Edge or Chrome
+  (`headlessBrowser.mjs`), each of four passes (phone and desktop width,
+  light and dark) on its own throwaway server with the sandbox's made-up
+  household. On each screen it reads every element's styles under the old
+  stylesheets, then the new, on the very same elements; then again with
+  everything that folds open opened, after each tap in its `OPENERS`, and
+  three more times under a device setting (`SPECIAL_LOOKS`: the recipe
+  page printed, the fridge and the plan with less motion). `@keyframes`
+  are compared as text, and a relative font or picture address the build
+  couldn't find stops it.
+  - A new screen gets a line in its `ROUTES`; a new sheet, menu or editor
+    its opening taps in `OPENERS`; made-up data only one screen needs, a
+    line in its `seed`.
+  - It can't see: hover and keyboard-focus looks; a drag in progress, or
+    anything else only on screen mid-gesture (the plan's bin, a peeling
+    fridge note), in any look; anything behind a tap that isn't in
+    `OPENERS`; widths other than 370 and 1200 px; the app's own Light /
+    Dark choice (it switches the device's setting, which Auto follows);
+    whether a font really loads (an absolute address that's wrong passes).
+  - Its made-up pantry is marked so no item looks for its photo online:
+    nothing in a run may wait on Open Food Facts or a store's website.
+  - It ends with 0 for no difference, 1 for differences, 2 when it
+    couldn't run or a screen was still loading when looked at. Taps that
+    found nothing to tap are listed, never hidden.
+
 ## Scripts (`web/scripts/`)
 
 - The Pi: `piConfig` (address, key, `sshOptions`), `onPi` to run a command
@@ -215,3 +273,17 @@ they say otherwise.
   `refuseUncommittedCode` (`committed.mjs`). All checks before sending:
   `runTests` (`tests.mjs`). Android builds with the right Java: `run`
   (`buildTools.mjs`).
+- A made-up household on a throwaway server: `fillSandbox(api)`
+  (`sandbox-fill.mjs`, the data in `sandbox-data.mjs`), with `sandboxCall`
+  for one more request and `sandboxDay` for a date some days from today.
+  The sandbox and the style check both use it; a script that needs a
+  filled server does too, adding only what it alone needs.
+- A throwaway PocketBase (a temporary folder, never `server/pb_data`,
+  `--automigrate=false`): `startTestServer({ port, prefix })`
+  (`testServer.mjs`), which waits until it answers, notices one that quit
+  as it started, and gives back `stop()` (ends it, deletes its folder,
+  never throws). `portFree(port)` for "is anything there?". The tests, the
+  sandbox and the style check all start theirs with it.
+- A hidden browser without a browser package: `openBrowser(folder)`
+  (`headlessBrowser.mjs`): `open(url, ready)` for a fresh load that waits
+  until the screen has finished fetching, `evaluate`, `send`.

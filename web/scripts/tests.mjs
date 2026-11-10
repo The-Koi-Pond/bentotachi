@@ -13,11 +13,11 @@
 //      engine (engineHooks), then the end-to-end checks
 //      (server/test/*.check.mjs).
 
-import { execFileSync, execSync, spawn } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { execFileSync, execSync } from "node:child_process";
+import { cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { startTestServer } from "./testServer.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const root = join(web, "..");
@@ -48,16 +48,6 @@ function nodeTests(label, cwd, patterns, env = {}) {
   if (!count) throw new TestsFailed(`The ${label} found nothing to run. Check: ${again}`);
   console.log(`${label}: ${count} passed`);
   return count;
-}
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function answers(url) {
-  try {
-    return (await fetch(url)).ok;
-  } catch {
-    return false;
-  }
 }
 
 // The hooks for the throwaway server: a copy of pb_hooks, plus the server's
@@ -114,24 +104,19 @@ async function engineTests(base) {
 }
 
 async function serverChecks() {
-  const exe = join(server, "pocketbase.exe");
-  if (!existsSync(exe)) throw new TestsFailed(`No ${exe}, so the end-to-end checks can't run (see README: First-time setup).`);
-  const health = `http://127.0.0.1:${CHECK_PORT}/api/health`;
-  if (await answers(health)) throw new TestsFailed(`Something is already running on port ${CHECK_PORT}; close it and try again.`);
-
-  const folder = mkdtempSync(join(tmpdir(), "bentotachi-checks-"));
-  const where = ["--dir", join(folder, "pb_data"), "--migrationsDir", join(server, "pb_migrations"), "--hooksDir", engineHooks(folder)];
-  execFileSync(exe, ["superuser", "upsert", "test@example.com", "testpassword123", ...where], { stdio: "ignore" });
-  const pocketbase = spawn(exe, ["serve", "--http", `127.0.0.1:${CHECK_PORT}`, "--automigrate=false", ...where], { stdio: "ignore" });
-  const stopped = new Promise((resolve) => pocketbase.on("exit", resolve));
+  let pocketbase;
   try {
-    let up = false;
-    for (let i = 0; i < 60 && !up; i++) {
-      up = await answers(health);
-      if (!up) await wait(500);
-    }
-    if (!up) throw new TestsFailed("The test server didn't start, so the end-to-end checks couldn't run.");
-    await engineTests(`http://127.0.0.1:${CHECK_PORT}`);
+    pocketbase = await startTestServer({
+      port: CHECK_PORT,
+      prefix: "bentotachi-checks-",
+      hooksDir: engineHooks,
+      beforeServe: (exe, where) => execFileSync(exe, ["superuser", "upsert", "test@example.com", "testpassword123", ...where], { stdio: "ignore" }),
+    });
+  } catch (err) {
+    throw new TestsFailed(`${err.message} So the end-to-end checks couldn't run (they use port ${CHECK_PORT}; BENTO_CHECK_PORT picks another).`);
+  }
+  try {
+    await engineTests(pocketbase.url);
 
     // pantry-rules first: it makes fixed accounts on a fresh server.
     const checks = readdirSync(join(server, "test"))
@@ -163,17 +148,7 @@ async function serverChecks() {
     }
     console.log(`end-to-end checks: ${passed} passed (${checks.length} files)`);
   } finally {
-    pocketbase.kill();
-    await Promise.race([stopped, wait(5000)]);
-    // Windows may hold the database files a moment after the server stops.
-    for (let i = 0; i < 10; i++) {
-      try {
-        rmSync(folder, { recursive: true, force: true });
-        break;
-      } catch {
-        await wait(300);
-      }
-    }
+    await pocketbase.stop();
   }
 }
 
