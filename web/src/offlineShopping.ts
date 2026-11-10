@@ -83,14 +83,16 @@ export async function sendQueued(
   return handled;
 }
 
-// The queue now, without the changes just handled. By identity, not
-// position: changes made while sending (a newer tick for the same item
-// replaces the old one with a new entry) stay waiting. Taps on items with a
-// change on its way are held off while sending (mustWait), so a change is
-// never altered under the send.
+// The queue now, without the changes just handled. By what each change is,
+// not its position, nor which copy of it this is (another tab writing the
+// queue meanwhile means it's read again as new copies): changes made while
+// sending (a newer tick for the same item is a new entry with a new time)
+// stay waiting. Taps on items with a change on its way are held off while
+// sending (mustWait), so a change is never altered under the send.
+const changeKey = (change: QueuedChange) => JSON.stringify([change.kind, change.id, change.checked, change.at, change.kind === "add" ? change.text : ""]);
 export function withoutHandled(current: QueuedChange[], handled: QueuedChange[]): QueuedChange[] {
-  const done = new Set(handled);
-  return current.filter((change) => !done.has(change));
+  const done = new Set(handled.map(changeKey));
+  return current.filter((change) => !done.has(changeKey(change)));
 }
 
 // One send at a time for the whole app, not each copy of the Shopping page:
@@ -98,18 +100,28 @@ export function withoutHandled(current: QueuedChange[], handled: QueuedChange[])
 // changes again (adding things twice). get/set reach the one shared queue
 // (shoppingQueue.ts); the result says how many of how many were handled, or
 // null when there was nothing to do or a send was already running.
-export function createQueueSender(get: () => QueuedChange[], set: (update: (queue: QueuedChange[]) => QueuedChange[]) => void) {
+// `exclusive` runs a send while no other tab is sending (they share the
+// queue); the queue is read inside it, so what another tab sent meanwhile
+// isn't sent again.
+export function createQueueSender(
+  get: () => QueuedChange[],
+  set: (update: (queue: QueuedChange[]) => QueuedChange[]) => void,
+  exclusive: <T>(run: () => Promise<T>) => Promise<T> = (run) => run()
+) {
   let sending = false;
   return {
     isSending: () => sending,
     async send(how: Parameters<typeof sendQueued>[1]): Promise<{ handled: number; total: number } | null> {
-      const queue = get();
-      if (sending || !queue.length) return null;
+      if (sending || !get().length) return null;
       sending = true;
       try {
-        const handled = await sendQueued(queue, how);
-        set((current) => withoutHandled(current, handled));
-        return { handled: handled.length, total: queue.length };
+        return await exclusive(async () => {
+          const queue = get();
+          if (!queue.length) return null;
+          const handled = await sendQueued(queue, how);
+          set((current) => withoutHandled(current, handled));
+          return { handled: handled.length, total: queue.length };
+        });
       } finally {
         sending = false;
       }

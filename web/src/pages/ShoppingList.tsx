@@ -55,6 +55,14 @@ export default function ShoppingList() {
   // one runs doesn't start another.
   useEffect(() => {
     if (offline || !items || !queue.length || queueSender.isSending()) return;
+    // A "Clear ticked" still offering Undo, with something added offline
+    // among what it clears: carried out first. Sent now, that thing would
+    // reach the server just before the clear looked for it in the queue,
+    // and come back under Got it.
+    if (queue.some((change) => undo.hidden.has(change.id))) {
+      void undo.settle();
+      return;
+    }
     void queueSender
       .send({
         // An expired login would make every change look refused, so make

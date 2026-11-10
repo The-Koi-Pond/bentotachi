@@ -49,4 +49,21 @@ export function useShoppingQueue(): QueuedChange[] {
   return useSyncExternalStore(subscribe, current);
 }
 
-export const queueSender = createQueueSender(current, setShoppingQueue);
+// Another tab changed the queue (sent it, or queued something): this one's
+// screen follows.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== SHOPPING_QUEUE_KEY && event.key !== null) return;
+    for (const listener of listeners) listener();
+  });
+}
+
+// One tab sending at a time: two tabs that were both offline share this
+// queue, and both sending it would add things twice. Where the browser has
+// no locks (very old ones), each tab sends as before.
+function acrossTabs<T>(run: () => Promise<T>): Promise<T> {
+  if (typeof navigator === "undefined" || !navigator.locks) return run();
+  return navigator.locks.request("bento.shoppingQueueSend", run);
+}
+
+export const queueSender = createQueueSender(current, setShoppingQueue, acrossTabs);

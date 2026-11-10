@@ -177,6 +177,39 @@ test("only one send at a time, however many copies of the page ask", async () =>
   assert.equal(sender.isSending(), false);
 });
 
+test("two tabs sharing the queue: the second sends only what the first didn't", async () => {
+  // The phone's storage, shared; each tab reads it again only when it
+  // changed (as shoppingQueue.ts does), so a tab gets its own copies.
+  type Queue = ReturnType<typeof queueAdd>;
+  let saved = JSON.stringify(queueAdd(queueAdd([], "Bread", now), "Jam", now));
+  const tab = () => {
+    let seen = "";
+    let copy: Queue = [];
+    const get = () => {
+      if (saved !== seen) [seen, copy] = [saved, JSON.parse(saved) as Queue];
+      return copy;
+    };
+    const set = (update: (queue: Queue) => Queue) => (saved = JSON.stringify(update(get())));
+    return { get, set };
+  };
+  // The browser's lock across tabs, as a plain one-at-a-time chain.
+  let chain: Promise<unknown> = Promise.resolve();
+  const exclusive = <T,>(run: () => Promise<T>): Promise<T> => {
+    const next = chain.then(run);
+    chain = next.catch(() => {});
+    return next;
+  };
+  const sent: string[] = [];
+  const send = { loggedIn: async () => true, add: async (text: string) => void sent.push(text), check: async () => {} };
+  const a = tab();
+  const b = tab();
+  const [fromA, fromB] = await Promise.all([createQueueSender(a.get, a.set, exclusive).send(send), createQueueSender(b.get, b.set, exclusive).send(send)]);
+  assert.deepEqual(sent, ["Bread", "Jam"]);
+  assert.deepEqual(fromA, { handled: 2, total: 2 });
+  assert.equal(fromB, null);
+  assert.deepEqual(b.get(), []);
+});
+
 test("clearing ticked things: ones added offline just leave the queue, and it waits while sending", () => {
   let queue = queueAdd([], "Bread", now);
   const bread = queue[0].id;
@@ -185,6 +218,15 @@ test("clearing ticked things: ones added offline just leave the queue, and it wa
   assert.deepEqual(clearPlan(false, queue, ticked), { wait: false, unsent: [bread], sent: ["milk1"] });
   assert.equal(clearPlan(true, queue, ticked).wait, true);
   assert.equal(clearPlan(true, queue, [{ id: "milk1" }]).wait, false);
+});
+
+test("what was sent leaves the queue even when it's been read again as new copies (another tab wrote it)", () => {
+  let queue = queueAdd([], "Bread", now);
+  queue = queueCheck(queue, "milk1", true, now);
+  const handled = [...queue];
+  // Another tab added Jam meanwhile: this tab reads the queue fresh.
+  const reread = JSON.parse(JSON.stringify(queueAdd(queue, "Jam", new Date("2026-11-01T10:00:05Z")))) as QueuedChange[];
+  assert.deepEqual(describe(withoutHandled(reread, handled)), ["add Jam"]);
 });
 
 test("changes made while sending aren't lost", async () => {
