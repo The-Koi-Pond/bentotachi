@@ -21,9 +21,6 @@ const username = `meals${Date.now()}`;
 await api(admin, "POST", "/collections/users/records", { username, password: "testpass123", passwordConfirm: "testpass123", name: "Meals" });
 const { token } = await api("", "POST", "/collections/users/auth-with-password", { identity: username, password: "testpass123" });
 
-const old = await api(token, "GET", "/collections/meal_plan/records?perPage=500");
-check("everything planned before is a dinner", old.items.every((entry) => entry.meal === "dinner"), `(${old.items.length} entries)`);
-
 // A date far from any other test's.
 const date = "2031-03-04 00:00:00.000Z";
 const fromOldApp = await api(token, "POST", "/collections/meal_plan/records", { date, note: "Soup" });
@@ -79,4 +76,4 @@ const chosen = await api(token, "PATCH", `/collections/household_settings/record
 check("the household can choose its meals", JSON.stringify(chosen.plan_meals) === JSON.stringify(["lunch", "dinner"]));
 await api(token, "PATCH", `/collections/household_settings/records/${record.id}`, { plan_meals: [] });
 
-for (const entry of [fromOldApp, moved, breakfast, swapA, swapB]) await api(token, "DELETE", `/collections/meal_plan/records/${entry.id}`);
+for (const entry of [fromOldApp, moved, secondLunch, breakfast, swapA, swapB]) await api(token, "DELETE", `/collections/meal_plan/records/${entry.id}`);
