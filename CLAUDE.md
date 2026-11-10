@@ -59,7 +59,9 @@ How to run: `README.md`.
     `npm run release` and `npm run deploy` run both suites first, the date
     tests again in two far-off time zones, knip (web/knip.json: files,
     exports and packages nothing uses; an export only its own file uses
-    loses its `export`; `npm run knip` alone), the server's unit tests again
+    loses its `export`; `npm run knip` alone), oxlint for React's rules for
+    hooks (web/.oxlintrc.json; ESLint's rule names and disable comments;
+    `npm run lint` alone), the server's unit tests again
     inside PocketBase's own JavaScript engine (which fails some code Node
     passes, like a regex on a long page), and the server's end-to-end
     checks (web/scripts/tests.mjs, about 10 seconds), and stop if any test
@@ -103,7 +105,11 @@ What every session needs anyway:
 - This repository is public: never commit the household's addresses,
   logins, network names or people's names (use made-up examples). The
   Pi's details are in `web/scripts/pi.json` and `CLAUDE.local.md`, both
-  private (gitignored).
+  private (gitignored). On this PC, git hooks (.git/hooks/pre-commit and
+  commit-msg, patterns in .git/info/private-names, none of it in the
+  repository) refuse a commit whose added lines or message match one; if
+  it fires, take the detail out or use a made-up name. Never
+  `--no-verify`. A new private detail goes in that patterns file.
 - The website (thekoipond.dev/bentotachi) is **not in this repository**:
   it's the `bentotachi/` folder of The Koi Pond's website repository
   (C:\Projects\TheKoiPond\the-koi-pond.github.io; its CLAUDE.md says how

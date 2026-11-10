@@ -137,21 +137,21 @@ const GROUPS: string[][][] = [
 
 // Calls back for each regional term found in the text, with where it is
 // and another country's word for it.
-function eachSwap(text: string, use: (at: { start: number; end: number }, to: string) => void) {
+function eachSwap(text: string, found: (at: { start: number; end: number }, to: string) => void) {
   for (const columns of GROUPS) {
     columns.forEach((names, column) => {
       for (const from of names) {
         const at = findMention(text, from);
         if (!at) continue;
         columns.forEach((others, other) => {
-          if (other !== column) for (const to of others) use(at, to);
+          if (other !== column) for (const to of others) found(at, to);
         });
       }
     });
   }
   for (const [from, to] of ONE_WAY) {
     const at = findMention(text, from);
-    if (at) use(at, to);
+    if (at) found(at, to);
   }
 }
 

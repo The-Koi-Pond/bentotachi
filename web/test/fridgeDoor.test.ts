@@ -39,7 +39,7 @@ test("a splash line is one of the list, first to last", () => {
 const note = (added_by: string, created: string) => ({ added_by, created });
 
 test("unread notes are other people's, newer than the last visit", () => {
-  const all = [note("me", "2026-11-04 10:00:00.000Z"), note("lilly", "2026-11-04 09:00:00.000Z"), note("kate", "2026-11-03 09:00:00.000Z")];
+  const all = [note("me", "2026-11-04 10:00:00.000Z"), note("alex", "2026-11-04 09:00:00.000Z"), note("robin", "2026-11-03 09:00:00.000Z")];
   assert.equal(unreadNotes(all, "me", ""), 2, "never opened: everyone else's");
   assert.equal(unreadNotes(all, "me", "2026-11-03 09:00:00.000Z"), 1, "only the one after the visit");
   assert.equal(unreadNotes(all, "me", "2026-11-04 10:00:00.000Z"), 0, "your own never count");
@@ -100,14 +100,14 @@ test("short lists name a few, then count the rest", () => {
 });
 
 test("lately: recipes added and cooked, newest first, a few at most", () => {
-  const added = [{ id: "r1", created: "2026-11-02 10:00:00.000Z", added_by: "lilly", title: "Soup" }];
+  const added = [{ id: "r1", created: "2026-11-02 10:00:00.000Z", added_by: "alex", title: "Soup" }];
   const cooked = [
     { id: "c1", created: "2026-11-03 19:00:00.000Z", cooked_by: "me", recipe: "r1", title: "Soup" },
-    { id: "c2", created: "2026-11-01 19:00:00.000Z", cooked_by: "kate", recipe: "r2", title: "Stew" },
+    { id: "c2", created: "2026-11-01 19:00:00.000Z", cooked_by: "robin", recipe: "r2", title: "Stew" },
   ];
   assert.deepEqual(
     happenings(added, cooked).map((h) => `${h.kind} ${h.title} ${h.who} ${h.recipeId}`),
-    ["cooked Soup me r1", "added Soup lilly r1", "cooked Stew kate r2"]
+    ["cooked Soup me r1", "added Soup alex r1", "cooked Stew robin r2"]
   );
   assert.equal(happenings(added, cooked, 2).length, 2);
 });

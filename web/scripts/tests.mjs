@@ -5,7 +5,7 @@
 //      its pattern matches nothing).
 //   2. The date tests again in two far-off time zones, since dates must
 //      never shift by a day wherever the phone is. And knip, for code
-//      nothing uses.
+//      nothing uses, and oxlint, for React's rules for hooks.
 //   3. A throwaway PocketBase in a temporary folder, started with
 //      --automigrate=false so it can't write migration files into the
 //      project, then stopped and deleted. Never the real data. On it:
@@ -189,11 +189,27 @@ function unusedCode() {
   console.log("unused code (knip): none");
 }
 
+// React's rules for hooks, by oxlint (.oxlintrc.json): a hook called
+// conditionally, or an effect that reads something it doesn't list and so
+// runs with an old value of it. oxlint rather than ESLint: typescript-eslint
+// doesn't read TypeScript 7 yet. The rule names and eslint-disable comments
+// are ESLint's.
+function hookRules() {
+  try {
+    execSync("npx oxlint src", { cwd: web, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (err) {
+    console.error(String(err.stdout ?? "") + String(err.stderr ?? ""));
+    throw new TestsFailed("oxlint found code breaking React's rules for hooks (above). See it with: npm run lint (in web)");
+  }
+  console.log("React hook rules (oxlint): kept");
+}
+
 export async function runTests() {
   try {
     nodeTests("server tests", root, ["server/test/*.test.js"]);
     nodeTests("web tests", web, ["test/*.test.ts"]);
     unusedCode();
+    hookRules();
     for (const zone of ["Pacific/Kiritimati", "Pacific/Pago_Pago"])
       nodeTests(`date tests in ${zone}`, web, ["test/dates.test.ts", "test/expiry.test.ts", "test/pantryPackets.test.ts"], { TZ: zone });
     await serverChecks();

@@ -18,22 +18,7 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
   const tapped = useRef<{ key: string; from: number; to: number; arrived: boolean; until: number } | null>(null);
   const [current, setCurrent] = useState<string | null>(null);
 
-  // Where each section is within the scrolling page (pageScroll.ts), how far
-  // down it the bar reaches, and how far the page can scroll.
-  function measure(): { places: JumpSection[]; offset: number; maxScroll: number } {
-    const page = pageScroller();
-    const start = pageScrollStart() - page.scrollTop;
-    const places = sections.flatMap(({ id }) => {
-      const element = document.getElementById(id);
-      if (!element) return [];
-      const box = element.getBoundingClientRect();
-      return [{ key: id, top: box.top - start, bottom: box.bottom - start }];
-    });
-    const offset = (bar.current?.offsetHeight ?? 0) + 8;
-    const maxScroll = page.scrollHeight - page.clientHeight;
-    return { places, offset, maxScroll };
-  }
-
+  // A string, so the effect below reruns only when the sections change.
   const ids = sections.map((section) => section.id).join(",");
   useEffect(() => {
     const page = pageScrollTarget();
@@ -41,7 +26,7 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const { places, offset, maxScroll } = measure();
+        const { places, offset, maxScroll } = measure(ids, bar.current);
         const scrolled = pageScroller().scrollTop;
         const tap = tapped.current;
         if (tap) {
@@ -59,11 +44,10 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
       page.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-    // measure() reads the latest sections when it runs.
   }, [ids]);
 
   function jump(id: string) {
-    const { places, offset, maxScroll } = measure();
+    const { places, offset, maxScroll } = measure(ids, bar.current);
     const page = pageScroller();
     const scrolled = page.scrollTop;
     const next = jumpTarget(places, id, scrolled, offset, saved.current, maxScroll, tapped.current?.key ?? null);
@@ -90,4 +74,21 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
       </div>
     </nav>
   );
+}
+
+// Where each section (`ids`, comma-separated) is within the scrolling page
+// (pageScroll.ts), how far down it the bar reaches, and how far the page
+// can scroll.
+function measure(ids: string, bar: HTMLElement | null): { places: JumpSection[]; offset: number; maxScroll: number } {
+  const page = pageScroller();
+  const start = pageScrollStart() - page.scrollTop;
+  const places = ids.split(",").flatMap((id) => {
+    const element = id ? document.getElementById(id) : null;
+    if (!element) return [];
+    const box = element.getBoundingClientRect();
+    return [{ key: id, top: box.top - start, bottom: box.bottom - start }];
+  });
+  const offset = (bar?.offsetHeight ?? 0) + 8;
+  const maxScroll = page.scrollHeight - page.clientHeight;
+  return { places, offset, maxScroll };
 }

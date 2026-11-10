@@ -364,7 +364,9 @@ export function useCurrentUser(): User | null {
   );
   return useMemo(
     () => (pb.authStore.token && pb.authStore.isValid ? (pb.authStore.record as User) : null),
-    // `key` is what changes; the record itself is read fresh each time.
+    // On purpose: `key` is what changes; the record itself is read fresh
+    // each time, so the rule can't see why it's listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [key]
   );
 }

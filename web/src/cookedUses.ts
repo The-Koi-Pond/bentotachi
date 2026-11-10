@@ -57,7 +57,7 @@ export function cookedUses(
     const own = packetsOf(packets, item.id);
     // The partly used one first, then oldest first.
     const ordered = [...own.filter((p) => p.left), ...own.filter((p) => !p.left)];
-    const use = ordered.length ? usePackets(item, itemLines, ordered, measures) : null;
+    const use = ordered.length ? packetsToUse(item, itemLines, ordered, measures) : null;
     if (use) uses.push(use);
     else if (!ordered.length && item.status === "have")
       uses.push({ item, title: item.name, note: "None counted in stock: mark it Low?", ticked: false, finish: [], leave: null, status: "low" });
@@ -68,7 +68,7 @@ export function cookedUses(
   return uses.some((use) => use.finish.length || use.leave) ? uses : [];
 }
 
-function usePackets(item: PantryItem, lines: string[], ordered: PantryPacket[], measures?: RecipeMeasures): Use | null {
+function packetsToUse(item: PantryItem, lines: string[], ordered: PantryPacket[], measures?: RecipeMeasures): Use | null {
   const counts = lines.map((line) => line.match(PACKET_COUNT));
   if (counts.every(Boolean)) {
     const n = counts.reduce((sum, m) => sum + Number(m![1]), 0);
