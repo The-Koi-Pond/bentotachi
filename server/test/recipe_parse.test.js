@@ -315,6 +315,41 @@ test("uses a microdata recipe's own photo when the page has no preview image", (
   assert.equal(recipe.imageUrl, "https://example.com/img/toast.jpg");
 });
 
+test("reads microdata list items left unclosed, as a browser would", () => {
+  // <li> without </li> is allowed HTML: each item stops where the next opens.
+  const html = `<div itemscope itemtype="https://schema.org/Recipe"><h1 itemprop="name">Toast</h1>
+    <ul><li itemprop="recipeIngredient">2 slices bread<li itemprop="recipeIngredient">Butter</ul>
+    <p itemprop="recipeInstructions">Toast the bread.</div>`;
+  const recipe = parseRecipe(html, "https://example.com/toast");
+  assert.deepEqual(recipe.ingredients, ["2 slices bread", "Butter"]);
+  assert.deepEqual(recipe.steps, ["Toast the bread."]);
+});
+
+test("a page built to be slow to read (runs of unclosed tags) is still quick", () => {
+  // Each of these took the square of the page's size before; in PocketBase's
+  // slower engine a few dozen KB took minutes.
+  const recipe = '<script type="application/ld+json">{"@type":"Recipe","name":"T","recipeIngredient":["1 egg","2 cups flour"],"recipeInstructions":["Cook it all."]}</script>';
+  const scope = '<div itemscope itemtype="https://schema.org/Recipe"><h1 itemprop="name">T</h1>';
+  const n = 20000;
+  const pages = {
+    "unclosed tags": recipe + "<a ".repeat(n),
+    "unclosed scripts": recipe + "<script ".repeat(n),
+    "unclosed meta tags": recipe + "<meta ".repeat(n),
+    "unclosed spans in the notes": recipe + '<div class="wprm-recipe-notes">' + "<span ".repeat(n) + "</div>",
+    "unclosed headings in the card": recipe + '<div class="wprm-recipe-ingredients-container">' + "<h3>".repeat(n) + "</div>",
+    "unclosed microdata labels": scope + '<div itemprop="x">'.repeat(n),
+    "unclosed microdata ingredients": scope + '<div itemprop="recipeIngredient">1 egg '.repeat(n),
+    "unclosed cards": "<article>".repeat(n),
+  };
+  for (const [shape, html] of Object.entries(pages)) {
+    const started = Date.now();
+    parseRecipe(html, "https://example.com/slow");
+    if (shape === "unclosed cards") recipeLinks(html, "https://example.com/slow");
+    const ms = Date.now() - started;
+    assert.ok(ms < 1500, `${shape}: ${ms} ms`);
+  }
+});
+
 test("reads the older data-vocabulary.org recipe labels", () => {
   const html = `<div itemscope itemtype="http://data-vocabulary.org/Recipe">
     <h1 itemprop="name">Old Soup</h1><p itemprop="summary">From 2012.</p>

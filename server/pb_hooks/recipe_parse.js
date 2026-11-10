@@ -43,7 +43,7 @@ function cleanText(value) {
   if (value === null || value === undefined) return "";
   var text = String(value);
   text = decodeEntities(text);
-  text = text.replace(/<[^>]*>/g, " ");
+  text = text.replace(/<[^<>]*>/g, " ");
   text = decodeEntities(text);
   // Removing tags (like a link around a word) can leave "word , more )":
   // no space before closing punctuation or after an opening bracket.
@@ -60,18 +60,36 @@ function cleanText(value) {
     .trim();
 }
 
+// Each element `open` (a global regex for its opening tag) finds, up to the
+// next `</close>` (a tag name, or a pattern like "h[1-6]"), in order:
+// `use({ open: the opening tag's match, inner, html: the whole element })`,
+// which returns true to stop. Plain searches rather than one regex over the
+// content: PocketBase's regex engine gives up on a long one, and an opening
+// with no closing after it would have every later one search on to the end
+// of the page; nothing later can close either, so that ends the search.
+function eachClosed(html, open, close, use) {
+  var closing = new RegExp("<\\/" + close + ">", "gi");
+  var m;
+  while ((m = open.exec(html)) !== null) {
+    closing.lastIndex = open.lastIndex;
+    var end = closing.exec(html);
+    if (!end) return;
+    if (use({ open: m, inner: html.slice(open.lastIndex, end.index), html: html.slice(m.index, closing.lastIndex) })) return;
+    open.lastIndex = closing.lastIndex;
+  }
+}
+
 function findJsonLdBlocks(html) {
   var blocks = [];
-  var re = /<script[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
-  var match;
-  while ((match = re.exec(html)) !== null) {
-    var raw = match[1].trim().replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "");
+  eachClosed(html, /<script\b[^<>]*>/gi, "script", function (script) {
+    if (!/\btype\s*=\s*["']?application\/ld\+json/i.test(script.open[0])) return;
+    var raw = script.inner.trim().replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "");
     try {
       blocks.push(JSON.parse(raw));
     } catch (err) {
       // A broken block on the page shouldn't stop us checking the others.
     }
-  }
+  });
   return blocks;
 }
 
@@ -123,8 +141,8 @@ function pickImage(image) {
 
 function findMetaImage(html) {
   var match =
-    html.match(/<meta[^>]*property\s*=\s*["']og:image["'][^>]*content\s*=\s*["']([^"']+)["']/i) ||
-    html.match(/<meta[^>]*content\s*=\s*["']([^"']+)["'][^>]*property\s*=\s*["']og:image["']/i);
+    html.match(/<meta\b[^<>]*property\s*=\s*["']og:image["'][^<>]*content\s*=\s*["']([^"']+)["']/i) ||
+    html.match(/<meta\b[^<>]*content\s*=\s*["']([^"']+)["'][^<>]*property\s*=\s*["']og:image["']/i);
   return match ? decodeEntities(match[1]) : "";
 }
 
@@ -356,15 +374,68 @@ function findScriptRecipe(html) {
 // Tags with no closing tag.
 var VOID_TAGS = { img: 1, meta: 1, link: 1, br: 1, hr: 1, input: 1, source: 1 };
 
+// Where each element in `html` ends, by its opening tag's position:
+// { at: where its inner HTML stops, end: just after its closing tag },
+// pairing tags of the same name as elementAt does. One pass, for loops that
+// look up many elements: elementAt alone scans on to the closing tag each
+// time, and on a page of unclosed tags that's to the end of the page for
+// every one. An element that's never closed (allowed for <li> and <p>) stops
+// as a browser reads it: where the next one of its name opens, or where the
+// element around it closes; and after UNCLOSED_LENGTH at most, so a page of
+// them can't make every one huge.
+var UNCLOSED_LENGTH = 10000;
+
+function closingTags(html) {
+  var closes = {};
+  var opens = {};
+  var waiting = {};
+  var around = [];
+  var unclosed = [];
+  var re = /<(\/?)([a-z][a-z0-9]*)\b[^<>]*>/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    var tag = m[2].toLowerCase();
+    if (VOID_TAGS[tag]) continue;
+    if (!m[1]) {
+      if (/\/>$/.test(m[0])) continue;
+      opens[tag] = opens[tag] || [];
+      var element = { tag: tag, start: m.index, inner: re.lastIndex, nth: opens[tag].length, stop: html.length };
+      opens[tag].push(m.index);
+      (waiting[tag] = waiting[tag] || []).push(element);
+      around.push(element);
+    } else if (waiting[tag] && waiting[tag].length) {
+      var closed = waiting[tag].pop();
+      closes[closed.start] = { at: m.index, end: re.lastIndex };
+      // Anything opened inside it and still open ends here too.
+      for (var top = around.pop(); top !== closed; top = around.pop()) {
+        waiting[top.tag].pop();
+        top.stop = m.index;
+        unclosed.push(top);
+      }
+    }
+  }
+  unclosed = unclosed.concat(around);
+  for (var i = 0; i < unclosed.length; i++) {
+    var left = unclosed[i];
+    var next = opens[left.tag][left.nth + 1];
+    var at = Math.min(next === undefined ? left.stop : Math.min(next, left.stop), left.inner + UNCLOSED_LENGTH);
+    closes[left.start] = { at: at, end: at };
+  }
+  return closes;
+}
+
 // The element whose opening tag starts at `start`: its tag name, opening
 // tag, inner HTML, and where it ends (counting nested tags of the same name).
-function elementAt(html, start) {
-  var open = html.slice(start).match(/^<([a-z][a-z0-9]*)\b[^>]*>/i);
+// `closes` (closingTags of the same html) skips the scan for the end.
+function elementAt(html, start, closes) {
+  var open = html.slice(start).match(/^<([a-z][a-z0-9]*)\b[^<>]*>/i);
   if (!open) return null;
   var tag = open[1].toLowerCase();
   var innerStart = start + open[0].length;
   if (VOID_TAGS[tag] || /\/>$/.test(open[0])) return { tag: tag, openTag: open[0], inner: "", end: innerStart };
-  var re = new RegExp("<(/?)" + tag + "\\b[^>]*>", "gi");
+  var close = closes && closes[start];
+  if (close) return { tag: tag, openTag: open[0], inner: html.slice(innerStart, close.at), end: close.end };
+  var re = new RegExp("<(/?)" + tag + "\\b[^<>]*>", "gi");
   re.lastIndex = innerStart;
   var depth = 1;
   var m;
@@ -409,18 +480,21 @@ function microdataValue(element) {
 // names (ingredient, instructions, yield, summary, photo); those map across.
 function findMicrodataRecipe(html) {
   var start = html.search(
-    /<[a-z][a-z0-9]*\b[^>]*\bitemtype\s*=\s*["']?https?:\/\/(?:www\.)?(?:schema\.org|data-vocabulary\.org)\/Recipe["'\s>\/]/i
+    /<[a-z][a-z0-9]*\b[^<>]*\bitemtype\s*=\s*["']?https?:\/\/(?:www\.)?(?:schema\.org|data-vocabulary\.org)\/Recipe["'\s>\/]/i
   );
   if (start < 0) return null;
   var root = elementAt(html, start);
   if (!root) return null;
   var scope = root.inner;
+  var closes = closingTags(scope);
 
+  // The caps are far past any real recipe; they keep a page of thousands of
+  // labels from costing labels × nested items.
   var nested = [];
-  var scopeRe = /<[a-z][a-z0-9]*\b[^>]*\bitemscope\b[^>]*>/gi;
+  var scopeRe = /<[a-z][a-z0-9]*\b[^<>]*\bitemscope\b[^<>]*>/gi;
   var sm;
-  while ((sm = scopeRe.exec(scope)) !== null) {
-    var item = elementAt(scope, sm.index);
+  while ((sm = scopeRe.exec(scope)) !== null && nested.length < 300) {
+    var item = elementAt(scope, sm.index, closes);
     if (item) nested.push([sm.index, item.end]);
   }
   function insideNestedItem(at) {
@@ -431,11 +505,12 @@ function findMicrodataRecipe(html) {
   }
 
   var props = {};
-  var propRe = /<[a-z][a-z0-9]*\b[^>]*\bitemprop\s*=\s*["']?([^"'>]+)/gi;
+  var propRe = /<[a-z][a-z0-9]*\b[^<>]*\bitemprop\s*=\s*["']?([^"'<>]+)/gi;
   var pm;
-  while ((pm = propRe.exec(scope)) !== null) {
+  var labels = 0;
+  while ((pm = propRe.exec(scope)) !== null && labels++ < 3000) {
     if (insideNestedItem(pm.index)) continue;
-    var element = elementAt(scope, pm.index);
+    var element = elementAt(scope, pm.index, closes);
     if (!element) continue;
     var value = microdataValue(element);
     var names = pm[1].trim().split(/\s+/);
@@ -495,7 +570,7 @@ function textLines(html) {
 
 // The post's own text: the usual WordPress-style containers, else <article>.
 function postHtml(html) {
-  var start = html.search(/<[a-z][a-z0-9]*\b[^>]*\bclass\s*=\s*["'][^"']*\b(entry-content|post-content|article-content|post-body)\b/i);
+  var start = html.search(/<[a-z][a-z0-9]*\b[^<>]*\bclass\s*=\s*["'][^"']*\b(entry-content|post-content|article-content|post-body)\b/i);
   if (start < 0) start = html.search(/<article\b/i);
   if (start < 0) return "";
   var element = elementAt(html, start);
@@ -511,10 +586,16 @@ function looksLikeIngredient(line) {
 
 function pageTitle(html) {
   var og =
-    html.match(/<meta[^>]*property\s*=\s*["']og:title["'][^>]*content\s*=\s*["']([^"']*)["']/i) ||
-    html.match(/<meta[^>]*content\s*=\s*["']([^"']*)["'][^>]*property\s*=\s*["']og:title["']/i);
-  var title = og ? cleanText(og[1]) : cleanText((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || ["", ""])[1]);
-  var site = html.match(/<meta[^>]*property\s*=\s*["']og:site_name["'][^>]*content\s*=\s*["']([^"']*)["']/i);
+    html.match(/<meta\b[^<>]*property\s*=\s*["']og:title["'][^<>]*content\s*=\s*["']([^"']*)["']/i) ||
+    html.match(/<meta\b[^<>]*content\s*=\s*["']([^"']*)["'][^<>]*property\s*=\s*["']og:title["']/i);
+  var title = og ? cleanText(og[1]) : "";
+  if (!og) {
+    eachClosed(html, /<title\b[^<>]*>/gi, "title", function (element) {
+      title = cleanText(element.inner);
+      return true;
+    });
+  }
+  var site = html.match(/<meta\b[^<>]*property\s*=\s*["']og:site_name["'][^<>]*content\s*=\s*["']([^"']*)["']/i);
   if (site && site[1]) title = title.split(cleanText(site[1])).join("");
   return title.replace(/\s*[-–|·:]\s*$/, "").replace(/^\s*[-–|·:]\s*/, "").trim();
 }
@@ -556,6 +637,14 @@ function findPlainTextRecipe(html) {
   };
 }
 
+// The opening tag of an element with this whole class name (not part of a
+// longer one, like "…-notes-container"), for html.search. [^<>] keeps each
+// try inside one tag: [^>] ran on through a page of unclosed tags from every
+// "<", which took minutes on PocketBase's slower regex engine.
+function classBox(name) {
+  return new RegExp("<[a-z][a-z0-9]*\\b[^<>]*\\bclass\\s*=\\s*[\"'](?:[^\"'<>]*\\s)?" + name + "(?=[\\s\"'])", "i");
+}
+
 // The recipe writer's own notes (swaps, storage, tips), which recipe data
 // doesn't include: the notes box of the usual recipe plugins (WP Recipe
 // Maker, Tasty Recipes, Mediavine Create), as lines without its "Notes"
@@ -564,12 +653,11 @@ var NOTES_BOXES = ["wprm-recipe-notes", "tasty-recipes-notes-body", "tasty-recip
 
 function findAuthorNotes(html) {
   for (var i = 0; i < NOTES_BOXES.length; i++) {
-    // The whole class name, not part of a longer one ("…-notes-container").
-    var start = html.search(new RegExp("<[a-z][a-z0-9]*\\b[^>]*\\bclass\\s*=\\s*[\"'](?:[^\"']*\\s)?" + NOTES_BOXES[i] + "(?=[\\s\"'])", "i"));
+    var start = html.search(classBox(NOTES_BOXES[i]));
     if (start < 0) continue;
     var element = elementAt(html, start);
     // WP Recipe Maker writes each note as a block-style <span>.
-    var inner = element ? element.inner.replace(/<span\b[^>]*display\s*:\s*block[^>]*>/gi, "\n") : "";
+    var inner = element ? element.inner.replace(/<span\b[^<>]*display\s*:\s*block[^<>]*>/gi, "\n") : "";
     var lines = textLines(inner);
     if (lines.length && /^(recipe )?notes?:?$/i.test(lines[0])) lines.shift();
     if (lines.length) return lines;
@@ -589,18 +677,31 @@ var INGREDIENT_BOXES = ["wprm-recipe-ingredients-container", "tasty-recipes-ingr
 
 function ingredientSections(html) {
   for (var i = 0; i < INGREDIENT_BOXES.length; i++) {
-    var start = html.search(new RegExp("<[a-z][a-z0-9]*\\b[^>]*\\bclass\\s*=\\s*[\"'](?:[^\"']*\\s)?" + INGREDIENT_BOXES[i] + "(?=[\\s\"'])", "i"));
+    var start = html.search(classBox(INGREDIENT_BOXES[i]));
     if (start < 0) continue;
     var element = elementAt(html, start);
     if (!element) continue;
     // In order: each heading, then how many list items follow it.
     var sections = [];
     var current = null;
-    var re = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>|<li\b/gi;
+    // A heading with no closing tag after it isn't one, and then nor is any
+    // later one (as in eachClosed).
+    var inner = element.inner;
+    var re = /<h[1-6]\b[^<>]*>|<li\b/gi;
+    var closing = /<\/h[1-6]>/gi;
+    var unclosed = false;
     var m;
-    while ((m = re.exec(element.inner)) !== null) {
-      if (m[1] !== undefined) {
-        var heading = cleanText(m[1]).replace(/\s*:\s*$/, "");
+    while ((m = re.exec(inner)) !== null) {
+      if (m[0].charAt(1).toLowerCase() === "h") {
+        if (unclosed) continue;
+        closing.lastIndex = re.lastIndex;
+        var end = closing.exec(inner);
+        if (!end) {
+          unclosed = true;
+          continue;
+        }
+        var heading = cleanText(inner.slice(re.lastIndex, end.index)).replace(/\s*:\s*$/, "");
+        re.lastIndex = closing.lastIndex;
         // The card's own "Ingredients" title ("Ingredients (serves 4)"),
         // before any section, isn't one; later, "Ingredients for the
         // sauce" is.
@@ -914,7 +1015,7 @@ function siteOf(url) {
 // A card's photo: the first picture with a real address (lazy-loading pages
 // put a blank placeholder in src and the photo in data-src or srcset).
 function cardImage(html) {
-  var re = /<(?:img|source)\b[^>]*>/gi;
+  var re = /<(?:img|source)\b[^<>]*>/gi;
   var m;
   while ((m = re.exec(html)) !== null) {
     var srcset = attribute(m[0], "data-srcset") || attribute(m[0], "srcset");
@@ -947,7 +1048,7 @@ function slugTitle(url) {
 // The page's "next page" link (rel="next", or a pagination "next" button),
 // on the same site, or "".
 function nextPageLink(html, pageUrl) {
-  var re = /<(?:link|a)\b[^>]*>/gi;
+  var re = /<(?:link|a)\b[^<>]*>/gi;
   var m;
   while ((m = re.exec(html)) !== null) {
     var rel = attribute(m[0], "rel");
@@ -1017,22 +1118,31 @@ function recipeLinks(html, pageUrl) {
 
   var re = /<article\b/gi;
   var m;
-  while ((m = re.exec(html)) !== null) {
-    var card = elementAt(html, m.index);
+  var closes = closingTags(html);
+  var cards = 0;
+  while ((m = re.exec(html)) !== null && cards++ < 2000) {
+    var card = elementAt(html, m.index, closes);
     // An <article> wrapping the cards isn't one of them, and WordPress
     // wraps each comment in one too.
     if (!card || /<article\b/i.test(card.inner)) continue;
     if (/comment/i.test(attribute(card.openTag, "class") + " " + attribute(card.openTag, "id"))) continue;
-    var links = card.inner.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || [];
-    var heading = card.inner.match(/<h([1-5])\b[^>]*>([\s\S]*?)<\/h\1>/i);
+    var links = [];
+    eachClosed(card.inner, /<a\b[^<>]*>/gi, "a", function (link) {
+      links.push(link);
+    });
+    var heading = "";
+    eachClosed(card.inner, /<h[1-5]\b[^<>]*>/gi, "h[1-6]", function (element) {
+      heading = cleanText(element.inner);
+      return true;
+    });
     for (var i = 0; i < links.length; i++) {
-      var url = resolveUrl(attribute(links[i].match(/^<a\b[^>]*>/i)[0], "href"), pageUrl);
+      var url = resolveUrl(attribute(links[i].open[0], "href"), pageUrl);
       if (!mayBeRecipe(url)) continue;
       // A link's text of one word is a badge on the photo ("Recipe"), not
       // the name; the address then reads better.
-      var linkText = cleanText(links[i]);
+      var linkText = cleanText(links[i].html);
       var title =
-        (heading && cleanText(heading[2])) ||
+        heading ||
         attribute(card.openTag, "data-item-name") ||
         attribute(card.openTag, "aria-label") ||
         (/\s/.test(linkText) ? linkText : "");
