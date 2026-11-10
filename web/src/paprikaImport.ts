@@ -7,7 +7,7 @@
 
 import { gunzipSync, strFromU8, unzipSync } from "fflate";
 import { stepTimes } from "./stepTimers.ts";
-import { headingOf, textToTags } from "./format.ts";
+import { headingOf, textToTags, type ExtraTime } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 import { sameTitle } from "./recipeTwins.ts";
 
@@ -20,6 +20,8 @@ export interface ImportedRecipe {
   prep_minutes: number;
   cook_minutes: number;
   total_minutes: number;
+  // Times besides prep and cook ("Cool: 7 hr"), from Bentotachi's own export.
+  extra_times: ExtraTime[];
   ingredients: string[];
   steps: string[];
   tags: string[];
@@ -187,7 +189,7 @@ function markedLines(value: unknown, { steps = false } = {}): { line: string; ph
       else waiting.push(...photos);
       continue;
     }
-    if (/^[^\d]{1,60}:$/.test(line)) line = `# ${line.slice(0, -1).trim()}`;
+    if (isHeadingLine(line)) line = `# ${line.slice(0, -1).trim()}`;
     marked.push({ line, photos: [...waiting, ...photos] });
     waiting = [];
   }
@@ -204,6 +206,32 @@ export function paprikaStepPhotos(raw: Record<string, unknown>): Record<string, 
     for (const name of photos) steps[name] ??= line;
   }
   return steps;
+}
+
+// A short line ending in a colon is a heading ("Sauce:", and Bentotachi's
+// own export of "# Day 1", "Day 1:"), unless it reads like a line of its
+// own: one starting with an amount ("2 cups:"), or a longer one with a
+// number in it ("Heat the oven to 180C and get out:").
+function isHeadingLine(line: string): boolean {
+  if (!/^[^\d].{0,59}:$/.test(line)) return false;
+  return !/\d/.test(line) || line.split(/\s+/).length <= 3;
+}
+
+// Bento's export put times Paprika has no place for ("Cool: 7 hr") in the
+// notes, as their last paragraph, "Other times: Cool: 7 hr, Rest: 10 min":
+// back into the recipe's own extra times. Anything else stays as notes.
+function splitOtherTimes(notes: string): { notes: string; extra_times: ExtraTime[] } {
+  const found = /(?:^|\n\n)Other times: ([^\n]+)$/.exec(notes);
+  if (!found) return { notes, extra_times: [] };
+  const parts = found[1].split(", ");
+  const extra_times = parts.flatMap((part) => {
+    const at = part.lastIndexOf(": ");
+    const label = at > 0 ? part.slice(0, at).trim() : "";
+    const minutes = at > 0 ? toMinutes(part.slice(at + 2)) : 0;
+    return label && minutes > 0 ? [{ label, minutes }] : [];
+  });
+  if (extra_times.length !== parts.length) return { notes, extra_times: [] };
+  return { notes: notes.slice(0, found.index).trim(), extra_times };
 }
 
 // Bento's export put the recipe writer's notes after its own, under "From the
@@ -349,7 +377,8 @@ const minutesNumber = (value: unknown) => (typeof value === "number" && value > 
 
 // `withPhoto: false` leaves the photo for later (paprikaPhoto).
 export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } = {}): ImportedRecipe {
-  const split = splitNotes(tidyText(raw.notes));
+  const timed = splitOtherTimes(tidyText(raw.notes));
+  const split = splitNotes(timed.notes);
   const extras = paprikaExtras(raw);
   const notes = [split.notes, extras].filter(Boolean).join("\n\n");
   const author_notes = split.author_notes;
@@ -363,6 +392,7 @@ export function fromPaprika(raw: Record<string, unknown>, { withPhoto = true } =
     prep_minutes: toMinutes(raw.prep_time) || minutesNumber(raw.prep_minutes),
     cook_minutes: toMinutes(raw.cook_time) || minutesNumber(raw.cook_minutes),
     total_minutes: toMinutes(raw.total_time) || minutesNumber(raw.total_minutes),
+    extra_times: timed.extra_times,
     ingredients: asLines(raw.ingredients),
     steps: asLines(raw.directions, { steps: true }),
     tags,

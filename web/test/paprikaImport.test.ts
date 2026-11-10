@@ -255,6 +255,37 @@ test("Bentotachi's own export comes back as already here, however the export rew
   assert.equal(alreadyHave(back, [real], "8F5A2D3C-1B2E-4C6D-9A0B-7E3F5D1C2B4A"), false);
 });
 
+test("sent to another Bentotachi as a Paprika file, a recipe keeps its other times and numbered headings", () => {
+  const original = {
+    id: "rec456",
+    title: "Brioche",
+    description: "",
+    source_url: "",
+    servings: "",
+    prep_minutes: 20,
+    cook_minutes: 30,
+    total_minutes: 0,
+    extra_times: [
+      { label: "Prove", minutes: 90 },
+      { label: "Chill", minutes: 7 * 60 },
+    ],
+    ingredients: ["# Day 1", "500 g flour", "# Day 2", "1 egg"],
+    steps: ["Mix the dough.", "Bake."],
+    tags: [],
+    notes: "Ours.",
+    author_notes: "Writer says hi.",
+    created: "",
+  };
+  const back = fromPaprika(readPaprikaFile(paprikaFile([toPaprika(original, "", 0)])).recipes[0]);
+  assert.deepEqual(back.extra_times, original.extra_times);
+  assert.equal(back.notes, "Ours.");
+  assert.equal(back.author_notes, "Writer says hi.");
+  assert.deepEqual(back.ingredients, original.ingredients);
+  // A longer line ending in a colon with a number in it stays a line.
+  const other = fromPaprika({ ...paprika, directions: "Heat the oven to 180C and get out:\nA tray." });
+  assert.equal(other.steps[0], "Heat the oven to 180C and get out:");
+});
+
 test("a file's recipes come one at a time, in order", () => {
   const recipe = (name: string) => gzipSync(strToU8(JSON.stringify({ ...paprika, name })));
   const zipped = zipSync({ "a.paprikarecipe": recipe("A"), "b.paprikarecipe": strToU8("not json"), "c.paprikarecipe": recipe("C") }, { level: 0 });
