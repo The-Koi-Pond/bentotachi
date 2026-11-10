@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "sandbox": "node scripts/sandbox.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "test": "node scripts/run-tests.mjs",

@@ -45,6 +45,14 @@ How to run: `README.md`.
   as `<Routes>` inside). `npm run build` writes to
   `server/pb_public/`, which PocketBase serves. `npm run dev` proxies `/api`
   to port 8090.
+  - **To try the app** (a browser check, a review, a mock-up): `npm run
+    sandbox` (in `web`; web/scripts/sandbox.mjs) starts a throwaway
+    PocketBase filled with a made-up household (sandbox-data.mjs: logins,
+    recipes, pantry, plan, notes) and the app on Vite, at
+    http://127.0.0.1:8181. `-- --empty` for a brand-new server, `-- --port
+    8280` beside another. Ctrl+C deletes its data; an agent stops the
+    processes on both ports instead (the next start clears what's left).
+    Tell a browser-checking agent to use it rather than build its own.
   - Tests: `node --test "test/*.test.ts"` from `web`. **`npm test`** (from
     `web`) runs everything below on its own (web/scripts/run-tests.mjs),
     without building or sending anything: use it before saying it works.
