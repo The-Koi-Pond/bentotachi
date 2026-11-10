@@ -75,11 +75,21 @@ export async function logInOnPhone(): Promise<boolean> {
   }
 }
 
+// The phone's server has no account yet but no name was given: the app
+// was closed during first-time setup, after the account was saved here but
+// before the server made it, so "Welcome back" didn't ask for one.
+export class PhoneNeedsName extends Error {
+  constructor() {
+    super("Bentotachi on this phone wasn't quite set up. What's your name?");
+  }
+}
+
 // "Just me, on this phone": starts the server, makes the account the first
 // time (or logs back into it), and remembers phone mode.
 export async function setUpPhone(name: string) {
   await startPhoneServer();
   const { needsSetup } = await pb.send<{ needsSetup: boolean }>("/api/cookbook/setup", {});
+  if (needsSetup && !name.trim()) throw new PhoneNeedsName();
   if (needsSetup) {
     const account = { username: usernameFor(name), password: randomPassword() };
     // Saved before the account is made, so the app being closed in between

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl, users } from "../pb";
-import { isPhoneMode, leavePhoneMode, phoneAccount, phoneModeSupported, rememberPhoneAccount, setUpPhone } from "../phoneMode";
+import { isPhoneMode, leavePhoneMode, phoneAccount, phoneModeSupported, PhoneNeedsName, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
 // "Set up your Bento" instead, to make the first account. In the app, with
@@ -175,7 +175,7 @@ export default function Login() {
 // back to it (after "Join a household"), the account is still saved and the
 // name would go unused, so it isn't asked again.
 function PhoneSetupForm() {
-  const [returning] = useState(() => phoneAccount() !== null);
+  const [returning, setReturning] = useState(() => phoneAccount() !== null);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -187,6 +187,8 @@ function PhoneSetupForm() {
     try {
       await setUpPhone(name);
     } catch (err) {
+      // Not really back: the name box after all.
+      if (err instanceof PhoneNeedsName) setReturning(false);
       setError(errorMessage(err));
       setBusy(false);
     }

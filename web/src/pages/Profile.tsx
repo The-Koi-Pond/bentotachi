@@ -264,7 +264,9 @@ function WhoSection({ user, phone }: { user: User; phone: boolean }) {
               maxLength={40}
               placeholder={phone ? "Your name" : user.username}
             />
-            <button className="button primary small" disabled={!!busy || !changed}>
+            {/* On a phone on its own, the username is made up ("testcook"),
+                so an empty name would show that around the app. */}
+            <button className="button primary small" disabled={!!busy || !changed || (phone && !name.trim())}>
               {busy === "name" ? "Saving…" : "Save"}
             </button>
           </div>
