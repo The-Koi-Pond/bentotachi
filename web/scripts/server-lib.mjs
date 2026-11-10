@@ -7,7 +7,8 @@
 //   npm run server-lib            (from the web folder)
 //
 // Needs Go, and gomobile set up once (see mobile/README.md). Builds for real
-// phones (arm64) only: the PC's emulator can't run it either way (its x86
+// phones, 64-bit (arm64) and older 32-bit ones (arm, ARMv7); Google Play
+// gives each phone only its own copy. The PC's emulator can't run it either way (its x86
 // Android blocks a system call the database uses, and its ARM translation
 // can't run Go), so phone-only mode is tested on a real phone. "-s -w" leaves out debugging
 // information, which phones never need (it nearly halves the size).
@@ -33,7 +34,10 @@ function newest(folder) {
   return latest;
 }
 
-if (existsSync(aar) && statSync(aar).mtimeMs > newest(mobile)) {
+// This script counts too: a change to how it builds (like which phones)
+// needs a new build even when the Go code hasn't changed.
+const thisScript = statSync(fileURLToPath(import.meta.url)).mtimeMs;
+if (existsSync(aar) && statSync(aar).mtimeMs > Math.max(newest(mobile), thisScript)) {
   console.log("Phone server library is up to date.");
   process.exit(0);
 }
@@ -64,6 +68,6 @@ mkdirSync(libs, { recursive: true });
 console.log("> gomobile bind (building the phone server, about a minute)");
 execFileSync(
   "gomobile",
-  ["bind", "-target=android/arm64", "-androidapi", "24", "-trimpath", "-ldflags=-s -w", "-javapkg", "com.xel.bento.server", "-o", aar, "./bentoserver"],
+  ["bind", "-target=android/arm,android/arm64", "-androidapi", "24", "-trimpath", "-ldflags=-s -w", "-javapkg", "com.xel.bento.server", "-o", aar, "./bentoserver"],
   { cwd: mobile, env, stdio: "inherit" },
 );

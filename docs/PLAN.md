@@ -246,6 +246,11 @@ Not released yet (all deployed 2026-11-10):
   second settings record.
 - The built-in browser's unused "Add to pantry" mode is gone (Android
   side too).
+- Phone-only mode also runs on older 32-bit phones (a closed-test tester
+  asked, 2026-11-11): the phone server is built for 32-bit ARM too, and
+  Chromebooks (which run phone apps by translating them, which Go can't
+  take) no longer offer it. Not tried on a 32-bit phone yet: the tester
+  who asked is the first.
 - From the codebase audit (2026-11-10):
   - A public Wi-Fi's sign-in page answering in the server's place counts
     as no connection: the phone keeps its offline copies, and what's added

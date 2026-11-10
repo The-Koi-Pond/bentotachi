@@ -33,9 +33,9 @@ export interface PhoneAccount {
   password: string;
 }
 
-// Whether this phone can run Bento's own server: it's built for 64-bit ARM
-// phones (nearly all phones since about 2017), not older 32-bit ones or
-// Chromebooks. Never in a browser.
+// Whether this phone can run Bento's own server: it's built for ARM phones,
+// 64-bit and older 32-bit ones, not Chromebooks or other x86 devices. Never
+// in a browser.
 export async function phoneModeSupported(): Promise<boolean> {
   if (!isAndroidApp) return false;
   try {

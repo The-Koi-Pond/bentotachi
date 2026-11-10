@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
  *   start()   starts it (if it isn't already) and resolves with { url }.
  *   backup()  makes a backup and asks where to save it: { saved }.
  *   restore() asks for a backup file and puts it in place: { restored, url }.
- *   supported() whether this phone can run it (64-bit ARM): { supported }.
+ *   supported() whether this phone can run it (an ARM phone): { supported }.
  *   erase()   stops it and deletes everything it kept.
  *   rescue()  when it won't start: saves its data as a backup anyway: { saved }.
  *
@@ -49,11 +49,16 @@ public class BentoLocalServerPlugin extends Plugin {
     private static final String RESCUED_ZIP = "bento-data-rescued.zip";
     private File pendingBackup;
 
-    // The server is built for 64-bit ARM only (see mobile/README.md).
+    // The server is built for ARM phones, 64-bit and 32-bit (see
+    // mobile/README.md). The phone's own kind comes first in SUPPORTED_ABIS;
+    // an x86 Chromebook lists ARM kinds after its own (it translates ARM
+    // apps), and Go can't run that way.
     @PluginMethod
     public void supported(PluginCall call) {
-        boolean arm64 = java.util.Arrays.asList(android.os.Build.SUPPORTED_ABIS).contains("arm64-v8a");
-        call.resolve(new JSObject().put("supported", arm64));
+        String[] abis = android.os.Build.SUPPORTED_ABIS;
+        String own = abis.length > 0 ? abis[0] : "";
+        boolean arm = own.equals("arm64-v8a") || own.equals("armeabi-v7a");
+        call.resolve(new JSObject().put("supported", arm));
     }
 
     @PluginMethod

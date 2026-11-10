@@ -32,7 +32,8 @@ in `go.mod` should match the one household servers run.
 
 ## Testing on a phone
 
-It's built for real phones (arm64) only. The PC's Android emulator can't run
+It's built for real phones only: 64-bit ones (arm64) and older 32-bit ones
+(arm, ARMv7). The PC's Android emulator can't run
 it: its x86 Android blocks a system call the database uses, and its ARM
 translation can't run Go. To try it beside the real Bento:
 

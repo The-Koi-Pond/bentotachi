@@ -133,7 +133,7 @@ export default function Login() {
         {brand}
         {isAndroidApp && phoneOk === false && firstRun && (
           <p className="muted small-note">
-            This phone can't run Bentotachi by itself (it needs a newer, 64-bit phone), so it connects to a Bentotachi server.
+            This device can't run Bentotachi by itself, so it connects to a Bentotachi server.
           </p>
         )}
         {isAndroidApp && (
