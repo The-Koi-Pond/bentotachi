@@ -235,7 +235,9 @@ export function paprikaZip(write: (piece: Uint8Array) => void) {
   return {
     add(recipe: PaprikaRecipe) {
       const name = strToU8(entryName(recipe.name, used));
-      const data = gzipSync(strToU8(JSON.stringify(recipe)));
+      // No time stamped in (gzip's default is now): the same recipes make
+      // the same file, as the zip's own fixed dates already do.
+      const data = gzipSync(strToU8(JSON.stringify(recipe)), { mtime: 0 });
       // A zip without zip64 can't say more: fail plainly rather than write
       // a file other apps would read wrong.
       if (count >= 0xffff || offset + 30 + name.length + data.length > 0xffffffff) throw new Error(TOO_BIG);

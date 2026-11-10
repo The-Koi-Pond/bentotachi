@@ -120,6 +120,19 @@ test("the zip is what strict readers expect: checksums, sizes, counts, UTF-8 nam
   assert.equal(at, end);
 });
 
+test("the same recipes make the same file, whatever the time", () => {
+  const recipes = [toPaprika(recipe, "", 0)];
+  const realNow = Date.now;
+  try {
+    Date.now = () => Date.UTC(2026, 0, 1, 0, 0, 0);
+    const before = paprikaFile(recipes);
+    Date.now = () => Date.UTC(2026, 0, 1, 0, 0, 7);
+    assert.deepEqual(paprikaFile(recipes), before);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 test("written a piece at a time, the file is the same as written whole", () => {
   const recipes = Array.from({ length: 5 }, (_, i) => toPaprika({ ...recipe, id: `p${i}` }, "", 0));
   const pieces: Uint8Array[] = [];
