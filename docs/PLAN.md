@@ -262,7 +262,7 @@ Not released yet (all deployed 2026-11-10):
     half-written fridge note and a typed shelf tag aren't lost.
   - Release and Play uploads also refuse uncommitted Android or phone-server
     code, and run the phone server's tests before building it.
-  - Not deployed yet: a page built to be slow (runs of unclosed tags) no
+  - A page built to be slow (runs of unclosed tags) no
     longer keeps the server busy for minutes when imported, and list items
     a page leaves unclosed (allowed for `<li>`) are read one by one; the
     recipe list's Shelves / One list switch shows what's on screen and
