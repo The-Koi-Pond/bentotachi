@@ -5,6 +5,12 @@ gaps our own use doesn't show, and how Bento compares with the well-known
 apps. Tick things off here as they're done (and note them in PLAN.md's
 "Waiting for the next app release" list as usual).
 
+**Where Google Play stands now is docs/PLAN.md, stage 8**: that list is
+kept current at each step; this one was brought up to date on 2026-11-10
+and is the 2026-10-31 check-up with its reasons. The closed test opened on
+2026-11-08 with 14 testers, and every phone in the household runs the Play
+version.
+
 ## How Bento compares (October 2026)
 
 Bento is ahead of Paprika 3 on: separate logins per person (Paprika 3 has
@@ -52,20 +58,22 @@ code unless marked *(inferred)*.
   Done: 2026-10-31, export only: ⋮ → Export recipes saves every recipe with its photo as a Paprika file (web/src/paprikaExport.ts), read back cleanly the way Mealie and Tandoor read it; not tried in Paprika itself. Android saving (BentoFilesPlugin) compiles but is untried on a phone. Importing from other apps is still to do.
 
 ### Google Play
-- [ ] **Blocker: the self-updater** (`REQUEST_INSTALL_PACKAGES`). Planned:
+- [x] **Blocker: the self-updater** (`REQUEST_INSTALL_PACKAGES`). Planned:
   a Play build without it.
+  Done: 2026-11-03: `npm run play` builds the Play version without it (no permission, no update banner of its own, no Ko-fi link). Since 1.20.0 (2026-11-08) the Play version shows Google's own update prompt instead (appUpdates.ts).
 - [x] **Blocker: no "Delete my account" in the app** (Play requires one for
   apps that create accounts) *(policy from memory; check in Play Console)*.
   Done: 2026-10-31: Profile → Delete my account (server: the account, picture and ratings; what they added stays). Phone-only: Delete everything erases the phone's Bento.
 - [x] **High: privacy policy** doesn't mention phone-only mode, Android's
   own backup (`allowBackup`), or Google's scanner.
-  Done: 2026-10-31: site/privacy.html covers phone-only mode, Android backup (now turned off: allowBackup=false), Google's scanner, and in-app account deletion. Goes live when pushed to GitHub.
+  Done: 2026-10-31: the privacy policy covers phone-only mode, Android backup (now turned off: allowBackup=false), Google's scanner, and in-app account deletion. Since 2026-11-03 it lives in The Koi Pond's website repository (`bentotachi/privacy.html`, thekoipond.dev/bentotachi/privacy.html), no longer in this repository's `site/`.
 - [ ] **High: plain http** (`cleartext: true`): passwords travel
   unencrypted on home Wi-Fi; the Data safety form would have to say so.
   Tailscale users are fine. Fix: https via `tailscale serve`, or guide
   friends to Tailscale only.
-- [ ] **Medium: 16 KB page-size rule** for native code on Android 15+: check
+- [x] **Medium: 16 KB page-size rule** for native code on Android 15+: check
   the phone-server library *(inferred)*.
+  Done: 2026-11-03: libgojni.so's sections are 16 KB-aligned, and zipalign -P 16 accepts the 1.13.0 APK.
 - [x] **Medium: store logos** in the Play build (planned).
   Decided 2026-11-01: they stay, inside the app only (not in the Play listing, screenshots or icon), with a line on the Household page that they belong to their owners and Bentotachi isn't connected with any store. Letter badges if anyone objects.
 
@@ -73,8 +81,9 @@ code unless marked *(inferred)*.
 - [x] **High: never tried on a real phone**; arm64 only, so older 32-bit
   phones would fail. Hide the option where it can't run.
   Done: Done: 2026-11-01 on a Pixel 7 Pro (Android 17, 4 KB pages): first screen, setup in 1.5 s, importing from links and through the built-in browser (taste.com.au), the home-network refusal, the backup nudge, Save a backup, Restore (a later change was undone), Export (3 recipes and photos, read cleanly), Delete everything, and dark mode. Phones that can't run it go to the server choice (supported(), not tried on such a phone). Not tried: Save my data on a phone whose server won't start (go test covers it).
-- [ ] **High: never gets app updates** (its own server has no releases, so
+- [x] **High: never gets app updates** (its own server has no releases, so
   the check always says "up to date").
+  Done: phone-only people use the Play version, which Google Play updates, with an in-app prompt since 1.20.0 (2026-11-08; ⋮ → Check for updates too).
 - [x] **High: backups only when someone remembers**: no reminder, no "last
   backed up". Set explicit Android backup rules too.
   Done: 2026-10-31: the Recipes page nudges (no backup yet, or two weeks old; Later waits three days), Backups shows when one was last saved. Android's own backup is turned off instead of given rules.
@@ -86,6 +95,9 @@ code unless marked *(inferred)*.
   Done: 2026-10-31: saved first, put back if setup fails.
 
 ### Friends' own servers
+Not being worked on (2026-11-10): the household's Pi is the only server
+running, and friends and testers use the Play version in phone-only mode
+(PLAN.md, "Which servers exist").
 - [ ] **High: a stranger can't get a server** without Node/npm; only Xel
   can build the zip. Publish it (GitHub Releases), link the guide.
 - [ ] **Medium: a new server can be claimed by whoever reaches it first**

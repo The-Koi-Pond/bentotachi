@@ -26,11 +26,12 @@ with). Website: **[thekoipond.dev/bentotachi](https://thekoipond.dev/bentotachi/
 
 ## Getting it
 
-Bentotachi is a small household project, being tested by friends. It's an
-Android app that works on its own on your phone; it isn't on Google Play yet.
-Households that want to share it run the server below on a computer at home
-(a Raspberry Pi or an old PC is plenty), and any phone or computer can then
-use it in a browser too.
+Bentotachi is a small household project. It's an Android app that works on
+its own on your phone, in a closed test on Google Play since 2026-11-08:
+**[sign up to help test it](https://thekoipond.dev/bentotachi/join/)**, and
+Google Play installs it and keeps it updated. Households that want to share
+it run the server below on a computer at home (a Raspberry Pi or an old PC
+is plenty), and any phone or computer can then use it in a browser too.
 
 ---
 
@@ -47,7 +48,9 @@ stays so installed phones keep getting updates.)
 - `mobile/` is the small server the app runs on the phone in phone-only mode.
 - The website, thekoipond.dev/bentotachi, lives in The Koi Pond's website
   repository (github.com/The-Koi-Pond/the-koi-pond.github.io, `bentotachi/`).
-- `docs/PLAN.md` is the roadmap, `docs/REVIEW.md` the list of gaps.
+- `docs/PLAN.md` is the roadmap (stage 8 is where Google Play stands),
+  `docs/RELEASES.md` what each release brought, and `docs/REVIEW.md` the
+  check-up of 2026-10-31.
 
 ## First-time setup on Windows
 
@@ -123,8 +126,16 @@ anywhere with Tailscale on, is the Pi's Tailscale address plus `:8090`
 
 ## Installing and updating the Android app
 
+People install Bentotachi from Google Play (the closed test, above); that's
+the version everyone uses, and Play sends its updates. `npm run play` (in
+`web`) builds it, and `.claude/rules/releases.md` says how it's uploaded.
+The self-installed version below is the older route, still used for a
+friend's own server and the friends' zip:
+
 - First install on a phone (with Tailscale on): open
   `http://<server address>/api/cookbook/app/download` in Chrome and install.
+  A phone with the Play version can't update to this one (or back): they're
+  signed differently, so switching means uninstalling first.
 - Publishing an update: in `web`, run
   `npm run release -- "What changed"` for a small fix (1.2.0 → 1.2.1),
   `npm run release -- minor "What changed"` for a new feature (→ 1.3.0), or

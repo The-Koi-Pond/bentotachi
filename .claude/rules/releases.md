@@ -24,7 +24,13 @@ paths:
   switches release builds to Bento's own key. Without it, release stops
   (unless `--test-key`, for a server whose phones all have test-key builds).
   Commit app/build.gradle after a release (it says so): otherwise the next
-  release can reuse a version number phones already have.
+  release can reuse a version number phones already have. Commit it as
+  "Release 1.24.0" and tag that commit `v1.24.0`
+  (`git tag -a v1.24.0 -m "Bentotachi 1.24.0"`, pushed with
+  `git push origin main v1.24.0`), so a version's code can be found
+  without reading commit messages. Releases from 1.9.0 on are tagged.
+  The plan's "Not released yet" list then moves to the top of
+  `docs/RELEASES.md` as "Released in 1.24.0 (date):".
   Then add the release to the website's "What's new" page and feed
   (`bentotachi/changelog.html` and `changelog.xml` in the website
   repository; its CLAUDE.md, "Bentotachi's changelog", says how), in plain

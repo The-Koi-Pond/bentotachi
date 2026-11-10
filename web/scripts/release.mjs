@@ -101,7 +101,8 @@ console.log(`\nPublished Bentotachi ${versionName}. Installed apps will offer th
 // lost (a fresh clone, or the change undone), the next release would reuse
 // a number phones already have, and they'd never be offered it.
 console.log(
-  `\nCommit web/android/app/build.gradle now (version ${versionCode}), so the next release doesn't reuse this number.` +
+  `\nCommit web/android/app/build.gradle now (version ${versionCode}) as "Release ${versionName}", so the next release doesn't reuse this number,` +
+    ` and tag it: git tag -a v${versionName} -m "Bentotachi ${versionName}", pushed with git push origin main v${versionName}.` +
     "\nThen npm run deploy sends the app to the Pi."
 );
 // The website's "What's new" page and feed only list what someone adds, so

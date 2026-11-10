@@ -12,11 +12,13 @@ the `/api/cookbook/...` routes keep the older "cookbook" name. The folder
 is `C:\Projects\TheKoiPond\bentotachi` (it was `C:\Projects\Cookbook`, then
 `...\TheKoiPond\bento`), next to The Koi Pond's other projects: see
 `C:\Projects\TheKoiPond\README.md`.
-Roadmap and status: `docs/PLAN.md`.
-What's already done or still open before offering Bentotachi to people
-outside the household (Google Play, phone-only mode, privacy, account
-deletion): `docs/REVIEW.md`, the 2026-10-31 check-up, ticked off as things
-get done. Check it before saying something for Play is missing.
+Roadmap and status: `docs/PLAN.md`; what each release brought:
+`docs/RELEASES.md` (releases are tagged `v1.23.0` in git).
+Where Google Play stands (what's done and what's open: the closed test,
+production access, the store listing): `docs/PLAN.md`, stage 8, kept
+current at each step. Check it before saying something for Play is
+missing. `docs/REVIEW.md` is the 2026-10-31 check-up behind it (privacy,
+account deletion, phone-only mode), with its reasons.
 What Bentotachi is, its promises, voice (cheeky, but the joke never
 replaces the information) and look: `docs/VISION.md`. Check new screens,
 wording and features against it. For app text, its voice wins over the
