@@ -18,8 +18,6 @@ import {
   displayName,
   errorMessage,
   personStyle,
-  recipeCategories,
-  recipeRatings,
   recipes,
   useCurrentUser,
   useQuickMinutes,
@@ -50,8 +48,8 @@ import {
 import { matchesSearch } from "../recipeSearch";
 import { searchVariants } from "../regionalNames";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
-import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
-import { liveUpdateFailed } from "../liveResend";
+import { ratingsCopy, recipesCopy } from "../offline";
+import { useLiveRecords } from "../useLiveRecords";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
 import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
@@ -64,7 +62,6 @@ import { sourceLines } from "../recipeTwins";
 import { confirmDelete, deleteRecipes } from "../recipeDeletion";
 import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
-import { ensureLogin } from "../session";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
 
@@ -74,6 +71,9 @@ const shelfDropTarget: CollisionDetection = (args) => {
   const underPointer = pointerWithin(args);
   return underPointer.length > 0 ? underPointer : closestCenter(args);
 };
+
+// What the cards need from each rating.
+const RATING_FIELDS = "id,recipe,user,stars,favorite,approved,disliked";
 
 // The chosen order is remembered on this device.
 const SORT_KEY = "bento.recipeSort";
@@ -116,8 +116,21 @@ function useEditMode() {
 }
 
 export default function RecipeList() {
-  const [all, setAll] = useState<Recipe[] | null>(null);
+  // Live, like the other shared lists: a recipe, rating or shelf a housemate
+  // changes shows here straight away. `offline`: showing the phone's copy
+  // because the server can't be reached.
+  const { items: all, setItems: setAll, loadError, offline } = useLiveRecords<Recipe>("recipes", {
+    sort: "title",
+    expand: "added_by",
+    copy: recipesCopy,
+  });
+  // Ratings are extras on the cards; the list still works without them.
+  const ratings = useLiveRecords<RecipeRating>("recipe_ratings", { fields: RATING_FIELDS, copy: ratingsCopy }).items;
+  // The household's categories (shelves); null until loaded, or if they
+  // can't be (offline, or an older server), which shows the plain list.
+  const { items: categories, setItems: setCategories } = useLiveRecords<RecipeCategory>("recipe_categories");
   const [error, setError] = useState("");
+  const problem = error || loadError;
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useEditMode();
   // Edit mode: the recipes picked, by id; what the bar is doing; whether it
@@ -153,14 +166,8 @@ export default function RecipeList() {
   const [tagMode, setTagMode] = useState<"with" | "without">("with");
   const me = useCurrentUser();
   const quickMinutes = useQuickMinutes();
-  const [ratings, setRatings] = useState<RecipeRating[]>([]);
   const [sort, setSort] = useState<SortOrder>(savedSort);
   const [layout, setLayout] = useState<CardLayout>(savedLayout);
-  // Showing the phone's saved copy because the server can't be reached.
-  const [offline, setOffline] = useState(false);
-  // The household's categories (shelves); null until loaded, or if they
-  // can't be (offline, or an older server), which shows the plain list.
-  const [categories, setCategories] = useState<RecipeCategory[] | null>(null);
   const drawers = useShelfDrawers();
   const singleUser = useSingleUser();
   // Dragging shelves into a new order: by the grip (a small move starts
@@ -196,108 +203,10 @@ export default function RecipeList() {
 
   const gridClass = `recipe-grid ${layout === "small" ? "" : layout}`;
 
-  useEffect(() => {
-    function load() {
-      // The login first: with an expired one the server answers with no
-      // recipes, which would replace the copy kept on this phone (session.ts).
-      void ensureLogin()
-        .then((state) => (state === "signedOut" ? null : recipes().getFullList({ sort: "title", expand: "added_by" })))
-        .then((list) => {
-          if (!list) return;
-          setAll(list);
-          saveRecipes(list);
-          setOffline(false);
-        })
-        .catch((err) => {
-          // No connection: show the copy kept on this phone, if there is one
-          // (and keep what's on screen, when a reload is what failed).
-          const saved = isOffline(err) ? savedRecipes() : null;
-          if (saved) {
-            setAll((current) => current ?? saved);
-            setRatings((current) => (current.length ? current : savedRatings()));
-            setOffline(true);
-          } else setError(errorMessage(err));
-        });
-      // Ratings are extras on the cards; the list still works without them.
-      // (After the same login check: ensureLogin asks the server only once.)
-      void ensureLogin()
-        .then((state) =>
-          state === "signedOut" ? null : recipeRatings().getFullList({ fields: "id,recipe,user,stars,favorite,approved,disliked" })
-        )
-        .then((list) => {
-          if (!list) return;
-          setRatings(list);
-          saveRatings(list);
-        })
-        .catch(() => {});
-      recipeCategories()
-        .getFullList()
-        .then(setCategories)
-        .catch(() => {});
-    }
-    load();
-
-    // Live, like the other shared lists (useLiveRecords): a recipe, rating
-    // or shelf a housemate changes shows here straight away. Phones pause
-    // apps in the background and can miss some, so it all loads again when
-    // the app comes back to the front, or the connection does.
-    const replaced = <T extends { id: string }>(list: T[], event: { action: string; record: T }) =>
-      event.action === "delete" ? list.filter((r) => r.id !== event.record.id) : [...list.filter((r) => r.id !== event.record.id), event.record];
-    let stopped = false;
-    const stops: (() => void)[] = [];
-    // The phone's copies follow, deletes too, so offline shows what's here.
-    const feeds = [
-      () =>
-        recipes().subscribe(
-          "*",
-          (event) =>
-            setAll((list) => {
-              if (!list) return list;
-              const next = replaced(list, event);
-              saveRecipes(next);
-              return next;
-            }),
-          { expand: "added_by" }
-        ),
-      () =>
-        recipeRatings().subscribe("*", (event) =>
-          setRatings((list) => {
-            const next = replaced(list, event);
-            saveRatings(next);
-            return next;
-          })
-        ),
-      () => recipeCategories().subscribe("*", (event) => setCategories((list) => list && replaced(list, event))),
-    ];
-    for (const start of feeds) {
-      start()
-        .then((stop) => {
-          if (stopped) void stop();
-          else stops.push(stop);
-        })
-        .catch(() => {
-          // Live updates are a bonus; coming back to the page still loads.
-          // Sent again when the connection comes back (liveResend.ts).
-          liveUpdateFailed();
-        });
-    }
-    const onVisible = () => {
-      if (document.visibilityState === "visible") load();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("online", load);
-    return () => {
-      stopped = true;
-      for (const stop of stops) stop();
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("online", load);
-    };
-  }, []);
-
   // Per recipe: everyone's ratings, the average, and whether it's your favorite.
   const ratingsByRecipe = useMemo(() => {
     const map = new Map<string, RecipeRating[]>();
-    for (const rating of ratings) map.set(rating.recipe, [...(map.get(rating.recipe) ?? []), rating]);
+    for (const rating of ratings ?? []) map.set(rating.recipe, [...(map.get(rating.recipe) ?? []), rating]);
     return map;
   }, [ratings]);
   const myRating = (recipe: Recipe) => (ratingsByRecipe.get(recipe.id) ?? []).find((r) => r.user === me?.id);
@@ -529,7 +438,7 @@ export default function RecipeList() {
     setWorking(false);
   }
 
-  if (!all) return error ? <p className="error">{error}</p> : <p className="muted">The recipes are in here somewhere…</p>;
+  if (!all) return problem ? <p className="error">{problem}</p> : <p className="muted">The recipes are in here somewhere…</p>;
 
   if (all.length === 0) {
     return (
@@ -841,7 +750,7 @@ export default function RecipeList() {
           </button>
         </div>
       )}
-      {editing && error && <p className="error">{error}</p>}
+      {editing && problem && <p className="error">{problem}</p>}
       {editing && done && (
         <p className="success" role="status">
           {done}
@@ -987,7 +896,7 @@ export default function RecipeList() {
         <ul className={gridClass}>{shown.map((recipe) => tile(recipe))}</ul>
       )}
 
-      {!editing && error && <p className="error">{error}</p>}
+      {!editing && problem && <p className="error">{problem}</p>}
     </div>
   );
 }

@@ -140,10 +140,15 @@ function PlanMealsSetting() {
   const [meals, setMeals] = usePlanMeals();
   const { error, save } = useSave();
 
+  // Made to the meals as they are by then (a tap a moment ago included).
   function toggle(meal: Meal) {
-    const next = meals.includes(meal) ? meals.filter((m) => m !== meal) : [...meals, meal];
-    if (next.length === 0) return;
-    void save(() => setMeals(MEALS.filter((m) => next.includes(m))));
+    if (meals.length === 1 && meals[0] === meal) return;
+    void save(() =>
+      setMeals((now) => {
+        const next = now.includes(meal) ? now.filter((m) => m !== meal) : [...now, meal];
+        return next.length ? MEALS.filter((m) => next.includes(m)) : now;
+      })
+    );
   }
 
   return (

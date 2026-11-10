@@ -55,9 +55,9 @@ if (!existsSync(join(android, "keystore.properties"))) {
   );
   process.exit(1);
 }
-// The app carries the web app, and the server code for phone-only mode (see
-// committed.mjs).
-refuseUncommittedCode("built");
+// The app carries the web app, the Android code, and the server code and
+// Go server for phone-only mode (see committed.mjs).
+refuseUncommittedCode("built", { app: true });
 await runTests();
 
 run("npm run android", web, { VITE_BENTO_PLAY: "1" });

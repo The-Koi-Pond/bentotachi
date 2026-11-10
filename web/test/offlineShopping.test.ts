@@ -238,6 +238,27 @@ test("an add whose answer was lost, ticked or unticked while it waited, ends tha
   assert.deepEqual(queue, []);
 });
 
+test("an add already on the server whose tick can't go yet stays waiting, with the ones after it", async () => {
+  let queue = queueAdd([], "Butter", now);
+  queue = queueCheck(queue, queue[0].id, true, now);
+  queue = queueCheck(queue, "milk1", true, now);
+  const sent: string[] = [];
+  const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
+    // Already there (its first answer was lost)...
+    add: async () => {
+      throw { status: 400 };
+    },
+    // ...and the signal drops before its tick goes.
+    check: async (id) => {
+      sent.push(id);
+      throw { status: 0 };
+    },
+  });
+  assert.equal(sent.length, 1, "its tick was tried, and milk1's wasn't");
+  assert.deepEqual(describe(withoutHandled(queue, handled)), ["add Butter", "check milk1 true"]);
+});
+
 test("two tabs sharing the queue: the second sends only what the first didn't", async () => {
   // The phone's storage, shared; each tab reads it again only when it
   // changed (as shoppingQueue.ts does), so a tab gets its own copies.

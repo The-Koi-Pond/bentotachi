@@ -23,6 +23,9 @@ test("tablespoons get a hint only when they aren't the household's spoon", () =>
   assert.equal(withVolumeHint("2 tbsp sugar", "AU", au, 15), "2 tbsp *(your 2 tbsp + 2 tsp)* sugar");
   assert.equal(withVolumeHint("1-2 tbsp honey", "US", au, 15), "1-2 tbsp *(your 1 tbsp + 1 tsp to 2 tbsp + 2 tsp)* honey");
   assert.equal(withVolumeHint("1 tsp salt", "AU", us, 20), "1 tsp salt");
+  assert.equal(withVolumeHint("1 and 1/2 tbsp butter", "AU", us, 20), "1 and 1/2 tbsp *(your 1 tbsp + ½ tsp)* butter");
+  assert.equal(withVolumeHint("1 1/2 tbsp butter", "AU", us, 20), "1 1/2 tbsp *(your 1 tbsp + ½ tsp)* butter");
+  assert.equal(withVolumeHint("1 & ½ cups milk", "UK", us, 15), "1 & ½ cups *(360 ml)* milk");
 });
 
 test("outside the US, US liquid measures get millilitres (and cups, except in Australia)", () => {

@@ -35,6 +35,7 @@ import {
 import { markFridgeSeen } from "../fridgeSeen";
 import { CheckIcon } from "../icons";
 import { BenMood } from "../Brand";
+import { useUnsavedChanges } from "../unsavedChanges";
 
 // The fridge door: the title opens it (App.tsx). A splash line, notes the
 // household leaves for each other, and what's been happening lately. On your
@@ -44,7 +45,7 @@ export default function Fridge() {
   const [splash] = useState(() => randomSplash());
   const singleUser = useSingleUser();
   const solo = isPhoneMode() || singleUser;
-  const list = useLiveRecords<Note>("notes", "added_by");
+  const list = useLiveRecords<Note>("notes", { expand: "added_by" });
   const undo = useUndo();
 
   // Opening the page (and staying on it while notes arrive) reads them.
@@ -204,6 +205,9 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // A note written but not stuck up yet: leaving asks first, as the other
+  // add boxes do.
+  useUnsavedChanges(text.trim() !== "");
   // The blank note is your next one, so it's on your paper.
   const paper = personStyle(useCurrentUser() ?? undefined);
 

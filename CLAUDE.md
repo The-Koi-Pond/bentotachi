@@ -77,8 +77,9 @@ What every session needs anyway:
 - Deploy: `npm run deploy` (in `web`) sends the server code and web app to
   the Pi (Xel allowed Claude to run it, 2026-10-30; say when you do, since
   Bento blinks off for a few seconds). Deploy, release, play and package
-  refuse while the web app or the server code has uncommitted changes
-  (web/scripts/committed.mjs), since other sessions often work in this
+  refuse while the web app or the server code has uncommitted changes, and
+  release and play also while the Android code or the phone server
+  (`mobile/`) has (web/scripts/committed.mjs), since other sessions often work in this
   folder: commit your own work first. A release or Play upload reaches
   phones, so only with Xel's go-ahead.
 - **Every APK carries `server/pb_hooks` and `server/pb_migrations`**
@@ -107,8 +108,8 @@ What every session needs anyway:
   starting with `#` is a heading.
 - All collections allow any logged-in household member to read and write.
 - Pages that show shared lists use `useLiveRecords` (load + live updates +
-  reload when the app returns to the front). The recipe list does the same
-  by hand (RecipeList.tsx), as it keeps its own offline copy and ratings.
+  reload when the app returns to the front), the recipe list included; an
+  offline copy is one of offline.ts's ready-made `copy` objects.
 - The "(Xel, 2026-11-08)" credit style is for docs/PLAN.md only, never code
   comments: a comment says why, and web/test/noCommentCredits.test.ts fails
   on a who-asked-and-when credit.

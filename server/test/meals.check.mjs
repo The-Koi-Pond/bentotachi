@@ -47,13 +47,16 @@ try {
   check("a meal still needs a recipe or a note", e.status === 400);
 }
 
-// Swapping two meals: one request, both saved together.
-const swapA = await api(token, "POST", "/collections/meal_plan/records", { date: "2031-03-06 00:00:00.000Z", meal: "dinner", note: "Tacos" });
+// Swapping two meals: one request, both saved together. One holds a
+// recipe, so its recipe has to move and the other's empty one too.
+const tacos = await api(token, "POST", "/collections/recipes/records", { title: `Swap tacos ${Date.now()}` });
+const swapA = await api(token, "POST", "/collections/meal_plan/records", { date: "2031-03-06 00:00:00.000Z", meal: "dinner", recipe: tacos.id, note: "Tacos" });
 const swapB = await api(token, "POST", "/collections/meal_plan/records", { date: "2031-03-07 00:00:00.000Z", meal: "lunch", note: "Salad" });
 await api(token, "POST", "/cookbook/meal-plan/swap", { a: swapA.id, b: swapB.id });
 const afterA = await api(token, "GET", `/collections/meal_plan/records/${swapA.id}`);
 const afterB = await api(token, "GET", `/collections/meal_plan/records/${swapB.id}`);
 check("swapping trades two meals", afterA.note === "Salad" && afterB.note === "Tacos");
+check("and their recipes", afterA.recipe === "" && afterB.recipe === tacos.id, `(${JSON.stringify([afterA.recipe, afterB.recipe])})`);
 check("each swapped meal keeps its place", afterA.date.startsWith("2031-03-06") && afterA.meal === "dinner" && afterB.meal === "lunch");
 try {
   await api(token, "POST", "/cookbook/meal-plan/swap", { a: swapA.id, b: "nosuchmeal12345" });
@@ -77,3 +80,4 @@ check("the household can choose its meals", JSON.stringify(chosen.plan_meals) ==
 await api(token, "PATCH", `/collections/household_settings/records/${record.id}`, { plan_meals: [] });
 
 for (const entry of [fromOldApp, moved, secondLunch, breakfast, swapA, swapB]) await api(token, "DELETE", `/collections/meal_plan/records/${entry.id}`);
+await api(token, "DELETE", `/collections/recipes/records/${tacos.id}`);

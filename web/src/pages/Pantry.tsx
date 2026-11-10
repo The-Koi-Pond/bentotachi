@@ -816,6 +816,10 @@ export default function Pantry() {
         </div>
       )}
 
+      {/* The run-out bar and the page's own Undo bar can show at once (a
+          mistaken Out, then something else used up): one above the other,
+          so neither's Undo is hidden. */}
+      <div className="toast-stack">
       {/* Gone by itself once it's no longer out, or someone puts it on the
           list meanwhile. */}
       {stillAsking && (
@@ -850,6 +854,7 @@ export default function Pantry() {
         </p>
       )}
       {undo.toast}
+      </div>
       {items.length > 0 && shown.length === 0 && (
         <p className="muted">
           {onePlace && scoped.length === 0

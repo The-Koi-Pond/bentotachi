@@ -4,6 +4,8 @@
 // phone is locked or the page is closed (it's saved on this device; see
 // RecipeTimer.tsx).
 
+import { extraTimes } from "./format.ts";
+
 export type TimerStage = "prep" | "cook" | "done";
 
 export interface TimerState {
@@ -71,4 +73,18 @@ export function recipeMinutes(ms: number): number {
   if (ms < 30_000) return ms > 0 ? 1 : 0;
   const minutes = ms / 60_000;
   return minutes < 10 ? Math.max(1, Math.round(minutes)) : Math.round(minutes / 5) * 5;
+}
+
+// The total to save with newly timed prep and cook. Extra times like "Cool
+// 7 h" aren't timed, so they stay in it; so does any waiting a website gave
+// only in its total (prep 15, cook 20, total 4 h 35 min), which would
+// otherwise turn a slow recipe into a quick one.
+export function timedTotal(
+  recipe: { prep_minutes: number; cook_minutes: number; total_minutes: number; extra_times?: unknown },
+  prep: number,
+  cook: number,
+): number {
+  const extra = extraTimes(recipe).reduce((sum, time) => sum + time.minutes, 0);
+  const waiting = Math.max(0, recipe.total_minutes - recipe.prep_minutes - recipe.cook_minutes - extra);
+  return prep + cook + extra + waiting;
 }

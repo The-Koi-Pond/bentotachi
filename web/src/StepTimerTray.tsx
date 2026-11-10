@@ -12,6 +12,7 @@ import {
   resumedTimer,
   startStepTimer,
   type StepTime,
+  type TimedStep,
   type StepTimer,
 } from "./stepTimers";
 
@@ -50,7 +51,7 @@ export function useStepTimers(): StepTimer[] {
   return useSyncExternalStore(subscribe, () => timers);
 }
 
-export function startTimer(recipeId: string, recipeTitle: string, step: number, time: StepTime) {
+export function startTimer(recipeId: string, recipeTitle: string, step: TimedStep, time: StepTime) {
   const timer = startStepTimer(recipeId, recipeTitle, step, time, Date.now());
   set([...timers, timer]);
   // Browsers only let a page make sound after a tap: this tap unlocks it.
@@ -143,6 +144,10 @@ export default function StepTimerTray() {
     const tick = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(tick);
   }, [running]);
+  // A timer just started or resumed counts from now, not from the last tick
+  // (which stopped while nothing ran): a new 30 minutes would show "30:09".
+  // Before paint, so the wrong time never shows.
+  useLayoutEffect(() => setNow(Date.now()), [list]);
   // Back from the background: catch up at once.
   useEffect(() => {
     const onVisible = () => document.visibilityState === "visible" && setNow(Date.now());
@@ -207,7 +212,7 @@ export default function StepTimerTray() {
             <Link to={`/recipes/${timer.recipeId}`} className="timer-what">
               <span className="timer-recipe">{timer.recipeTitle}</span>
               <span className="timer-step">
-                Step {timer.step} · {timer.label}
+                {timer.heading && `${timer.heading} · `}Step {timer.step} · {timer.label}
               </span>
             </Link>
             <span className="timer-left" aria-live={done ? "assertive" : "off"}>
@@ -221,7 +226,7 @@ export default function StepTimerTray() {
             <button
               className="icon-button small"
               onClick={() => remove(timer)}
-              aria-label={done ? `Dismiss step ${timer.step}'s timer` : `Stop step ${timer.step}'s timer`}
+              aria-label={`${done ? "Dismiss" : "Stop"} ${timer.heading ? `${timer.heading} ` : ""}step ${timer.step}'s timer`}
             >
               <CloseIcon />
             </button>

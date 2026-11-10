@@ -4,14 +4,13 @@
 // brands from) is kept the same way, and can be ticked off and added to
 // offline (see offlineShopping.ts). Other changes need the server.
 
-import type { Recipe, RecipeRating } from "./pb";
+import type { PantryItem, Recipe, RecipeRating, ShoppingItem } from "./pb";
 import { remember, rememberedJson } from "./phoneStorage.ts";
 
 const RECIPES_KEY = "bento.offline.recipes";
 const RATINGS_KEY = "bento.offline.ratings";
-// Copies kept by useLiveRecords (see its offlineKey).
-export const SHOPPING_KEY = "bento.offline.shopping";
-export const PANTRY_KEY = "bento.offline.pantry";
+const SHOPPING_KEY = "bento.offline.shopping";
+const PANTRY_KEY = "bento.offline.pantry";
 // Shopping list changes made offline, waiting to be sent.
 export const SHOPPING_QUEUE_KEY = "bento.offline.shoppingQueue";
 
@@ -35,9 +34,21 @@ function plain(recipe: Recipe): Recipe {
   return { ...rest, expand: { added_by: { id, collectionId, collectionName, name, username, color } } } as Recipe;
 }
 
-export function saveRecipes(list: Recipe[]) {
-  write(RECIPES_KEY, list.map(plain));
+// A list's copy, as useLiveRecords keeps it.
+export interface OfflineCopy<T> {
+  read(): T[] | null;
+  write(list: T[]): void;
 }
+
+// keep: trims each record to what's worth keeping.
+function copyAt<T>(key: string, keep?: (item: T) => T): OfflineCopy<T> {
+  return { read: () => read<T>(key), write: (list) => write(key, keep ? list.map(keep) : list) };
+}
+
+export const recipesCopy = copyAt<Recipe>(RECIPES_KEY, plain);
+export const ratingsCopy = copyAt<RecipeRating>(RATINGS_KEY);
+export const shoppingCopy = copyAt<ShoppingItem>(SHOPPING_KEY);
+export const pantryCopy = copyAt<PantryItem>(PANTRY_KEY);
 
 // Keeps one recipe's copy up to date (after opening or editing it).
 export function saveRecipe(recipe: Recipe) {
@@ -47,14 +58,6 @@ export function saveRecipe(recipe: Recipe) {
 
 export function savedRecipes(): Recipe[] | null {
   return read<Recipe>(RECIPES_KEY);
-}
-
-export function saveRatings(list: RecipeRating[]) {
-  write(RATINGS_KEY, list);
-}
-
-export function savedRatings(): RecipeRating[] {
-  return read<RecipeRating>(RATINGS_KEY) ?? [];
 }
 
 // "Can't reach the server" (no connection, or the server is off), as

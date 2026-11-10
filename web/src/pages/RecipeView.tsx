@@ -82,7 +82,7 @@ import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
 import { scaleLine } from "../scaling";
 import { saveScale, savedScale } from "../recipeScale";
-import { stepTimes } from "../stepTimers";
+import { runsForStep, stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
 import RecipeJumpBar from "../RecipeJumpBar";
 import { startTimer, useStepTimers } from "../StepTimerTray";
@@ -306,14 +306,17 @@ export default function RecipeView() {
   }
 
   // Saves changes to this recipe, showing them straight away and undoing
-  // them if the server says no (the editor then shows why).
-  async function save(changes: Partial<Recipe>) {
+  // them if the server says no (the editor then shows why). closeEditor:
+  // the save came from the open editor. The tags, the timer and the photo
+  // framer save while an editor may be open too, and mustn't close it and
+  // lose its draft.
+  async function save(changes: Partial<Recipe>, { closeEditor = false } = {}) {
     setRecipe({ ...current, ...changes });
     try {
       const saved = await recipes().update(current.id, changes, { expand: "added_by" });
       setRecipe(saved);
       saveRecipe(saved);
-      setEditing(null);
+      if (closeEditor) setEditing(null);
     } catch (err) {
       setRecipe(current);
       throw err;
@@ -329,7 +332,7 @@ export default function RecipeView() {
       const ingredients = textToLines(text);
       const { ingredient_links: links } = await recipes().getOne(current.id, { fields: "id,ingredient_links" });
       const carried = carriedLinks(current.ingredients ?? [], ingredients, links);
-      await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried });
+      await save(sameLinks(carried, links) ? { ingredients } : { ingredients, ingredient_links: carried }, { closeEditor: true });
     });
   }
 
@@ -340,7 +343,7 @@ export default function RecipeView() {
       const steps = textToLines(text);
       const { photo_steps, photos } = await recipes().getOne(current.id, { fields: "id,photo_steps,photos" });
       const carried = carriedStepPhotos(current.steps, steps, photo_steps, photos);
-      await save(samePhotoSteps(carried, photo_steps) ? { steps } : { steps, photo_steps: carried });
+      await save(samePhotoSteps(carried, photo_steps) ? { steps } : { steps, photo_steps: carried }, { closeEditor: true });
     });
   }
 
@@ -474,6 +477,7 @@ export default function RecipeView() {
   const editButton = (part: Part, label: string) =>
     !offline && editing === null ? <EditButton label={label} onClick={() => setEditing(part)} /> : null;
   const stopEditing = () => setEditing(null);
+  const saveEdit = (changes: Partial<Recipe>) => save(changes, { closeEditor: true });
 
   // Prep, Cook, then any extra ones like "Cool", then Total.
   const times = [
@@ -483,6 +487,8 @@ export default function RecipeView() {
     ["Total", totalMinutes(recipe)],
   ].filter(([, minutes]) => minutes) as [string, number][];
   let stepNumber = 0;
+  // The # heading the numbering last started again under, for step timers.
+  let stepHeading = "";
   // "Amounts in the method" (Settings): which steps show how much of what,
   // from the ingredients at the recipe's chosen size (stepAmounts.ts).
   const amountPlan = stepAmountsOn
@@ -529,7 +535,7 @@ export default function RecipeView() {
         <PhotoFramer recipe={recipe} onSave={(image_framing) => save({ image_framing })} onClose={() => setFraming(false)} />
       )}
       {editing === "details" ? (
-        <DetailsEditor recipe={recipe} onSave={save} onCancel={stopEditing} />
+        <DetailsEditor recipe={recipe} onSave={saveEdit} onCancel={stopEditing} />
       ) : (
         <>
           <div className="title-row">
@@ -680,7 +686,10 @@ export default function RecipeView() {
               if (heading !== null) {
                 // A # heading's steps count from 1 again, like recipe sites;
                 // a ## heading's carry on from the steps before.
-                if (!continuesNumbering(line)) stepNumber = 0;
+                if (!continuesNumbering(line)) {
+                  stepNumber = 0;
+                  stepHeading = withoutSoftMarks(heading).trim();
+                }
                 return (
                   <li key={i} className="list-heading">
                     <SoftText text={heading} />
@@ -690,6 +699,7 @@ export default function RecipeView() {
               const key = `s${i}`;
               stepNumber += 1;
               const number = stepNumber;
+              const timedStep = { index: i, number, heading: stepHeading };
               const times = stepTimes(withoutSoftMarks(line));
               const photosHere = offline ? [] : (byStep.get(stepKey(line)) ?? []);
               return (
@@ -706,14 +716,12 @@ export default function RecipeView() {
                   {times.length > 0 && (
                     <div className="step-timers">
                       {times.map((time) => {
-                        const running = timers.some(
-                          (t) => t.recipeId === recipe.id && t.step === number && t.label === time.label && !t.rang
-                        );
+                        const running = timers.some((t) => runsForStep(t, recipe.id, timedStep, time.label));
                         return (
                           <button
                             key={time.label}
                             className="timer-chip"
-                            onClick={() => startTimer(recipe.id, recipe.title, number, time)}
+                            onClick={() => startTimer(recipe.id, recipe.title, timedStep, time)}
                             disabled={running}
                             aria-label={running ? `Step ${number}'s ${time.label} timer is running` : `Start a ${time.label} timer for step ${number}`}
                           >
@@ -765,7 +773,7 @@ export default function RecipeView() {
               hint="Tips from the recipe's writer, like swaps, storage or making ahead."
               initial={recipe.author_notes ?? ""}
               rows={6}
-              onSave={(text) => save({ author_notes: text.trim() })}
+              onSave={(text) => saveEdit({ author_notes: text.trim() })}
               onCancel={stopEditing}
             />
           ) : (
@@ -785,7 +793,7 @@ export default function RecipeView() {
               hint="Changes you made, what worked, what to try next time."
               initial={recipe.notes}
               rows={5}
-              onSave={(text) => save({ notes: text.trim() })}
+              onSave={(text) => saveEdit({ notes: text.trim() })}
               onCancel={stopEditing}
             />
           ) : (
@@ -809,7 +817,7 @@ export default function RecipeView() {
               hint="Per serving, one per line, like “Calories: 420 kcal”."
               initial={(recipe.nutrition ?? []).join("\n")}
               rows={8}
-              onSave={(text) => save({ nutrition: textToLines(text) })}
+              onSave={(text) => saveEdit({ nutrition: textToLines(text) })}
               onCancel={stopEditing}
             />
           ) : (

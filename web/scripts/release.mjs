@@ -40,9 +40,9 @@ if (!signed && !testKey) {
   );
   process.exit(1);
 }
-// The APK carries the web app, and the server code for phone-only mode (see
-// committed.mjs).
-refuseUncommittedCode("built");
+// The APK carries the web app, the Android code, and the server code and
+// Go server for phone-only mode (see committed.mjs).
+refuseUncommittedCode("built", { app: true });
 await runTests();
 
 // 1. Next version number. versionCode is what Android compares (it just

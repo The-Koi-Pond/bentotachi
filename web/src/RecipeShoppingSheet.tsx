@@ -27,7 +27,7 @@ export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }
 
   useEffect(() => {
     recipes()
-      .getFullList({ sort: "title", fields: "id,collectionId,title,tags,ingredients,ingredient_links" })
+      .getFullList({ sort: "title", fields: "id,collectionId,title,tags,ingredients,ingredient_links,source_url" })
       .then(setAll)
       .catch((err) => setLoadError(errorMessage(err)));
   }, []);

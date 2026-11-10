@@ -1,9 +1,10 @@
-import PocketBase, { type RecordModel } from "pocketbase";
+import PocketBase, { ClientResponseError, type RecordModel } from "pocketbase";
 import { Capacitor } from "@capacitor/core";
 import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
 import { DEFAULT_QUICK_MINUTES } from "./format";
 import { remember, remembered } from "./phoneStorage";
 import { forgetOfflineCopy } from "./offline";
+import { isServerAnswer } from "./loginGuard";
 
 // In a browser, Bento is served by PocketBase itself, so it talks to "/"
 // (in development Vite forwards that to PocketBase). The Android app carries
@@ -31,6 +32,17 @@ export const pb = new PocketBase(isAndroidApp ? savedServerUrl() : "/");
 // Allow overlapping requests (e.g. typing fast in search) instead of the
 // library cancelling earlier ones.
 pb.autoCancellation(false);
+// An answer that isn't the server's (a Wi-Fi sign-in page in its place)
+// counts as no connection (status 0), like everywhere offline is handled:
+// lists show the phone's copy and keep it, and shopping changes wait.
+// Otherwise its page reads as an empty list (wiping that copy) and every
+// save as done.
+pb.afterSend = (response, data) => {
+  if (!isServerAnswer(response.status, response.headers.get("content-type"), response.headers.get("content-length"))) {
+    throw new ClientResponseError({ url: response.url, status: 0, response: { message: "That wasn't Bentotachi's server answering." } });
+  }
+  return data;
+};
 
 // Logged out: the phone's offline copies go too, so the next person on it
 // doesn't see them (offline.ts). keepWaiting: shopping list changes not

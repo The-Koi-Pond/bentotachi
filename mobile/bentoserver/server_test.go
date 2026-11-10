@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -117,6 +118,64 @@ func TestStartBackupRestore(t *testing.T) {
 	items = call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
 	if len(items) != 1 || items[0].(map[string]any)["title"] != "Soup" {
 		t.Fatalf("the rescued data should restore with Soup in it: %v", items)
+	}
+}
+
+// The phone makes no nightly backups, though the auto_backups migration
+// still stores the household servers' schedule, and the next backup tidies
+// away nightly ones an earlier version left behind.
+func TestNoNightlyBackups(t *testing.T) {
+	server, _ := filepath.Abs(filepath.Join("..", "..", "server"))
+	dataDir := filepath.Join(t.TempDir(), "pb_data")
+	hooks, migrations := filepath.Join(server, "pb_hooks"), filepath.Join(server, "pb_migrations")
+	if _, err := Start(dataDir, hooks, migrations); err != nil {
+		t.Fatal(err)
+	}
+	defer Stop()
+
+	var stored string
+	if err := app.DB().NewQuery("SELECT value FROM _params WHERE id = 'settings'").Row(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stored, `"cron":"30 3 * * *"`) {
+		t.Fatalf("the migration's schedule should still be stored, for restoring on a server: %s", stored)
+	}
+	noJob := func(when string) {
+		t.Helper()
+		for _, job := range app.Cron().Jobs() {
+			if job.Id() == autoBackupJob {
+				t.Fatalf("%s: the nightly backup job shouldn't be scheduled on a phone", when)
+			}
+		}
+	}
+	noJob("after starting")
+	if err := app.ReloadSettings(); err != nil {
+		t.Fatal(err)
+	}
+	noJob("after the settings reload")
+	// Started again: the migration has run, so nothing reloads the settings
+	// after PocketBase schedules the job at start-up.
+	Stop()
+	if _, err := Start(dataDir, hooks, migrations); err != nil {
+		t.Fatal(err)
+	}
+	noJob("after starting again")
+
+	folder := filepath.Join(dataDir, "backups")
+	_ = os.MkdirAll(folder, 0o755)
+	nightly := filepath.Join(folder, "@auto_pb_backup_bentotachi_20261101033000.zip")
+	if err := os.WriteFile(nightly, []byte("an old nightly backup"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	made, err := Backup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(nightly); !os.IsNotExist(err) {
+		t.Fatalf("an old nightly backup should be deleted by the next backup: %v", err)
+	}
+	if _, err := os.Stat(made); err != nil {
+		t.Fatalf("the new backup should be there: %v", err)
 	}
 }
 

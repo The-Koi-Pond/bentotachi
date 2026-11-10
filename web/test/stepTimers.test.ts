@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { JUST_ENDED_MS, beepsInApp, countdown, formatDuration, pausedTimer, remaining, resumedTimer, startStepTimer, stepTimes } from "../src/stepTimers.ts";
+import { JUST_ENDED_MS, beepsInApp, countdown, formatDuration, pausedTimer, remaining, resumedTimer, runsForStep, startStepTimer, stepTimes } from "../src/stepTimers.ts";
 
 const labels = (step: string) => stepTimes(step).map((t) => `${t.label}=${t.seconds}`);
 
@@ -18,6 +18,10 @@ test("a range counts down from its shorter end", () => {
   assert.deepEqual(labels("Cook for 10-15 minutes until golden"), ["10–15 min=600"]);
   assert.deepEqual(labels("Bake 20 to 25 mins"), ["20–25 min=1200"]);
   assert.deepEqual(labels("Braise 1-1/2 hours"), ["1 h 30 min=5400"]);
+  assert.deepEqual(labels("Bake for 1 and 1/2 hours"), ["1 h 30 min=5400"]);
+  assert.deepEqual(labels("Bake for 1 & ½ hours"), ["1 h 30 min=5400"]);
+  // "and" between two times still adds them.
+  assert.deepEqual(labels("Roast 1 hour and 30 minutes"), ["1 h 30 min=5400"]);
 });
 
 test("hours and minutes together are one time", () => {
@@ -47,8 +51,10 @@ test("durations and countdowns", () => {
   assert.equal(countdown(400), "0:01");
 });
 
+const SOUP_STEP_2 = { index: 1, number: 2, heading: "" };
+
 test("a countdown pauses and carries on", () => {
-  const timer = startStepTimer("r1", "Soup", 2, { label: "10 min", seconds: 600 }, 0);
+  const timer = startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0);
   assert.equal(remaining(timer, 60_000), 540_000);
   const paused = pausedTimer(timer, 60_000);
   assert.equal(remaining(paused, 999_999), 540_000);
@@ -68,6 +74,29 @@ test("the tray beeps unless Android's notification already rang it a while ago",
   assert.equal(beepsInApp(60_000, true), false);
   assert.equal(beepsInApp(5 * 60_000, false), true);
   // Paused, its notification is taken back, so it isn't counted on.
-  const timer = startStepTimer("r1", "Soup", 2, { label: "10 min", seconds: 600 }, 0);
+  const timer = startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0);
   assert.equal(pausedTimer({ ...timer, alert: "exact" }, 60_000).alert, undefined);
+});
+
+test("a step timer belongs to its own step, even when two steps share a number", () => {
+  // "# Sauce / Simmer 10 minutes / # Pasta / Boil 10 minutes": both are step 1.
+  const sauce = { index: 1, number: 1, heading: "Sauce" };
+  const pasta = { index: 3, number: 1, heading: "Pasta" };
+  const timer = startStepTimer("r1", "Spaghetti", sauce, { label: "10 min", seconds: 600 }, 0);
+  assert.equal(timer.step, 1);
+  assert.equal(timer.heading, "Sauce");
+  assert.equal(runsForStep(timer, "r1", sauce, "10 min"), true);
+  assert.equal(runsForStep(timer, "r1", pasta, "10 min"), false);
+  // Another time in the same step, another recipe, or rung already: not it.
+  assert.equal(runsForStep(timer, "r1", sauce, "5 min"), false);
+  assert.equal(runsForStep(timer, "r2", sauce, "10 min"), false);
+  assert.equal(runsForStep({ ...timer, rang: true }, "r1", sauce, "10 min"), false);
+  // No heading: none kept.
+  assert.equal("heading" in startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0), false);
+});
+
+test("a step timer saved before timers kept their step's place goes by its number", () => {
+  const { stepIndex: _, ...saved } = startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0);
+  assert.equal(runsForStep(saved, "r1", { index: 5, number: 2 }, "10 min"), true);
+  assert.equal(runsForStep(saved, "r1", { index: 1, number: 3 }, "10 min"), false);
 });

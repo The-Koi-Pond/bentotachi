@@ -1,7 +1,8 @@
 // Builds the server that phone-only mode runs inside the Android app
 // (mobile/bentoserver, with Go and gomobile) into
 // android/app/libs/bentoserver.aar. Runs as part of `npm run android`, and
-// only rebuilds when the Go code has changed since the last build.
+// only rebuilds (after the Go tests pass) when the Go code has changed since
+// the last build.
 //
 //   npm run server-lib            (from the web folder)
 //
@@ -35,6 +36,18 @@ function newest(folder) {
 if (existsSync(aar) && statSync(aar).mtimeMs > newest(mobile)) {
   console.log("Phone server library is up to date.");
   process.exit(0);
+}
+
+// The Go tests run the phone server with the real hooks and migrations, so a
+// change that breaks it stops here rather than reaching phones.
+console.log("> go test ./... (the phone server's tests)");
+try {
+  execFileSync("go", ["test", "./..."], { cwd: mobile, stdio: "inherit" });
+} catch (error) {
+  console.error(error.code === "ENOENT"
+    ? "Go isn't installed (or isn't on PATH): see mobile/README.md."
+    : "The phone server's Go tests failed (above), so it wasn't rebuilt. Fix them, then try again.");
+  process.exit(1);
 }
 
 const sdk = process.env.ANDROID_HOME ?? join(process.env.LOCALAPPDATA ?? "", "Android", "Sdk");

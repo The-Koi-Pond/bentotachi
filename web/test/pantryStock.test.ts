@@ -48,6 +48,9 @@ test("spoons and cups count against bottles, with the recipe's own spoon size", 
 test("pounds and ounces against grams", () => {
   assert.equal(coverOf(need("1 lb beef mince"), sizes("500 g")).kind, "enough");
   assert.equal(coverOf(need("2 lb beef mince"), sizes("500 g")).kind, "short");
+  // One and a half pounds is 680 g, more than the 500 g in.
+  assert.equal(coverOf(need("1 and 1/2 lb beef mince"), sizes("500 g")).kind, "short");
+  assert.deepEqual(lineMeasure("1 and 1/2 cups (188g) flour"), { amount: 1.5, unit: "cups" });
 });
 
 test("a range counts its top, so there's enough", () => {

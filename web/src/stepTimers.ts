@@ -80,6 +80,12 @@ export interface StepTimer {
   recipeTitle: string;
   // The step's number, as shown in the method.
   step: number;
+  // Which step it is, by its place in recipe.steps: numbers start again
+  // after a # heading, so two steps can share one. Missing on timers saved
+  // before it was kept.
+  stepIndex?: number;
+  // The # heading the step is under ("Sauce"), to tell apart two "Step 1"s.
+  heading?: string;
   label: string;
   // When it reaches zero (ms since 1970), or null while paused.
   endsAt: number | null;
@@ -109,17 +115,34 @@ export function beepsInApp(msSinceEnd: number, notificationShown: boolean): bool
   return msSinceEnd <= JUST_ENDED_MS || !notificationShown;
 }
 
-export function startStepTimer(recipeId: string, recipeTitle: string, step: number, time: StepTime, now: number): StepTimer {
+// A step with a timer, where the method shows it.
+export interface TimedStep {
+  index: number; // in recipe.steps
+  number: number; // as the method shows it
+  heading: string; // the # heading it's under, or ""
+}
+
+export function startStepTimer(recipeId: string, recipeTitle: string, step: TimedStep, time: StepTime, now: number): StepTimer {
   return {
     id: `${now}-${Math.random().toString(36).slice(2, 7)}`,
     recipeId,
     recipeTitle,
-    step,
+    step: step.number,
+    stepIndex: step.index,
+    ...(step.heading ? { heading: step.heading } : {}),
     label: time.label,
     endsAt: now + time.seconds * 1000,
     leftMs: time.seconds * 1000,
     rang: false,
   };
+}
+
+// Whether this step's timer for this time is counting down, so its button
+// says so. A timer saved before timers kept their step's place goes by the
+// step's number, as it did then.
+export function runsForStep(timer: StepTimer, recipeId: string, step: Pick<TimedStep, "index" | "number">, label: string): boolean {
+  if (timer.recipeId !== recipeId || timer.label !== label || timer.rang) return false;
+  return timer.stepIndex === undefined ? timer.step === step.number : timer.stepIndex === step.index;
 }
 
 export function remaining(timer: StepTimer, now: number): number {

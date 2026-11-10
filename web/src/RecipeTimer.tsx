@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { errorMessage, type Recipe } from "./pb";
-import { extraTimes, formatMinutes, totalMinutes } from "./format";
+import { formatMinutes, totalMinutes } from "./format";
 import { PauseIcon, PlayIcon, StopIcon } from "./icons";
 import {
   clock,
@@ -11,6 +11,7 @@ import {
   resumed,
   startCooking,
   startTimer,
+  timedTotal,
   type TimerState,
 } from "./cookTiming";
 import { remember, rememberedJson } from "./phoneStorage";
@@ -101,9 +102,7 @@ export default function RecipeTimer({
     setBusy(true);
     setError("");
     try {
-      // The total keeps any extra times like "Cool 7 h", which aren't timed.
-      const extra = extraTimes(recipe).reduce((sum, time) => sum + time.minutes, 0);
-      await onSave({ prep_minutes: prep, cook_minutes: cook, total_minutes: prep + cook + extra });
+      await onSave({ prep_minutes: prep, cook_minutes: cook, total_minutes: timedTotal(recipe, prep, cook) });
       setState(null);
     } catch (err) {
       setError(errorMessage(err));

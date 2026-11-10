@@ -1,10 +1,32 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { withWeightHint } from "../src/weights.ts";
+import { parseNumber, withWeightHint } from "../src/weights.ts";
 
 const au = (line: string) => withWeightHint(line, "AU");
 const us = (line: string) => withWeightHint(line, "US");
+
+test("a whole number and a fraction joined by 'and' or '&' is one mixed number", () => {
+  assert.equal(parseNumber("1 and 1/2"), 1.5);
+  assert.equal(parseNumber("2 and 1/4"), 2.25);
+  assert.equal(parseNumber("1 & ½"), 1.5);
+  assert.equal(parseNumber("3&3/4"), 3.75);
+  // The forms it read before still read the same.
+  assert.equal(parseNumber("1 1/2"), 1.5);
+  assert.equal(parseNumber("1½"), 1.5);
+  assert.equal(parseNumber("3 ½"), 3.5);
+  assert.equal(parseNumber("1/2"), 0.5);
+  assert.equal(parseNumber("2"), 2);
+});
+
+test("a mixed number written with 'and' gets the whole weight", () => {
+  assert.equal(au("1 and 1/2 pounds chicken thighs"), "1 and 1/2 pounds *(680 g)* chicken thighs");
+  assert.equal(au("1 & ½ lbs ground beef"), "1 & ½ lbs *(680 g)* ground beef");
+  assert.equal(au("1 and 1/2 to 2 pounds potatoes"), "1 and 1/2 to 2 pounds *(680–905 g)* potatoes");
+  // "and" with no whole number before it joins nothing.
+  assert.equal(au("Salt and 1/2 lb butter"), "Salt and 1/2 lb *(225 g)* butter");
+  assert.equal(au("2 eggs and 1/2 lb butter"), "2 eggs and 1/2 lb *(225 g)* butter");
+});
 
 test("pounds and ounces get grams in Australia", () => {
   assert.equal(au("1½ lbs ground beef"), "1½ lbs *(680 g)* ground beef");

@@ -68,6 +68,17 @@ test("a partly used packet is used first, and whole ones after it", () => {
   assert.equal(use.note, "About 700 g left in the open one");
 });
 
+test("an open packet is finished before an older full one", () => {
+  const butter = item("bu", "Butter");
+  const full = packet("bu", "500 g");
+  const open = packet("bu", "500 g", "200 g");
+  const [use] = cookedUses(["200 g butter"], null, [butter], [full, open]);
+  assert.deepEqual(ids(use.finish), [(open as { id: string }).id]);
+  assert.equal(use.leave, null);
+  assert.equal(use.title, "Butter: 1 of 2");
+  assert.equal(use.status, null);
+});
+
 test("a crumb left counts as used up", () => {
   const sugar = item("su", "Sugar");
   const [use] = cookedUses(["490 g sugar"], null, [sugar], [packet("su", "500 g"), packet("su", "500 g")]);

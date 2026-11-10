@@ -170,9 +170,11 @@ function CategoryForm({
     setTyped("");
   }
 
+  // A tag still in the box counts, as Enter would have added it.
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (await onSave(name, tags)) leave();
+    const last = normaliseTag(typed);
+    if (await onSave(name, last && !tags.includes(last) ? [...tags, last] : tags)) leave();
   }
 
   return (

@@ -82,7 +82,8 @@ export async function holdAlert(timer: StepTimer, ask: boolean): Promise<TimerAl
       notifications: [
         {
           id: notificationId(timer),
-          title: `Time's up: step ${timer.step} (${timer.label})`,
+          // The heading too ("Sauce, step 1"), as two steps can share a number.
+          title: `Time's up: ${timer.heading ? `${timer.heading}, step` : "step"} ${timer.step} (${timer.label})`,
           body: timer.recipeTitle,
           channelId: CHANNEL,
           smallIcon: "ic_stat_timer",

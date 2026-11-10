@@ -15,6 +15,13 @@ keep recipes readable without internet, and avoid subscriptions.
 - **Tailscale** (free) will let phones reach the Pi away from home without
   exposing it to the internet. It also provides the HTTPS address, which
   Android apps need before they can talk to a server.
+- **Which servers exist** (Xel, 2026-11-10): the household's Pi is the only
+  server running; friends and testers use the Google Play version in
+  phone-only mode, which carries its own server. So the server is never
+  older than the app talking to it (the Pi is deployed first, and a phone's
+  own server comes with its app): code for "an older server" in the app
+  can go. Code for "an older app" on the server stays while the household's
+  Play phones lag behind the Pi.
 
 ## Stages
 
@@ -235,6 +242,26 @@ Not released yet (all deployed 2026-11-10):
   second settings record.
 - The built-in browser's unused "Add to pantry" mode is gone (Android
   side too).
+- From the codebase audit (2026-11-10):
+  - A public Wi-Fi's sign-in page answering in the server's place counts
+    as no connection: the phone keeps its offline copies, and what's added
+    or ticked waits to be sent (before, lists looked empty, the copies were
+    wiped, and taps "saved" into nothing).
+  - Amounts written "1 and 1/2" (or "1 & ½") are read as one and a half
+    everywhere: scaling, spoon and gram hints, timers, the shopping list.
+  - Phone-only: no hidden nightly backups filling the phone (and old ones
+    are tidied away); "Delete everything" also removes a rescue copy and a
+    half-finished restore.
+  - "Save these times" keeps a website recipe's waiting time; an open
+    editor on a recipe keeps what's typed when a tag or photo is saved;
+    step timers under different headings ("Sauce", "Pasta") are told apart,
+    in the tray and the phone's notification, and start at the right time.
+  - The pantry's "X is out" bar and another Undo bar stack instead of one
+    hiding the other; "From a recipe" on the shopping list reads Australian
+    and UK spoons right; quick taps on the plan's meals all count; a
+    half-written fridge note and a typed shelf tag aren't lost.
+  - Release and Play uploads also refuse uncommitted Android or phone-server
+    code, and run the phone server's tests before building it.
 
 Released in 1.23.0 (2026-11-10, deployed the same day):
 
@@ -605,7 +632,7 @@ Released in 1.17.0 (2026-11-07, deployed the same day):
   looked like the bottom of the page to a tester (Xel chose this). Also
   since then, the top bar's Add recipe shows only on Recipes and Browse (a
   tester expected it to add a pantry item on Pantry). Also since then a
-  meal can hold more than one recipe (a side with the main; Lilly): "+ Add
+  meal can hold more than one recipe (a side with the main; a household member's idea): "+ Add
   another" under it, the recipe page's Plan adds alongside instead of
   replacing, and a lone dish dragged onto a lone dish still swaps
   (migration 1764806400; older apps show one per meal). A planned meal is one

@@ -24,7 +24,7 @@ const target = join(root, "backups", "pi");
 const listing = onPi(pi, `ls ${REMOTE} 2>/dev/null || true`);
 const zips = listing.split("\n").map((name) => name.trim()).filter((name) => name.endsWith(".zip"));
 if (!zips.length) {
-  console.log("The Pi has no backups yet (the first one is made at 3:30 am).");
+  console.log("The Pi has no backups yet (the first one is made at 03:30 UTC).");
   process.exit(0);
 }
 

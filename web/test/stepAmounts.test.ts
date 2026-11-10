@@ -29,6 +29,7 @@ test("reads an ingredient's amount and name", () => {
   );
   assert.equal(readIngredient("2 cloves garlic")?.amount, "2 cloves");
   assert.equal(readIngredient("1 1/2 cups stock")?.amount, "1 1/2 cups");
+  assert.equal(readIngredient("1 and 1/2 cups stock")?.amount, "1 and 1/2 cups");
   assert.equal(readIngredient("2 × 400 g tins chopped tomatoes")?.amount, "2 × 400 g tins");
   assert.equal(readIngredient("500g beef mince")?.amount, "500g");
   assert.equal(readIngredient("1 large egg")?.amount, "1");

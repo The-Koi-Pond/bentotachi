@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { clock, elapsed, finished, paused, recipeMinutes, resumed, startCooking, startTimer } from "../src/cookTiming.ts";
+import { clock, elapsed, finished, paused, recipeMinutes, resumed, startCooking, startTimer, timedTotal } from "../src/cookTiming.ts";
 
 const MIN = 60_000;
 
@@ -39,4 +39,17 @@ test("clock and saved minutes", () => {
   assert.equal(recipeMinutes(7 * MIN + 20_000), 7);
   assert.equal(recipeMinutes(23 * MIN), 25);
   assert.equal(recipeMinutes(61 * MIN), 60);
+});
+
+test("a timed total keeps the untimed waiting and extra times", () => {
+  // A website's 4 h of waiting, kept only in its total.
+  assert.equal(timedTotal({ prep_minutes: 15, cook_minutes: 20, total_minutes: 275 }, 15, 20), 275);
+  assert.equal(timedTotal({ prep_minutes: 15, cook_minutes: 20, total_minutes: 275 }, 10, 30), 280);
+  // Extra times count once, not again as waiting.
+  const cooled = { prep_minutes: 10, cook_minutes: 20, total_minutes: 450, extra_times: [{ label: "Cool", minutes: 420 }] };
+  assert.equal(timedTotal(cooled, 15, 25), 460);
+  assert.equal(timedTotal({ ...cooled, total_minutes: 0 }, 15, 25), 460);
+  // No total, or one smaller than its parts: just the parts.
+  assert.equal(timedTotal({ prep_minutes: 0, cook_minutes: 0, total_minutes: 0 }, 5, 25), 30);
+  assert.equal(timedTotal({ prep_minutes: 15, cook_minutes: 20, total_minutes: 30 }, 10, 10), 20);
 });

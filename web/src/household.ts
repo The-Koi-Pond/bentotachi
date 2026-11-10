@@ -161,43 +161,44 @@ export function usePantryPlaces(): [string[], (change: (places: string[]) => str
   useEffect(() => {
     if (current === null) loadSettings();
   }, [current]);
-  return [
-    current?.pantry_places ?? [],
-    // Shown at once (a dragged place stays where it was dropped), put back
-    // if the server says no.
-    async (change) => {
-      // What's on screen now (an edit a moment ago included), not this
-      // render's copy.
-      const shown = settings;
-      if (shown) setSettings({ ...shown, pantry_places: change(shown.pantry_places) });
-      // One after another: two quick edits both reading the list before
-      // either saved would save only the second.
-      const saving = placeSaves.then(async () => {
-        const fresh = await freshSettings();
-        await saveSettings(fresh, { pantry_places: change(fresh?.pantry_places ?? []) });
-      });
-      placeSaves = saving.catch(() => {
-        // Its own caller shows the error; the next edit still goes ahead.
-      });
-      try {
-        await saving;
-      } catch (err) {
-        setSettings(shown);
-        throw err;
-      }
-    },
-  ];
+  return [current?.pantry_places ?? [], (change) => changeInTurn("pantry_places", change)];
 }
-let placeSaves: Promise<void> = Promise.resolve();
+
+// A list setting changed by tapping (places, meals on the plan): shown at
+// once (a dragged place stays where it was dropped), put back if the server
+// says no, and made to the list as the server has it at that moment. The
+// saves go one after another: two quick taps both reading the list before
+// either saved would keep only the second.
+let settingSaves: Promise<void> = Promise.resolve();
+async function changeInTurn<K extends "pantry_places" | "plan_meals">(field: K, change: (list: string[]) => string[]) {
+  // What's on screen now (a change a moment ago included), not a render's
+  // copy.
+  const shown = settings;
+  if (shown) setSettings({ ...shown, [field]: change(shown[field]) });
+  const saving = settingSaves.then(async () => {
+    const fresh = await freshSettings();
+    await saveSettings(fresh, { [field]: change(fresh?.[field] ?? []) } as Partial<Omit<Settings, "id">>);
+  });
+  settingSaves = saving.catch(() => {
+    // Its own caller shows the error; the next change still goes ahead.
+  });
+  try {
+    await saving;
+  } catch (err) {
+    setSettings(shown);
+    throw err;
+  }
+}
 
 // The meals the plan shows, in plan order: just dinner until the household
-// chooses more (or until loaded, or offline).
-export function usePlanMeals(): [Meal[], (meals: Meal[]) => Promise<void>] {
+// chooses more (or until loaded, or offline). `change` turns the meals as
+// they are into the ones wanted.
+export function usePlanMeals(): [Meal[], (change: (meals: Meal[]) => Meal[]) => Promise<void>] {
   const current = useSyncExternalStore(subscribe, () => settings);
   useEffect(() => {
     if (current === null) loadSettings();
   }, [current]);
-  return [plannedMeals(current?.plan_meals), (meals) => saveSettings(current, { plan_meals: meals })];
+  return [plannedMeals(current?.plan_meals), (change) => changeInTurn("plan_meals", (saved) => change(plannedMeals(saved)))];
 }
 
 // The grocery stores to offer, for the household's country.

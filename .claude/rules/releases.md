@@ -49,7 +49,10 @@ paths:
   key: never commit, print or send it. Uploading reaches testers, so only
   with Xel's go-ahead, like a release.
 - Release, play and package refuse while the web app or server code has
-  uncommitted changes, like deploy (see CLAUDE.md, "Sending it out").
+  uncommitted changes, like deploy (see CLAUDE.md, "Sending it out");
+  release and play also while `web/android` or `mobile/` has, as both go
+  into the app. Release runs the phone server's Go tests before rebuilding
+  it (server-lib.mjs).
 - The friends' zip (`npm run package`) uses
   web/scripts/package-files/Start Bentotachi.bat; `server/Start Bentotachi
   here.bat` is the PC's fallback (asks for YES).

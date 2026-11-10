@@ -4895,9 +4895,14 @@ legend {
   text-overflow: ellipsis;
 }
 
+/* One line, cut short like the recipe's name above it: a long heading
+   ("Sauce · Step 1") would otherwise wrap and fill the tray. */
 .timer-step {
   font-size: 0.9rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .timer-left {
@@ -7037,6 +7042,34 @@ em.soft {
 
 body:has(.undo-toast:not(.notice-toast)) .notice-toast {
   bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 72px);
+}
+
+/* Two bars stacked (Pantry's .toast-stack): above both. */
+body:has(.toast-stack > .toast + .toast) .notice-toast {
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 148px);
+}
+
+/* Two bars at once on a page (Pantry's "X is out" and an Undo): stacked
+   where one would be, the newer on top of the older, never over it. */
+.toast-stack {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 12px);
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast-stack > .toast {
+  position: static;
+  margin: 0;
+  max-width: none;
+  pointer-events: auto;
 }
 
 /* "Removed “Milk”. Undo": the button sits at the far end, in the toast's

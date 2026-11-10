@@ -7,15 +7,20 @@
 
 const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875 };
 
-// "1 1/2", "1/2", "3 ½", "1½", "½", "1.5", "2" (lengths.ts and
-// temperatures.ts read numbers the same way). A comma is a thousands
+// "1 1/2", "1 and 1/2", "1 & ½", "1/2", "3 ½", "1½", "½", "1.5", "2"
+// (lengths.ts and temperatures.ts read numbers the same way). "and" joins
+// a mixed number only between a whole number and a fraction, as Sally's
+// Baking Addiction writes them ("2 and 1/4 cups"). A comma is a thousands
 // separator before three digits ("1,000 g") and a decimal comma before one
 // or two, as Dutch and most of Europe write it ("1,5 kg", "2,25 l"). Dutch
 // also writes thousands with a dot ("1.000 g"), which reads the same as an
 // English three-decimal amount ("1.250 kg"), so parseNumber decides by the
 // unit (see dotMeansThousands).
 const THOUSANDS_DOT = String.raw`[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?(?![\d.])`;
-export const NUMBER = String.raw`(?:\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|${THOUSANDS_DOT}|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
+// "and" in any capitals ("1 And 1/2", a line typed in title case): the
+// patterns built on NUMBER aren't all case-blind.
+const JOINED_FRACTION = String.raw`\d+(?:\s+[aA][nN][dD]\s+|\s*&\s*)(?:\d+\/\d+|[½¼¾⅓⅔⅛⅜⅝⅞])`;
+export const NUMBER = String.raw`(?:${JOINED_FRACTION}|\d+\s+\d+\/\d+|\d+\/\d+|\d*\s?[½¼¾⅓⅔⅛⅜⅝⅞]|\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)|${THOUSANDS_DOT}|\d+,\d{1,2}(?!\d)|\d+(?:\.\d+)?)`;
 // An amount (groups 1 and 2: "1-2", "1–2", "1 to 2"), then its unit (group 3),
 // maybe joined by a hyphen ("14.5-ounce can"). ("1/2" and "1.5" are read
 // whole from their start, so only a digit, or a digit and point, is kept
@@ -42,6 +47,8 @@ export function dotMeansThousands(text: string, unit: string): boolean {
 // dot means (see dotMeansThousands).
 export function parseNumber(text: string, unit = ""): number {
   const t = text.trim();
+  const joined = t.match(/^(\d+)(?:\s+and\s+|\s*&\s*)(\d+\/\d+|[½¼¾⅓⅔⅛⅜⅝⅞])$/i);
+  if (joined) return Number(joined[1]) + parseNumber(joined[2]);
   const mixed = t.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
   const fraction = t.match(/^(\d+)\/(\d+)$/);

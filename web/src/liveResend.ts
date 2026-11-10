@@ -11,6 +11,14 @@ import { pb } from "./pb";
 
 let missed = false;
 
+// Stops a live subscription (a page closing). Telling the server can fail
+// offline; it lets go of a client whose connection has gone anyway.
+export function stopLive(stop: () => Promise<void>) {
+  stop().catch(() => {
+    // Offline, or not the server answering: nothing to tell it.
+  });
+}
+
 // A live subscription that failed: sent again when the connection (or the
 // app) comes back.
 export function liveUpdateFailed() {

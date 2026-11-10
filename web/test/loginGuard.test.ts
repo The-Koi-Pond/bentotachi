@@ -1,7 +1,17 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createLoginGuard, isServerRefusal, type LoginState } from "../src/loginGuard.ts";
+import { createLoginGuard, isServerAnswer, isServerRefusal, type LoginState } from "../src/loginGuard.ts";
+
+test("only JSON or an empty 'done' is the server answering; a Wi-Fi sign-in page isn't", () => {
+  assert.equal(isServerAnswer(200, "application/json; charset=utf-8", "120"), true);
+  assert.equal(isServerAnswer(400, "application/json", null), true, "its refusals are JSON too");
+  assert.equal(isServerAnswer(204, null, null), true, "a delete, or the live updates' subscription");
+  assert.equal(isServerAnswer(200, null, "0"), true);
+  assert.equal(isServerAnswer(200, "text/html; charset=utf-8", "5120"), false, "a sign-in page saying OK");
+  assert.equal(isServerAnswer(403, "text/html", null), false, "a 'forbidden' page");
+  assert.equal(isServerAnswer(200, null, null), false, "something with a body but no type");
+});
 
 test("only PocketBase's own refusal signs out, not a public Wi-Fi's page", () => {
   // PocketBase's answer: its JSON names the status.

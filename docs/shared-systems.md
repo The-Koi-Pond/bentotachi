@@ -43,8 +43,10 @@ they say otherwise.
 - Talking to a collection: the typed helpers in `pb.ts` (`recipes()`,
   `pantryItems()`, `users()`, ...), not `pb.collection("...")` (only
   `household_settings` and `useLiveRecords` use that).
-- A shared list on screen: `useLiveRecords` (load, live updates, reload on
-  return, offline copy with `offlineKey`).
+- A shared list on screen: `useLiveRecords(collection, { expand, fields,
+  sort, copy })` (load, live updates, reload on return; the offline copy is
+  one of offline.ts's ready-made ones, `recipesCopy`, `ratingsCopy`,
+  `shoppingCopy`, `pantryCopy`, made once outside the page).
 - Before loading or sending: `ensureLogin` / `ensureLoginNow` (`session.ts`;
   an expired login looks like an empty list, not an error).
 - Saving an edit: send only the changed fields, `changedFields`

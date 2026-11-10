@@ -92,7 +92,7 @@ function savedView(): View {
 // breakfast or lunch are turned on in Settings → Household). In both views, meals
 // can be dragged to another place; if that place already has one, they swap.
 export default function MealPlan() {
-  const plan = useLiveRecords<MealPlanEntry>("meal_plan", "recipe");
+  const plan = useLiveRecords<MealPlanEntry>("meal_plan", { expand: "recipe" });
   const cooked = useLiveRecords<CookedEntry>("cooked");
   const [meals] = usePlanMeals();
   // Weeks start on Sunday in the US, Monday elsewhere.

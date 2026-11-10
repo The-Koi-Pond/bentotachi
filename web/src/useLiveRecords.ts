@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RecordModel } from "pocketbase";
 import { errorMessage, pb } from "./pb";
-import { isOffline, read, write } from "./offline";
+import { isOffline, type OfflineCopy } from "./offline";
 import { ensureLogin } from "./session";
-import { liveUpdateFailed } from "./liveResend";
+import { liveUpdateFailed, stopLive } from "./liveResend";
+
+interface LiveOptions<T> {
+  expand?: string;
+  // Only these fields, for a big list the page needs a little of.
+  fields?: string;
+  sort?: string;
+  // The phone's copy of the list (offline.ts), shown when the server can't
+  // be reached (`offline` is then true). Made once, outside the page: a new
+  // one each render would load the list again each render.
+  copy?: OfflineCopy<T>;
+}
 
 // Loads a whole collection and keeps it up to date while anyone changes it.
 // Also hands back helpers to update what's on screen straight away, before
 // the server confirms (the live update then simply replaces it).
-//
-// With an offlineKey (see offline.ts), the phone keeps a copy of the list,
-// and shows it when the server can't be reached (`offline` is then true).
-export function useLiveRecords<T extends RecordModel>(collection: string, expand?: string, offlineKey?: string) {
+export function useLiveRecords<T extends RecordModel>(collection: string, { expand, fields, sort, copy }: LiveOptions<T> = {}) {
   const [items, setItems] = useState<T[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [offline, setOffline] = useState(false);
@@ -27,7 +35,7 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
         return pb
           .collection<T>(collection)
           // Never an old answer the browser kept: offline should look offline.
-          .getFullList({ expand, cache: "no-store" });
+          .getFullList({ expand, fields, sort, cache: "no-store" });
       })
       .then((list) => {
         if (!list) return;
@@ -36,19 +44,19 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
         setOffline(false);
       })
       .catch((err) => {
-        const saved = offlineKey && isOffline(err) ? read<T>(offlineKey) : null;
+        const saved = copy && isOffline(err) ? copy.read() : null;
         if (saved) {
           setItems((current) => current ?? saved);
           setOffline(true);
           setLoadError("");
         } else setLoadError(errorMessage(err));
       });
-  }, [collection, expand, offlineKey]);
+  }, [collection, expand, fields, sort, copy]);
 
   // The copy follows what's on screen (including changes made offline).
   useEffect(() => {
-    if (offlineKey && items) write(offlineKey, items);
-  }, [offlineKey, items]);
+    if (copy && items) copy.write(items);
+  }, [copy, items]);
 
   const upsert = useCallback((item: T) => {
     setItems((previous) => previous && [...previous.filter((i) => i.id !== item.id), item]);
@@ -62,7 +70,7 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
     reload();
 
     // Live updates: the server tells every open copy of the app about changes.
-    let unsubscribe: (() => void) | undefined;
+    let unsubscribe: (() => Promise<void>) | undefined;
     let stopped = false;
     pb.collection<T>(collection)
       .subscribe(
@@ -74,7 +82,7 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
         { expand }
       )
       .then((stop) => {
-        if (stopped) stop();
+        if (stopped) stopLive(stop);
         else unsubscribe = stop;
       })
       .catch(() => {
@@ -93,11 +101,12 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
 
     return () => {
       stopped = true;
-      unsubscribe?.();
+      if (unsubscribe) stopLive(unsubscribe);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", reload);
     };
   }, [collection, expand, reload, upsert, removeLocally]);
 
-  return { items, loadError, offline, setOffline, reload, upsert, removeLocally };
+  // setItems: for changes to many at once (a bulk edit, its Undo).
+  return { items, setItems, loadError, offline, setOffline, reload, upsert, removeLocally };
 }

@@ -112,8 +112,9 @@ anywhere with Tailscale on, is the Pi's Tailscale address plus `:8090`
   tests first, and won't send anything if a folder is missing here (from a
   fresh clone, `server/releases` is: run a release first, or copy it from
   the Pi).
-- **Backups**: the Pi saves one every night at 3:30 am into
-  `pb_data/backups` and keeps 7. In `web`, `npm run backup` copies new ones
+- **Backups**: the Pi saves one every day at 03:30 UTC (PocketBase's
+  schedules run in UTC, not the Pi's local time) into `pb_data/backups` and
+  keeps 7. In `web`, `npm run backup` copies new ones
   to `backups/pi/` here; copy that to a USB stick now and then.
 - `server/pb_data` on this PC is the old copy from before the move. Don't
   run the PC server alongside the Pi: changes in one would never reach the

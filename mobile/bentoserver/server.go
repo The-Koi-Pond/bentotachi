@@ -25,6 +25,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/jsvm"
 	"github.com/pocketbase/pocketbase/tools/archive"
+	"github.com/pocketbase/pocketbase/tools/hook"
 )
 
 var (
@@ -35,6 +36,10 @@ var (
 	// What the server was last started with, for restarting after a restore.
 	lastDirs [3]string
 )
+
+// PocketBase's own id for the nightly backup job it schedules from the
+// settings (core/backup.go).
+const autoBackupJob = "__pbAutoBackup__"
 
 // Start starts the server, if it isn't running already, and returns the port
 // it listens on. dataDir holds the database and photos; hooksDir and
@@ -59,9 +64,28 @@ func start(dataDir, hooksDir, migrationsDir string) (int, error) {
 		e.InstallerFunc = nil
 		return e.Next()
 	})
+	// No nightly backups on a phone (the auto_backups migration's schedule is
+	// for household servers): nothing in the app shows them, and each is a
+	// full copy of the data and photos. The job PocketBase schedules from the
+	// settings is taken off again, after every settings load (outermost, so
+	// after PocketBase's own handler has added it) and once after starting.
+	// The settings themselves are never changed, so nothing that saves them
+	// can store a blank schedule, and a phone's backup restored on a
+	// household server still backs up there.
+	pb.OnSettingsReload().Bind(&hook.Handler[*core.SettingsReloadEvent]{
+		Priority: -1,
+		Func: func(e *core.SettingsReloadEvent) error {
+			if err := e.Next(); err != nil {
+				return err
+			}
+			e.App.Cron().Remove(autoBackupJob)
+			return nil
+		},
+	})
 	if err := pb.Bootstrap(); err != nil {
 		return 0, fmt.Errorf("couldn't open Bentotachi's data: %w", err)
 	}
+	pb.Cron().Remove(autoBackupJob)
 
 	free, err := freePort()
 	if err != nil {
@@ -139,7 +163,8 @@ func stopApp(pb *pocketbase.PocketBase) {
 // Backup writes a backup of everything (recipes, photos, lists, accounts)
 // and returns the zip file's path, for the app to save where the person
 // chooses. It's the same kind of backup a PocketBase server makes, so it can
-// also be restored on a real server later. Only the newest one is kept.
+// also be restored on a real server later. Only the newest one is kept, and
+// nightly ones from before phones stopped making them are deleted too.
 func Backup() (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -148,7 +173,8 @@ func Backup() (string, error) {
 	}
 	folder := filepath.Join(app.DataDir(), "backups")
 	old, _ := filepath.Glob(filepath.Join(folder, "bento-*.zip"))
-	for _, file := range old {
+	nightly, _ := filepath.Glob(filepath.Join(folder, "@auto_pb_backup_*.zip"))
+	for _, file := range append(old, nightly...) {
 		_ = os.Remove(file)
 	}
 	name := "bento-" + time.Now().Format("2006-01-02-150405") + ".zip"

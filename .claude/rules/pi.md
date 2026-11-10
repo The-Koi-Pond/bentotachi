@@ -19,12 +19,16 @@ paths:
   here, and the Pi only swaps folders in once all of them have arrived.
   Deploy, release, play and package also refuse while the web app (`web/`,
   apart from `web/android` and `web/scripts`) or the server code has
-  uncommitted changes (web/scripts/committed.mjs): Xel often runs several
+  uncommitted changes, and release and play also while the Android code
+  (`web/android`) or the phone server (`mobile/`) has
+  (web/scripts/committed.mjs): Xel often runs several
   sessions in this folder, and the build takes files as they are, so
   another session's half-finished work would go out too. Commit your own
   work; if the rest is another session's, wait for it, or deploy from a
   clean copy (the project memory note on deploying beside other sessions).
-- `npm run backup` pulls its nightly backups to `backups/pi`.
+- `npm run backup` pulls its daily backups to `backups/pi`. The Pi makes
+  them at 03:30 UTC (PocketBase's schedules run in UTC, not the Pi's local
+  time), so in Australia that's the afternoon, not the middle of the night.
 - Fixing data the app can't (a one-off script, like 2026-11-05's pantry
   tidy-up): `npm run pi-admin -- <script.mjs>` (web/scripts/pi-admin.mjs)
   adds a temporary admin login, backs up, runs the script and removes the

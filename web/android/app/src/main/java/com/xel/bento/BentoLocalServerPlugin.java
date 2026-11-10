@@ -45,6 +45,8 @@ public class BentoLocalServerPlugin extends Plugin {
     // One at a time, off the screen's thread: starting can take a few seconds.
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private static final String PENDING_BACKUP_KEY = "bentoPendingBackup";
+    // Where Bentoserver.rescue() writes: the data folder's name + "-rescued.zip".
+    private static final String RESCUED_ZIP = "bento-data-rescued.zip";
     private File pendingBackup;
 
     // The server is built for 64-bit ARM only (see mobile/README.md).
@@ -84,7 +86,10 @@ public class BentoLocalServerPlugin extends Plugin {
             } catch (Throwable e) {
                 // Not running (or can't run here): nothing to stop.
             }
-            deleteAll(new File(getContext().getFilesDir(), "bento-data"));
+            // Every "bento-data*": the data itself, plus what sits beside it
+            // (rescue()'s zip, and what an interrupted restore left behind).
+            File[] kept = getContext().getFilesDir().listFiles((folder, name) -> name.startsWith("bento-data"));
+            if (kept != null) for (File file : kept) deleteAll(file);
             deleteAll(new File(getContext().getFilesDir(), "bento-server"));
             call.resolve();
         });
@@ -166,6 +171,10 @@ public class BentoLocalServerPlugin extends Plugin {
                  OutputStream out = getContext().getContentResolver().openOutputStream(target)) {
                 if (out == null) throw new IOException("couldn't open the place you picked");
                 copy(in, out);
+                // rescue()'s zip is a whole extra copy of the data, now saved
+                // where the person picked. backup()'s stays: the next backup
+                // replaces it.
+                if (backup.getName().equals(RESCUED_ZIP)) backup.delete();
                 call.resolve(new JSObject().put("saved", true));
             } catch (Throwable e) {
                 call.reject("Couldn't save the backup: " + e.getMessage());

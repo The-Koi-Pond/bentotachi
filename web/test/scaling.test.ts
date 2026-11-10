@@ -21,6 +21,22 @@ test("ranges scale at both ends", () => {
   assert.equal(scaleLine("1-1/2 lbs beef", 2), "3 lbs beef");
 });
 
+test("a mixed number written with 'and' or '&' scales whole", () => {
+  assert.equal(scaleLine("1 and 1/2 cups (188g) flour", 2), "3 cups (375g) flour");
+  // The same as when it's written "1 1/2".
+  assert.equal(scaleLine("1 1/2 cups (188g) flour", 2), "3 cups (375g) flour");
+  assert.equal(scaleLine("2 and 1/4 cups (281g) all-purpose flour", 2), "4½ cups (560g) all-purpose flour");
+  assert.equal(scaleLine("1 & ½ tsp baking soda", 2), "3 tsp baking soda");
+  assert.equal(scaleLine("2 and 1/2 eggs", 2), "5 eggs");
+  assert.equal(scaleLine("Butter, 1 and 1/2 cups, softened", 2), "Butter, 3 cups, softened");
+  // A line typed in title case.
+  assert.equal(scaleLine("1 And 1/2 Cups Flour", 2), "3 Cups Flour");
+  // "and" that isn't between a whole number and a fraction joins nothing.
+  assert.equal(scaleLine("Salt and 1/2 tsp pepper", 2), "Salt and 1 tsp pepper");
+  assert.equal(scaleLine("1 cup and 1/2 tsp sugar", 2), "2 cups and 1 tsp sugar");
+  assert.equal(scaleLine("2 eggs and 1/2 cup milk", 2), "4 eggs and 1/2 cup milk");
+});
+
 test("grams and millilitres come out as round numbers", () => {
   assert.equal(scaleLine("250 g butter", 1.5), "375 g butter");
   assert.equal(scaleLine("125g sugar", 1.5), "190g sugar");

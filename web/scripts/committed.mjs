@@ -11,7 +11,10 @@
 //
 // The web app: the build takes web/ as it is in the folder, so another
 // session's half-finished work would go out with it (it nearly did on
-// 2026-11-04). web/android and web/scripts aren't part of the web app.
+// 2026-11-04). web/scripts isn't part of it. The apps (release, play) also
+// build in the Android code (web/android; its built files and keys are
+// gitignored, so they don't count) and the phone-only server (mobile/), so
+// those are checked for them too.
 
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -20,12 +23,14 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const CHECKED = ["server/pb_hooks", "server/pb_migrations", "web", ":(exclude)web/android", ":(exclude)web/scripts"];
+const APP_ALSO = ["web/android", "mobile"];
 
 // Stops the script (nothing done yet) if the server code or the web app has
-// anything uncommitted. `sending` says what was about to happen, for the
-// message.
-export function refuseUncommittedCode(sending) {
-  const uncommitted = execFileSync("git", ["status", "--porcelain", "--", ...CHECKED], {
+// anything uncommitted (and, with `app`, the Android code or the phone
+// server). `sending` says what was about to happen, for the message.
+export function refuseUncommittedCode(sending, { app = false } = {}) {
+  const paths = app ? [...CHECKED.filter((path) => path !== ":(exclude)web/android"), ...APP_ALSO] : CHECKED;
+  const uncommitted = execFileSync("git", ["status", "--porcelain", "--", ...paths], {
     cwd: root,
     encoding: "utf8",
   });

@@ -6,7 +6,7 @@ import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
 import { brandBesideName, storeLinksOf } from "../pantryItem";
 import { useUnsavedChanges } from "../unsavedChanges";
-import { PANTRY_KEY, SHOPPING_KEY, isOffline } from "../offline";
+import { isOffline, pantryCopy, shoppingCopy } from "../offline";
 import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
 import { showError, showToast } from "../toast";
@@ -31,12 +31,11 @@ function savedOrder(): Order {
 export default function ShoppingList() {
   const { items, loadError, offline, setOffline, reload, upsert, removeLocally } = useLiveRecords<ShoppingItem>(
     "shopping_items",
-    "recipe",
-    SHOPPING_KEY
+    { expand: "recipe", copy: shoppingCopy }
   );
   // Things linked to a pantry item show its preferred brand and store link.
   // Kept live, so changes made in the pantry show up here too.
-  const pantry = useLiveRecords<PantryItem>("pantry_items", undefined, PANTRY_KEY);
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const pantryById = new Map((pantry.items ?? []).map((p) => [p.id, p]));
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
