@@ -11,7 +11,7 @@ type SavedPage = { url: string; html: string };
 
 // Bento's built-in browser (BrowserActivity.java in the Android project).
 interface BentoBrowserPlugin {
-  open(options: { url: string; mode?: "recipe" | "link" | "pantry" }): Promise<BrowserResult>;
+  open(options: { url: string; mode?: "recipe" | "link" }): Promise<BrowserResult>;
 }
 
 const BentoBrowser = registerPlugin<BentoBrowserPlugin>("BentoBrowser");
@@ -82,13 +82,9 @@ export function RestoredSaveReceiver() {
 }
 
 // Opens a page (like a store's search) in Bento's browser with a "Link this
-// item" (or, for "pantry", "Add to pantry") button, and returns the address
-// and product name of the page that was open when it was tapped, or null if
-// the browser was just closed.
-export async function pickPageLink(
-  url: string,
-  mode: "link" | "pantry" = "link"
-): Promise<{ url: string; name: string } | null> {
-  const result = await BentoBrowser.open({ url, mode });
+// item" button, and returns the address and product name of the page that
+// was open when it was tapped, or null if the browser was just closed.
+export async function pickPageLink(url: string): Promise<{ url: string; name: string } | null> {
+  const result = await BentoBrowser.open({ url, mode: "link" });
   return result.saved && result.url ? { url: result.url, name: result.name ?? "" } : null;
 }

@@ -14,8 +14,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * Lets the web app open Bento's built-in browser:
  * BentoBrowser.open({ url }) resolves with { saved: false } if the person just
  * closed it, or { saved: true, url, html } after "Save to Bento". With
- * mode: "link" or "pantry" the button says "Link this item" or "Add to
- * pantry", html is empty and name is the product's name.
+ * mode: "link" the button says "Link this item", html is empty and name is
+ * the product's name.
  */
 @CapacitorPlugin(name = "BentoBrowser")
 public class BentoBrowserPlugin extends Plugin {

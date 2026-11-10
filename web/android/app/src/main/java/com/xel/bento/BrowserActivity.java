@@ -34,9 +34,9 @@ import org.json.JSONTokener;
  * Bento's server. Opened by BentoBrowserPlugin, which hands the result back
  * to the app.
  *
- * In link mode (EXTRA_MODE = "link" or "pantry") the button says "Link this
- * item" or "Add to pantry" and hands back the page's address and product
- * name, for linking a pantry item to its product page in a store.
+ * In link mode (EXTRA_MODE = "link") the button says "Link this item" and
+ * hands back the page's address and product name, for linking a pantry item
+ * to its product page in a store.
  */
 public class BrowserActivity extends AppCompatActivity {
 
@@ -131,15 +131,13 @@ public class BrowserActivity extends AppCompatActivity {
     private TextView title;
     private ProgressBar progress;
     private Button save;
-    // "recipe" (Save to Bento), "link" (Link this item) or "pantry" (Add to pantry).
-    private String mode;
+    // "Link this item" instead of Save to Bento.
     private boolean linkMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mode = getIntent().getStringExtra(EXTRA_MODE);
-        linkMode = "link".equals(mode) || "pantry".equals(mode);
+        linkMode = "link".equals(getIntent().getStringExtra(EXTRA_MODE));
         buildLayout();
         setUpWebView();
 
@@ -286,7 +284,6 @@ public class BrowserActivity extends AppCompatActivity {
     }
 
     private String buttonLabel() {
-        if ("pantry".equals(mode)) return "Add to pantry";
         return linkMode ? "Link this item" : "Save to Bentotachi";
     }
 
