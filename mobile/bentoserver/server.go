@@ -226,7 +226,9 @@ func Restore(zipPath string) (int, error) {
 
 	started, err := start(dataDir, hooksDir, migrationsDir)
 	if err != nil {
-		// The backup wouldn't start: put the old data back.
+		// The backup wouldn't start: put the old data back, with this
+		// phone's backups folder (moved into the backup's data above).
+		_ = os.Rename(filepath.Join(dataDir, "backups"), filepath.Join(previous, "backups"))
 		_ = os.RemoveAll(dataDir)
 		_ = os.Rename(previous, dataDir)
 		started, startErr := start(dataDir, hooksDir, migrationsDir)

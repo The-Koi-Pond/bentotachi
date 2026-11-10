@@ -4,6 +4,7 @@ package bentoserver
 // from the mobile folder, `go test ./...`.
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -116,5 +117,39 @@ func TestStartBackupRestore(t *testing.T) {
 	items = call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
 	if len(items) != 1 || items[0].(map[string]any)["title"] != "Soup" {
 		t.Fatalf("the rescued data should restore with Soup in it: %v", items)
+	}
+}
+
+// A backup that won't open leaves everything as it was, the phone's own
+// backups folder included.
+func TestBadBackupKeepsBackups(t *testing.T) {
+	server, _ := filepath.Abs(filepath.Join("..", "..", "server"))
+	dataDir := filepath.Join(t.TempDir(), "pb_data")
+	hooks, migrations := filepath.Join(server, "pb_hooks"), filepath.Join(server, "pb_migrations")
+	if _, err := Start(dataDir, hooks, migrations); err != nil {
+		t.Fatal(err)
+	}
+	defer Stop()
+	made, err := Backup()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bad := filepath.Join(t.TempDir(), "bad.zip")
+	file, _ := os.Create(bad)
+	writer := zip.NewWriter(file)
+	entry, _ := writer.Create("data.db")
+	_, _ = entry.Write([]byte("not a database, just text"))
+	_ = writer.Close()
+	_ = file.Close()
+
+	if _, err := Restore(bad); err == nil {
+		t.Fatal("a backup that isn't a database should fail to restore")
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, "data.db")); err != nil {
+		t.Fatalf("the old data should be back: %v", err)
+	}
+	if _, err := os.Stat(made); err != nil {
+		t.Fatalf("the phone's earlier backup should still be there: %v", err)
 	}
 }
