@@ -6,8 +6,7 @@
 // make good changes look refused; only the renewal itself answers 401
 // (server/test/expired-login.check.mjs).
 
-import { pb, users, type User } from "./pb";
-import { forgetOfflineCopy } from "./offline";
+import { logOut, pb, users, type User } from "./pb";
 import { isPhoneMode, logInOnPhone } from "./phoneMode";
 import { createLoginGuard, isServerRefusal, type LoginState } from "./loginGuard";
 
@@ -30,8 +29,7 @@ async function renewLogin(): Promise<LoginState> {
     if (isPhoneMode() && (await logInOnPhone())) return "ok";
     // No longer good: the login screen shows. Shopping changes made offline
     // that haven't gone yet are kept, and go after logging back in.
-    forgetOfflineCopy({ keepWaiting: true });
-    pb.authStore.clear();
+    logOut({ keepWaiting: true });
     return "signedOut";
   }
 }

@@ -1,6 +1,6 @@
 import { registerPlugin } from "@capacitor/core";
-import { isAndroidApp, pb, users } from "./pb";
-import { forgetOfflineCopy, read as readList, SHOPPING_QUEUE_KEY } from "./offline";
+import { isAndroidApp, logOut, pb, users } from "./pb";
+import { read as readList, SHOPPING_QUEUE_KEY } from "./offline";
 import { remember, remembered, rememberedJson } from "./phoneStorage";
 import { askBetween, askFirst } from "./askFirst";
 
@@ -129,9 +129,8 @@ export async function leavePhoneMode(): Promise<boolean> {
     if (answer === null) return false;
     keepWaiting = answer === "yes";
   }
-  forgetOfflineCopy({ keepWaiting });
   remember(MODE_KEY, null);
-  pb.authStore.clear();
+  logOut({ keepWaiting });
   return true;
 }
 
@@ -157,8 +156,7 @@ export async function erasePhone() {
   remember(MODE_KEY, null);
   remember(ACCOUNT_KEY, null);
   remember(LAST_BACKUP_KEY, null);
-  forgetOfflineCopy();
-  pb.authStore.clear();
+  logOut();
 }
 
 export async function backUpPhone(): Promise<boolean> {
@@ -219,8 +217,7 @@ export async function restorePhone(): Promise<boolean> {
   }
   // Everything was replaced: the offline copies, and changes waiting to be
   // sent, belonged to what was here before.
-  forgetOfflineCopy();
-  pb.authStore.clear();
+  logOut();
   await logInOnPhone();
   return true;
 }

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
-import { displayName, errorMessage, PERSON_COLORS, pb, useCurrentUser, users, type User } from "../pb";
+import { displayName, errorMessage, logOut, PERSON_COLORS, useCurrentUser, users, type User } from "../pb";
 import Avatar from "../Avatar";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
 import { erasePhone, isPhoneMode, switchToServer } from "../phoneMode";
-import { forgetOfflineCopy } from "../offline";
 import { BenMood } from "../Brand";
 import { CameraIcon, ChevronIcon, CloseIcon, LogOutIcon } from "../icons";
 import { HelpBox, HelpButton, useHelp } from "../Help";
@@ -70,10 +69,7 @@ function LeaveButton({ phone }: { phone: boolean }) {
         <button
           type="button"
           className="button"
-          onClick={() => {
-            forgetOfflineCopy();
-            pb.authStore.clear();
-          }}
+          onClick={() => logOut()}
         >
           <LogOutIcon /> Log out
         </button>
@@ -102,8 +98,7 @@ function DeleteSection({ user }: { user: User }) {
       if (phone) await erasePhone();
       else {
         await users().delete(user.id);
-        forgetOfflineCopy();
-        pb.authStore.clear();
+        logOut();
       }
       window.location.reload();
     } catch (err) {

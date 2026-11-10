@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
 import { DEFAULT_QUICK_MINUTES } from "./format";
 import { remember, remembered } from "./phoneStorage";
+import { forgetOfflineCopy } from "./offline";
 
 // In a browser, Bento is served by PocketBase itself, so it talks to "/"
 // (in development Vite forwards that to PocketBase). The Android app carries
@@ -30,6 +31,15 @@ export const pb = new PocketBase(isAndroidApp ? savedServerUrl() : "/");
 // Allow overlapping requests (e.g. typing fast in search) instead of the
 // library cancelling earlier ones.
 pb.autoCancellation(false);
+
+// Logged out: the phone's offline copies go too, so the next person on it
+// doesn't see them (offline.ts). keepWaiting: shopping list changes not
+// sent yet stay, for when the login merely expired; they go once someone
+// logs in again.
+export function logOut({ keepWaiting = false } = {}) {
+  forgetOfflineCopy({ keepWaiting });
+  pb.authStore.clear();
+}
 
 export interface User extends RecordModel {
   // What they log in with, like "xel" (lowercase, unique).

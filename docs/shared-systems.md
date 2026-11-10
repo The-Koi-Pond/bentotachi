@@ -30,9 +30,13 @@ they say otherwise.
   `useTablespoon`, `usePlanMeals`, `useStores` (`household.ts`).
 - The logged-in person: `useCurrentUser`, their name `displayName`, their
   colour `personStyle`, picture `avatarUrl` / `<Avatar>` (`pb.ts`, `Avatar.tsx`).
-- Logging out or switching servers: `forgetOfflineCopy` (`offline.ts`) wipes
-  the phone's copies. A new offline copy's key goes in its list, or the next
-  person on the phone sees it.
+- Logging out or switching servers: `logOut({ keepWaiting })` (`pb.ts`),
+  which wipes the phone's copies (`forgetOfflineCopy`, `offline.ts`) and the
+  login. A new offline copy's key goes in forgetOfflineCopy's list, or the
+  next person on the phone sees it.
+- Live updates that failed to start are sent again when the connection
+  comes back: call `liveUpdateFailed()` (`liveResend.ts`) in a new
+  subscription's catch.
 
 ## Saved data and syncing
 
