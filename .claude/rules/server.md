@@ -18,7 +18,14 @@ paths:
   household.pb.js uses `??`); older files avoid them only because an older
   note said so.
 - `pb_hooks/pantry.pb.js`: server rules linking pantry and shopping list.
-- Tests: `node --test "server/test/*.test.js"` from the project folder. The
+- Tests: `node --test "server/test/*.test.js"` from the project folder.
+  `npm test` also runs them inside PocketBase's own engine (goja), where
+  the hooks really run: it fails things Node passes (a regex that runs out
+  of backtracking room on a long page, a missing built-in). There a test
+  file gets stand-ins for `node:test` and `node:assert/strict`
+  (server/test/engine/): synchronous `test(name, fn)` and `assert.equal`,
+  `notEqual`, `deepEqual`, `ok`, `match`. A test needing more, add it
+  there. The
   `*.check.mjs` files check the server end to end against a throwaway
   PocketBase on port 8091, or `BENTO_TEST_PORT` (instructions at the top of
   `pantry-rules.check.mjs`). `npm test`, `npm run release` and `npm run
