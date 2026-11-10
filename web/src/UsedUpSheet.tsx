@@ -4,6 +4,8 @@
 // come off the pantry; Skip leaves it. Only opens when there's something to
 // offer.
 import { useEffect, useRef, useState } from "react";
+import { statusOf } from "./errorStatus";
+import { useModalSheet } from "./useModalSheet";
 import { errorMessage, pantryItems, pantryPackets, type PantryItem, type PantryPacket, type Recipe } from "./pb";
 import { useLiveRecords } from "./useLiveRecords";
 import { cookedUses, type Use } from "./cookedUses";
@@ -48,11 +50,7 @@ export default function UsedUpSheet({
     setTicked(new Set(again ? [] : worked.filter((use) => use.ticked).map((use) => use.item.id)));
   }, [uses, pantry.items, packets.items, recipe, scale, measures, again, onClose]);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (uses && dialog && !dialog.open) dialog.showModal();
-    return () => dialog?.close();
-  }, [uses]);
+  const sheetClosed = useModalSheet(dialogRef, onClose, { show: !!uses });
 
   // Couldn't load the pantry (offline): nothing to offer.
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function UsedUpSheet({
     const chosen = uses.filter((use) => ticked.has(use.item.id));
     // A packet gone already (finished on another phone meanwhile) is fine.
     const goneIsFine = (err: unknown) => {
-      if ((err as { status?: number }).status !== 404) throw err;
+      if (statusOf(err) !== 404) throw err;
     };
     try {
       for (const use of chosen) {
@@ -108,7 +106,7 @@ export default function UsedUpSheet({
       ref={dialogRef}
       className="sheet"
       aria-labelledby="used-up-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       // Not closed while it's saving, or a failure halfway would go unseen.
       onCancel={(event) => {
         if (busy) event.preventDefault();

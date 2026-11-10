@@ -50,7 +50,7 @@ export function productWithBarcode(item: Pick<PantryItem, "products">, code: str
 
 // A product added by hand or by scanning: joins one of the same brand and
 // size (its barcode added), else goes at the end.
-export function withProduct(products: PantryProduct[], added: PacketDetails & { barcode?: string }): PantryProduct[] {
+export function addProduct(products: PantryProduct[], added: PacketDetails & { barcode?: string }): PantryProduct[] {
   const code = added.barcode ?? "";
   const at = products.findIndex((p) => sameKind(p, added));
   if (at >= 0) {

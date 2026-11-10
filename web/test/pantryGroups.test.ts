@@ -7,12 +7,30 @@ import {
   matchesPantrySearch,
   needsChecking,
   needsUsingSoon,
+  onceEach,
   placeList,
   placeOptions,
+  renamedPlaces,
   subcategoryOptions,
   uniqueLabels,
+  unrenamedPlaces,
+  withoutPlace,
   withPlaceBack,
 } from "../src/pantryGroups.ts";
+
+test("renaming a place keeps its spot; a name another place has merges them, and Undo puts it back", () => {
+  const list = ["Fridge", "Pantry", "Garage"];
+  assert.deepEqual(renamedPlaces(list, "pantry", "Cupboard"), ["Fridge", "Cupboard", "Garage"]);
+  assert.deepEqual(renamedPlaces(list, "pantry", "Garage", { merge: true }), ["Fridge", "Garage"]);
+  // Undo on the latest list: Shed, added by another phone since, stays.
+  assert.deepEqual(unrenamedPlaces(["Fridge", "cupboard", "Garage", "Shed"], "Pantry", "Cupboard", 1), ["Fridge", "Pantry", "Garage", "Shed"]);
+  assert.deepEqual(unrenamedPlaces(["Fridge", "Garage", "Shed"], "Pantry", "Garage", 1, { merge: true }), ["Fridge", "Pantry", "Garage", "Shed"]);
+  assert.deepEqual(withoutPlace(list, "garage"), ["Fridge", "Pantry"]);
+});
+
+test("a place named twice, in any capitals, is kept once where it first is", () => {
+  assert.deepEqual(onceEach(["Fridge", "Pantry", "fridge", " Pantry "]), ["Fridge", "Pantry"]);
+});
 
 test("a place's Undo puts it back where it was, in the list as it is now", () => {
   // Another phone added Garage meanwhile: it stays.

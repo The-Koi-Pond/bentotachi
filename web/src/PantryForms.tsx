@@ -553,9 +553,8 @@ export function AddPantryItem({
         try {
           await pantryPackets().create(packetToSave({ item: added.id, ...scannedDetails, barcode, left: "" }));
         } catch (err) {
-          // The item is saved either way; a server from before counting
-          // (no such collection) just doesn't count it.
-          if ((err as { status?: number }).status !== 404) showError(`Added, but not counted in stock: ${errorMessage(err)}`);
+          // The item is saved either way.
+          showError(`Added, but not counted in stock: ${errorMessage(err)}`);
         }
       }
       setBarcode("");
@@ -818,8 +817,8 @@ export function EditPantryItem({
 }: {
   item: PantryItem;
   existing: PantryItem[];
-  // Its packets in stock; null when the server has none (one from before
-  // packets), so they aren't offered.
+  // Its packets in stock; null until they've loaded (or if they can't),
+  // and then none are offered.
   packets?: PantryPacket[] | null;
   onAddPacket?: (details: PacketDetails) => Promise<boolean>;
   onFinishPacket?: (packet: PantryPacket) => void;

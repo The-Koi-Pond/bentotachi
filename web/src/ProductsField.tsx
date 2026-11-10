@@ -4,7 +4,7 @@
 // Changes are saved with the form; the logic is in pantryProducts.ts.
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { errorMessage, type PantryItem, type PantryProduct } from "./pb";
-import { productName, productNote, replaceProduct, sameKind, withProduct } from "./pantryProducts";
+import { productName, productNote, replaceProduct, sameKind, addProduct } from "./pantryProducts";
 import { tidySize, type PacketDetails } from "./pantryPackets";
 import { barcodesOf, normaliseBarcode } from "./barcodes";
 import { canScan, lookUpBarcode, scanBarcode } from "./scanner";
@@ -47,7 +47,7 @@ export default function ProductsField({
   }
 
   function add(details: PacketDetails & { barcode?: string }) {
-    const next = withProduct(products, details);
+    const next = addProduct(products, details);
     onChange(next);
     setAdding(false);
     // Open, so one known only by its barcode can be named straight away.

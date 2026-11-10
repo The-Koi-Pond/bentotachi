@@ -1,4 +1,5 @@
 import { App } from "@capacitor/app";
+import { statusOf } from "./errorStatus";
 import { registerPlugin } from "@capacitor/core";
 import { AppUpdate, AppUpdateResultCode, FlexibleUpdateInstallStatus } from "@capawesome/capacitor-app-update";
 import { useSyncExternalStore } from "react";
@@ -146,7 +147,7 @@ export async function checkForUpdate() {
     );
   } catch (err) {
     // 404: nothing published yet, so this app is as new as it gets.
-    if ((err as { status?: number }).status === 404) setState({ status: "current", installed });
+    if (statusOf(err) === 404) setState({ status: "current", installed });
     else setState({ status: "error", message: errorMessage(err), installed });
   }
 }

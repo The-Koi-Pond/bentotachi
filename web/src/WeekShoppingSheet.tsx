@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useModalSheet } from "./useModalSheet";
 import { Link } from "react-router";
 import { errorMessage, type MealPlanEntry, type PantryItem, type PantryPacket, type Recipe } from "./pb";
 import { addDays, datePart, formatDay } from "./dates";
@@ -33,11 +34,7 @@ export default function WeekShoppingSheet({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   const last = addDays(today, days - 1);
   const dinners = entries
@@ -79,7 +76,7 @@ export default function WeekShoppingSheet({
       ref={dialogRef}
       className="sheet"
       aria-labelledby="week-shop-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}

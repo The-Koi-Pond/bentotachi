@@ -186,14 +186,7 @@ export default function MealPlan() {
         )
       );
     } catch (err) {
-      // A server from before several dishes per meal refuses a second one.
-      const fields = (err as { response?: { data?: Record<string, { code?: string }> } }).response?.data ?? {};
-      const notUnique = Object.values(fields).some((field) => field?.code === "validation_not_unique");
-      showError(
-        notUnique
-          ? `This Bentotachi server holds one dish per ${meal}. Once it's updated, sides can go with the main.`
-          : errorMessage(err)
-      );
+      showError(errorMessage(err));
     }
   }
 
@@ -237,14 +230,7 @@ export default function MealPlan() {
     try {
       if (there) {
         // One request, so both are saved or neither (pb_hooks/meal_plan.pb.js).
-        try {
-          await pb.send("/api/cookbook/meal-plan/swap", { method: "POST", body: { a: moving.id, b: there.id } });
-        } catch (err) {
-          // A server older than that route (a friend's own): two saves.
-          if ((err as { status?: number }).status !== 404) throw err;
-          await mealPlan().update(moving.id, { recipe: there.recipe, note: there.note });
-          await mealPlan().update(there.id, { recipe: moving.recipe, note: moving.note });
-        }
+        await pb.send("/api/cookbook/meal-plan/swap", { method: "POST", body: { a: moving.id, b: there.id } });
       } else {
         await mealPlan().update(moving.id, { date: toStoredDate(target.date), meal: target.meal });
       }

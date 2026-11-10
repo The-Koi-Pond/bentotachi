@@ -12,11 +12,10 @@ import {
   learnsBarcode,
   nextPacket,
   boughtDay,
-  groupText,
   labelMeta,
   preferredChanges,
   packetGroups,
-  packetLabel,
+  packetName,
   packetToSave,
   packetsOf,
   tidySize,
@@ -41,13 +40,11 @@ test("packets show as one counter per brand and size, without the favourite bran
       ["800 g", 1, ["4"]],
     ]
   );
-  // Tins and bottles are counted too, so never "Packet": plain ones show as
-  // a count ("2"), and what's left still reads without a stray comma.
+  // Tins and bottles are counted too, so never "Packet": plain ones have no
+  // label, and what's left still reads without a stray comma.
   const plain = packetGroups([{ brand: "", size: "" }, { brand: "", size: "" }, { brand: "", size: "", left: "100 g" }]);
   assert.deepEqual(plain.map((g) => g.label), ["", "about 100 g left"]);
-  assert.deepEqual(plain.map(groupText), ["2", "about 100 g left"]);
-  assert.equal(groupText({ count: 3, label: "400 g" }), "3 × 400 g");
-  assert.equal(groupText({ count: 1, label: "400 g" }), "400 g");
+  assert.deepEqual(plain.map((g) => g.count), [2, 1]);
 });
 
 test("a partly used packet is its own counter, saying what's left", () => {
@@ -163,10 +160,10 @@ test("+ 1 packet adds one like the usual packet, else the newest, else just the 
 const CODE = "9300633603161";
 
 test("a packet's label is its brand and size, or just Packet", () => {
-  assert.equal(packetLabel({ brand: "White Mill", size: "1 kg" }), "White Mill 1 kg");
-  assert.equal(packetLabel({ brand: " Coles ", size: "" }), "Coles");
-  assert.equal(packetLabel({ brand: "", size: "2 kg" }), "2 kg");
-  assert.equal(packetLabel({ brand: "", size: " " }), "", "never the word packet: tins and bottles count too");
+  assert.equal(packetName({ brand: "White Mill", size: "1 kg" }), "White Mill 1 kg");
+  assert.equal(packetName({ brand: " Coles ", size: "" }), "Coles");
+  assert.equal(packetName({ brand: "", size: "2 kg" }), "2 kg");
+  assert.equal(packetName({ brand: "", size: " " }), "", "never the word packet: tins and bottles count too");
 });
 
 test("an item's packets: only its own, oldest first, without hidden ones", () => {

@@ -13,6 +13,22 @@ import type { Recipe } from "./pb";
 export const MAX_PHOTOS = 20;
 export const PHOTO_SIDE = 1600;
 
+// How many more photos a recipe takes: MAX_PHOTOS besides the cover, plus
+// the cover's own spot while it has none (the first added becomes it).
+export function photoRoom(photos: number, { hasCover }: { hasCover: boolean }): number {
+  return MAX_PHOTOS - photos + (hasCover ? 0 : 1);
+}
+
+// What adding photos says: how many went in of the ones chosen (the first
+// as the cover when there was none), and whether the rest didn't fit.
+export function photosAddedText(added: number, chosen: number, { hasCover }: { hasCover: boolean }): string {
+  if (added <= 0) return `This recipe already has ${MAX_PHOTOS} photos besides its cover. Remove one to add another.`;
+  const said = `Added ${added === 1 ? "the photo" : `${added} photos`}${hasCover ? "" : ", the first as the cover"}.`;
+  return chosen > added
+    ? `${said} The rest didn't fit: a recipe keeps up to ${MAX_PHOTOS} photos besides its cover.`
+    : `${said} Tap one to put it with a step.`;
+}
+
 // A step's key in photo_steps. On purpose its own rule, not a shared text
 // helper: saved step photos are found by it, so it must never change.
 export const stepKey = (line: string) => line.trim().toLowerCase();

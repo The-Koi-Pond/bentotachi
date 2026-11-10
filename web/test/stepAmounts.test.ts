@@ -34,6 +34,8 @@ test("reads an ingredient's amount and name", () => {
   assert.equal(readIngredient("500g beef mince")?.amount, "500g");
   assert.equal(readIngredient("1 large egg")?.amount, "1");
   assert.deepEqual(readIngredient("3 garlic cloves, crushed"), { amount: "3 cloves", words: ["garlic"], choices: [["garlic"]], partly: false });
+  assert.equal(readIngredient("1 and 1/2 garlic cloves")?.amount, "1 and 1/2 cloves");
+  assert.equal(readIngredient("1 & ½ garlic cloves")?.amount, "1 & ½ cloves");
   // Both ways at once (RecipeTin Eats).
   assert.equal(readIngredient("1.2 kg/ 2.4lb (6 pieces) bone-in chicken thighs")?.amount, "1.2 kg/ 2.4lb");
   assert.equal(readIngredient("2 tbsp/ 30g melted ghee or butter")?.amount, "2 tbsp/ 30g");

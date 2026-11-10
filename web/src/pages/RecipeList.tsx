@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   DndContext,
   DragOverlay,
@@ -127,7 +127,7 @@ export default function RecipeList() {
   // Ratings are extras on the cards; the list still works without them.
   const ratings = useLiveRecords<RecipeRating>("recipe_ratings", { fields: RATING_FIELDS, copy: ratingsCopy }).items;
   // The household's categories (shelves); null until loaded, or if they
-  // can't be (offline, or an older server), which shows the plain list.
+  // can't be (offline), which shows the plain list.
   const { items: categories, setItems: setCategories } = useLiveRecords<RecipeCategory>("recipe_categories");
   const [error, setError] = useState("");
   const problem = error || loadError;
@@ -160,7 +160,6 @@ export default function RecipeList() {
   const [viewOpen, setViewOpen] = useState(false);
   const shelfHelp = useHelp();
   const spell = useSpell();
-  const navigate = useNavigate();
   // What tapping a tag in the panel does: show only recipes with it, or
   // hide the ones with it.
   const [tagMode, setTagMode] = useState<"with" | "without">("with");
@@ -299,9 +298,19 @@ export default function RecipeList() {
     setSearchParams(next, { replace: true });
   }
 
+  // Shelves only show with nothing narrowing the list, so asking for them
+  // clears the search and filters too.
   function showShelvesAgain() {
     const next = new URLSearchParams(searchParams);
-    next.delete("list");
+    for (const name of ["list", "tag", "not", "by", "fav", "quick"]) next.delete(name);
+    setSearch("");
+    setSearchParams(next);
+  }
+
+  // Keeps the filters, search and select mode.
+  function showOneList() {
+    const next = new URLSearchParams(searchParams);
+    next.set("list", "1");
     setSearchParams(next);
   }
 
@@ -699,13 +708,10 @@ export default function RecipeList() {
             <div className="view-panel-row">
               <span className="view-panel-label">Shelves</span>
               <span className="view-switch" role="group" aria-label="Shelves or one list">
-                <button aria-pressed={!listChosen} onClick={() => listChosen && showShelvesAgain()}>
+                <button aria-pressed={showShelves} onClick={() => !showShelves && showShelvesAgain()}>
                   Shelves
                 </button>
-                <button
-                  aria-pressed={listChosen}
-                  onClick={() => !listChosen && navigate({ search: editing ? "?list=1&edit=1" : "?list=1" })}
-                >
+                <button aria-pressed={!showShelves} onClick={() => !listChosen && showOneList()}>
                   One list
                 </button>
               </span>

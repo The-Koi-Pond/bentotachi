@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useModalSheet } from "./useModalSheet";
 import { errorMessage, recipeImageUrl, type Recipe } from "./pb";
 import { CloseIcon } from "./icons";
 import { CENTRED, MAX_ZOOM, framingOf, framingStyle, isCentred, panned, zoomed, type Framing } from "./photoFraming";
@@ -27,11 +28,7 @@ export default function PhotoFramer({
   // The pointer's last spot while dragging.
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -73,7 +70,7 @@ export default function PhotoFramer({
       ref={dialogRef}
       className="sheet"
       aria-labelledby="framer-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}

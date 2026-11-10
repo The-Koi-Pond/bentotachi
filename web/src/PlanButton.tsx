@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { statusOf } from "./errorStatus";
 import { Link } from "react-router";
 import { errorMessage, mealPlan, pb, type Recipe } from "./pb";
 import { formatDay, localToday, toStoredDate } from "./dates";
@@ -33,7 +34,7 @@ export default function PlanButton({ recipe }: { recipe: Recipe }) {
       const already = await mealPlan()
         .getFirstListItem(pb.filter("date = {:date} && meal = {:meal} && recipe = {:recipe}", { date: toStoredDate(date), meal, recipe: recipe.id }))
         .catch((err) => {
-          if ((err as { status?: number }).status === 404) return null;
+          if (statusOf(err) === 404) return null;
           throw err;
         });
       if (!already) {

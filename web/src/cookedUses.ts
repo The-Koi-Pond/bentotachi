@@ -7,7 +7,7 @@ import type { PantryItem, PantryPacket } from "./pb";
 import { headingOf } from "./format.ts";
 import { linkFor } from "./pantryLinks.ts";
 import { scaleLine } from "./scaling.ts";
-import { packetLabel, packetsOf } from "./pantryPackets.ts";
+import { packetName, packetsOf } from "./pantryPackets.ts";
 import { amountLabel, packetAmount, quantityOf } from "./pantryStock.ts";
 import type { RecipeMeasures } from "./volumes.ts";
 
@@ -99,7 +99,7 @@ function usePackets(item: PantryItem, lines: string[], ordered: PantryPacket[], 
   if (leave && !finish.length) {
     return {
       item,
-      title: `${item.name}: ${amountLabel({ kind: first.kind, amount: used })} of the ${packetLabel(leave.packet) || "open"} one`,
+      title: `${item.name}: ${amountLabel({ kind: first.kind, amount: used })} of the ${packetName(leave.packet) || "open"} one`,
       note: `About ${leave.left} left`,
       ticked: true,
       finish,

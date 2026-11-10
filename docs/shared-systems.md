@@ -57,7 +57,8 @@ they say otherwise.
   a second quick choice doesn't undo the first.
 - Remembering something on this device (a setting, a view): `remembered` /
   `rememberedJson` / `remember` (`phoneStorage.ts`), never raw
-  `localStorage`. Offline copies of lists: `read` / `write` and the `*_KEY`
+  `localStorage`; with `{ thisVisit: true }` for this visit only (never raw
+  `sessionStorage`). Offline copies of lists: `read` / `write` and the `*_KEY`
   names (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
   `useShoppingQueue` (`shoppingQueue.ts`). A record saved under an id
   picked beforehand (so sending it twice can't add it twice):
@@ -99,7 +100,8 @@ they say otherwise.
   `bottom: var(--timer-tray-height, 0px)`, not offset by the bars, and
   needs no `overflow: hidden` between it and the page (`clip` is fine).
 - Error text for people: `errorMessage` (`pb.ts`); "is it offline?":
-  `isOffline` (`offline.ts`); `<OfflineNote>` to say so.
+  `isOffline` (`offline.ts`); `<OfflineNote>` to say so. A failed call's
+  status (404, 409…): `statusOf(err)` (`errorStatus.ts`), never a cast.
 - Import size limits: `LIMITS` / `fitRecipe` (`server/pb_hooks/recipe_parse.js`),
   mirrored as `IMPORT_LIMITS` / `fitImported` (`paprikaImport.ts`; a test
   keeps the limits equal).
@@ -146,6 +148,11 @@ they say otherwise.
 - A site's name from its address: `siteHost` (`recipeSites.ts`; pass `""`
   as its second argument for blank instead of the address); store:
   `storeFor` / `storeName` (`stores.ts`).
+- A recipe's copy: `copyOf` (`recipeCopy.ts`), its step photos by
+  `photoStepsFor`. Room for more photos and what adding them says:
+  `photoRoom` / `photosAddedText` (`recipePhotos.ts`). A pantry place
+  renamed, merged or put back: `renamedPlaces` / `unrenamedPlaces` /
+  `withPlaceBack` (`pantryGroups.ts`).
 - Recipes with the same name: `sameTitle`, `twinLabels` (`recipeTwins.ts`);
   "already imported": `alreadyHave` (`paprikaImport.ts`).
 - Words on screen the US spells differently (favourite, colour, grey):
@@ -165,6 +172,10 @@ they say otherwise.
 
 - Any date box: `<DateField>` (`DateField.tsx`), never `<input type="date">`;
   its month grid and typed-date reading are `calendar.ts`.
+- A `<dialog className="sheet">` opened while it's on screen:
+  `useModalSheet(dialogRef, onClose)` (`useModalSheet.ts`), whose handler
+  goes on the dialog's `onClose` (it ignores the late close event that made
+  sheets shut as they opened in `npm run dev`).
 - `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
   `PhotoViewer.tsx`. Screen stays on: `useWakeLock`. A pantry level (Have /
@@ -174,6 +185,10 @@ they say otherwise.
   a 5px rim around compartments of `--surface` with 8px corners; see the
   recipe box, pantry places, shopping list, plan and tab bar in
   `styles.css`, and docs/VISION.md "Bento trays" for where they go.
+- "Label" means two things: on screen, a packet in stock (its "label" chip,
+  docs/VISION.md); in code, also a group's display text (`packetGroups`'
+  `.label`). A packet's brand and size as words: `packetName`
+  (`pantryPackets.ts`).
 - A pantry item's labels (each one in stock, with its use-by and opened):
   `<StockLabels>` (`StockLabels.tsx`, grouping by `packetGroups`, the small
   words by `labelMeta`); the item's own date as their soonest:

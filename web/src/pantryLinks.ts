@@ -293,7 +293,11 @@ const PLAIN_KIND_WORDS = new Set(
 export function isJustThis(line: string, name: string): boolean {
   // "Full cream" is one describing word here, though "cream" before a name
   // is usually another product ("cream cheese").
-  const main = line.split(/[,(]/)[0].replace(/\bfull[\s-]+cream\b/gi, "full");
+  // "1 and 1/2 cups" is one amount; "and" elsewhere joins two things.
+  const main = line
+    .split(/[,(]/)[0]
+    .replace(/\bfull[\s-]+cream\b/gi, "full")
+    .replace(/(\d)\s+and\s+(?=\d|[½¼¾⅓⅔⅛])/gi, "$1 ");
   const at = findMention(main, name);
   if (!at) return false;
   const words = (text: string) =>

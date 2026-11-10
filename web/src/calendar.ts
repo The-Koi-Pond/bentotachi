@@ -2,7 +2,7 @@
 // days, and a date typed by hand in the phone's own order (14/12/2026 in
 // Australia, 12/14/2026 in the US). Dates are plain "2026-12-14" (dates.ts).
 // Tested in web/test/calendar.test.ts.
-import { addDays, dayNumber, weekStart, type FirstDay } from "./dates.ts";
+import { addDays, weekStart, type FirstDay } from "./dates.ts";
 
 // The month holding `month` (any day in it) as whole weeks from the first
 // day of the week; days outside the month are "" (blank cells).
@@ -50,7 +50,7 @@ export function readTypedDate(text: string, order: DateOrder): string | null {
   if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1) return null;
   const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   // 31/02 rolls over to March in Date maths: not a real day.
-  const back = new Date(dayNumber(date) * 86_400_000).toISOString().slice(0, 10);
+  const back = addDays(date, 0);
   return back === date ? date : null;
 }
 

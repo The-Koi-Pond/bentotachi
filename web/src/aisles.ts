@@ -31,16 +31,18 @@ export const AISLES = [
 
 export type Aisle = (typeof AISLES)[number];
 
-// Two-word names first, so "red pepper" is veg though "pepper" is a spice,
-// and "coconut milk" is a tin though "milk" is dairy.
+// Names of more than one word first, so "red pepper" is veg though "pepper"
+// is a spice, "coconut milk" a tin though "milk" is dairy, and "egg noodles"
+// pasta though "egg" is dairy.
 const PHRASES: [Aisle, string[]][] = [
   ["Fruit & veg", ["bell pepper", "red pepper", "green pepper", "yellow pepper", "green bean", "spring onion", "sweet potato", "snow pea", "bean sprout"]],
   ["Dairy & eggs", ["sour cream", "cream cheese", "oat milk", "almond milk", "soy milk"]],
+  ["Pasta, rice & grains", ["egg noodle", "egg pasta"]],
   ["Tins & jars", ["coconut milk", "coconut cream", "tomato paste", "tomato puree", "baked bean", "peanut butter"]],
   ["Sauces & oils", ["soy sauce", "fish sauce", "lemon juice", "lime juice"]],
-  ["Baking & spices", ["baking soda", "baking powder", "black pepper", "bicarb soda", "brown sugar", "icing sugar", "caster sugar"]],
-  ["Frozen", ["ice cream", "ice block"]],
-  ["Household", ["toilet paper", "paper towel", "dish soap", "bin bag", "cling wrap", "baking paper"]],
+  ["Baking & spices", ["baking soda", "baking powder", "black pepper", "bicarb soda", "brown sugar", "icing sugar", "caster sugar", "cream of tartar"]],
+  ["Frozen", ["ice cream", "ice block", "spring roll"]],
+  ["Household", ["toilet paper", "toilet roll", "paper towel", "dish soap", "bin bag", "cling wrap", "baking paper"]],
 ];
 
 // Then single words, most telling first: "frozen peas" is frozen, "tinned

@@ -10,28 +10,16 @@ import { showError } from "../toast";
 import { CloseIcon } from "../icons";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { useSpell } from "../household";
+import { remember, remembered } from "../phoneStorage";
 
 // The last search stays until cleared (for this visit to Bento), so after
 // saving a recipe found with it, coming back to Browse (Back, or the tab)
 // still shows it, ready to look for more.
 const SEARCH_KEY = "bento.browseSearch";
 
-function rememberedSearch(): string {
-  try {
-    return sessionStorage.getItem(SEARCH_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
+const rememberedSearch = () => remembered(SEARCH_KEY, { thisVisit: true }) ?? "";
 
-function rememberSearch(text: string) {
-  try {
-    if (text) sessionStorage.setItem(SEARCH_KEY, text);
-    else sessionStorage.removeItem(SEARCH_KEY);
-  } catch {
-    // Storage blocked: the search just won't be kept.
-  }
-}
+const rememberSearch = (text: string) => remember(SEARCH_KEY, text || null, { thisVisit: true });
 
 export default function Browse() {
   const navigate = useNavigate();

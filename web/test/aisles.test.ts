@@ -33,6 +33,11 @@ test("two-word names before single words", () => {
   assert.equal(guessAisle("Peanut butter"), "Tins & jars");
   assert.equal(guessAisle("Green beans"), "Fruit & veg");
   assert.equal(guessAisle("Soy sauce"), "Sauces & oils");
+  assert.equal(guessAisle("Egg noodles"), "Pasta, rice & grains");
+  assert.equal(guessAisle("Fresh egg pasta"), "Pasta, rice & grains");
+  assert.equal(guessAisle("Toilet rolls"), "Household");
+  assert.equal(guessAisle("Spring rolls"), "Frozen");
+  assert.equal(guessAisle("Cream of tartar"), "Baking & spices");
 });
 
 test("what it's made into decides, not what it's made of", () => {

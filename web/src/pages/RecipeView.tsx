@@ -64,14 +64,16 @@ import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
 import { shrinkPhoto } from "../pantryPhoto";
 import { inTurn } from "../inTurn";
+import { copyOf } from "../recipeCopy";
 import {
-  MAX_PHOTOS,
   PHOTO_SIDE,
   carriedStepPhotos,
   galleryPhotos,
   numberedSteps,
+  photoRoom,
+  photosAddedText,
+  photoStepsFor,
   samePhotoSteps,
-  savedName,
   stepKey,
   stepPhotos,
   uploadName,
@@ -214,14 +216,8 @@ export default function RecipeView() {
       ))
     )
       return "";
-    let fresh: SiteRecipe | null = null;
-    try {
-      fresh = (await pb.send("/api/cookbook/import", { method: "POST", body: { url: recipe.source_url, preview: true } })).recipe ?? null;
-    } catch (err) {
-      // A server from before re-importing would have offered to add a copy.
-      if ((err as { status?: number }).status !== 409) throw err;
-    }
-    if (!fresh) return "This Bentotachi server can't re-import yet: it needs updating first.";
+    const fresh: SiteRecipe = (await pb.send("/api/cookbook/import", { method: "POST", body: { url: recipe.source_url, preview: true } }))
+      .recipe;
     // The link may lead to a different recipe now (a site that moved or
     // merged its pages): ask before replacing this one with it.
     if (
@@ -246,27 +242,7 @@ export default function RecipeView() {
   // plans stay with the original.
   async function duplicate() {
     if (!recipe) return;
-    const data: Record<string, unknown> = {
-      title: `${recipe.title.slice(0, 290)} (copy)`,
-      description: recipe.description,
-      source_url: recipe.source_url,
-      servings: recipe.servings,
-      prep_minutes: recipe.prep_minutes,
-      cook_minutes: recipe.cook_minutes,
-      total_minutes: recipe.total_minutes,
-      extra_times: recipe.extra_times,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      tags: recipe.tags,
-      notes: recipe.notes,
-      author_notes: recipe.author_notes,
-      nutrition: recipe.nutrition,
-      ingredient_links: recipe.ingredient_links,
-      site_rating: recipe.site_rating,
-      site_rating_count: recipe.site_rating_count,
-      image_framing: recipe.image_framing,
-      added_by: pb.authStore.record?.id,
-    };
+    const data = copyOf(recipe, pb.authStore.record?.id);
     if (recipe.image) {
       // The photo comes along when it loads; the copy is made either way.
       const answer = await fetch(recipeImageUrl(recipe)).catch(() => null);
@@ -285,12 +261,7 @@ export default function RecipeView() {
     if (photos.length) data.photos = photos;
     const copy = await recipes().create(data);
     // Step photos stay with their steps, under the copies' names.
-    const onSteps: Record<string, string> = {};
-    for (const [name, upload] of sent) {
-      const key = recipe.photo_steps?.[name];
-      const saved = savedName(upload, copy.photos);
-      if (key && saved) onSteps[saved] = key;
-    }
+    const onSteps = photoStepsFor(sent, recipe.photo_steps ?? {}, copy.photos);
     if (Object.keys(onSteps).length) await recipes().update(copy.id, { photo_steps: onSteps });
     navigate(`/recipes/${copy.id}/edit`);
   }
@@ -411,8 +382,8 @@ export default function RecipeView() {
   async function addPhotosNow(files: File[]): Promise<string> {
     const now = await photosNow();
     const hasCover = !!now.image;
-    const room = MAX_PHOTOS - (now.photos?.length ?? 0) + (hasCover ? 0 : 1);
-    if (room <= 0) return `This recipe already has ${MAX_PHOTOS} photos besides its cover. Remove one to add another.`;
+    const room = photoRoom(now.photos?.length ?? 0, { hasCover });
+    if (room <= 0) return photosAddedText(0, files.length, { hasCover });
     const picked = files.slice(0, room);
     const shrunk = await Promise.all(
       picked.map(async (file) => {
@@ -428,18 +399,8 @@ export default function RecipeView() {
       rest = shrunk.slice(1);
     }
     if (rest.length) data["photos+"] = rest;
-    const saved = await savePhotos(data);
-    // A server older than these photos (a friend's copy not updated yet)
-    // says yes but keeps only the cover.
-    if (rest.length && saved.photos === undefined) {
-      return hasCover
-        ? "This Bentotachi server is too old to keep more photos, so they weren't saved. Whoever runs it can update it, then try again."
-        : "Added the first photo as the cover, but this Bentotachi server is too old to keep more, so the others weren't saved. Whoever runs it can update it, then try again.";
-    }
-    const added = `Added ${picked.length === 1 ? "the photo" : `${picked.length} photos`}${hasCover ? "" : ", the first as the cover"}.`;
-    return files.length > picked.length
-      ? `${added} The rest didn't fit: a recipe keeps up to ${MAX_PHOTOS} photos besides its cover.`
-      : `${added} Tap one to put it with a step.`;
+    await savePhotos(data);
+    return photosAddedText(picked.length, files.length, { hasCover });
   }
 
   // "We cooked this" (or finishing the timer): today, by whoever's logged

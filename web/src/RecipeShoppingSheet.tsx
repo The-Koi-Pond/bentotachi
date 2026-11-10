@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useModalSheet } from "./useModalSheet";
 import { errorMessage, recipes, type PantryItem, type PantryPacket, type Recipe } from "./pb";
 import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
@@ -19,11 +20,7 @@ export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }
   const [search, setSearch] = useState("");
   const [chosen, setChosen] = useState<Recipe | null>(null);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   useEffect(() => {
     recipes()
@@ -40,7 +37,7 @@ export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }
       ref={dialogRef}
       className="sheet"
       aria-labelledby="recipe-shop-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}

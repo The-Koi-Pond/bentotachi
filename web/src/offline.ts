@@ -5,6 +5,7 @@
 // offline (see offlineShopping.ts). Other changes need the server.
 
 import type { PantryItem, Recipe, RecipeRating, ShoppingItem } from "./pb";
+import { statusOf } from "./errorStatus.ts";
 import { remember, rememberedJson } from "./phoneStorage.ts";
 
 const RECIPES_KEY = "bento.offline.recipes";
@@ -63,7 +64,7 @@ export function savedRecipes(): Recipe[] | null {
 // "Can't reach the server" (no connection, or the server is off), as
 // opposed to the server answering with an error.
 export function isOffline(err: unknown): boolean {
-  return (err as { status?: number })?.status === 0;
+  return statusOf(err) === 0;
 }
 
 // Logging out forgets the copy (and unsent list changes), so the next person

@@ -22,15 +22,8 @@ type Packet = Pick<PantryPacket, "id" | "item" | "brand" | "size" | "created">;
 // "White Mill 1 kg", "White Mill", "1 kg", or "" when it has neither: the
 // word "packet" never shows, as tins, jars and bottles are counted too, so
 // callers say "one" or just the count instead.
-export function packetLabel(packet: Pick<PantryPacket, "brand" | "size">): string {
+export function packetName(packet: Pick<PantryPacket, "brand" | "size">): string {
   return [packet.brand, packet.size].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
-}
-
-// How a counter or "In stock" shows a group: "2 × 500 g", "500 g", or just
-// "2" for ones with no brand or size.
-export function groupText(group: { count: number; label: string }): string {
-  if (!group.label) return String(group.count);
-  return group.count > 1 ? `${group.count} × ${group.label}` : group.label;
 }
 
 // An item's packets grouped, one group per brand, size and state ("3 ×
@@ -56,7 +49,7 @@ export function packetGroups<
     const brand = norm(packet.brand ?? "") === norm(favouriteBrand) ? "" : packet.brand ?? "";
     // A partly used one (cooking left "100 g") is its own counter.
     const left = (packet.left ?? "").trim();
-    const base = packetLabel({ brand, size: packet.size });
+    const base = packetName({ brand, size: packet.size });
     const label = left ? [base, `about ${left} left`].filter(Boolean).join(", ") : base;
     const key = `${norm(brand)}|${norm(packet.size ?? "")}|${norm(left)}|${(packet.expires ?? "").slice(0, 10)}|${packet.opened ? "open" : ""}|${boughtDay(packet)}`;
     const group = groups.get(key) ?? { label, count: 0, packets: [] };

@@ -18,6 +18,12 @@ export function storedTime(stored: string): Date {
   return new Date(stored ? stored.replace(" ", "T") : NaN);
 }
 
+// A moment as PocketBase stores it ("2026-10-30 09:15:00.000Z"), so it
+// sorts and compares with the server's own.
+export function serverDate(date: Date): string {
+  return date.toISOString().replace("T", " ");
+}
+
 // Today on this device, as "2026-11-02".
 export function localToday(now = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, "0");

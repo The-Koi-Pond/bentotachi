@@ -68,8 +68,8 @@ export interface User extends RecordModel {
   // Whether recipes show their nutrition facts to them (Settings'
   // "Show nutrition"; off unless they turn it on).
   show_nutrition?: boolean;
-  // "Bring step photos" from websites (import.pb.js). Missing on an older
-  // server.
+  // "Bring step photos" from websites (import.pb.js). Missing from a login
+  // an older app version saved on the phone.
   website_step_photos?: boolean;
   updated: string;
 }
@@ -97,14 +97,17 @@ export interface Recipe extends RecordModel {
   // The recipe writer's own tips from the original page; "notes" are ours.
   author_notes: string;
   // The website's own rating when it was imported from a link: out of 5
-  // (0 = none) and how many gave it. Missing on an older server.
+  // (0 = none) and how many gave it. Missing from offline copies older app
+  // versions saved.
   site_rating?: number;
   site_rating_count?: number;
   // Nutrition facts per serving, a line each ("Calories: 420 kcal"),
-  // shown to people who turn on "Show nutrition". Missing on an older server.
+  // shown to people who turn on "Show nutrition". Missing from offline
+  // copies older app versions saved.
   nutrition?: string[] | null;
   // Photos besides the cover (file names), and which step each goes with
-  // (see recipePhotos.ts). Missing on an older server.
+  // (see recipePhotos.ts). Missing from offline copies older app versions
+  // saved, and from lists that load only some fields.
   photos?: string[];
   photo_steps?: Record<string, string> | null;
   added_by: string;

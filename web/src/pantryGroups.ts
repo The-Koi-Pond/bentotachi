@@ -143,6 +143,29 @@ export function withPlaceBack(list: string[], label: string, at: number): string
   return [...list.slice(0, spot), label, ...list.slice(spot)];
 }
 
+// A name that's in the list twice (in any capitals) kept once, where it
+// first is.
+export function onceEach(list: string[]): string[] {
+  return list.filter((label, i, all) => all.findIndex((l) => norm(l) === norm(label)) === i);
+}
+
+export function withoutPlace(list: string[], key: string): string[] {
+  return list.filter((l) => norm(l) !== key);
+}
+
+// The places after renaming one (`fromKey`) to `to`: the new name in its
+// spot, or, when `to` is another place already (`merge`), it's gone into
+// that one.
+export function renamedPlaces(list: string[], fromKey: string, to: string, { merge = false } = {}): string[] {
+  return merge ? withoutPlace(list, fromKey) : list.map((l) => (norm(l) === fromKey ? to : l));
+}
+
+// Undo of renamedPlaces, made to the latest list so another phone's places
+// since then stay: the old name back (in its spot `at`, after a merge).
+export function unrenamedPlaces(list: string[], from: string, to: string, at: number, { merge = false } = {}): string[] {
+  return merge ? withPlaceBack(list, from, at) : list.map((l) => (norm(l) === norm(to) ? from : l));
+}
+
 // Removes blanks and case-only duplicates (the first spelling wins, so the
 // starter names keep their capitals), then sorts A to Z.
 export function uniqueLabels(values: string[]): string[] {

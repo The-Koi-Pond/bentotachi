@@ -7029,8 +7029,8 @@ em.soft {
 }
 
 /* toast.ts's short messages ("Moved to the Fridge."): a tap puts one away.
-   An error gets a plum stripe; with an Undo bar showing, the message sits
-   just above it rather than on top. */
+   An error gets a plum stripe. With a page's Undo bars showing, Toaster.tsx
+   lifts the message above them rather than on top. */
 .notice-toast {
   cursor: pointer;
 }
@@ -7038,15 +7038,6 @@ em.soft {
 .toast-error {
   box-shadow: inset 5px 0 0 var(--accent), 0 4px 16px rgba(0, 0, 0, 0.2);
   padding-left: 18px;
-}
-
-body:has(.undo-toast:not(.notice-toast)) .notice-toast {
-  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 72px);
-}
-
-/* Two bars stacked (Pantry's .toast-stack): above both. */
-body:has(.toast-stack > .toast + .toast) .notice-toast {
-  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--timer-tray-height, 0px) + 148px);
 }
 
 /* Two bars at once on a page (Pantry's "X is out" and an Undo): stacked

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type R
 import { Link } from "react-router";
 import { displayName, errorMessage, logOut, PERSON_COLORS, useCurrentUser, users, type User } from "../pb";
 import Avatar from "../Avatar";
+import { cleanUsername, MIN_PASSWORD } from "../accounts";
 import { squarePicture } from "../avatarImage";
 import { useUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
@@ -275,9 +276,6 @@ function WhoSection({ user, phone }: { user: User; phone: boolean }) {
   );
 }
 
-// Usernames: lowercase letters, numbers, dots, dashes and underscores.
-const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]/g, "");
-
 // What you log in with, in one box: the username (saved on its own), then
 // the password.
 function LoggingInSection({ user }: { user: User }) {
@@ -438,7 +436,7 @@ function PasswordForm({ user }: { user: User }) {
 
   async function change(event: FormEvent) {
     event.preventDefault();
-    if (next.length < 8) return setStatus({ text: "The new password needs at least 8 characters.", isError: true });
+    if (next.length < MIN_PASSWORD) return setStatus({ text: `The new password needs at least ${MIN_PASSWORD} characters.`, isError: true });
     if (next !== again) return setStatus({ text: "The two new passwords don't match.", isError: true });
     setBusy(true);
     setStatus(null);
@@ -473,7 +471,7 @@ function PasswordForm({ user }: { user: User }) {
       </label>
       <label>
         New password
-        <span className="hint">At least 8 characters.</span>
+        <span className="hint">At least {MIN_PASSWORD} characters.</span>
         <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" required />
       </label>
       <label>

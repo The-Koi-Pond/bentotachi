@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router";
 import { displayName, errorMessage, isAndroidApp, pb, personStyle, useCurrentUser, users, type User } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
+import { cleanUsername, MIN_PASSWORD } from "../accounts";
 import Avatar from "../Avatar";
 import { refreshHousehold } from "../household";
 import { isPhoneMode } from "../phoneMode";
@@ -10,9 +11,6 @@ import { useUnsavedChanges } from "../unsavedChanges";
 // Opened on the server computer itself ("localhost"), whose address phones
 // can't use.
 const onServerComputer = /^(localhost|127\.|\[::1\])/.test(window.location.hostname);
-
-// Usernames: lowercase letters, numbers, dots, dashes and underscores.
-const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]/g, "");
 
 // Everyone with an account on this Bento, and a way to add someone. Anyone
 // in the household can add people; changing or removing accounts is done on
@@ -79,7 +77,7 @@ function AddPerson({ onAdded }: { onAdded: (user: User) => void }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (username.length < 2) return setError("Usernames need at least 2 characters.");
-    if (password.length < 8) return setError("The password needs at least 8 characters.");
+    if (password.length < MIN_PASSWORD) return setError(`The password needs at least ${MIN_PASSWORD} characters.`);
     setBusy(true);
     setError("");
     try {
@@ -175,7 +173,7 @@ function AddPerson({ onAdded }: { onAdded: (user: User) => void }) {
           </label>
           <label>
             Starting password
-            <span className="hint">At least 8 characters. Tell them it; they can change it after.</span>
+            <span className="hint">At least {MIN_PASSWORD} characters. Tell them it; they can change it after.</span>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}

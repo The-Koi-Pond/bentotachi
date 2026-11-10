@@ -3,6 +3,7 @@
 // files (PantryRow, PantryForms, PantryScan); the sorting rules are in
 // pantryGroups.ts.
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { statusOf } from "../errorStatus";
 import { useSearchParams } from "react-router";
 import {
   errorMessage,
@@ -26,7 +27,7 @@ import {
   knowsBarcode,
   lastPacketRunsOut,
   learnsBarcode,
-  packetLabel,
+  packetName,
   packetToSave,
   packetsOf,
   tidySize,
@@ -41,7 +42,21 @@ import { useLiveRecords } from "../useLiveRecords";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
-import { groupItems, isOtherName, matchesPantrySearch, needsChecking, needsUsingSoon, norm, placeList, withPlaceBack, type Place } from "../pantryGroups";
+import {
+  groupItems,
+  isOtherName,
+  matchesPantrySearch,
+  needsChecking,
+  needsUsingSoon,
+  norm,
+  onceEach,
+  placeList,
+  renamedPlaces,
+  unrenamedPlaces,
+  withoutPlace,
+  withPlaceBack,
+  type Place,
+} from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
 import PantryCard from "../PantryCard";
@@ -93,9 +108,8 @@ function savedPlace(): Place | null {
 export default function Pantry() {
   const pantry = useLiveRecords<PantryItem>("pantry_items");
   const shopping = useLiveRecords<ShoppingItem>("shopping_items");
-  // Not waited for: a server from before packets (a friend's older copy)
-  // hasn't any, and the pantry works without them (packets.items stays null,
-  // and nothing offers to add one).
+  // Not waited for: the pantry works without them while they load or if
+  // they can't (packets.items stays null, and nothing offers to add one).
   const packets = useLiveRecords<PantryPacket>("pantry_packets");
   // A finished packet waits a few seconds for Undo before it's deleted.
   const undo = useUndo();
@@ -284,7 +298,7 @@ export default function Pantry() {
     if (
       bought &&
       !(await askFirst(
-        `The shopping list already added ${packetLabel(bought) || "one"} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one.`,
+        `The shopping list already added ${packetName(bought) || "one"} of ${item.name} ${noteAge(bought.created, new Date())}, when it was ticked bought. Unless you bought two, that's probably this one.`,
         { yes: "I bought two", no: "It's the same one" }
       ))
     ) {
@@ -334,7 +348,7 @@ export default function Pantry() {
     if (!added) return;
     // "Added Nutella 400 g.", "Added Masterfoods 560 g to American mustard.":
     // the item named unless the product's name says it already.
-    const label = packetLabel(added);
+    const label = packetName(added);
     const words = !label
       ? `Added one to ${item.name}.`
       : norm(label).includes(norm(item.name))
@@ -385,13 +399,13 @@ export default function Pantry() {
       setStatus(item, "out", true);
       return;
     }
-    undo.offer([packet.id], `Finished: ${packetLabel(packet) || "one"} of ${item.name}.`, async () => {
+    undo.offer([packet.id], `Finished: ${packetName(packet) || "one"} of ${item.name}.`, async () => {
       try {
         await pantryPackets().delete(packet.id);
         packets.removeLocally(packet.id);
       } catch (err) {
         // Already gone (the item ran out meanwhile, clearing it) is fine.
-        if ((err as { status?: number }).status !== 404) showError(errorMessage(err));
+        if (statusOf(err) !== 404) showError(errorMessage(err));
       }
     });
   }
@@ -539,9 +553,7 @@ export default function Pantry() {
   // kept once.
   async function keepPlaces(change: (list: string[]) => string[]): Promise<boolean> {
     try {
-      await savePlaces((saved) =>
-        change(listedFrom(saved, latestItems.current)).filter((label, i, all) => all.findIndex((l) => norm(l) === norm(label)) === i)
-      );
+      await savePlaces((saved) => onceEach(change(listedFrom(saved, latestItems.current))));
       return true;
     } catch (err) {
       showError(errorMessage(err));
@@ -556,7 +568,7 @@ export default function Pantry() {
       return;
     }
     const known = places.find((p) => p.key === norm(label));
-    if (!known && !(await keepPlaces((list) => (list.some((l) => norm(l) === norm(label)) ? list : [...list, label])))) return;
+    if (!known && !(await keepPlaces((list) => [...list, label]))) return;
     choosePlace(known ?? { key: norm(label), label });
   }
 
@@ -578,11 +590,8 @@ export default function Pantry() {
       return;
     const target = into ? into.label : label;
     const at = listed.findIndex((l) => norm(l) === from.key);
-    // Undo is a change too, made to the latest list: another phone's places
-    // since then stay.
-    const unrename = (list: string[]) => (into ? withPlaceBack(list, from.label, at) : list.map((l) => (norm(l) === norm(target) ? from.label : l)));
-    const renamed = (list: string[]) => (into ? list.filter((l) => norm(l) !== from.key) : list.map((l) => (norm(l) === from.key ? target : l)));
-    if (!(await keepPlaces(renamed))) return;
+    const merge = !!into;
+    if (!(await keepPlaces((list) => renamedPlaces(list, from.key, target, { merge })))) return;
     const moving = (items ?? []).filter((i) => norm(i.location) === from.key);
     const showing = place?.key === from.key;
     if (showing) choosePlace({ key: norm(target), label: target });
@@ -592,7 +601,7 @@ export default function Pantry() {
         label: "Undo",
         run: () =>
           void (async () => {
-            await keepPlaces(unrename);
+            await keepPlaces((list) => unrenamedPlaces(list, from.label, target, at, { merge }));
             if (showing) choosePlace(from);
             for (const item of moving) if (!(await save(item, { location: item.location }, ""))) return;
           })(),
@@ -615,7 +624,7 @@ export default function Pantry() {
     const count = moving.length === 1 ? "The 1 thing in it moves" : `The ${moving.length} things in it move`;
     if (moving.length && !(await askFirst(`Delete ${gone.label}? ${count} to Other.`, { yes: "Delete", no: "Cancel", danger: true }))) return;
     const at = listed.findIndex((l) => norm(l) === gone.key);
-    if (!(await keepPlaces((list) => list.filter((l) => norm(l) !== gone.key)))) return;
+    if (!(await keepPlaces((list) => withoutPlace(list, gone.key)))) return;
     const showing = place?.key === gone.key;
     if (showing) choosePlace(null);
     for (const item of moving) if (!(await save(item, { location: "", subcategory: "" }, ""))) return;

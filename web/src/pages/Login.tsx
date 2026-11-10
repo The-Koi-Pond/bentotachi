@@ -1,5 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
+import { cleanUsername, MIN_PASSWORD } from "../accounts";
+import { statusOf } from "../errorStatus";
+import { isOffline } from "../offline";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl, users } from "../pb";
 import { isPhoneMode, leavePhoneMode, phoneAccount, phoneModeSupported, PhoneNeedsName, rememberPhoneAccount, setUpPhone } from "../phoneMode";
 
@@ -44,7 +47,7 @@ export default function Login() {
       .then((answer) => setNeedsSetup(answer.needsSetup))
       .catch((err) => {
         setNeedsSetup(null);
-        if (isAndroidApp && (err as { status?: number }).status === 0) setUnreachable(true);
+        if (isAndroidApp && isOffline(err)) setUnreachable(true);
       });
   }
 
@@ -241,7 +244,7 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
       // Phone-only: log in by itself from now on.
       if (phone) rememberPhoneAccount({ username: identity, password });
     } catch (err) {
-      setError((err as { status?: number }).status === 400 ? "Wrong username or password." : errorMessage(err));
+      setError(statusOf(err) === 400 ? "Wrong username or password." : errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -280,9 +283,6 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
   );
 }
 
-// Usernames: lowercase letters, numbers, dots, dashes and underscores.
-const cleanUsername = (text: string) => text.toLowerCase().replace(/[^a-z0-9._-]/g, "");
-
 // First-time setup on a new server: your account (and, with the same
 // password, the server's admin account for its admin page).
 function SetupForm({ server }: { server: string }) {
@@ -296,7 +296,7 @@ function SetupForm({ server }: { server: string }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (username.length < 2) return setError("Usernames need at least 2 characters.");
-    if (password.length < 8) return setError("The password needs at least 8 characters.");
+    if (password.length < MIN_PASSWORD) return setError(`The password needs at least ${MIN_PASSWORD} characters.`);
     if (password !== again) return setError("The two passwords don't match.");
     setBusy(true);
     setError("");
@@ -341,7 +341,7 @@ function SetupForm({ server }: { server: string }) {
       </label>
       <label>
         Password
-        <span className="hint">At least 8 characters.</span>
+        <span className="hint">At least {MIN_PASSWORD} characters.</span>
         <input
           type="password"
           autoComplete="new-password"

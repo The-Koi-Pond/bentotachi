@@ -13,18 +13,15 @@ import {
 } from "../phoneMode";
 import { formatDay, localToday, timeAgo } from "../dates";
 import { BenMood } from "../Brand";
+import { remember, remembered } from "../phoneStorage";
 
 // Restoring reloads the app, so "Restored" is kept across the reload here.
 const JUST_RESTORED_KEY = "bento.justRestored";
 
 function takeJustRestored(): boolean {
-  try {
-    const restored = sessionStorage.getItem(JUST_RESTORED_KEY) === "1";
-    sessionStorage.removeItem(JUST_RESTORED_KEY);
-    return restored;
-  } catch {
-    return false;
-  }
+  const restored = remembered(JUST_RESTORED_KEY, { thisVisit: true }) === "1";
+  remember(JUST_RESTORED_KEY, null, { thisVisit: true });
+  return restored;
 }
 
 // ⋮ → Settings → Backups, on a phone-only Bento (see phoneMode.ts): everything lives on
@@ -86,11 +83,9 @@ export default function Backups() {
     try {
       // Start afresh with the restored data (logging in again if needed).
       if (await restorePhone()) {
-        try {
-          sessionStorage.setItem(JUST_RESTORED_KEY, "1");
-        } catch {
-          // Restored all the same; just no message after the reload.
-        }
+        // If storage refuses, it's restored all the same, just without the
+        // message after the reload.
+        remember(JUST_RESTORED_KEY, "1", { thisVisit: true });
         window.location.reload();
       } else setBusy(false);
     } catch (err) {

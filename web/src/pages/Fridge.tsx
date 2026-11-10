@@ -19,7 +19,7 @@ import { useUndo } from "../undo";
 import { showError } from "../toast";
 import { usePlanMeals, useSingleUser } from "../household";
 import { isPhoneMode } from "../phoneMode";
-import { addDays, localToday, toStoredDate } from "../dates";
+import { addDays, localToday, serverDate, toStoredDate } from "../dates";
 import {
   happenings,
   magnetOf,
@@ -260,7 +260,7 @@ function Lately() {
 
   useEffect(() => {
     const today = localToday();
-    const since = new Date(Date.now() - 7 * 86_400_000).toISOString().replace("T", " ");
+    const since = serverDate(new Date(Date.now() - 7 * 86_400_000));
     Promise.all([
       recipes().getList(1, 8, { filter: pb.filter("created >= {:since}", { since }), sort: "-created", expand: "added_by" }),
       cookedLog().getList(1, 8, { filter: pb.filter("created >= {:since}", { since }), sort: "-created", expand: "recipe,cooked_by" }),

@@ -9,7 +9,7 @@ import {
   productNote,
   productWithBarcode,
   replaceProduct,
-  withProduct,
+  addProduct,
   withServerAdditions,
 } from "../src/pantryProducts.ts";
 
@@ -44,8 +44,8 @@ test("which product a barcode is on", () => {
 });
 
 test("adding a product joins the same brand and size, else goes at the end", () => {
-  assert.deepEqual(withProduct([small], { brand: "nutella", size: "400 g", barcode: "111" })[0].barcodes, [NUT, "111"]);
-  assert.deepEqual(withProduct([small], { brand: " Bon Maman", size: "360 g " }).at(-1), { brand: "Bon Maman", size: "360 g", barcodes: [], links: [] });
+  assert.deepEqual(addProduct([small], { brand: "nutella", size: "400 g", barcode: "111" })[0].barcodes, [NUT, "111"]);
+  assert.deepEqual(addProduct([small], { brand: " Bon Maman", size: "360 g " }).at(-1), { brand: "Bon Maman", size: "360 g", barcodes: [], links: [] });
 });
 
 test("products as saved: trimmed, links made full, empty ones gone", () => {

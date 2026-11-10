@@ -2,15 +2,42 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  MAX_PHOTOS,
   carriedStepPhotos,
   galleryPhotos,
   numberedSteps,
+  photoRoom,
+  photosAddedText,
   photoStepsFor,
   samePhotoSteps,
   savedName,
   stepPhotos,
   uploadName,
 } from "../src/recipePhotos.ts";
+import { copyOf } from "../src/recipeCopy.ts";
+import type { Recipe } from "../src/pb.ts";
+
+test("adding photos: the cover's spot counts while it's empty, and the message says what went in", () => {
+  assert.equal(photoRoom(0, { hasCover: false }), MAX_PHOTOS + 1);
+  assert.equal(photoRoom(MAX_PHOTOS - 2, { hasCover: true }), 2);
+  assert.equal(photoRoom(MAX_PHOTOS, { hasCover: true }), 0);
+  assert.equal(photosAddedText(1, 1, { hasCover: true }), "Added the photo. Tap one to put it with a step.");
+  assert.equal(photosAddedText(3, 3, { hasCover: false }), "Added 3 photos, the first as the cover. Tap one to put it with a step.");
+  assert.match(photosAddedText(2, 5, { hasCover: true }), /^Added 2 photos\. The rest didn't fit/);
+  assert.match(photosAddedText(0, 1, { hasCover: true }), /already has 20 photos/);
+});
+
+test("a recipe's copy has its own things under a new name, not who added it", () => {
+  const recipe = { id: "r1", title: "Soup", description: "Warm.", ingredients: ["1 onion"], steps: ["Boil."], tags: ["dinner"], added_by: "u1" } as unknown as Recipe;
+  const copy = copyOf(recipe, "u2");
+  assert.equal(copy.title, "Soup (copy)");
+  assert.equal(copy.added_by, "u2");
+  assert.deepEqual(copy.ingredients, ["1 onion"]);
+  assert.equal(copy.description, "Warm.");
+  assert.equal("id" in copy, false);
+  // " (copy)" still fits in a title's 300 characters.
+  assert.ok((copyOf({ ...recipe, title: "x".repeat(300) }, "u2").title as string).length <= 300);
+});
 
 const steps = ["# The sauce", "Fry the onions.", "Add the tomatoes.", "## Then", "Simmer.", "# Eggs", "Crack in the eggs."];
 

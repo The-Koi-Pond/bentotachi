@@ -61,9 +61,9 @@ function settingsFrom(saved: SavedSettings): Settings {
     id: saved.id,
     country: saved.country,
     tablespoon: saved.tablespoon ?? 0,
-    // A server from before meals has no plan_meals: dinner only.
+    // Not set yet: dinner only.
     plan_meals: saved.plan_meals ?? [],
-    // A server from before it: none listed, so the places items are in.
+    // Not set yet: none listed, so the places items are in.
     pantry_places: Array.isArray(saved.pantry_places) ? saved.pantry_places.filter((p): p is string => typeof p === "string") : [],
   };
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useModalSheet } from "./useModalSheet";
 import { errorMessage, recipeImageUrl, recipePhotoUrl, type Recipe } from "./pb";
 import { numberedSteps, stepKey } from "./recipePhotos";
 import { withoutSoftMarks } from "./softMarks";
@@ -46,9 +47,7 @@ export default function PhotoViewer({
   const index = found >= 0 ? found : Math.min(lastIndex.current, count - 1);
   if (found >= 0) lastIndex.current = found;
 
-  useEffect(() => {
-    dialogRef.current?.showModal();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   // Close once there's nothing left to show; after a removal, show the
   // photo now in its place.
@@ -100,7 +99,7 @@ export default function PhotoViewer({
       ref={dialogRef}
       className="photo-viewer"
       aria-label="Photo"
-      onClose={onClose}
+      onClose={sheetClosed}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}

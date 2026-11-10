@@ -86,7 +86,7 @@ export function readIngredient(line: string): Ingredient | null {
   const words = choices.flat();
   // "3 garlic cloves": the unit after the name goes with the amount.
   const unitLast = words.length > 1 && new RegExp(`^${UNIT}$`, "i").test(words[words.length - 1]);
-  const withUnit = unitLast && /^[\d½¼¾⅓⅔⅛⅜⅝⅞.,/\s-]+$/.test(amount);
+  const withUnit = unitLast && /^(?:[\d½¼¾⅓⅔⅛⅜⅝⅞.,/\s&-]|\band\b)+$/i.test(amount);
   if (withUnit) {
     amount = `${amount} ${words.pop()}`;
     choices[choices.length - 1].pop();

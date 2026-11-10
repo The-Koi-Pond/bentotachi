@@ -6,7 +6,7 @@
 // everything" for the full form (PantryForms.tsx).
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { PantryItem, PantryPacket } from "./pb";
-import { nextPacket, packetLabel, type PacketDetails } from "./pantryPackets";
+import { nextPacket, packetName, type PacketDetails } from "./pantryPackets";
 import { otherProducts, preferredProduct, productName } from "./pantryProducts";
 import { describeExpiry } from "./expiry";
 import { brandsOf } from "./pantryItem";
@@ -25,8 +25,8 @@ export default function PantryCard({
   onEditAll,
 }: {
   item: PantryItem;
-  // Its packets in stock, oldest first; null on a server from before
-  // packets, which then aren't offered.
+  // Its packets in stock, oldest first; null until they've loaded (or if
+  // they can't), and then none are offered.
   packets: PantryPacket[] | null;
   layout: PantryLayout;
   onMore: (details: PacketDetails) => void;
@@ -73,7 +73,7 @@ export default function PantryCard({
                 · <span title={spell("Favourite")}>★</span> {productName(preferred)}
               </span>
             ) : (
-              packetLabel(next) && <span className="pantry-card-size">· {packetLabel(next)}</span>
+              packetName(next) && <span className="pantry-card-size">· {packetName(next)}</span>
             )}
           </button>
         )}

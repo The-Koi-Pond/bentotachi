@@ -5,6 +5,8 @@
 // Tested in web/test/offlineShopping.test.ts.
 
 import type { ShoppingItem } from "./pb";
+import { statusOf } from "./errorStatus.ts";
+import { serverDate } from "./dates.ts";
 
 export type QueuedChange =
   // Something added offline, under a made-up id until it's sent (and maybe
@@ -19,9 +21,6 @@ export type QueuedChange =
 
 export const OFFLINE_ID_PREFIX = "offline-";
 export const isUnsent = (id: string) => id.startsWith(OFFLINE_ID_PREFIX);
-
-// "2026-10-30 09:15:00.000Z", the server's date format, so sorting matches.
-export const serverDate = (date: Date) => date.toISOString().replace("T", " ");
 
 // A new record's id, the way PocketBase makes them (15 lower-case letters
 // and digits), for saving something under an id chosen beforehand.
@@ -67,7 +66,7 @@ export function withQueued(items: ShoppingItem[], queue: QueuedChange[]): Shoppi
 // else (no connection, the server having trouble) is worth keeping for
 // later. This only holds while logged in: PocketBase answers an expired
 // login with the same 400/404, which is why sendQueued checks it first.
-const turnedDown = (err: unknown) => [400, 404].includes((err as { status?: number })?.status ?? -1);
+const turnedDown = (err: unknown) => [400, 404].includes(statusOf(err));
 
 // Sends the changes in order, stopping at the first that can't go now.
 // Returns the ones handled: sent, or turned down for good. The rest stay

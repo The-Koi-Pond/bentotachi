@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { useModalSheet } from "./useModalSheet";
 import { errorMessage, pantryItems, type PantryItem } from "./pb";
 import { familiesOf, familyLinkValue, familyStatus, suggestedName, type Family, type IngredientLink } from "./pantryLinks";
 import { CloseIcon } from "./icons";
@@ -31,11 +32,7 @@ export default function PantryLinkSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   const shown = items
     .filter((item) => matchesPantrySearch(item, search))
@@ -81,7 +78,7 @@ export default function PantryLinkSheet({
       ref={dialogRef}
       className="sheet"
       aria-labelledby="link-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}

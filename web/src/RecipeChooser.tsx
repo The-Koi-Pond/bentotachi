@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useModalSheet } from "./useModalSheet";
 import {
   averageStars,
   errorMessage,
@@ -72,11 +73,7 @@ export default function RecipeChooser({
   const pantry = useLiveRecords<PantryItem>("pantry_items");
 
   // Open as a modal (dimmed background, focus inside) as soon as it appears.
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog?.showModal();
-    return () => dialog?.close();
-  }, []);
+  const sheetClosed = useModalSheet(dialogRef, onClose);
 
   useEffect(() => {
     recipes()
@@ -207,7 +204,7 @@ export default function RecipeChooser({
       ref={dialogRef}
       className="sheet"
       aria-labelledby="chooser-title"
-      onClose={onClose}
+      onClose={sheetClosed}
       // A tap on the dimmed area outside the panel lands on the dialog itself.
       onClick={(event) => {
         if (event.target === dialogRef.current) onClose();

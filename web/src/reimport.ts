@@ -43,9 +43,8 @@ export function reimportChanges(now: SavedParts, site: SiteRecipe): Record<strin
     steps,
     ingredient_links: carriedLinks(now.ingredients ?? [], ingredients, now.ingredient_links),
     tags: [...new Set([...(now.tags ?? []), ...(site.tags ?? [])])],
+    photo_steps: carriedStepPhotos(now.steps, steps, now.photo_steps, now.photos),
   };
-  // Missing on a server from before step photos.
-  if (now.photo_steps !== undefined) data.photo_steps = carriedStepPhotos(now.steps, steps, now.photo_steps, now.photos);
   if (site.description) data.description = site.description;
   if (site.servings) data.servings = site.servings;
   if (site.prepMinutes) data.prep_minutes = site.prepMinutes;

@@ -2,6 +2,7 @@
 // product's photo online (Open Food Facts, then its store link), and
 // filling in photos for items not looked up yet (see wantsOnlinePhoto).
 import { useEffect, useRef, useState } from "react";
+import { statusOf } from "./errorStatus";
 import { pantryItems, pb, type PantryItem } from "./pb";
 import { barcodesOf } from "./barcodes";
 import { photoSources, storeLinksOf, wantsOnlinePhoto } from "./pantryItem";
@@ -98,7 +99,7 @@ export function useOnlinePhotos(items: PantryItem[]) {
         await pantryItems().update(next.id, { photo, photo_link_tried: sources });
       } catch (err) {
         // Nothing found: don't ask again.
-        if ((err as { status?: number }).status === 400 && (await stillWanted().catch(() => false))) {
+        if (statusOf(err) === 400 && (await stillWanted().catch(() => false))) {
           await pantryItems().update(next.id, { photo_link_tried: sources }).catch(() => {});
         }
       } finally {

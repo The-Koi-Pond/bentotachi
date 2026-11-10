@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { remember, remembered, rememberedJson } from "./phoneStorage";
 
 // Which category shelves on the Recipes page are open, on this device.
 // Normally every shelf starts open and the ones you close stay closed
@@ -11,31 +12,11 @@ const START_CLOSED_KEY = "bento.shelvesStartClosed";
 const CLOSED_KEY = "bento.closedShelves";
 const OPENED_KEY = "bento.openedShelves";
 
-// Storage can be missing or refuse (private windows, blocked site data);
-// then this just isn't remembered.
-function readSet(storage: () => Storage, key: string): Set<string> {
-  try {
-    const saved: unknown = JSON.parse(storage().getItem(key) ?? "[]");
-    return new Set(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
+const VISIT = { thisVisit: true };
 
-function write(storage: () => Storage, key: string, value: string) {
-  try {
-    storage().setItem(key, value);
-  } catch {
-    // Not remembered.
-  }
-}
-
-function readStartClosed(): boolean {
-  try {
-    return localStorage.getItem(START_CLOSED_KEY) === "1";
-  } catch {
-    return false;
-  }
+function readSet(key: string, where = {}): Set<string> {
+  const saved = rememberedJson(key, where);
+  return new Set(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : []);
 }
 
 interface DrawerState {
@@ -45,9 +26,9 @@ interface DrawerState {
 }
 
 let state: DrawerState = {
-  startClosed: readStartClosed(),
-  closed: readSet(() => localStorage, CLOSED_KEY),
-  opened: readSet(() => sessionStorage, OPENED_KEY),
+  startClosed: remembered(START_CLOSED_KEY) === "1",
+  closed: readSet(CLOSED_KEY),
+  opened: readSet(OPENED_KEY, VISIT),
 };
 const listeners = new Set<() => void>();
 
@@ -78,11 +59,11 @@ export function useShelfDrawers() {
     toggle(id: string) {
       if (state.startClosed) {
         const opened = toggled(state.opened, id);
-        write(() => sessionStorage, OPENED_KEY, JSON.stringify([...opened]));
+        remember(OPENED_KEY, JSON.stringify([...opened]), VISIT);
         update({ ...state, opened });
       } else {
         const closed = toggled(state.closed, id);
-        write(() => localStorage, CLOSED_KEY, JSON.stringify([...closed]));
+        remember(CLOSED_KEY, JSON.stringify([...closed]));
         update({ ...state, closed });
       }
     },
@@ -95,7 +76,7 @@ export function useShelfDrawers() {
           if (open) opened.add(id);
           else opened.delete(id);
         }
-        write(() => sessionStorage, OPENED_KEY, JSON.stringify([...opened]));
+        remember(OPENED_KEY, JSON.stringify([...opened]), VISIT);
         update({ ...state, opened });
       } else {
         const closed = new Set(state.closed);
@@ -103,14 +84,14 @@ export function useShelfDrawers() {
           if (open) closed.delete(id);
           else closed.add(id);
         }
-        write(() => localStorage, CLOSED_KEY, JSON.stringify([...closed]));
+        remember(CLOSED_KEY, JSON.stringify([...closed]));
         update({ ...state, closed });
       }
     },
     // Switching it on closes every shelf now, as it will on the next start.
     setStartClosed(on: boolean) {
-      write(() => localStorage, START_CLOSED_KEY, on ? "1" : "0");
-      write(() => sessionStorage, OPENED_KEY, "[]");
+      remember(START_CLOSED_KEY, on ? "1" : "0");
+      remember(OPENED_KEY, "[]", VISIT);
       update({ ...state, startClosed: on, opened: new Set() });
     },
   };
