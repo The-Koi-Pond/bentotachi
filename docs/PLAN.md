@@ -164,7 +164,9 @@ keep recipes readable without internet, and avoid subscriptions.
          and answers in docs/PLAY-LISTING.md, pictures in branding/play/
          from branding/make_play_listing.py; entering them in Play Console
          is Xel's, below).
-   - [ ] 12+ testers lined up, and a way for them to send feedback.
+   - [x] 12+ testers lined up, and a way for them to send feedback (the
+         closed test opened 2026-11-08 with 14 testers: the signup and
+         testers' pages on the website, and its feedback form).
 
    Not needed before testing: new features (Packets in stock), iPhone.
 
@@ -183,21 +185,56 @@ keep recipes readable without internet, and avoid subscriptions.
          store or Google ever objects, swap them for coloured letter badges
          in StoreLogo.tsx.
    - [x] App bundle (.aab): `npm run play` makes it (2026-11-03).
-   - [ ] In Play Console (Xel): Play App Signing with Bento's key as the
+   - [x] In Play Console (Xel): Play App Signing with Bento's key as the
          upload key, store listing, data safety form (answers drafted in
          docs/PLAY-DATA-SAFETY.md, 2026-11-06), privacy policy link
-         (thekoipond.dev/bentotachi/privacy.html).
-   - [ ] Play-signed builds can't update self-installed ones: everyone
-         reinstalls once (recipes are safe on the server).
+         (thekoipond.dev/bentotachi/privacy.html). Done by the closed
+         test's start (2026-11-08); new store screenshots still to swap in
+         (Xel's to-do list).
+   - [x] Play-signed builds can't update self-installed ones: everyone
+         reinstalls once (recipes are safe on the server). Done: since
+         2026-11-10 every phone in the household runs the Play version.
+   - [ ] Production access: after the closed test's 14 days, apply in Play
+         Console, with the testers' feedback (saved by the testers' page)
+         as the evidence Google asks for.
 
 ## Waiting for the next app release
 
 Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes):
 
-Not released yet:
+Not released yet (all deployed 2026-11-10):
 
-(nothing yet)
+- Running out of something already on the shopping list under another
+  wording ("300ml milk" from a recipe, for Milk) says "Already on the list
+  as “300ml milk”." and links that row to the item, instead of adding a
+  second. Only a plain amount and describing words count ("2 L full cream
+  milk"); "Milk chocolate" or "garlic bread" never do.
+- A recipe saved from a website gets its photos (cover and step photos)
+  shrunk like the app's own (1600 px), so a site's big photos don't fill a
+  phone or its backups.
+- The recipe list updates live, like the other lists: a recipe, rating,
+  favourite or shelf a housemate changes shows straight away, and the
+  phone's offline copy keeps up (deletes too).
+- Live updates come back after the connection drops, or when the app was
+  opened with the server unreachable (liveResend.ts; before, they stayed
+  off until the app restarted).
+- Shopping list offline: an add whose answer was lost (patchy signal) isn't
+  added twice, and a tick or untick made meanwhile still goes; two
+  browser tabs that were both offline send each change once; "Clear
+  ticked" sticks when the signal comes back during its Undo.
+- Pantry places: Edit places opens again after its questions; a place
+  can't be called "Other" (it's where things with no place go); a
+  correction to a label's size moves its barcode to the corrected product.
+- Paprika files from Bentotachi keep their other times ("Cool: 7 hr") and
+  numbered headings ("Day 1") through a round trip to another Bentotachi.
+- Phone-only mode: setup closed halfway asks for the name instead of making
+  a nameless account; the display name can't be saved empty; a backup that
+  won't open no longer deletes the phone's last backup.
+- A settings change made before the settings loaded no longer makes a
+  second settings record.
+- The built-in browser's unused "Add to pantry" mode is gone (Android
+  side too).
 
 Released in 1.23.0 (2026-11-10, deployed the same day):
 
@@ -1738,6 +1775,10 @@ recipe's full amounts; "Missing from pantry" and Choose… take stock off.
 
 ## Next: pantry polish, and kinds of one thing (Xel, 2026-11-08)
 
+Status (2026-11-10): 1 to 3 are built (ticking adds one; the quick card;
+counters, now labels with their own dates in 1.23.0, see "Pantry labels"
+in VISION.md); 4 and 5 are still open.
+
 Xel: the pantry is promising but clunky. Agreed after going through it
 on a phone-sized screen (2026-11-08), most important first:
 
@@ -1853,7 +1894,7 @@ Mill 1 kg an hour ago." That's the one / Add another.
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 
-Built 2026-11-08 (on main since then, not released yet):
+Built 2026-11-08, released in 1.20.0:
 @capawesome/capacitor-app-update 8.1.1, `updatesFromPlay` in
 appUpdates.ts, the same banner with "Restart to update" once Play has
 downloaded it, and "Check for updates" in the ⋮ menu (phone-only mode

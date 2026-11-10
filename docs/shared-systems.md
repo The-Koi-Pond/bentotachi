@@ -57,11 +57,16 @@ they say otherwise.
   `rememberedJson` / `remember` (`phoneStorage.ts`), never raw
   `localStorage`. Offline copies of lists: `read` / `write` and the `*_KEY`
   names (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
-  `useShoppingQueue` (`shoppingQueue.ts`).
+  `useShoppingQueue` (`shoppingQueue.ts`). A record saved under an id
+  picked beforehand (so sending it twice can't add it twice):
+  `newRecordId` (`offlineShopping.ts`).
 - Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
   what's already waiting, `newToTheList`). "Is it already on the list?":
   `sameThing`, for a pantry item `onTheList` (`shoppingMatch.ts`;
-  `server/pb_hooks/pantry.pb.js` follows the same rule).
+  `server/pb_hooks/pantry.pb.js` follows the same rule), or under another
+  wording ("300ml milk"): `onTheListAs`. Whether a line is just a thing
+  with an amount ("2 cups milk", not "milk chocolate"): `isJustThis`
+  (`pantryLinks.ts`).
   How much the pantry's packets cover of what a recipe needs, and whether
   it's worth buying: `coversFor` / `coverOf`, `worthBuying`, `stillToBuy`,
   `coverNote` (`pantryStock.ts`); an amount in grams or millilitres:
@@ -147,8 +152,9 @@ they say otherwise.
 ## Photos and files
 
 - Shrinking any photo before upload: `shrinkPhoto` (`pantryPhoto.ts`; pass
-  `PHOTO_SIDE` from `recipePhotos.ts` for recipes). Profile pictures:
-  `squarePicture` (`avatarImage.ts`).
+  `PHOTO_SIDE` from `recipePhotos.ts` for recipes; a website import's
+  photos are shrunk after saving, `shrinkSavedPhotos` in `recipeImport.ts`).
+  Profile pictures: `squarePicture` (`avatarImage.ts`).
 - Photo addresses: `recipeImageUrl`, `recipePhotoUrl`, `pantryPhotoUrl` (`pb.ts`).
 - Saving a file (download, or Android's "save as"): `startFile`
   (`saveFile.ts`); Paprika exports `savePaprikaFile` (`paprikaSave.ts`).
