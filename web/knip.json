@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["scripts/*.mjs", "test/*.test.ts"],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "test/**/*.ts"],
+  "ignoreBinaries": ["go", "gomobile"]
+}

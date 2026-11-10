@@ -5,7 +5,7 @@ import { datePart, dayNumber, localToday } from "./dates.ts";
 export { toStoredDate } from "./dates.ts";
 
 // Expired, or this many days or fewer to go, counts as "use soon".
-export const SOON_DAYS = 3;
+const SOON_DAYS = 3;
 
 export type ExpiryState = "expired" | "soon" | "later";
 

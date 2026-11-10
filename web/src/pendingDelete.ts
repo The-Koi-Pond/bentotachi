@@ -6,7 +6,7 @@
 
 export const UNDO_SECONDS = 6;
 
-export interface Pending {
+interface Pending {
   ids: string[];
   message: string;
   commit: () => Promise<void> | void;

@@ -19,7 +19,7 @@ export type QueuedChange =
   // sending it twice does no harm.
   | { kind: "check"; id: string; checked: boolean; at: string };
 
-export const OFFLINE_ID_PREFIX = "offline-";
+const OFFLINE_ID_PREFIX = "offline-";
 export const isUnsent = (id: string) => id.startsWith(OFFLINE_ID_PREFIX);
 
 // A new record's id, the way PocketBase makes them (15 lower-case letters

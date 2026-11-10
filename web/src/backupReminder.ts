@@ -4,8 +4,8 @@
 // backup was ever saved, or the last one is two weeks old. "Later" waits
 // three days. Tested in web/test/backupReminder.test.ts.
 
-export const REMIND_AFTER_DAYS = 14;
-export const SNOOZE_DAYS = 3;
+const REMIND_AFTER_DAYS = 14;
+const SNOOZE_DAYS = 3;
 const WORTH_KEEPING = 3;
 const DAY = 24 * 60 * 60 * 1000;
 

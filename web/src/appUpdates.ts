@@ -124,7 +124,7 @@ async function askPlay(): Promise<PlayUpdateStatus | null> {
   }
 }
 
-export async function checkForUpdate() {
+async function checkForUpdate() {
   if (state.status === "checking") return;
   if (updatesFromPlay) {
     // A download Play runs is checked on every return to the app (Google's

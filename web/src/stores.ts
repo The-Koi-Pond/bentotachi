@@ -16,7 +16,7 @@
 
 import { siteHost } from "./recipeSites.ts";
 
-export type CountryCode = "AU" | "US" | "NL";
+type CountryCode = "AU" | "US" | "NL";
 
 export interface Store {
   name: string;

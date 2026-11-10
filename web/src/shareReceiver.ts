@@ -54,7 +54,7 @@ export async function shareText(title: string, text: string): Promise<"shared" |
 // Bento is open), go to Add recipe and import it there, or, for a store's
 // product page (Coles, Woolworths), to the Pantry to add it as an item. Used inside the
 // router, so it only runs once someone is logged in.
-export function useShareReceiver() {
+function useShareReceiver() {
   const navigate = useNavigate();
   useEffect(() => {
     if (!isAndroidApp) return;

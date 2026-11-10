@@ -3,7 +3,7 @@ import { shrinkPhoto } from "./pantryPhoto";
 import { PHOTO_SIDE, photoStepsFor, uploadName } from "./recipePhotos";
 
 // One recipe on a page that lists recipes (a site's category page).
-export interface ListedRecipe {
+interface ListedRecipe {
   url: string;
   title: string;
   // The site's photo address, or "".

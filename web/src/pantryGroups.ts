@@ -61,7 +61,7 @@ export function subcategoryOptions(existing: Placed[], place: string): string[] 
 }
 
 // `key` identifies a drawer for opening/closing: the place, or place/subcategory.
-export interface Subgroup<T> {
+interface Subgroup<T> {
   key: string;
   label: string;
   items: T[];

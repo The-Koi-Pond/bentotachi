@@ -4,7 +4,8 @@
 //      that finds no tests at all counts as failing (node --test passes when
 //      its pattern matches nothing).
 //   2. The date tests again in two far-off time zones, since dates must
-//      never shift by a day wherever the phone is.
+//      never shift by a day wherever the phone is. And knip, for code
+//      nothing uses.
 //   3. A throwaway PocketBase in a temporary folder, started with
 //      --automigrate=false so it can't write migration files into the
 //      project, then stopped and deleted. Never the real data. On it:
@@ -176,10 +177,23 @@ async function serverChecks() {
   }
 }
 
+// Code nothing uses (files, exports, packages) in web/, by knip (knip.json):
+// left behind, it's more to read and keep right for nothing.
+function unusedCode() {
+  try {
+    execSync("npx knip --no-progress", { cwd: web, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (err) {
+    console.error(String(err.stdout ?? "") + String(err.stderr ?? ""));
+    throw new TestsFailed("knip found code nothing uses (above). Remove it, or drop the export if only its own file uses it. See it with: npm run knip (in web)");
+  }
+  console.log("unused code (knip): none");
+}
+
 export async function runTests() {
   try {
     nodeTests("server tests", root, ["server/test/*.test.js"]);
     nodeTests("web tests", web, ["test/*.test.ts"]);
+    unusedCode();
     for (const zone of ["Pacific/Kiritimati", "Pacific/Pago_Pago"])
       nodeTests(`date tests in ${zone}`, web, ["test/dates.test.ts", "test/expiry.test.ts", "test/pantryPackets.test.ts"], { TZ: zone });
     await serverChecks();

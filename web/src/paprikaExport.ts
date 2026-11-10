@@ -45,7 +45,7 @@ export interface ExtraPhoto {
 
 // A photo in Paprika's gallery: "name" is what its directions point at,
 // "[photo:Step 3]".
-export interface PaprikaPhoto {
+interface PaprikaPhoto {
   name: string;
   filename: string;
   data: string;

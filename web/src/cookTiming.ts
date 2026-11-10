@@ -6,7 +6,7 @@
 
 import { extraTimes } from "./format.ts";
 
-export type TimerStage = "prep" | "cook" | "done";
+type TimerStage = "prep" | "cook" | "done";
 
 export interface TimerState {
   stage: TimerStage;

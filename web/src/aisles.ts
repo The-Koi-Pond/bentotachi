@@ -14,7 +14,7 @@ function hasWord(text: string, word: string): boolean {
   return new RegExp(`(?<![a-z])${forms}(?![a-z])`, "i").test(text);
 }
 
-export const AISLES = [
+const AISLES = [
   "Fruit & veg",
   "Bakery",
   "Meat & fish",

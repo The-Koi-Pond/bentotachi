@@ -57,7 +57,9 @@ How to run: `README.md`.
     `web`) runs everything below on its own (web/scripts/run-tests.mjs),
     without building or sending anything: use it before saying it works.
     `npm run release` and `npm run deploy` run both suites first, the date
-    tests again in two far-off time zones, the server's unit tests again
+    tests again in two far-off time zones, knip (web/knip.json: files,
+    exports and packages nothing uses; an export only its own file uses
+    loses its `export`; `npm run knip` alone), the server's unit tests again
     inside PocketBase's own JavaScript engine (which fails some code Node
     passes, like a regex on a long page), and the server's end-to-end
     checks (web/scripts/tests.mjs, about 10 seconds), and stop if any test

@@ -123,7 +123,7 @@ export function itemAfterPacket(
 // A packet the shopping list added (ticking it bought) in the last few
 // hours, newest first, or null: adding one by hand now is likely the same
 // bag, so the page asks first.
-export const JUST_BOUGHT_HOURS = 6;
+const JUST_BOUGHT_HOURS = 6;
 export function justBought<T extends Pick<PantryPacket, "bought_with" | "created">>(packets: T[], now = new Date()): T | null {
   const since = now.getTime() - JUST_BOUGHT_HOURS * 60 * 60 * 1000;
   const bought = packets.filter((packet) => packet.bought_with && storedTime(packet.created).getTime() >= since);
