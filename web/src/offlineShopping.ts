@@ -8,8 +8,11 @@ import type { ShoppingItem } from "./pb";
 
 export type QueuedChange =
   // Something added offline, under a made-up id until it's sent (and maybe
-  // ticked off since).
-  | { kind: "add"; id: string; text: string; checked: boolean; at: string }
+  // ticked off since). `record`: the id it's saved under, picked here, so
+  // one that reached the server with its answer lost (a shop's patchy
+  // signal) isn't added again: the server refuses a second with that id.
+  // Missing on ones queued before.
+  | { kind: "add"; id: string; text: string; checked: boolean; at: string; record?: string }
   // Ticked off (or back on): sent as the final state, not a toggle, so
   // sending it twice does no harm.
   | { kind: "check"; id: string; checked: boolean; at: string };
@@ -20,9 +23,18 @@ export const isUnsent = (id: string) => id.startsWith(OFFLINE_ID_PREFIX);
 // "2026-10-30 09:15:00.000Z", the server's date format, so sorting matches.
 export const serverDate = (date: Date) => date.toISOString().replace("T", " ");
 
-export function queueAdd(queue: QueuedChange[], text: string, now: Date, random = Math.random): QueuedChange[] {
+// A new record's id, the way PocketBase makes them (15 lower-case letters
+// and digits), for saving something under an id chosen beforehand.
+const ID_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
+export function newRecordId(random = Math.random): string {
+  return Array.from({ length: 15 }, () => ID_LETTERS[Math.floor(random() * ID_LETTERS.length)]).join("");
+}
+
+// `record`: the id it's to be saved under (one already tried, when the
+// first try looked offline), else a new one.
+export function queueAdd(queue: QueuedChange[], text: string, now: Date, random = Math.random, record = newRecordId(random)): QueuedChange[] {
   const id = `${OFFLINE_ID_PREFIX}${now.getTime()}-${Math.floor(random() * 1e6)}`;
-  return [...queue, { kind: "add", id, text, checked: false, at: serverDate(now) }];
+  return [...queue, { kind: "add", id, text, checked: false, at: serverDate(now), record }];
 }
 
 // One change per item: the latest. Ticking something added offline just
@@ -65,7 +77,8 @@ export async function sendQueued(
   queue: QueuedChange[],
   send: {
     loggedIn: () => Promise<boolean>;
-    add: (text: string, checked: boolean) => Promise<unknown>;
+    // `record`: the id to save it under ("" lets the server pick one).
+    add: (text: string, checked: boolean, record: string) => Promise<unknown>;
     check: (id: string, checked: boolean) => Promise<unknown>;
   }
 ): Promise<QueuedChange[]> {
@@ -73,10 +86,21 @@ export async function sendQueued(
   if (!(await send.loggedIn())) return handled;
   for (const change of queue) {
     try {
-      if (change.kind === "add") await send.add(change.text, change.checked);
+      // Sent before with its answer lost: the server refuses a second one
+      // with that id (400), which counts as handled below.
+      if (change.kind === "add") await send.add(change.text, change.checked, change.record ?? "");
       else await send.check(change.id, change.checked);
     } catch (err) {
       if (!turnedDown(err)) break;
+      // That refused add may be the one already there, ticked or unticked
+      // since (in the trolley, or not after all): that still goes.
+      if (change.kind === "add" && change.record) {
+        try {
+          await send.check(change.record, change.checked);
+        } catch (again) {
+          if (!turnedDown(again)) break;
+        }
+      }
     }
     handled.push(change);
   }

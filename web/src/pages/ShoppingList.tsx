@@ -12,7 +12,7 @@ import { useUndo } from "../undo";
 import { showError, showToast } from "../toast";
 import { ensureLoginNow } from "../session";
 import { queueSender, setShoppingQueue, useShoppingQueue } from "../shoppingQueue";
-import { clearPlan, isUnsent, mustWait, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
+import { clearPlan, isUnsent, mustWait, newRecordId, queueAdd, queueCheck, serverDate, withQueued, type QueuedChange } from "../offlineShopping";
 import { aisleOf, byAisle } from "../aisles";
 import { BenMood } from "../Brand";
 import RecipeShoppingSheet from "../RecipeShoppingSheet";
@@ -69,7 +69,7 @@ export default function ShoppingList() {
         // sure of it first. If it's no longer good, the login screen shows
         // and the changes wait for the next login (session.ts).
         loggedIn: async () => (await ensureLoginNow()) === "ok",
-        add: (text, checked) => shoppingItems().create({ text, checked, added_by: pb.authStore.record?.id }),
+        add: (text, checked, record) => shoppingItems().create({ ...(record && { id: record }), text, checked, added_by: pb.authStore.record?.id }),
         check: (id, checked) => shoppingItems().update(id, { checked }),
       })
       .then((result) => {
@@ -117,10 +117,13 @@ export default function ShoppingList() {
       return toggle(same);
     }
     if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date()));
+    // Its id picked here: if the server saved it but the answer was lost,
+    // sending it again later can't add a second one.
+    const record = newRecordId();
     try {
-      upsert(await shoppingItems().create({ text: value, checked: false, added_by: pb.authStore.record?.id }));
+      upsert(await shoppingItems().create({ id: record, text: value, checked: false, added_by: pb.authStore.record?.id }));
     } catch (err) {
-      if (isOffline(err)) return keepForLater((queue) => queueAdd(queue, value, new Date()));
+      if (isOffline(err)) return keepForLater((queue) => queueAdd(queue, value, new Date(), Math.random, record));
       setText(value);
       showError(errorMessage(err));
     }

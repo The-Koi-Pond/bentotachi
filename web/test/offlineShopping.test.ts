@@ -177,6 +177,67 @@ test("only one send at a time, however many copies of the page ask", async () =>
   assert.equal(sender.isSending(), false);
 });
 
+test("an add whose answer was lost (it did reach the server) isn't added twice", async () => {
+  // The server: refuses a second record with an id it has (as PocketBase
+  // does, 400), and this once saves it but the answer never arrives.
+  const saved = new Map<string, string>();
+  let loseAnswer = true;
+  const send = {
+    loggedIn: async () => true,
+    add: async (text: string, _checked: boolean, record: string) => {
+      if (saved.has(record)) throw { status: 400 };
+      saved.set(record, text);
+      if (loseAnswer) {
+        loseAnswer = false;
+        throw { status: 0 };
+      }
+    },
+    check: async () => {},
+  };
+  let queue = queueAdd([], "Milk", now);
+  const lost = await sendQueued(queue, send);
+  assert.equal(lost.length, 0, "looked offline: still waiting");
+  const again = await sendQueued(queue, send);
+  queue = withoutHandled(queue, again);
+  assert.deepEqual([...saved.values()], ["Milk"]);
+  assert.deepEqual(queue, []);
+});
+
+test("an add whose answer was lost, ticked or unticked while it waited, ends that way on the server", async () => {
+  const saved = new Map<string, boolean>();
+  let loseAnswer = true;
+  const send = {
+    loggedIn: async () => true,
+    add: async (_text: string, checked: boolean, record: string) => {
+      if (saved.has(record)) throw { status: 400 };
+      saved.set(record, checked);
+      if (loseAnswer) {
+        loseAnswer = false;
+        throw { status: 0 };
+      }
+    },
+    check: async (id: string, checked: boolean) => void saved.set(id, checked),
+  };
+  let queue = queueAdd([], "Butter", now);
+  await sendQueued(queue, send);
+  // In the trolley before the signal came back.
+  queue = queueCheck(queue, queue[0].id, true, now);
+  queue = withoutHandled(queue, await sendQueued(queue, send));
+  assert.deepEqual([...saved.values()], [true]);
+  assert.deepEqual(queue, []);
+
+  // And the other way: it reached the server ticked, then was unticked.
+  saved.clear();
+  loseAnswer = true;
+  queue = queueAdd([], "Jam", now);
+  queue = queueCheck(queue, queue[0].id, true, now);
+  await sendQueued(queue, send);
+  queue = queueCheck(queue, queue[0].id, false, now);
+  queue = withoutHandled(queue, await sendQueued(queue, send));
+  assert.deepEqual([...saved.values()], [false]);
+  assert.deepEqual(queue, []);
+});
+
 test("two tabs sharing the queue: the second sends only what the first didn't", async () => {
   // The phone's storage, shared; each tab reads it again only when it
   // changed (as shoppingQueue.ts does), so a tab gets its own copies.
