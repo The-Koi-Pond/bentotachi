@@ -51,6 +51,7 @@ import { matchesSearch } from "../recipeSearch";
 import { searchVariants } from "../regionalNames";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { isOffline, saveRatings, saveRecipes, savedRatings, savedRecipes } from "../offline";
+import { liveUpdateFailed } from "../liveResend";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
 import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
@@ -276,6 +277,8 @@ export default function RecipeList() {
         })
         .catch(() => {
           // Live updates are a bonus; coming back to the page still loads.
+          // Sent again when the connection comes back (liveResend.ts).
+          liveUpdateFailed();
         });
     }
     const onVisible = () => {

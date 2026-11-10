@@ -3,6 +3,7 @@ import type { RecordModel } from "pocketbase";
 import { errorMessage, pb } from "./pb";
 import { isOffline, read, write } from "./offline";
 import { ensureLogin } from "./session";
+import { liveUpdateFailed } from "./liveResend";
 
 // Loads a whole collection and keeps it up to date while anyone changes it.
 // Also hands back helpers to update what's on screen straight away, before
@@ -78,6 +79,8 @@ export function useLiveRecords<T extends RecordModel>(collection: string, expand
       })
       .catch(() => {
         // Live updates are a bonus; everything still works without them.
+        // Sent again when the connection comes back (liveResend.ts).
+        liveUpdateFailed();
       });
 
     // Phones pause apps in the background and can miss updates, so reload
