@@ -22,8 +22,8 @@ android {
         applicationId "com.xel.bento"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 28
-        versionName "1.23.0"
+        versionCode 29
+        versionName "1.24.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // A test copy that installs beside the real Bento, as "Bento (test)":
         //   gradlew assembleDebug -PbentoTest

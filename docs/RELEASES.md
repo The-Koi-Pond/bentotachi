@@ -6,6 +6,74 @@ for the next release stays in PLAN.md, "Waiting for the next app
 release"; when a release goes out, its list moves to the top of this file.
 Each release from 1.9.0 on is tagged in git (`v1.23.0`).
 
+Released in 1.24.0 (2026-11-11, deployed the same day; most of it was
+deployed 2026-11-10):
+
+- Running out of something already on the shopping list under another
+  wording ("300ml milk" from a recipe, for Milk) says "Already on the list
+  as “300ml milk”." and links that row to the item, instead of adding a
+  second. Only a plain amount and describing words count ("2 L full cream
+  milk"); "Milk chocolate" or "garlic bread" never do.
+- A recipe saved from a website gets its photos (cover and step photos)
+  shrunk like the app's own (1600 px), so a site's big photos don't fill a
+  phone or its backups.
+- The recipe list updates live, like the other lists: a recipe, rating,
+  favourite or shelf a housemate changes shows straight away, and the
+  phone's offline copy keeps up (deletes too).
+- Live updates come back after the connection drops, or when the app was
+  opened with the server unreachable (liveResend.ts; before, they stayed
+  off until the app restarted).
+- Shopping list offline: an add whose answer was lost (patchy signal) isn't
+  added twice, and a tick or untick made meanwhile still goes; two
+  browser tabs that were both offline send each change once; "Clear
+  ticked" sticks when the signal comes back during its Undo.
+- Pantry places: Edit places opens again after its questions; a place
+  can't be called "Other" (it's where things with no place go); a
+  correction to a label's size moves its barcode to the corrected product.
+- Paprika files from Bentotachi keep their other times ("Cool: 7 hr") and
+  numbered headings ("Day 1") through a round trip to another Bentotachi.
+- Phone-only mode: setup closed halfway asks for the name instead of making
+  a nameless account; the display name can't be saved empty; a backup that
+  won't open no longer deletes the phone's last backup.
+- A settings change made before the settings loaded no longer makes a
+  second settings record.
+- The built-in browser's unused "Add to pantry" mode is gone (Android
+  side too).
+- Phone-only mode also runs on older 32-bit phones (a closed-test tester
+  asked, 2026-11-11): the phone server is built for 32-bit ARM too, and
+  Chromebooks (which run phone apps by translating them, which Go can't
+  take) no longer offer it. Not tried on a 32-bit phone yet: the tester
+  who asked is the first.
+- From the codebase audit (2026-11-10):
+  - A public Wi-Fi's sign-in page answering in the server's place counts
+    as no connection: the phone keeps its offline copies, and what's added
+    or ticked waits to be sent (before, lists looked empty, the copies were
+    wiped, and taps "saved" into nothing).
+  - Amounts written "1 and 1/2" (or "1 & ½") are read as one and a half
+    everywhere: scaling, spoon and gram hints, timers, the shopping list.
+  - Phone-only: no hidden nightly backups filling the phone (and old ones
+    are tidied away); "Delete everything" also removes a rescue copy and a
+    half-finished restore.
+  - "Save these times" keeps a website recipe's waiting time; an open
+    editor on a recipe keeps what's typed when a tag or photo is saved;
+    step timers under different headings ("Sauce", "Pasta") are told apart,
+    in the tray and the phone's notification, and start at the right time.
+  - The pantry's "X is out" bar and another Undo bar stack instead of one
+    hiding the other; "From a recipe" on the shopping list reads Australian
+    and UK spoons right; quick taps on the plan's meals all count; a
+    half-written fridge note and a typed shelf tag aren't lost.
+  - Release and Play uploads also refuse uncommitted Android or phone-server
+    code, and run the phone server's tests before building it.
+  - A page built to be slow (runs of unclosed tags) no
+    longer keeps the server busy for minutes when imported, and list items
+    a page leaves unclosed (allowed for `<li>`) are read one by one; the
+    recipe list's Shelves / One list switch shows what's on screen and
+    keeps the filters; "egg noodles", "toilet rolls", "spring rolls" and
+    "cream of tartar" go in their right aisles; a short message always sits
+    above the Undo bars, however tall; sheets stay open in `npm run dev`;
+    the app's code for servers older than itself is gone (the Pi is the
+    only server).
+
 Released in 1.23.0 (2026-11-10, deployed the same day):
 
 - Short messages after a tap ("The scanner isn't ready yet", "already on
