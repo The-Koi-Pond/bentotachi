@@ -196,40 +196,99 @@ export default function RecipeList() {
   const gridClass = `recipe-grid ${layout === "small" ? "" : layout}`;
 
   useEffect(() => {
-    // The login first: with an expired one the server answers with no
-    // recipes, which would replace the copy kept on this phone (session.ts).
-    void ensureLogin()
-      .then((state) => (state === "signedOut" ? null : recipes().getFullList({ sort: "title", expand: "added_by" })))
-      .then((list) => {
-        if (!list) return;
-        setAll(list);
-        saveRecipes(list);
-      })
-      .catch((err) => {
-        // No connection: show the copy kept on this phone, if there is one.
-        const saved = isOffline(err) ? savedRecipes() : null;
-        if (saved) {
-          setAll(saved);
-          setRatings(savedRatings());
-          setOffline(true);
-        } else setError(errorMessage(err));
-      });
-    // Ratings are extras on the cards; the list still works without them.
-    // (After the same login check: ensureLogin asks the server only once.)
-    void ensureLogin()
-      .then((state) =>
-        state === "signedOut" ? null : recipeRatings().getFullList({ fields: "id,recipe,user,stars,favorite,approved,disliked" })
-      )
-      .then((list) => {
-        if (!list) return;
-        setRatings(list);
-        saveRatings(list);
-      })
-      .catch(() => {});
-    recipeCategories()
-      .getFullList()
-      .then(setCategories)
-      .catch(() => {});
+    function load() {
+      // The login first: with an expired one the server answers with no
+      // recipes, which would replace the copy kept on this phone (session.ts).
+      void ensureLogin()
+        .then((state) => (state === "signedOut" ? null : recipes().getFullList({ sort: "title", expand: "added_by" })))
+        .then((list) => {
+          if (!list) return;
+          setAll(list);
+          saveRecipes(list);
+          setOffline(false);
+        })
+        .catch((err) => {
+          // No connection: show the copy kept on this phone, if there is one
+          // (and keep what's on screen, when a reload is what failed).
+          const saved = isOffline(err) ? savedRecipes() : null;
+          if (saved) {
+            setAll((current) => current ?? saved);
+            setRatings((current) => (current.length ? current : savedRatings()));
+            setOffline(true);
+          } else setError(errorMessage(err));
+        });
+      // Ratings are extras on the cards; the list still works without them.
+      // (After the same login check: ensureLogin asks the server only once.)
+      void ensureLogin()
+        .then((state) =>
+          state === "signedOut" ? null : recipeRatings().getFullList({ fields: "id,recipe,user,stars,favorite,approved,disliked" })
+        )
+        .then((list) => {
+          if (!list) return;
+          setRatings(list);
+          saveRatings(list);
+        })
+        .catch(() => {});
+      recipeCategories()
+        .getFullList()
+        .then(setCategories)
+        .catch(() => {});
+    }
+    load();
+
+    // Live, like the other shared lists (useLiveRecords): a recipe, rating
+    // or shelf a housemate changes shows here straight away. Phones pause
+    // apps in the background and can miss some, so it all loads again when
+    // the app comes back to the front, or the connection does.
+    const replaced = <T extends { id: string }>(list: T[], event: { action: string; record: T }) =>
+      event.action === "delete" ? list.filter((r) => r.id !== event.record.id) : [...list.filter((r) => r.id !== event.record.id), event.record];
+    let stopped = false;
+    const stops: (() => void)[] = [];
+    // The phone's copies follow, deletes too, so offline shows what's here.
+    const feeds = [
+      () =>
+        recipes().subscribe(
+          "*",
+          (event) =>
+            setAll((list) => {
+              if (!list) return list;
+              const next = replaced(list, event);
+              saveRecipes(next);
+              return next;
+            }),
+          { expand: "added_by" }
+        ),
+      () =>
+        recipeRatings().subscribe("*", (event) =>
+          setRatings((list) => {
+            const next = replaced(list, event);
+            saveRatings(next);
+            return next;
+          })
+        ),
+      () => recipeCategories().subscribe("*", (event) => setCategories((list) => list && replaced(list, event))),
+    ];
+    for (const start of feeds) {
+      start()
+        .then((stop) => {
+          if (stopped) void stop();
+          else stops.push(stop);
+        })
+        .catch(() => {
+          // Live updates are a bonus; coming back to the page still loads.
+        });
+    }
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", load);
+    return () => {
+      stopped = true;
+      for (const stop of stops) stop();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", load);
+    };
   }, []);
 
   // Per recipe: everyone's ratings, the average, and whether it's your favorite.

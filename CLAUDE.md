@@ -107,8 +107,8 @@ What every session needs anyway:
   starting with `#` is a heading.
 - All collections allow any logged-in household member to read and write.
 - Pages that show shared lists use `useLiveRecords` (load + live updates +
-  reload when the app returns to the front). The recipe list and categories
-  don't yet: they load when opened (TODO.md has it).
+  reload when the app returns to the front). The recipe list does the same
+  by hand (RecipeList.tsx), as it keeps its own offline copy and ratings.
 - The "(Xel, 2026-11-08)" credit style is for docs/PLAN.md only, never code
   comments: a comment says why, and web/test/noCommentCredits.test.ts fails
   on a who-asked-and-when credit.
