@@ -110,6 +110,15 @@ check(
   JSON.stringify(tapped.products.map((p) => `${p.brand}|${p.size}`)) === JSON.stringify(["Masterfoods|500 ml", "Uncle Tobys|"]),
   JSON.stringify(tapped.products)
 );
+// A label's size corrected: its barcode moves to the corrected product.
+const RICE = "9310000000029";
+const rice = await api(token, "POST", "/collections/pantry_items/records", { name: `Rice ${run}`, status: "have", brand: "SunRice" });
+const bag = await api(token, "POST", "/collections/pantry_packets/records", { item: rice.id, brand: "SunRice", size: "5 kg", barcode: RICE });
+await api(token, "PATCH", `/collections/pantry_packets/records/${bag.id}`, { size: "1 kg" });
+const riceNow = await itemNow(rice.id);
+const holds = (size) => riceNow.products.find((p) => p.size === size)?.barcodes.includes(RICE);
+check("a label's size corrected moves its barcode to the corrected product", holds("1 kg") === true && !holds("5 kg"), JSON.stringify(riceNow.products));
+
 const newBrand = await api(token, "PATCH", `/collections/pantry_items/records/${typo.id}`, { brand: "Uncle Tobys, Coles, Keens" });
 check(
   "...while a brand an older app adds to the list still joins them",

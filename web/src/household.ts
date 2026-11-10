@@ -73,10 +73,19 @@ function setSettings(next: SavedSettings | null) {
   for (const listener of listeners) listener();
 }
 
+// The household's one settings record as the server has it now, or null.
+async function freshSettings(): Promise<Settings | null> {
+  const page = await pb.collection("household_settings").getList(1, 1, { sort: "created" });
+  return page.items[0] ? settingsFrom(page.items[0] as unknown as SavedSettings) : null;
+}
+
+// Not loaded yet (or loading failed, then the connection came back): the
+// record is looked for first, as a second one would never be read.
 async function saveSettings(current: Settings | null, patch: Partial<Omit<Settings, "id">>) {
-  const saved = current
-    ? await pb.collection("household_settings").update(current.id, patch)
-    : await pb.collection("household_settings").create(patch);
+  const target = current ?? (await freshSettings());
+  const saved = target
+    ? await pb.collection("household_settings").update(target.id, patch)
+    : await pb.collection("household_settings").create({ country: browserCountry(), ...patch });
   setSettings(saved as unknown as SavedSettings);
 }
 
@@ -164,8 +173,7 @@ export function usePantryPlaces(): [string[], (change: (places: string[]) => str
       // One after another: two quick edits both reading the list before
       // either saved would save only the second.
       const saving = placeSaves.then(async () => {
-        const page = await pb.collection("household_settings").getList(1, 1, { sort: "created" });
-        const fresh = page.items[0] ? settingsFrom(page.items[0] as unknown as SavedSettings) : null;
+        const fresh = await freshSettings();
         await saveSettings(fresh, { pantry_places: change(fresh?.pantry_places ?? []) });
       });
       placeSaves = saving.catch(() => {

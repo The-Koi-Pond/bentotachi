@@ -4,7 +4,7 @@
 import type { PantryItem } from "./pb";
 import { expiryDate, toStoredDate } from "./expiry.ts";
 import { cleanStoreLinks, storeLinkFields, storeLinksOf } from "./pantryItem.ts";
-import { norm } from "./pantryGroups.ts";
+import { isOtherName, norm } from "./pantryGroups.ts";
 import { barcodesOf } from "./barcodes.ts";
 import { changedFields } from "./changedFields.ts";
 
@@ -67,7 +67,8 @@ export function recordFrom(fields: Fields): ItemRecord | null {
   if (links === null) return null;
   return {
     name: fields.name.trim(),
-    location: fields.location.trim(),
+    // A place typed as "Other" is no place, which is what Other shows.
+    location: isOtherName(fields.location) ? "" : fields.location.trim(),
     subcategory: fields.subcategory.trim(),
     expires: toStoredDate(fields.expires),
     ...storeLinkFields(links),

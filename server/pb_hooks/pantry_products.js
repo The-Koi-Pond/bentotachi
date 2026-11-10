@@ -304,8 +304,11 @@ function keepProducts(e, created) {
 // One in stock with a brand and size, or a barcode, not among its item's
 // products yet: remembered as one (another brand bought instead, a new
 // size, a barcode scanned), so it's offered next time. One with a use-by
-// date means the household dates this item.
-function rememberProduct(app, label) {
+// date means the household dates this item. `was`: its brand and size
+// before a change: corrected ("5 kg" was really "1 kg"), its barcode moves
+// from the product it was on to the corrected one, or the next scan would
+// say 5 kg again.
+function rememberProduct(app, label, was) {
   let item;
   try {
     item = app.findRecordById("pantry_items", label.getString("item"));
@@ -314,7 +317,13 @@ function rememberProduct(app, label) {
     return;
   }
   const before = parseProducts(item.getString("products"));
-  const after = withProduct(before, {
+  const code = label.getString("barcode");
+  const now = { brand: label.getString("brand"), size: label.getString("size") };
+  const start =
+    was && code && !sameKind(was, now)
+      ? before.map((p) => (sameKind(p, was) ? { brand: p.brand, size: p.size, barcodes: p.barcodes.filter((c) => c !== code), links: p.links } : p))
+      : before;
+  const after = withProduct(start, {
     brand: label.getString("brand"),
     size: label.getString("size"),
     barcode: label.getString("barcode"),

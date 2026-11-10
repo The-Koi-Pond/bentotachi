@@ -3,6 +3,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { editChanges, fieldsOf, recordFrom, sameName } from "../src/pantryFields.ts";
 
+test("a place typed as Other is saved as no place, which is what Other shows", () => {
+  assert.equal(recordFrom({ ...fieldsOf(), name: "Eggs", location: " other " })?.location, "");
+  assert.equal(recordFrom({ ...fieldsOf(), name: "Eggs", location: "Otherworldly shelf" })?.location, "Otherworldly shelf");
+});
+
 const COLES = "https://www.coles.com.au/product/lea-perrins-worcestershire-sauce-250ml-123";
 const WOOLIES = "https://www.woolworths.com.au/shop/productdetails/36059";
 

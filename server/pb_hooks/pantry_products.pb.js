@@ -24,7 +24,8 @@ onRecordAfterCreateSuccess((e) => {
 
 onRecordAfterUpdateSuccess((e) => {
   try {
-    require(`${__hooks}/pantry_products.js`).rememberProduct(e.app, e.record);
+    const was = e.record.original();
+    require(`${__hooks}/pantry_products.js`).rememberProduct(e.app, e.record, { brand: was.getString("brand"), size: was.getString("size") });
   } catch (err) {
     e.app.logger().warn("Couldn't remember the pantry product", "error", String(err));
   }

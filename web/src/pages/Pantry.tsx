@@ -41,7 +41,7 @@ import { useLiveRecords } from "../useLiveRecords";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
-import { groupItems, matchesPantrySearch, needsChecking, needsUsingSoon, norm, placeList, withPlaceBack, type Place } from "../pantryGroups";
+import { groupItems, isOtherName, matchesPantrySearch, needsChecking, needsUsingSoon, norm, placeList, withPlaceBack, type Place } from "../pantryGroups";
 import { useOnlinePhotos } from "../pantryPhoto";
 import PantryRow, { type PantryLayout } from "../PantryRow";
 import PantryCard from "../PantryCard";
@@ -84,6 +84,7 @@ function saveClosedPlaces(closed: Set<string>) {
 // The place the page shows (PlacePicker), on this device; null (every
 // place) until someone picks one, so nothing seems missing at first.
 const PLACE_KEY = "bento.pantryPlace";
+const OTHER_TAKEN = "“Other” is where things with no place go. Pick another name.";
 function savedPlace(): Place | null {
   const saved = rememberedJson(PLACE_KEY) as Partial<Place> | null;
   return saved && typeof saved.key === "string" && typeof saved.label === "string" ? { key: saved.key, label: saved.label } : null;
@@ -541,6 +542,10 @@ export default function Pantry() {
 
   // "Edit places": a new one, kept while empty, and shown.
   async function addPlace(label: string) {
+    if (isOtherName(label)) {
+      showError(OTHER_TAKEN);
+      return;
+    }
     const known = places.find((p) => p.key === norm(label));
     if (!known && !(await keepPlaces((list) => (list.some((l) => norm(l) === norm(label)) ? list : [...list, label])))) return;
     choosePlace(known ?? { key: norm(label), label });
@@ -549,6 +554,10 @@ export default function Pantry() {
   // A new name for a place: every item in it moves too, with Undo. A name
   // another place has already merges the two, so that's asked first.
   async function renamePlace(from: Place, label: string) {
+    if (isOtherName(label)) {
+      showError(OTHER_TAKEN);
+      return;
+    }
     const into = places.find((p) => p.key === norm(label) && p.key !== from.key);
     if (
       into &&
@@ -654,7 +663,7 @@ export default function Pantry() {
             onPick={choosePlace}
             onAdd={(label) => void addPlace(label)}
             onRename={renamePlace}
-            onDelete={(gone) => void deletePlace(gone)}
+            onDelete={deletePlace}
             onMove={movePlace}
           /> : <h1>Pantry</h1>}
         <div className="view-switch" role="group" aria-label="Layout">

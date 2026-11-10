@@ -29,7 +29,8 @@ export default function PlacePicker({
   // Renames a place for every item in it.
   // Done when it's renamed, or the merge it would be was turned down.
   onRename: (place: Place, label: string) => Promise<void>;
-  onDelete: (place: Place) => void;
+  // Done when it's deleted, or its question was answered no.
+  onDelete: (place: Place) => Promise<void>;
   // One place dragged to where another is (their keys).
   onMove: (fromKey: string, toKey: string) => void;
 }) {
@@ -68,6 +69,17 @@ export default function PlacePicker({
     setOpen(false);
   }
 
+  // A merge or a delete can ask first, and its question (a dialog) closes
+  // this menu: open again, still editing, once it's answered.
+  async function stillEditing(change: () => Promise<void>) {
+    const box = menu.current;
+    const wasOpen = !!box && canPop && box.matches(":popover-open");
+    await change();
+    if (!box || !wasOpen || !box.isConnected || box.matches(":popover-open")) return;
+    box.showPopover();
+    setEditing(true);
+  }
+
   // "Other" is items with no place: nothing to rename or delete.
   const editable = places.filter((p) => p.key !== "");
 
@@ -81,7 +93,12 @@ export default function PlacePicker({
         }}
       >
         {editable.map((p) => (
-          <PlaceRow key={p.key} place={p} onRename={(label) => onRename(p, label)} onDelete={() => onDelete(p)} />
+          <PlaceRow
+            key={p.key}
+            place={p}
+            onRename={(label) => stillEditing(() => onRename(p, label))}
+            onDelete={() => void stillEditing(() => onDelete(p))}
+          />
         ))}
       </DndContext>
       <NewPlace onAdd={onAdd} />
@@ -159,6 +176,13 @@ function PlaceRow({ place, onRename, onDelete }: { place: Place; onRename: (labe
   // Enter renames, and the merge question it can ask takes the focus, so
   // leaving the box would rename (and ask) again.
   const renaming = useRef(false);
+  // Its name now: a rename that only changes capitals keeps this row, so
+  // the box follows it rather than the name from before.
+  const latest = useRef(place.label);
+  useEffect(() => {
+    latest.current = place.label;
+    setName(place.label);
+  }, [place.label]);
   const commit = () => {
     if (renaming.current) return;
     const label = name.trim();
@@ -166,6 +190,8 @@ function PlaceRow({ place, onRename, onDelete }: { place: Place; onRename: (labe
       renaming.current = true;
       void onRename(label).finally(() => {
         renaming.current = false;
+        // Not renamed (refused, or the merge turned down): its name again.
+        setName(latest.current);
       });
     } else setName(place.label);
   };

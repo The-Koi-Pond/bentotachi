@@ -130,6 +130,10 @@ export function placeList(saved: string[], items: Pick<PantryItem, "location">[]
   return places;
 }
 
+// "Other" is the built-in place for things with no place (key ""), so a
+// place can't be called that: it would be a second Other.
+export const isOtherName = (label: string) => norm(label) === "other";
+
 // The places with this one put back where it was (`at`, or the end when
 // that's past it or unknown), for Undo of a delete or merge. Already there
 // (another phone added it again): as it is.
