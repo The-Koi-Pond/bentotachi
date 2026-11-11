@@ -6,6 +6,66 @@ for the next release stays in PLAN.md, "Waiting for the next app
 release"; when a release goes out, its list moves to the top of this file.
 Each release from 1.9.0 on is tagged in git (`v1.23.0`).
 
+Released in 1.25.0 (2026-11-11, deployed the same day):
+
+- Browse's sites have a "Categories" button (a tester's idea, Xel's call
+  2026-11-11): the site's categories as a plain list, read by the server
+  from the site's own menu (links to `/category/…`, `/collection(s)/…`,
+  `/topic/…`; categories.pb.js), so nobody keeps lists by hand and they
+  follow the site's changes. Opening one shows its recipes to tick and add
+  at once (the category picker from 1.20.0), or, when it holds categories
+  itself (BBC Good Food's "Barbecue"), those. A filter box for long menus;
+  Back shows the list again at once, with its filter. Works for RecipeTin
+  Eats, BBC Good Food and Just One Cookbook (checked 2026-11-11);
+  taste.com.au turns the server away, Tasty and Simply Recipes use other
+  kinds of addresses, and BBC Food's category pages list recipes in a way
+  Bentotachi can't read yet, so those four (and the sites that block
+  imports) have no button. Our own sites get it too; when one's menu can't
+  be read, the page offers to open the site instead. Also: reading a big
+  page is quicker inside PocketBase (recipe_parse.js steps from tag to tag).
+  Possible later: reading a menu's links whatever their addresses (Simply
+  Recipes, Serious Eats), and the menu's grouping ("Dietary › Gluten free").
+- "Can't reach the server" (the connection indicator's bubble, and the
+  error on a page with nothing saved) adds "It goes through Tailscale, so
+  check this phone's Tailscale is switched on." when the server's address
+  is a Tailscale one (100.64.x to 100.127.x, or a .ts.net name), after the
+  household's phones quietly dropped off Tailscale for two days
+  (2026-11-11) and the lists just looked stale.
+- Works in the no-signal corner: the plan, the pantry (with its packets),
+  what was cooked, the fridge door and the recipe shelves are kept on the
+  phone too, like recipes and the shopping list, and show (with an
+  "Offline" note) when the server can't be reached. The plan's copy
+  borrows its recipes from the recipes' copy rather than keeping them
+  twice. Offline they're for reading: the plan hides adding, taking off
+  and dragging, the fridge hides "Done", shelves can't be edited, and a
+  pantry change that can't be sent goes back as it was, with a message.
+  "Used anything up?" after cooking never works from the copy (it could
+  mark something Out that a housemate just bought more of).
+- A server that doesn't answer at all (Tailscale off, a dead corner) no
+  longer leaves pages on "Loading…" for minutes: loading the household's
+  records with no answer starting within 8 seconds counts as offline, and
+  the copy shows (checked in the sandbox: every page in about 8 seconds).
+  Saves aren't limited (one the server made but answered late would be
+  taken back, like a mistaken Out's packets), except shopping list changes
+  (sent again safely) and any save once the server is known to be away.
+  Imports, barcode lookups and photo uploads aren't limited either. While
+  the server can't be reached, it's checked every half minute, and every
+  open list (and an open recipe) reloads by itself when it answers; a page
+  showing its copy counts as "can't be reached", so the check starts even
+  when an earlier answer said otherwise (before, only the shopping list
+  tried again). "Try again" on an Offline note asks the server instead of
+  reloading the page.
+- A connection indicator beside ⋮, only when something's off: a cloud
+  with a line through it when the server can't be reached, with a small
+  count of shopping changes waiting to be sent. Tapping it says what's
+  going on and when the server last answered ("today at 2:14 pm"), the
+  Tailscale reminder for a Tailscale address, the server's address, and
+  Try again. Back online with changes still waiting, it points to the
+  shopping list, where they're sent. Nothing shows while all's well.
+  Checked in the sandbox (phone width, light and dark): shows after 8
+  seconds of no answer, Try again brings everything back at once, and on
+  its own it's back within the half minute.
+
 Released in 1.24.0 (2026-11-11, deployed the same day; most of it was
 deployed 2026-11-10):
 
