@@ -1,8 +1,8 @@
-import { useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
-import { useNavigate } from "react-router";
-import { RECIPE_SITES, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
-import { browseAndSave, hasBuiltInBrowser, importBrowsedPage } from "../bentoBrowser";
-import AlreadyHere from "../AlreadyHere";
+import { useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
+import { RECIPE_SITES, categoriesPath, hasCategories, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
+import { hasBuiltInBrowser } from "../bentoBrowser";
+import { SiteLink, useSiteOpener } from "../SiteOpener";
 import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
 import { useUndo } from "../undo";
@@ -22,7 +22,6 @@ const rememberedSearch = () => remembered(SEARCH_KEY, { thisVisit: true }) ?? ""
 const rememberSearch = (text: string) => remember(SEARCH_KEY, text || null, { thisVisit: true });
 
 export default function Browse() {
-  const navigate = useNavigate();
   const spell = useSpell();
   const [text, setText] = useState(rememberedSearch);
   const [searched, setSearchedState] = useState(rememberedSearch);
@@ -31,9 +30,7 @@ export default function Browse() {
     setSearchedState(value);
     rememberSearch(value);
   };
-  const [saving, setSaving] = useState(false);
-  // A recipe saved from the browser that's already here (AlreadyHere).
-  const [duplicate, setDuplicate] = useState<{ id: string; title: string; page: { url: string; html: string } } | null>(null);
+  const { open: openInBento, status: openStatus } = useSiteOpener();
   const ours = useLiveRecords<SavedSite>("saved_sites");
   const undo = useUndo();
   const [addingSite, setAddingSite] = useState(false);
@@ -57,42 +54,6 @@ export default function Browse() {
   function search(event: FormEvent) {
     event.preventDefault();
     setSearched(text.trim());
-  }
-
-  // In the Android app, open Bento's own browser; a recipe saved there opens
-  // straight away. In a web browser the link opens in a new tab instead.
-  async function openInBento(event: MouseEvent, url: string) {
-    if (!hasBuiltInBrowser) return;
-    event.preventDefault();
-    setDuplicate(null);
-    try {
-      setSaving(true);
-      const saved = await browseAndSave(url);
-      if (!saved) return;
-      if ("id" in saved.result) navigate(`/recipes/${saved.result.id}`);
-      // A category page saved from the browser: pick its recipes on Add.
-      else if ("list" in saved.result) navigate("/add", { state: { list: saved.result.list } });
-      else setDuplicate({ ...saved.result.duplicate, page: saved.page });
-    } catch (err) {
-      showError(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // "Add another copy" of a recipe already here.
-  async function saveAgain() {
-    if (!duplicate) return;
-    setSaving(true);
-    try {
-      const result = await importBrowsedPage(duplicate.page, true);
-      if ("id" in result) navigate(`/recipes/${result.id}`);
-    } catch (err) {
-      showError(errorMessage(err));
-      setDuplicate(null);
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (
@@ -132,12 +93,7 @@ export default function Browse() {
         </button>
       </form>
 
-      {saving && (
-        <p className="muted" role="status">
-          Saving the recipe, minus the life story…
-        </p>
-      )}
-      {duplicate && <AlreadyHere duplicate={duplicate} busy={saving} onAgain={() => void saveAgain()} />}
+      {openStatus}
 
       {searched && (
         <section className="stack tray-section" aria-live="polite">
@@ -180,13 +136,14 @@ export default function Browse() {
         {ourSites.length > 0 && (
           <ul className="site-list">
             {ourSites.map((site) => (
-              <li key={site.id} className="site-saved">
+              <li key={site.id} className="site-split site-saved">
                 <SiteLink href={site.url} onOpen={openInBento}>
                   <span className="site-text">
                     <span className="site-name">{site.name}</span>
                     {site.name !== siteHost(site.url) && <span className="muted site-about">{siteHost(site.url)}</span>}
                   </span>
                 </SiteLink>
+                <CategoriesButton name={site.name} url={site.url} />
                 <button
                   className="icon-button small site-remove"
                   onClick={() => removeSite(site)}
@@ -206,7 +163,7 @@ export default function Browse() {
         <h2>Recipe sites</h2>
         <ul className="site-list">
           {RECIPE_SITES.map((site) => (
-            <li key={site.name}>
+            <li key={site.name} className="site-split">
               <SiteLink href={site.home} onOpen={openInBento}>
                 <span className="site-text">
                   <span className="site-name">{site.name}</span>
@@ -217,6 +174,7 @@ export default function Browse() {
                   )}
                 </span>
               </SiteLink>
+              {hasCategories(site) && <CategoriesButton name={site.name} url={site.home} />}
             </li>
           ))}
         </ul>
@@ -226,10 +184,12 @@ export default function Browse() {
         {hasBuiltInBrowser ? (
           <>
             Open a site, find a recipe you like (past the ads), then tap <strong>Save to Bentotachi</strong> at the top.
+            Or tap a site's <strong>Categories</strong> to tick a whole bunch at once.
           </>
         ) : (
           <>
             Found one you like? Copy its link from the browser, then tap <strong>+</strong> at the top and paste it in.
+            Or tap a site's <strong>Categories</strong> to tick a whole bunch at once.
           </>
         )}
       </p>
@@ -304,21 +264,12 @@ function AddSiteForm({ onAdded, onClose }: { onAdded: (site: SavedSite) => void;
   );
 }
 
-function SiteLink({
-  href,
-  onOpen,
-  children,
-}: {
-  href: string;
-  onOpen: (event: MouseEvent, url: string) => void;
-  children: ReactNode;
-}) {
+// Beside a site: its categories as a plain list in Bentotachi
+// (SiteCategories), to tick recipes from without the site's ads.
+function CategoriesButton({ name, url }: { name: string; url: string }) {
   return (
-    <a href={href} className="site-row" target="_blank" rel="noopener noreferrer" onClick={(event) => onOpen(event, href)}>
-      {children}
-      <span className="site-go" aria-hidden="true">
-        {hasBuiltInBrowser ? "›" : "↗"}
-      </span>
-    </a>
+    <Link className="button small site-categories" to={categoriesPath({ name, url })} aria-label={`${name} categories`}>
+      Categories
+    </Link>
   );
 }

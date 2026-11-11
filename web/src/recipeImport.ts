@@ -115,6 +115,29 @@ export async function importRecipe(request: ImportRequest): Promise<ImportResult
   }
 }
 
+export interface SiteCategory {
+  title: string;
+  url: string;
+}
+
+// A site's categories, read by the server from the site's own menu
+// (categories.pb.js). `inside`: the link is one of them, so also its
+// recipes to tick (`list`), and the categories inside it.
+export async function siteCategories(
+  url: string,
+  { inside = false }: { inside?: boolean } = {}
+): Promise<{ categories: SiteCategory[]; list: RecipeList | null }> {
+  const answer = await pb.send<{ categories?: unknown; list?: unknown }>("/api/cookbook/categories", {
+    method: "POST",
+    body: { url, inside },
+  });
+  const categories = (Array.isArray(answer.categories) ? answer.categories : [])
+    .filter((category): category is Record<string, unknown> => !!category && typeof category === "object")
+    .filter((category) => typeof category.url === "string" && typeof category.title === "string")
+    .map((category) => ({ title: String(category.title), url: String(category.url) }));
+  return { categories, list: readList(answer.list) };
+}
+
 // The next page of a list ("More from this page"), read without saving
 // anything even if it turns out to be a recipe.
 export async function nextRecipeList(url: string): Promise<RecipeList | null> {

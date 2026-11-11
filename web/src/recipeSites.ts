@@ -10,6 +10,13 @@
 // testing, so pasting its links on the PC fails. The Android app's built-in
 // browser reads the page itself, so saving from there works, and the app
 // doesn't show the note.
+//
+// `noCategories`: Bento's server couldn't read this site's categories, or
+// the recipes in them, when checked (2026-11-11: it refused, its menu's
+// links don't look like categories, or, for BBC Food, its category pages
+// list recipes without the cards recipeLinks reads), so Browse leaves its
+// Categories button out. The rest gave categories with recipes in them.
+// The blocking sites have no button either.
 
 export interface RecipeSite {
   name: string;
@@ -17,7 +24,11 @@ export interface RecipeSite {
   search: string;
   about: string;
   blocksImport?: boolean;
+  noCategories?: boolean;
 }
+
+// Whether Browse offers this site's categories (pages/SiteCategories.tsx).
+export const hasCategories = (site: RecipeSite) => !site.blocksImport && !site.noCategories;
 
 export const RECIPE_SITES: RecipeSite[] = [
   {
@@ -31,6 +42,7 @@ export const RECIPE_SITES: RecipeSite[] = [
     home: "https://www.taste.com.au/",
     search: "https://www.taste.com.au/search-recipes/?q={q}",
     about: "Australia's biggest recipe site",
+    noCategories: true,
   },
   {
     name: "BBC Good Food",
@@ -43,6 +55,7 @@ export const RECIPE_SITES: RecipeSite[] = [
     home: "https://www.bbc.co.uk/food",
     search: "https://www.bbc.co.uk/food/search?q={q}",
     about: "Recipes from BBC cooking shows and chefs",
+    noCategories: true,
   },
   {
     name: "Just One Cookbook",
@@ -55,6 +68,7 @@ export const RECIPE_SITES: RecipeSite[] = [
     home: "https://tasty.co/",
     search: "https://tasty.co/search?q={q}",
     about: "Quick, fun recipes with short videos",
+    noCategories: true,
   },
   {
     name: "AllRecipes",
@@ -82,6 +96,7 @@ export const RECIPE_SITES: RecipeSite[] = [
     home: "https://www.simplyrecipes.com/",
     search: "https://www.simplyrecipes.com/search?q={q}",
     about: "Simple, family-friendly cooking",
+    noCategories: true,
   },
 ];
 
@@ -119,6 +134,15 @@ export function normaliseSiteUrl(input: string): string | null {
 // since every site's own search page works differently.
 export function savedSiteSearchUrl(url: string, words: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(`site:${siteHost(url)} ${words.trim()}`)}`;
+}
+
+// The page listing a site's categories (pages/SiteCategories.tsx), or with
+// `inside`, what's in one of them. Each level is its own page, so Back goes
+// up a level.
+export function categoriesPath({ name, url, inside = false }: { name: string; url: string; inside?: boolean }): string {
+  const query = new URLSearchParams({ name, url });
+  if (inside) query.set("inside", "1");
+  return `/browse/categories?${query}`;
 }
 
 // The first web address in shared text ("Share to Bento"). Apps share either

@@ -20,7 +20,10 @@ they say otherwise.
   custom route that saves records sets it itself, as `import.pb.js` does.
 - The server fetching a web address for someone: `isPublicUrl`
   (`server/pb_hooks/safe_url.js`) first, always, so nobody can reach the
-  home network through it.
+  home network through it. A website's page: `readPage` (`web_page.js`),
+  which does that check and words a refusal; "is a recipe from this link
+  already here?": `sameRecipe`, and a page's recipe list marked with it:
+  `markHere` (same file; the import and categories routes use them).
 - New server routes: end with `$apis.requireAuth()`, as every route does
   except first-time setup and app updates, which are public on purpose.
 - Single-user mode (one account hides the "other people" parts):
@@ -190,6 +193,10 @@ they say otherwise.
 
 ## Screen pieces
 
+- A link that opens a recipe site (Bento's own browser in the app, saving
+  what's saved there; a new tab elsewhere): `<SiteLink>` with
+  `useSiteOpener()`, whose `status` shows the saving and "already here"
+  (`SiteOpener.tsx`).
 - Any date box: `<DateField>` (`DateField.tsx`), never `<input type="date">`;
   its month grid and typed-date reading are `calendar.ts`.
 - A `<dialog className="sheet">` opened while it's on screen:

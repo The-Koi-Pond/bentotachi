@@ -15,6 +15,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   // Handlers can't see variables from outside themselves, so load helpers here.
   const parser = require(`${__hooks}/recipe_parse.js`);
   const safeUrl = require(`${__hooks}/safe_url.js`);
+  const webPage = require(`${__hooks}/web_page.js`);
 
   const body = e.requestInfo().body;
   const url = String(body.url || "").trim();
@@ -27,31 +28,11 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   // it into the recipe in the app.
   const preview = body.preview === true;
 
-  // The recipe saved from this link, or null.
-  const sameRecipe = (link) => {
-    const key = parser.linkKey(link);
-    if (!key) return null;
-    // Narrowed by the site and the last part of the address ("chasseur",
-    // "p=123"), so a site with hundreds of recipes still finds an old one;
-    // linkKey then decides.
-    const host = key.split(/[/?]/)[0];
-    const tail = key.slice(host.length).split(/[/?&]/).filter(Boolean).pop() || "";
-    const filter = tail ? "source_url ~ {:host} && source_url ~ {:tail}" : "source_url ~ {:host}";
-    // A "%" in the value would make PocketBase's "~" match from the start
-    // instead of anywhere (accented addresses arrive as %C3%A8…), so it's
-    // escaped.
-    const candidates = e.app.findRecordsByFilter("recipes", filter, "-created", 500, 0, {
-      host: host,
-      tail: tail.replace(/%/g, "\\%"),
-    });
-    return candidates.find((record) => parser.linkKey(record.getString("source_url")) === key) || null;
-  };
-
   // A recipe from this page already here: say so (409, with its id and
   // name, for "Open it" and "Add another copy"), unless asked for another
   // copy ("again"). Older apps just show the message.
   if (body.again !== true && !preview) {
-    const same = sameRecipe(url);
+    const same = webPage.sameRecipe(e.app, url);
     // Sent as it is (not an ApiError, whose extra data PocketBase blanks
     // out): PocketBase's own error shape, so older apps show the message.
     if (same) {
@@ -60,34 +41,7 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
     }
   }
 
-  let html = typeof body.html === "string" ? body.html : "";
-  if (html.length > 5 * 1024 * 1024) {
-    throw new BadRequestError("That page is too big to save.");
-  }
-
-  if (!html) {
-    // Never this computer or the home network (see safe_url.js).
-    if (!safeUrl.isPublicUrl(url)) {
-      throw new BadRequestError("Bentotachi only imports from public websites, not addresses on your own network.");
-    }
-    let page;
-    try {
-      page = $http.send({
-        url: url,
-        method: "GET",
-        headers: { "user-agent": parser.BROWSER_USER_AGENT, accept: "text/html,*/*" },
-        timeout: 20,
-      });
-    } catch (err) {
-      throw new BadRequestError("Couldn't reach that website. Check the link and the internet connection.");
-    }
-    if (page.statusCode >= 400) {
-      throw new BadRequestError(
-        `That website refused the request (error ${page.statusCode}). Some sites block apps like this one; you can still add the recipe by hand.`
-      );
-    }
-    html = toString(page.body);
-  }
+  const html = webPage.readPage(url, body.html, "you can still add the recipe by hand.");
 
   const parsed = parser.parseRecipe(html, url);
   // A page listing recipes (a site's category) rather than being one: its
@@ -98,14 +52,11 @@ routerAdd("POST", "/api/cookbook/import", (e) => {
   if (!parsed || (!parsed.ingredients.length && !parsed.steps.length)) {
     const list = parser.recipeLinks(html, url);
     if (list) {
-      list.recipes.forEach((recipe) => {
-        recipe.have = !!sameRecipe(recipe.url);
-      });
       return e.json(400, {
         status: 400,
         message: "That's a page of recipes, not one recipe. Open the one you want, then import its link.",
         data: {},
-        list: list,
+        list: webPage.markHere(e.app, list),
       });
     }
   }

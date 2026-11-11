@@ -216,6 +216,23 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
+- Browse's sites have a "Categories" button (a tester's idea, Xel's call
+  2026-11-11): the site's categories as a plain list, read by the server
+  from the site's own menu (links to `/category/…`, `/collection(s)/…`,
+  `/topic/…`; categories.pb.js), so nobody keeps lists by hand and they
+  follow the site's changes. Opening one shows its recipes to tick and add
+  at once (the category picker from 1.20.0), or, when it holds categories
+  itself (BBC Good Food's "Barbecue"), those. A filter box for long menus;
+  Back shows the list again at once, with its filter. Works for RecipeTin
+  Eats, BBC Good Food and Just One Cookbook (checked 2026-11-11);
+  taste.com.au turns the server away, Tasty and Simply Recipes use other
+  kinds of addresses, and BBC Food's category pages list recipes in a way
+  Bentotachi can't read yet, so those four (and the sites that block
+  imports) have no button. Our own sites get it too; when one's menu can't
+  be read, the page offers to open the site instead. Also: reading a big
+  page is quicker inside PocketBase (recipe_parse.js steps from tag to tag).
+  Possible later: reading a menu's links whatever their addresses (Simply
+  Recipes, Serious Eats), and the menu's grouping ("Dietary › Gluten free").
 - "Can't reach the server" (the connection indicator's bubble, and the
   error on a page with nothing saved) adds "It goes through Tailscale, so
   check this phone's Tailscale is switched on." when the server's address

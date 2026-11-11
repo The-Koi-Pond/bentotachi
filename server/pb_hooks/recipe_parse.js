@@ -385,35 +385,58 @@ var VOID_TAGS = { img: 1, meta: 1, link: 1, br: 1, hr: 1, input: 1, source: 1 };
 // them can't make every one huge.
 var UNCLOSED_LENGTH = 10000;
 
+// Each tag in `html` ("<b>", "</b>", "<a href=…>"), in order: use(match,
+// where it starts, just after it ends), with match[1] "/" for a closing tag
+// and match[2] its name. Steps from "<" to "<" rather than running one
+// regex along the page: in PocketBase's engine a page with any non-ASCII
+// letter made every step of that regex slower the longer the page, and a
+// page of 40,000 tags took seconds.
+function eachTag(html, use) {
+  var TAG = /^<(\/?)([a-z][a-z0-9]*)\b[^<>]*>$/i;
+  var at = html.indexOf("<");
+  var close = -1;
+  while (at >= 0) {
+    if (close < at) close = html.indexOf(">", at);
+    if (close < 0) return;
+    var nextOpen = html.indexOf("<", at + 1);
+    // "<" again before the ">": this one isn't a tag.
+    if (nextOpen >= 0 && nextOpen < close) {
+      at = nextOpen;
+      continue;
+    }
+    var m = html.slice(at, close + 1).match(TAG);
+    if (m) use(m, at, close + 1);
+    at = nextOpen;
+  }
+}
+
 function closingTags(html) {
   var closes = {};
   var opens = {};
   var waiting = {};
   var around = [];
   var unclosed = [];
-  var re = /<(\/?)([a-z][a-z0-9]*)\b[^<>]*>/gi;
-  var m;
-  while ((m = re.exec(html)) !== null) {
+  eachTag(html, function (m, index, after) {
     var tag = m[2].toLowerCase();
-    if (VOID_TAGS[tag]) continue;
+    if (VOID_TAGS[tag]) return;
     if (!m[1]) {
-      if (/\/>$/.test(m[0])) continue;
+      if (/\/>$/.test(m[0])) return;
       opens[tag] = opens[tag] || [];
-      var element = { tag: tag, start: m.index, inner: re.lastIndex, nth: opens[tag].length, stop: html.length };
-      opens[tag].push(m.index);
+      var element = { tag: tag, start: index, inner: after, nth: opens[tag].length, stop: html.length };
+      opens[tag].push(index);
       (waiting[tag] = waiting[tag] || []).push(element);
       around.push(element);
     } else if (waiting[tag] && waiting[tag].length) {
       var closed = waiting[tag].pop();
-      closes[closed.start] = { at: m.index, end: re.lastIndex };
+      closes[closed.start] = { at: index, end: after };
       // Anything opened inside it and still open ends here too.
       for (var top = around.pop(); top !== closed; top = around.pop()) {
         waiting[top.tag].pop();
-        top.stop = m.index;
+        top.stop = index;
         unclosed.push(top);
       }
     }
-  }
+  });
   unclosed = unclosed.concat(around);
   for (var i = 0; i < unclosed.length; i++) {
     var left = unclosed[i];
@@ -428,7 +451,10 @@ function closingTags(html) {
 // tag, inner HTML, and where it ends (counting nested tags of the same name).
 // `closes` (closingTags of the same html) skips the scan for the end.
 function elementAt(html, start, closes) {
-  var open = html.slice(start).match(/^<([a-z][a-z0-9]*)\b[^<>]*>/i);
+  // Only up to the tag's ">": copying the rest of the page each time made a
+  // page with thousands of tags take minutes in PocketBase's engine.
+  var tagEnd = html.indexOf(">", start);
+  var open = tagEnd < 0 ? null : html.slice(start, tagEnd + 1).match(/^<([a-z][a-z0-9]*)\b[^<>]*>/i);
   if (!open) return null;
   var tag = open[1].toLowerCase();
   var innerStart = start + open[0].length;
@@ -1191,9 +1217,114 @@ function inMainFolder(recipes) {
   });
 }
 
+// Addresses where a site keeps a list of recipes: "/category/soups/",
+// "/recipes/collection/quick", "/food/collections/easy_soup", "/topic/easy".
+// Not the index of them all ("/categories/"), a further page of one, or its
+// feed.
+var CATEGORY_PATH = /\/(category|categories|collection|collections|topic|topics)\/[^\/?#]+/i;
+var NOT_CATEGORY_PATH = /\/(page\/\d+|feed)\/?$|[?&](page|paged)=/i;
+
+// Link names that are a "see more" or the site's own pages, not a category.
+var NOT_CATEGORY_NAME =
+  /^(home|all|all recipes|recipes|categories|collections|see all|view all|see more|show more|more|explore|browse|menu|search|shop|subscribe|newsletter|about|about us|contact|contact us)$/i;
+
+// Parts of a page that are the site's menus, the same on every page.
+var MENU_PARTS = /<(nav|header|footer|aside)\b/gi;
+
+// Where the page's menus (MENU_PARTS) are, as [start, end] in order, for
+// a category page's own sub-categories rather than the whole site's menu
+// again. Positions, not a copy of the page without them: in PocketBase's
+// engine reading a page built in JavaScript was far slower than reading
+// the page as it arrived, seconds for a category page with a few thousand
+// links. Real pages have a few dozen menu parts; past MAX_MENU_PARTS the
+// rest count as page, so a page built of them can't take minutes.
+function menuSpans(html) {
+  var MAX_MENU_PARTS = 300;
+  var closes = closingTags(html);
+  var spans = [];
+  var m;
+  MENU_PARTS.lastIndex = 0;
+  while (spans.length < MAX_MENU_PARTS && (m = MENU_PARTS.exec(html)) !== null) {
+    var part = elementAt(html, m.index, closes);
+    if (!part) continue;
+    spans.push([m.index, part.end]);
+    MENU_PARTS.lastIndex = part.end;
+  }
+  return spans;
+}
+
+// A category's name from its address, for one whose link has no words or
+// whose name another category already has: the path after "category",
+// "/category/mains/pork/" as "Mains › pork".
+function categoryPathTitle(url) {
+  var path = url.replace(/^https?:\/\/[^\/]+/i, "").replace(/[?#].*$/, "");
+  var after = path.replace(/^.*?\/(category|categories|collection|collections|topic|topics)\//i, "");
+  var words = after
+    .split("/")
+    .filter(Boolean)
+    .map(function (part) {
+      return slugTitle("/" + part).toLowerCase();
+    })
+    .filter(Boolean)
+    .join(" › ");
+  return words ? words[0].toUpperCase() + words.slice(1) : "";
+}
+
+// A site's categories: the links on a page to its lists of recipes
+// (CATEGORY_PATH), as [{ title, url }] in the page's order, or [] for fewer
+// than two. Read from the site's home page, its menu included; `inPage`
+// leaves the menus out (menuSpans), for the categories inside a category
+// (BBC Good Food's "Barbecue" holds "Barbecue chicken", "Barbecue sides"…).
+// Only links on the page's own site count.
+function siteCategories(html, pageUrl, options) {
+  var inPage = !!(options && options.inPage);
+  var site = siteOf(pageUrl);
+  var pageKey = linkKey(pageUrl);
+  var found = [];
+  var byKey = {};
+  var names = {};
+  var menus = inPage ? menuSpans(html) : [];
+  var menu = 0;
+  eachClosed(html, /<a\b[^<>]*>/gi, "a", function (link) {
+    if (found.length >= 300) return true;
+    // Links come in page order, and so do the menus.
+    while (menu < menus.length && menus[menu][1] <= link.open.index) menu++;
+    if (menu < menus.length && menus[menu][0] <= link.open.index) return;
+    var url = resolveUrl(attribute(link.open[0], "href"), pageUrl).replace(/#.*$/, "");
+    if (!url || siteOf(url) !== site) return;
+    var path = url.replace(/^https?:\/\/[^\/]+/i, "");
+    if (!CATEGORY_PATH.test(path) || NOT_CATEGORY_PATH.test(path)) return;
+    var key = linkKey(url);
+    if (!key || key === pageKey) return;
+    // A photo's link has no words; a card's is a whole sentence. The same
+    // category's other link may have its name.
+    var name = cleanText(link.inner);
+    if (name.length > 60 || NOT_CATEGORY_NAME.test(name) || !/[A-Za-zÀ-￿]/.test(name)) name = "";
+    var entry = byKey[key];
+    if (!entry) {
+      entry = byKey[key] = { title: name, url: url };
+      found.push(entry);
+    } else if (!entry.title) entry.title = name;
+  });
+  var categories = [];
+  found.forEach(function (entry) {
+    // A second category with a name already shown (BBC Good Food's
+    // "Vegetarian" recipes and "Vegetarian" collections) is named from its
+    // address instead, so both can be told apart.
+    var title = entry.title || categoryPathTitle(entry.url);
+    if (names[title.toLowerCase()]) title = categoryPathTitle(entry.url);
+    title = fitText(title, LIMITS.title);
+    if (!title || names[title.toLowerCase()]) return;
+    names[title.toLowerCase()] = true;
+    categories.push({ title: title, url: entry.url });
+  });
+  return categories.length >= 2 ? categories : [];
+}
+
 module.exports = {
   BROWSER_USER_AGENT: BROWSER_USER_AGENT,
   recipeLinks: recipeLinks,
+  siteCategories: siteCategories,
   LIMITS: LIMITS,
   fitRecipe: fitRecipe,
   linkKey: linkKey,

@@ -76,15 +76,21 @@
 }
 
 
-/* Our own sites on the Browse tab: the link, then a ✕ to remove it. */
-.site-saved {
+/* A site with buttons beside its link: Categories, and for our own sites a
+   ✕ to remove it. */
+.site-split {
   display: flex;
   align-items: center;
 }
 
-.site-saved .site-row {
+.site-split .site-row {
   flex: 1;
   min-width: 0;
+}
+
+.site-categories {
+  flex: none;
+  margin-right: 8px;
 }
 
 .site-saved .site-remove {

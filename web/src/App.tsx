@@ -9,6 +9,7 @@ import AddRecipe from "./pages/AddRecipe";
 import ShoppingList from "./pages/ShoppingList";
 import Pantry from "./pages/Pantry";
 import Browse from "./pages/Browse";
+import SiteCategories from "./pages/SiteCategories";
 import MealPlan from "./pages/MealPlan";
 import Profile from "./pages/Profile";
 import Household from "./pages/Household";
@@ -105,6 +106,7 @@ function Screens() {
           <Route path="/recipes/:id" element={<OneRecipe page={RecipeView} />} />
           <Route path="/recipes/:id/edit" element={<OneRecipe page={RecipeEdit} />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/browse/categories" element={<SiteCategories />} />
           <Route path="/plan" element={<MealPlan />} />
           <Route path="/shopping" element={<ShoppingList />} />
           <Route path="/pantry" element={<Pantry />} />

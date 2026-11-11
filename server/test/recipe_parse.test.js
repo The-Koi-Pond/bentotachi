@@ -1,7 +1,7 @@
 // Run from the project folder with: node --test "server/test/*.test.js"
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseRecipe, durationToMinutes, linkKey, recipeLinks } = require("../pb_hooks/recipe_parse.js");
+const { parseRecipe, durationToMinutes, linkKey, recipeLinks, siteCategories } = require("../pb_hooks/recipe_parse.js");
 
 // A WordPress-style category page: one <article> card per recipe.
 const card = (slug, title, extra = "") =>
@@ -140,6 +140,119 @@ test("WordPress's own 'next page' button counts when there's no rel=next", () =>
   const nav = `<nav><a class="next page-numbers" href="/category/quick/page/2/">Next</a></nav>`;
   const list = recipeLinks(categoryPage([card("pho", "Pho"), card("laksa", "Laksa"), nav]), "https://www.site.example/category/quick/");
   assert.equal(list.next, "https://www.site.example/category/quick/page/2/");
+});
+
+// A site's home page: its menu, then cards linking to recipes and lists.
+const homePage = (menu, main = "") =>
+  `<html><body><header><nav><ul>${menu.join("")}</ul></nav></header><main>${main}</main>` +
+  `<footer><a href="/category/footer-pick/">Footer pick</a></footer></body></html>`;
+const menuLink = (href, name) => `<li><a href="${href}">${name}</a></li>`;
+
+test("a site's categories come from the links to its lists, in the page's order", () => {
+  const categories = siteCategories(
+    homePage([
+      menuLink("/category/dinner/", "Dinner"),
+      menuLink("https://site.example/recipes/collection/quick-soups", "<span>Quick &amp; easy</span> soups"),
+      menuLink("/topic/baking/", "Baking"),
+      menuLink("/about/", "About"),
+      menuLink("/pho/", "Pho"),
+      menuLink("https://elsewhere.example/category/dinner/", "Their dinner"),
+    ]),
+    "https://www.site.example/"
+  );
+  assert.deepEqual(categories, [
+    { title: "Dinner", url: "https://www.site.example/category/dinner/" },
+    { title: "Quick & easy soups", url: "https://site.example/recipes/collection/quick-soups" },
+    { title: "Baking", url: "https://www.site.example/topic/baking/" },
+    { title: "Footer pick", url: "https://www.site.example/category/footer-pick/" },
+  ]);
+});
+
+test("a site's categories skip the index, further pages, feeds and see-more links, and take a name from another link", () => {
+  const categories = siteCategories(
+    homePage(
+      [
+        menuLink("/categories/", "All categories"),
+        menuLink("/category/dinner/page/2/", "Next"),
+        menuLink("/category/dinner/feed/", "Feed"),
+        menuLink("/category/soups/", "See all"),
+        menuLink("/category/curries/", `<img src="/c.jpg" alt="">`),
+      ],
+      `<a href="/category/curries/#top">Curries</a><a href="/category/soups/">Soups</a>`
+    ),
+    "https://www.site.example/"
+  );
+  assert.deepEqual(
+    categories.map((category) => category.title),
+    ["Soups", "Curries", "Footer pick"]
+  );
+});
+
+test("inside a category, its own categories leave out the site's menus and the page itself", () => {
+  const page = homePage(
+    [menuLink("/recipes/category/dinner/", "Dinner"), menuLink("/recipes/category/barbecue/", "Barbecue")],
+    `<h1>Barbecue</h1><a href="/recipes/category/barbecue/">Barbecue</a>` +
+      `<a href="/recipes/collection/bbq-chicken">Barbecue chicken</a><a href="/recipes/collection/bbq-sides">Barbecue sides</a>`
+  );
+  assert.deepEqual(
+    siteCategories(page, "https://www.site.example/recipes/category/barbecue/", { inPage: true }).map((category) => category.title),
+    ["Barbecue chicken", "Barbecue sides"]
+  );
+});
+
+test("inside a category, a menu outside the header, a sidebar and links after the header's menu are all left out", () => {
+  const page =
+    `<html><body><header><a href="/">Logo</a><nav><a href="/category/dinner/">Dinner</a></nav>` +
+    `<a href="/category/lunch/">Lunch</a><a href="/category/baking/">Baking</a></header>` +
+    `<nav><a href="/category/soups/">Soups</a><a href="/category/salads/">Salads</a></nav>` +
+    `<main><a href="/category/bbq-chicken/">Barbecue chicken</a><a href="/category/bbq-sides/">Barbecue sides</a></main>` +
+    `<aside><h3>Categories</h3><a href="/category/curries/">Curries</a><a href="/category/pies/">Pies</a></aside></body></html>`;
+  assert.deepEqual(
+    siteCategories(page, "https://www.site.example/category/barbecue/", { inPage: true }).map((category) => category.title),
+    ["Barbecue chicken", "Barbecue sides"]
+  );
+});
+
+test("a category's name: from its other link when the first has none, one entry per address, and two of the same name told apart", () => {
+  const categories = siteCategories(
+    homePage([
+      menuLink("/category/quick-dinners/", `<img src="/q.jpg" alt="">`),
+      menuLink("/category/vegetarian/", "Vegetarian"),
+      menuLink("/category/dinner/", "Dinner"),
+      menuLink("/recipes/collection/vegetarian-collections", "Vegetarian"),
+      menuLink("/category/mains/pork/", "Dinner"),
+      menuLink("/category/under-30-minutes/", "30"),
+      menuLink("/category/long-one/", "A whole card's sentence about this week's very best dinners, and more"),
+    ], `<a href="/category/quick-dinners/">Weeknight dinners</a><a href="/category/dinner/">Dinner recipes</a>`),
+    "https://www.site.example/"
+  );
+  assert.deepEqual(
+    categories.map((category) => category.title),
+    ["Weeknight dinners", "Vegetarian", "Dinner", "Vegetarian collections", "Mains › pork", "Under 30 minutes", "Long one", "Footer pick"]
+  );
+});
+
+test("two categories whose names and addresses both read the same show once", () => {
+  assert.deepEqual(
+    siteCategories(
+      homePage([menuLink("/recipes/category/dinner/", "Dinner"), menuLink("/recipes/collection/dinner", "Dinner"), menuLink("/category/lunch/", "Lunch")]),
+      "https://www.site.example/"
+    ).map((category) => category.title),
+    ["Dinner", "Lunch", "Footer pick"]
+  );
+});
+
+test("a stray \"<\" in the text doesn't hide the tag after it", () => {
+  const list = recipeLinks(`<html><body><main>1 < 2 ${card("pho", "Pho")}${card("laksa", "Laksa")}</main></body></html>`, "https://www.site.example/category/soups/");
+  assert.deepEqual(
+    list.recipes.map((recipe) => recipe.title),
+    ["Pho", "Laksa"]
+  );
+});
+
+test("a page with one category link or none has no categories to show", () => {
+  assert.deepEqual(siteCategories(homePage([]).replace(/<footer>[\s\S]*<\/footer>/, ""), "https://www.site.example/"), []);
+  assert.deepEqual(siteCategories(homePage([]), "https://www.site.example/"), []);
 });
 
 test("a recipe page with one related-recipe card isn't a list", () => {
@@ -340,14 +453,33 @@ test("a page built to be slow to read (runs of unclosed tags) is still quick", (
     "unclosed microdata labels": scope + '<div itemprop="x">'.repeat(n),
     "unclosed microdata ingredients": scope + '<div itemprop="recipeIngredient">1 egg '.repeat(n),
     "unclosed cards": "<article>".repeat(n),
+    "unclosed category links": '<a href="/category/x/">'.repeat(n),
+    "unclosed menus": "<nav><header>".repeat(n),
+    // One "é" makes PocketBase's engine keep the page in a slower form.
+    "thousands of closed menus": "é" + "<aside></aside>".repeat(n),
   };
+  // A page of thousands of links is in categories.check.mjs instead: a page
+  // built in JavaScript, as here, reads slowly in PocketBase's engine
+  // whatever the code does, unlike a page that arrives over the network.
+  const lists = ["unclosed cards", "unclosed category links", "unclosed menus", "thousands of closed menus"];
+  const url = "https://example.com/slow";
+  const reads = {
+    parseRecipe: (html) => parseRecipe(html, url),
+    recipeLinks: (html) => recipeLinks(html, url),
+    siteCategories: (html) => siteCategories(html, url),
+    "siteCategories inside": (html) => siteCategories(html, url, { inPage: true }),
+  };
+  const slow = [];
   for (const [shape, html] of Object.entries(pages)) {
-    const started = Date.now();
-    parseRecipe(html, "https://example.com/slow");
-    if (shape === "unclosed cards") recipeLinks(html, "https://example.com/slow");
-    const ms = Date.now() - started;
-    assert.ok(ms < 1500, `${shape}: ${ms} ms`);
+    for (const [read, run] of Object.entries(reads)) {
+      if (read !== "parseRecipe" && !lists.includes(shape)) continue;
+      const started = Date.now();
+      run(html);
+      const ms = Date.now() - started;
+      if (ms >= 1500) slow.push(`${shape}, ${read}: ${ms} ms`);
+    }
   }
+  assert.deepEqual(slow, []);
 });
 
 test("reads the older data-vocabulary.org recipe labels", () => {

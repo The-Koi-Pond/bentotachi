@@ -48,6 +48,18 @@ test("cleans up typed site addresses", async () => {
   assert.equal(savedSiteSearchUrl("https://www.example.com/", " beef pie "), "https://www.google.com/search?q=site%3Aexample.com%20beef%20pie");
 });
 
+test("a site's categories page carries its name and link intact, and only a category's says inside", async () => {
+  const { categoriesPath } = await import("../src/recipeSites.ts");
+  const site = categoriesPath({ name: "Fish & chips?", url: "https://example.com/?a=1&b=2" });
+  const query = new URLSearchParams(site.split("?").slice(1).join("?"));
+  assert.ok(site.startsWith("/browse/categories?"));
+  assert.equal(query.get("name"), "Fish & chips?");
+  assert.equal(query.get("url"), "https://example.com/?a=1&b=2");
+  assert.equal(query.get("inside"), null);
+  const inside = categoriesPath({ name: "Soups", url: "https://example.com/category/soups/", inside: true });
+  assert.equal(new URLSearchParams(inside.split("?")[1]).get("inside"), "1");
+});
+
 test("finds the link in shared text", async () => {
   const { sharedLink } = await import("../src/recipeSites.ts");
   assert.equal(sharedLink("https://www.recipetineats.com/lasagne/"), "https://www.recipetineats.com/lasagne/");
