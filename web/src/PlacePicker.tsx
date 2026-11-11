@@ -80,6 +80,29 @@ export default function PlacePicker({
     setEditing(true);
   }
 
+  // A tap on the message at the bottom (a rename's or delete's Undo) is
+  // outside this menu, so the browser closes it: open it again, still
+  // editing, as stillEditing does after a question.
+  const tappedToast = useRef(false);
+  useEffect(() => {
+    if (!editing) return;
+    const note = (event: PointerEvent) => {
+      tappedToast.current = event.target instanceof Element && !!event.target.closest(".notice-toast");
+    };
+    // A touch that turns into a scroll closes nothing: forget it, or a
+    // later Escape or Back would open the menu again instead of closing it.
+    const forget = () => {
+      tappedToast.current = false;
+    };
+    document.addEventListener("pointerdown", note, true);
+    document.addEventListener("pointercancel", forget, true);
+    return () => {
+      document.removeEventListener("pointerdown", note, true);
+      document.removeEventListener("pointercancel", forget, true);
+      forget();
+    };
+  }, [editing]);
+
   // "Other" is items with no place: nothing to rename or delete.
   const editable = places.filter((p) => p.key !== "");
 
@@ -149,6 +172,11 @@ export default function PlacePicker({
           className="place-menu"
           popover="auto"
           onToggle={(event) => {
+            if (event.newState === "closed" && tappedToast.current) {
+              tappedToast.current = false;
+              menu.current?.showPopover();
+              return;
+            }
             setOpen(event.newState === "open");
             if (event.newState === "closed") setEditing(false);
           }}

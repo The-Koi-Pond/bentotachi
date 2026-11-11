@@ -41,9 +41,12 @@
   background: var(--surface);
 }
 
+/* Plum, like the app's other actions. This file loads after base.css, so
+   this beats its grey small icon button, which used to win. */
 .scale-control .icon-button {
   font-size: 1.25rem;
   line-height: 1;
+  color: var(--accent);
 }
 
 .scale-control .icon-button:disabled {

@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { RECIPE_SITES, categoriesPath, hasCategories, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
 import { hasBuiltInBrowser } from "../bentoBrowser";
@@ -136,14 +136,16 @@ export default function Browse() {
         {ourSites.length > 0 && (
           <ul className="site-list">
             {ourSites.map((site) => (
-              <li key={site.id} className="site-split site-saved">
-                <SiteLink href={site.url} onOpen={openInBento}>
-                  <span className="site-text">
-                    <span className="site-name">{site.name}</span>
-                    {site.name !== siteHost(site.url) && <span className="muted site-about">{siteHost(site.url)}</span>}
-                  </span>
-                </SiteLink>
-                <CategoriesButton name={site.name} url={site.url} />
+              <li key={site.id} className="site-saved">
+                <div className="site-with-categories">
+                  <SiteLink href={site.url} onOpen={openInBento}>
+                    <span className="site-text">
+                      <span className="site-name">{breakAtDots(site.name)}</span>
+                      {site.name !== siteHost(site.url) && <span className="muted site-about">{breakAtDots(siteHost(site.url))}</span>}
+                    </span>
+                  </SiteLink>
+                  <CategoriesButton name={site.name} url={site.url} />
+                </div>
                 <button
                   className="icon-button small site-remove"
                   onClick={() => removeSite(site)}
@@ -163,7 +165,7 @@ export default function Browse() {
         <h2>Recipe sites</h2>
         <ul className="site-list">
           {RECIPE_SITES.map((site) => (
-            <li key={site.name} className="site-split">
+            <li key={site.name} className={hasCategories(site) ? "site-with-categories" : undefined}>
               <SiteLink href={site.home} onOpen={openInBento}>
                 <span className="site-text">
                   <span className="site-name">{site.name}</span>
@@ -262,6 +264,23 @@ function AddSiteForm({ onAdded, onClose }: { onAdded: (site: SavedSite) => void;
       </div>
     </form>
   );
+}
+
+// An address that has to wrap ("sallysbakingaddiction.com") breaks after a
+// dot first, rather than anywhere (browse.css's overflow-wrap still breaks
+// a part too long for the row).
+function breakAtDots(text: string): ReactNode {
+  const parts = text.split(".");
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && (
+        <>
+          .<wbr />
+        </>
+      )}
+    </Fragment>
+  ));
 }
 
 // Beside a site: its categories as a plain list in Bentotachi

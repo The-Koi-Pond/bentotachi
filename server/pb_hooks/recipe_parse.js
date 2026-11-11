@@ -1114,7 +1114,8 @@ function itemListEntries(node, depth, out) {
 // next: the next page's link or "" }, or null when it lists fewer than two.
 // Cards are the page's <article>s (WordPress and most recipe sites), else
 // its JSON-LD ItemList. Only links on the page's own site count.
-function recipeLinks(html, pageUrl) {
+// `options.closes`: closingTags(html), when the caller has it already.
+function recipeLinks(html, pageUrl, options) {
   var site = siteOf(pageUrl);
   // A comment's "Reply" is the page again plus ?replytocom=, so that's
   // left out when comparing with the page. The rest of the query stays:
@@ -1144,7 +1145,7 @@ function recipeLinks(html, pageUrl) {
 
   var re = /<article\b/gi;
   var m;
-  var closes = closingTags(html);
+  var closes = (options && options.closes) || closingTags(html);
   var cards = 0;
   while ((m = re.exec(html)) !== null && cards++ < 2000) {
     var card = elementAt(html, m.index, closes);
@@ -1238,9 +1239,8 @@ var MENU_PARTS = /<(nav|header|footer|aside)\b/gi;
 // the page as it arrived, seconds for a category page with a few thousand
 // links. Real pages have a few dozen menu parts; past MAX_MENU_PARTS the
 // rest count as page, so a page built of them can't take minutes.
-function menuSpans(html) {
+function menuSpans(html, closes) {
   var MAX_MENU_PARTS = 300;
-  var closes = closingTags(html);
   var spans = [];
   var m;
   MENU_PARTS.lastIndex = 0;
@@ -1275,7 +1275,7 @@ function categoryPathTitle(url) {
 // than two. Read from the site's home page, its menu included; `inPage`
 // leaves the menus out (menuSpans), for the categories inside a category
 // (BBC Good Food's "Barbecue" holds "Barbecue chicken", "Barbecue sides"…).
-// Only links on the page's own site count.
+// Only links on the page's own site count. `options.closes`: as recipeLinks.
 function siteCategories(html, pageUrl, options) {
   var inPage = !!(options && options.inPage);
   var site = siteOf(pageUrl);
@@ -1283,7 +1283,7 @@ function siteCategories(html, pageUrl, options) {
   var found = [];
   var byKey = {};
   var names = {};
-  var menus = inPage ? menuSpans(html) : [];
+  var menus = inPage ? menuSpans(html, (options && options.closes) || closingTags(html)) : [];
   var menu = 0;
   eachClosed(html, /<a\b[^<>]*>/gi, "a", function (link) {
     if (found.length >= 300) return true;
@@ -1325,6 +1325,7 @@ module.exports = {
   BROWSER_USER_AGENT: BROWSER_USER_AGENT,
   recipeLinks: recipeLinks,
   siteCategories: siteCategories,
+  closingTags: closingTags,
   LIMITS: LIMITS,
   fitRecipe: fitRecipe,
   linkKey: linkKey,

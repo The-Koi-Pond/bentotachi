@@ -244,6 +244,8 @@ they say otherwise.
   cards, trays, sheets, chips, help), `shell` (top bar, menu, tab bar,
   timer tray, toasts), then `fridge`, `browse`, `shopping`, `plan`,
   `pantry`, `recipe-list`, `recipe`, `dates`, `settings`, `print`.
+- Words only screen readers hear (a label beside a number that's
+  announced on its own): `.screen-reader-only` (`base.css`).
 - A screen's styles go in its own file. A new piece two screens use goes
   in `base.css`, not a copy in each. Some older shared pieces still live
   in the file of the screen they began on, among them: tag chips

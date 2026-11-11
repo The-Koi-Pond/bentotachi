@@ -19,8 +19,18 @@ test("a pantry item on the list under another wording is found, so it isn't adde
     ["Eggs", "Easter eggs"],
   ])
     assert.equal(onTheListAs({ id: "x", name }, [{ text, pantry_item: "" }]), null, text);
-  assert.equal(onTheListAs({ id: "e", name: "Eggs" }, [{ text: "a dozen large eggs", pantry_item: "" }]), null, "a dozen isn't an amount word: unsure, so no");
   assert.equal(onTheListAs({ id: "e", name: "Eggs" }, [{ text: "6 large eggs", pantry_item: "" }])?.text, "6 large eggs");
+  // Containers and counts are amounts too.
+  for (const [name, text] of [
+    ["Eggs", "a dozen large eggs"],
+    ["Ice cream", "1 tub ice cream"],
+    ["Strawberries", "2 punnets strawberries"],
+    ["Coriander", "1 bunch coriander"],
+    ["Spring onions", "2 bunches spring onions"],
+    ["Cream", "1 carton cream"],
+    ["Yeast", "2 sachets yeast"],
+  ])
+    assert.equal(onTheListAs({ id: "x", name }, [{ text, pantry_item: "" }])?.text, text, text);
   // Plain describing words, and an amount after it, leave it the thing.
   for (const text of ["1 cup whole milk", "250 ml skim milk", "2 L full cream milk", "Milk 2L", "Light milk", "1 cup warm milk", "1 and 1/2 cups milk", "1 & ½ cups milk"])
     assert.equal(onTheListAs(milk, [{ text, pantry_item: "" }])?.text, text, text);

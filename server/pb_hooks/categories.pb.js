@@ -18,8 +18,11 @@ routerAdd("POST", "/api/cookbook/categories", (e) => {
   const inside = body.inside === true;
   const html = webPage.readPage(url, body.html, "open the site and use its own menu instead.");
 
-  const categories = parser.siteCategories(html, url, { inPage: inside });
-  let list = inside ? parser.recipeLinks(html, url) : null;
+  // Inside a category both readers need the page's tag structure: worked
+  // out once, since on a huge page it's the bulk of the memory.
+  const closes = inside ? parser.closingTags(html) : null;
+  const categories = parser.siteCategories(html, url, { inPage: inside, closes });
+  let list = inside ? parser.recipeLinks(html, url, { closes }) : null;
   // A page of categories with a few stray cards (BBC Good Food's "Barbecue":
   // a sauce, a magazine offer and a podcast) isn't a list of recipes.
   if (list && categories.length && list.recipes.length < 4) list = null;

@@ -83,7 +83,7 @@ import RecipeTimer from "../RecipeTimer";
 import UsedUpSheet from "../UsedUpSheet";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
-import { scaleLine } from "../scaling";
+import { scaleLine, servingsWording } from "../scaling";
 import { saveScale, savedScale } from "../recipeScale";
 import { runsForStep, stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
@@ -555,8 +555,8 @@ export default function RecipeView() {
               <dl className="facts">
                 {recipe.servings && (
                   <div>
-                    <dt>Makes</dt>
-                    <dd>{scaledServings(recipe.servings, scale)}</dd>
+                    <dt>{servingsWording(scaledServings(recipe.servings, scale)).label}</dt>
+                    <dd>{servingsWording(scaledServings(recipe.servings, scale)).amount}</dd>
                   </div>
                 )}
                 {times.map(([label, minutes], index) => (

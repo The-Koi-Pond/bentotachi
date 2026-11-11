@@ -216,7 +216,27 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-(nothing yet)
+- From a tester's look at Categories (2026-11-12): a category's name
+  shows once (the tick list's own heading went) and stays pinned at the
+  top while its recipes scroll; on Browse, a site with Categories is one
+  whole row again (all of it opens the site, every row's › lines up at the
+  end) with the button inside it, just before the ›.
+- Servings read as one line: "6 people" is "Serves 6" (not "Makes 6
+  people"), "Serves 4-6" no longer reads "Makes Serves 4-6", and "12
+  cookies" stays "Makes 12 cookies" (servingsWording, scaling.ts). The
+  edit forms' box is "Servings".
+- The recipe page's − and + for servings are plum, like the other actions
+  (they were meant to be, but base.css's grey won).
+- Containers and counts are amounts on the shopping list: running out of
+  Ice cream with "1 tub ice cream" already on it uses that row instead of
+  adding a second (also punnet, bunch, dozen, carton, sachet; "a dozen
+  large eggs" is eggs now), and a new pantry item from "1 tub ice cream"
+  is named "Ice cream".
+- Undo after renaming or deleting a place keeps "Edit places" open (the
+  tap on the Undo bar closed it).
+- A link to a page that's gone (error 404 or 410) says "That page isn't
+  there any more. Check the link." instead of calling it the site
+  refusing Bentotachi (importing, and Categories).
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -1014,7 +1034,10 @@ safe to send twice (their own ids), and a check that a housemate's change
 meanwhile isn't overwritten. The pantry is the one most wanted in a shop
 (counting what's bought).
 
-## To decide: photos offline, opt-in (Xel, 2026-11-11)
+## Next: photos offline, opt-in (Xel, 2026-11-11)
+
+Decided (Xel, 2026-11-11): build it, with cover and step photos, filling
+over any connection (not Wi-Fi only).
 
 Xel asked whether photos could be kept on the phone too, as something
 people turn on if they have the room. Measured on the Pi (2026-11-11):
@@ -1029,8 +1052,7 @@ N MB)", with the size worked out from the household's photos; the app
 then saves the 600-wide copies (and pantry squares) in the browser's
 own cache (Cache Storage, which has far more room than the text
 copies' storage) and shows them from there when offline; switching it
-off empties that cache. Not decided yet: whether step photos come too,
-and whether it fills over Wi-Fi only.
+off empties that cache.
 
 ## Ideas for later
 

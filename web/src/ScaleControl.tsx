@@ -3,7 +3,7 @@
 // quarter of the recipe for big batches, "24 cookies" goes up by 6);
 // others step through ×½, ×1, ×1½, ×2, ×3, ×4.
 
-import { kitchenFraction, servingsCount, servingsText } from "./scaling";
+import { kitchenFraction, servingsCount, servingsText, servingsWording } from "./scaling";
 
 const FACTORS = [0.5, 1, 1.5, 2, 3, 4];
 
@@ -38,12 +38,13 @@ export default function ScaleControl({
     more = at < FACTORS.length - 1 ? FACTORS[at + 1] : null;
   }
 
-  // A small card (a slider can come later if people ask): "Makes" with the stepper beside it, then once changed one line
-  // saying what it was scaled from, with Reset.
+  // A small card (a slider can come later if people ask): "Serves" or "Makes" (servingsWording) with the stepper
+  // beside it, then once changed one line saying what it was scaled from, with Reset.
+  const shown = servingsWording(scaledServings(servings, factor));
   return (
     <div className="scale-row">
       <div className="scale-top">
-        <span className="scale-label">{base ? "Makes" : "Batch"}</span>
+        <span className="scale-label">{base ? shown.label : "Batch"}</span>
         <div className="scale-control" role="group" aria-label="Recipe size">
           <button
             className="icon-button small"
@@ -54,7 +55,10 @@ export default function ScaleControl({
             −
           </button>
           <span className="scale-value" aria-live="polite">
-            {base ? scaledServings(servings, factor) : `×${kitchenFraction(factor)}`}
+            {/* The label is beside the stepper; said with the number, so a
+                change is heard as "Serves 5", not "5". */}
+            {base && <span className="screen-reader-only">{shown.label} </span>}
+            {base ? shown.amount : `×${kitchenFraction(factor)}`}
           </span>
           <button
             className="icon-button small"

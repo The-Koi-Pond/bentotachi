@@ -93,4 +93,13 @@ check("a page without categories says to use the site's own menu", none.status =
 const local = await call(token, "POST", "/cookbook/categories", { url: `http://127.0.0.1:${PORT}/` });
 check("never reads a page on the home network", local.status === 400 && /own network/.test(local.data?.message ?? ""), `(${local.status} ${local.data?.message})`);
 
+// The page reading both routes share (web_page.js): a site that can't be
+// reached (".invalid" never exists), and a page over 5 MB.
+for (const route of ["/cookbook/categories", "/cookbook/import"]) {
+  const gone = await call(token, "POST", route, { url: "https://nowhere.invalid/" });
+  check(`${route}: an unreachable site says so`, gone.status === 400 && /Couldn't reach that website/.test(gone.data?.message ?? ""), `(${gone.status} ${gone.data?.message})`);
+  const big = await call(token, "POST", route, { url: `${site}/big-page/`, html: "x".repeat(5 * 1024 * 1024 + 1) });
+  check(`${route}: a page over 5 MB is too big`, big.status === 400 && /too big/.test(big.data?.message ?? ""), `(${big.status} ${big.data?.message})`);
+}
+
 if (pho?.id) await call(admin, "DELETE", `/collections/recipes/records/${pho.id}`);

@@ -8,7 +8,8 @@ import { hasBuiltInBrowser } from "./bentoBrowser";
 // A page listing recipes (a site's category), to tick the ones wanted and
 // add them all: each is imported like a pasted link, one after another so
 // the site isn't flooded. Recipes already here can't be ticked.
-export default function RecipePicker({ list: first }: { list: RecipeList }) {
+// `showTitle`: the page's name above it, unless the page says it already.
+export default function RecipePicker({ list: first, showTitle = true }: { list: RecipeList; showTitle?: boolean }) {
   const [list, setList] = useState(first);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   // Added in this visit, so they show as here without asking the server.
@@ -105,7 +106,7 @@ export default function RecipePicker({ list: first }: { list: RecipeList }) {
   return (
     <section className="card stack recipe-picker">
       <div>
-        <h2>{list.title || "Recipes on this page"}</h2>
+        {showTitle && <h2>{list.title || "Recipes on this page"}</h2>}
         <p className="muted">{list.recipes.length} recipes found. Tick the ones you want.</p>
       </div>
       {pickable.length > 0 && (

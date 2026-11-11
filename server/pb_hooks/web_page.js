@@ -27,6 +27,10 @@ function readPage(url, html, whenRefused) {
   } catch (err) {
     throw new BadRequestError("Couldn't reach that website. Check the link and the internet connection.");
   }
+  // A page that's gone isn't the site turning Bentotachi away.
+  if (page.statusCode === 404 || page.statusCode === 410) {
+    throw new BadRequestError(`That page isn't there any more (error ${page.statusCode}). Check the link.`);
+  }
   if (page.statusCode >= 400) {
     throw new BadRequestError(
       `That website refused the request (error ${page.statusCode}). Some sites block apps like this one; ${whenRefused}`

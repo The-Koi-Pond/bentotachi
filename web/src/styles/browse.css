@@ -49,10 +49,15 @@
   outline-offset: -3px;
 }
 
+/* Free to shrink, a long address ("sallysbakingaddiction.com") breaking
+   mid-word: otherwise it pushes past the row, under Categories and over
+   the ✕ beside it, taking its taps. */
 .site-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .site-name {
@@ -76,21 +81,53 @@
 }
 
 
-/* A site with buttons beside its link: Categories, and for our own sites a
-   ✕ to remove it. */
-.site-split {
+/* Our own sites: the link, then a ✕ to remove it. */
+.site-saved {
   display: flex;
   align-items: center;
 }
 
-.site-split .site-row {
+.site-saved > :first-child {
   flex: 1;
   min-width: 0;
 }
 
+/* A site with Categories: the whole row is still the site's link (all of it
+   tints, its › at the end like every row's), with the button over its
+   right side, just before the ›. The text keeps clear of the button; in
+   em, so it grows with the text size. */
+.site-with-categories {
+  position: relative;
+}
+
+.site-with-categories .site-text {
+  padding-right: 7.5em;
+}
+
 .site-categories {
-  flex: none;
-  margin-right: 8px;
+  position: absolute;
+  top: 50%;
+  right: 32px;
+  transform: translateY(-50%);
+}
+
+/* A category's name (SiteCategories.tsx), stuck at the top while its
+   recipes scroll under it, so it's clear which one you're in. Like the
+   recipe page's jump bar: edge to edge on the page's own background. */
+.category-title {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: -4px -10px;
+  padding: 4px 10px;
+  background: var(--bg);
+}
+
+/* Lined up with every other page's title: base.css's `main h1:not(.card
+   h1)` sets its own inset and would take this padding's left side, so the
+   same shape plus the class, to win. */
+main h1.category-title:not(.card h1) {
+  padding-inline-start: calc(10px + var(--tray-inset));
 }
 
 .site-saved .site-remove {

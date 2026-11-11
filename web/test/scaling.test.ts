@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { kitchenFraction, scaleLine, servingsCount, servingsText } from "../src/scaling.ts";
+import { kitchenFraction, scaleLine, servingsCount, servingsText, servingsWording } from "../src/scaling.ts";
 
 test("the amount a line starts with is scaled", () => {
   assert.equal(scaleLine("2 cups flour", 1.5), "3 cups flour");
@@ -145,4 +145,35 @@ test("how many a recipe makes", () => {
   assert.equal(servingsText("Serves 4-6", 8), "Serves 8");
   assert.equal(servingsText("12 cookies", 24), "24 cookies");
   assert.equal(servingsText("4 servings", 6), "6 servings");
+});
+
+test("servings read as one line: Serves for people, Makes for things", () => {
+  const read = (text: string) => {
+    const { label, amount } = servingsWording(text);
+    return `${label} ${amount}`;
+  };
+  assert.equal(read("6 people"), "Serves 6");
+  assert.equal(read("4-6 People."), "Serves 4-6");
+  assert.equal(read("2 adults"), "Serves 2");
+  assert.equal(read("Serves 4-6"), "Serves 4-6");
+  assert.equal(read("Serves 4 people"), "Serves 4");
+  assert.equal(read("Servings: 4"), "Serves 4");
+  assert.equal(read("4"), "Serves 4");
+  assert.equal(read("1 ½"), "Serves 1 ½");
+  assert.equal(read("12 cookies"), "Makes 12 cookies");
+  assert.equal(read("4 servings"), "Makes 4 servings");
+  assert.equal(read("Makes 1 loaf"), "Makes 1 loaf");
+  assert.equal(read("Yield: 24 muffins"), "Makes 24 muffins");
+  assert.equal(read("One loaf"), "Makes One loaf");
+  assert.equal(read("6 people (with leftovers)"), "Serves 6 (with leftovers)");
+  assert.equal(read("2 people, with leftovers"), "Serves 2, with leftovers");
+  assert.equal(read("4 hungry people"), "Serves 4 hungry people");
+  assert.equal(read("6 serves"), "Serves 6");
+  assert.equal(read("Feeds 4"), "Serves 4");
+  assert.equal(read("Servings: 4 people"), "Serves 4");
+  assert.equal(read("12 people-shaped cookies"), "Makes 12 people-shaped cookies");
+  assert.equal(read("Serves 4 adults or 6 children"), "Serves 4 adults or 6 children");
+  assert.equal(read("4 adults and 2 kids"), "Serves 4 adults and 2 kids");
+  // Scaled first, then worded.
+  assert.equal(read(servingsText("6 people", 3)), "Serves 3");
 });

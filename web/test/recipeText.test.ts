@@ -37,6 +37,12 @@ test("a recipe as text to share", () => {
   );
 });
 
+test("shared servings read as one line, like on the recipe", () => {
+  assert.match(recipeAsText({ ...soup, servings: "6 people" }), /^Serves 6 · /m);
+  assert.match(recipeAsText({ ...soup, servings: "Serves 4" }), /^Serves 4 · /m);
+  assert.match(recipeAsText({ ...soup, servings: "6 people" }, 0.5), /^Serves 3 · /m);
+});
+
 test("shared at the size it's scaled to", () => {
   const text = recipeAsText(soup, 1.5);
   assert.match(text, /Makes 6 servings/);

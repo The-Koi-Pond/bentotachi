@@ -156,6 +156,8 @@ test("a group's level: Have if any kind is had, else Low if any is low, else Out
 test("suggests a name for a new pantry item", () => {
   assert.equal(suggestedName("2 large onions, diced"), "Onions");
   assert.equal(suggestedName("1 tin chickpeas"), "Chickpeas");
+  assert.equal(suggestedName("1 tub ice cream"), "Ice cream");
+  assert.equal(suggestedName("1 bunch coriander, leaves picked"), "Coriander");
   assert.equal(suggestedName("½ yellow onion ((4 oz, 113 g; peeled))"), "Yellow onion");
   assert.equal(suggestedName("2 cloves garlic"), "Garlic");
   assert.equal(suggestedName("1 tbsp sake"), "Sake");

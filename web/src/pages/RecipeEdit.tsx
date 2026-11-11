@@ -258,8 +258,8 @@ export default function RecipeEdit() {
 
       <div className="row">
         <label>
-          Makes
-          <input placeholder="4 servings" {...field("servings")} />
+          Servings
+          <input placeholder="4 people" {...field("servings")} />
         </label>
         <label>
           Prep (min)

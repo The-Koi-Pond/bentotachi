@@ -98,7 +98,7 @@ function CategoriesLevel({ url, inside }: { url: string; inside: boolean }) {
 
   return (
     <div className="stack narrow">
-      <h1>{name}</h1>
+      <h1 className={inside ? "category-title" : undefined}>{name}</h1>
       {status}
       {!found && !error && (
         <p className="muted" role="status">
@@ -158,7 +158,8 @@ function CategoriesLevel({ url, inside }: { url: string; inside: boolean }) {
         </section>
       )}
 
-      {found?.list && <RecipePicker key={url} list={found.list} />}
+      {/* The page's own title names it already. */}
+      {found?.list && <RecipePicker key={url} list={found.list} showTitle={false} />}
     </div>
   );
 }

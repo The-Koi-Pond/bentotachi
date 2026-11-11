@@ -154,8 +154,8 @@ export function DetailsEditor({
       </label>
       <div className="row">
         <label>
-          Makes
-          <input placeholder="4 servings" value={servings} onChange={(e) => setServings(e.target.value)} />
+          Servings
+          <input placeholder="4 people" value={servings} onChange={(e) => setServings(e.target.value)} />
         </label>
         <label>
           Prep (min)

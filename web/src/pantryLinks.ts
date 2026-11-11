@@ -275,7 +275,7 @@ export function pantryCheck(
 }
 
 const AMOUNT_WORDS =
-  /^(\d+([./]\d+)?|[½¼¾⅓⅔⅛]|\d+[½¼¾⅓⅔⅛]|a|an|about|cups?|tbsps?|tablespoons?|tsps?|teaspoons?|g|grams?|kg|ml|l|litres?|liters?|oz|ounces?|lbs?|pounds?|tins?|cans?|packets?|pinch(es)?|handfuls?|cloves?|large|small|medium|of|-|–)$/i;
+  /^(\d+([./]\d+)?|[½¼¾⅓⅔⅛]|\d+[½¼¾⅓⅔⅛]|a|an|about|cups?|tbsps?|tablespoons?|tsps?|teaspoons?|g|grams?|kg|ml|l|litres?|liters?|oz|ounces?|lbs?|pounds?|tins?|cans?|packets?|tubs?|punnets?|bunch(es)?|dozen|cartons?|sachets?|pinch(es)?|handfuls?|cloves?|large|small|medium|of|-|–)$/i;
 
 // Words that leave a thing what it is on a shopping list ("1 cup whole
 // milk", "2 L full cream milk", "basmati rice"), besides amounts. Products

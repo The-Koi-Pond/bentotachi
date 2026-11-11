@@ -254,3 +254,27 @@ export function servingsCount(servings: string): number | null {
 export function servingsText(servings: string, count: number): string {
   return servings.replace(new RegExp(String.raw`(?<![\d.])${RANGE}`), kitchenFraction(count));
 }
+
+// The servings text as a label and what follows it, so it reads as one
+// line: "6 people" -> Serves 6, "Serves 4-6" -> Serves 4-6, "4" -> Serves 4,
+// "6 serves" -> Serves 6, "4 hungry people" -> Serves 4 hungry people,
+// "12 cookies" -> Makes 12 cookies, "Makes 1 loaf" -> Makes 1 loaf. (Sites
+// write it every way, and "Makes 6 people" made people laugh.)
+export function servingsWording(servings: string): { label: "Serves" | "Makes"; amount: string } {
+  const text = servings.trim();
+  const said = text.match(/^(serves|servings|serving(?=\s*:)|feeds|makes|yields?)\b\s*:?\s*/i);
+  const rest = said ? text.slice(said[0].length) : text;
+  if (said && /^make|^yield/i.test(said[1])) return { label: "Makes", amount: rest };
+  // A count of people, maybe with a describing word, maybe a note after.
+  const people = rest.match(/^([\d½¼¾⅓⅔⅛][\d\s½¼¾⅓⅔⅛./–-]*?)\s+(\p{L}+\s+)?(people|persons?|adults|guests|pax|serves)(?![\p{L}-])\.?(.*)$/iu);
+  if (people) {
+    const [, count, describing, word, after] = people;
+    // The word goes only when nothing carries on after it but a note ("4
+    // adults or 6 children" keeps its "adults").
+    if (!/^\s*([(,;.]|$)/.test(after)) return { label: "Serves", amount: rest };
+    const amount = describing && !/^serves$/i.test(word) ? `${count} ${describing}${word}` : count;
+    return { label: "Serves", amount: `${amount}${after}`.trim() };
+  }
+  if (said || /^[\d\s½¼¾⅓⅔⅛./–-]+$/.test(rest)) return { label: "Serves", amount: rest };
+  return { label: "Makes", amount: rest };
+}

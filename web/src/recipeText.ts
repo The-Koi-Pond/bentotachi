@@ -5,7 +5,7 @@
 
 import { continuesNumbering, extraTimes, formatMinutes, headingOf, totalMinutes } from "./format.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
-import { scaleLine, servingsCount, servingsText } from "./scaling.ts";
+import { scaleLine, servingsCount, servingsText, servingsWording } from "./scaling.ts";
 
 interface Shareable {
   title: string;
@@ -26,7 +26,8 @@ export function recipeAsText(recipe: Shareable, scale = 1): string {
   const servings = (recipe.servings ?? "").trim();
   if (servings) {
     const base = servingsCount(servings);
-    facts.push(`Makes ${base && scale !== 1 ? servingsText(servings, base * scale) : servings}`);
+    const { label, amount } = servingsWording(base && scale !== 1 ? servingsText(servings, base * scale) : servings);
+    facts.push(`${label} ${amount}`);
   }
   const times: [string, number][] = [
     ["Prep", recipe.prep_minutes],
