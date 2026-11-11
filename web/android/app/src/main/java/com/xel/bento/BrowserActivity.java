@@ -1,5 +1,6 @@
 package com.xel.bento;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -237,6 +238,9 @@ public class BrowserActivity extends AppCompatActivity {
         setContentView(root);
     }
 
+    // On purpose: recipe sites need JavaScript to show their recipes, and
+    // this browser exposes nothing of Bento's to the pages it shows.
+    @SuppressLint("SetJavaScriptEnabled")
     private void setUpWebView() {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);

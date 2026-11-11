@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 import { run } from "./buildTools.mjs";
+import { lintAndroid } from "./android-lint.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
@@ -71,6 +72,7 @@ console.log(`Building Bentotachi ${versionName} (version ${versionCode})`);
 //    put the old version number back so the next try reuses this one.
 try {
   run("npm run android", web);
+  lintAndroid();
   if (!signed) console.warn("\n--test-key: signing with Android Studio's test key.");
   run(`"${join(android, "gradlew.bat")}" ${signed ? "assembleRelease" : "assembleDebug"} --console=plain`, android);
 } catch (err) {

@@ -50,4 +50,6 @@ paths:
   (`%LOCALAPPDATA%\Bentotachi emulator\copy`; don't work in it) and opens it
   in the "Bentotachi" emulator (a virtual Pixel 7 Pro). `size big|small|tiny`
   and `text big|normal` change its screen and text size while it runs.
+- Android Lint: `npm run lint:android` (in `web`); release and play run it
+  too, and a new warning stops them (releases.md says what to do).
 - Releases and the Google Play version: `.claude/rules/releases.md`.

@@ -30,6 +30,7 @@ import { refuseUncommittedCode } from "./committed.mjs";
 import { runTests } from "./tests.mjs";
 import { uploadBundle } from "./playUpload.mjs";
 import { run } from "./buildTools.mjs";
+import { lintAndroid } from "./android-lint.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const android = join(web, "android");
@@ -61,6 +62,7 @@ refuseUncommittedCode("built", { app: true });
 await runTests();
 
 run("npm run android", web, { VITE_BENTO_PLAY: "1" });
+lintAndroid();
 run(`"${join(android, "gradlew.bat")}" bundleRelease -PbentoPlay --console=plain`, android);
 
 // Check the permission Play refuses really is gone from what was built.

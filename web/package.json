@@ -8,6 +8,7 @@
     "sandbox": "node scripts/sandbox.mjs",
     "knip": "knip",
     "lint": "oxlint src",
+    "lint:android": "node scripts/android-lint.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "test": "node scripts/run-tests.mjs",

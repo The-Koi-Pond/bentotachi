@@ -82,6 +82,18 @@ android {
         }
     }
     buildFeatures { buildConfig = true }
+    // Android Lint (`npm run lint:android`; release and play run it before
+    // building): a new warning fails it. The warnings there were when it was
+    // added, mostly Capacitor's starter files, are accepted in
+    // lint-baseline.xml; fixing one there is welcome, adding one isn't.
+    lint {
+        baseline = file("lint-baseline.xml")
+        warningsAsErrors = true
+        abortOnError = true
+        // Newer versions of Gradle and libraries: news, not mistakes, and it
+        // changes whenever one comes out. Bento is in English only.
+        disable += ["GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable", "SetTextI18n"]
+    }
 }
 
 // Copies server/pb_hooks and server/pb_migrations into the app on every

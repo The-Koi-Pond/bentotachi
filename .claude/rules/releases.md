@@ -58,7 +58,13 @@ paths:
   uncommitted changes, like deploy (see CLAUDE.md, "Sending it out");
   release and play also while `web/android` or `mobile/` has, as both go
   into the app. Release runs the phone server's Go tests before rebuilding
-  it (server-lib.mjs).
+  it (server-lib.mjs). Release and play run Android Lint before building
+  (`npm run lint:android` alone, web/scripts/android-lint.mjs): a new
+  warning stops them, with the report's path; the old ones are accepted in
+  `web/android/app/lint-baseline.xml`. Fix the warning, or for one that's
+  wrong about Bentotachi, say why where it is (`tools:ignore`,
+  `@SuppressLint`, as ic_stat_timer.xml and BrowserActivity do). Never
+  re-make the baseline to get a release through.
 - The friends' zip (`npm run package`) uses
   web/scripts/package-files/Start Bentotachi.bat; `server/Start Bentotachi
   here.bat` is the PC's fallback (asks for YES).
