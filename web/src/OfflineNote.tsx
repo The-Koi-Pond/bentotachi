@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { connection } from "./connection";
 import { showError } from "./toast";
+import { usePhotoStatus } from "./photoCache";
 
 async function tryAgain() {
   await connection.checkNow();
@@ -25,11 +26,16 @@ export default function OfflineNote({
   heading?: string;
   onRetry?: () => void;
 }) {
+  // With photos kept on the phone (photoCache.ts), the copy has them too.
+  const { on: photosKept } = usePhotoStatus();
   return (
     <p className="offline-note" role="status">
       <span>
         {heading ? <strong className="offline-heading">{heading}</strong> : <strong>Offline.</strong>}{" "}
-        {children ?? "Showing the recipes saved on this phone, without photos. Changes need a connection."}
+        {children ??
+          (photosKept
+            ? "Showing the recipes saved on this phone. Changes need a connection."
+            : "Showing the recipes saved on this phone, without photos. Changes need a connection.")}
       </span>
       <button className="button small" onClick={onRetry ?? tryAgain}>
         Try again

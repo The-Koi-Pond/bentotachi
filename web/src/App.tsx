@@ -22,6 +22,7 @@ import Toaster from "./Toaster";
 import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
 import ConnectionStatus from "./ConnectionStatus";
+import { PhotoKeeper } from "./KeptPhotos";
 import { BookPlusIcon } from "./icons";
 import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
@@ -84,6 +85,7 @@ function Screens() {
     <>
       <ShareReceiver />
       <RestoredSaveReceiver />
+      <PhotoKeeper />
       <UnsavedChangesGuard />
       {/* The top bar, then the scrolling part, all above the tab bar
           (pageScroll.ts). */}

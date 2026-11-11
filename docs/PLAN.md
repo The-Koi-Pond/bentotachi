@@ -216,6 +216,22 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
+- Photos offline, opt-in (Xel's call, 2026-11-11): Settings → Your data →
+  "Keep photos for offline", on this device, off unless turned on; it
+  says the rough size first ("about 18 MB", 200 KB a recipe photo), then
+  how many are kept and their real size. On, the phone keeps the 600-wide
+  copies of every recipe's cover and step photos and the pantry's small
+  squares in Cache Storage (photoCache.ts), fetched one at a time over any
+  connection when the app opens, comes back to the front (every ten
+  minutes at most) and when the server answers again; deleted or replaced
+  photos are dropped. Offline (the server known away, or a photo failing),
+  cards, the recipe page's photos (as their 600-wide copies), step photos
+  and pantry photos show the kept copy (KeptPhotos.tsx), and the Offline
+  note no longer says "without photos". Full size (the viewer) still needs
+  the server. Turning it off empties the cache at once; logging out too.
+  Not offered where Cache Storage doesn't exist (a browser on a plain-http
+  address, like the PC's on the Pi) nor in phone-only mode (the photos are
+  on the phone already). Checked in the sandbox with the server cut off.
 - From a tester's look at Categories (2026-11-12): a category's name
   shows once (the tick list's own heading went) and stays pinned at the
   top while its recipes scroll; on Browse, a site with Categories is one
@@ -1034,10 +1050,11 @@ safe to send twice (their own ids), and a check that a housemate's change
 meanwhile isn't overwritten. The pantry is the one most wanted in a shop
 (counting what's bought).
 
-## Next: photos offline, opt-in (Xel, 2026-11-11)
+## Photos offline, opt-in (Xel, 2026-11-11)
 
 Decided (Xel, 2026-11-11): build it, with cover and step photos, filling
-over any connection (not Wi-Fi only).
+over any connection (not Wi-Fi only). Built 2026-11-12 (see "Not released
+yet"); what's below is the background.
 
 Xel asked whether photos could be kept on the phone too, as something
 people turn on if they have the room. Measured on the Pi (2026-11-11):

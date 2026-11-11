@@ -6,7 +6,6 @@
 //   With packets in stock, a counter per kind ("In stock: − 3 × 400 g +").
 // Both show the shopping list as an icon beside the level: a cart when it's
 // on the list, a dashed "+ cart" button when it's low or out and isn't.
-import { useState } from "react";
 import { pantryPhotoUrl, type PantryItem, type PantryPacket, type PantryStatus } from "./pb";
 import StockLabels from "./StockLabels";
 import { CartIcon, LevelJar } from "./icons";
@@ -14,6 +13,7 @@ import { describeExpiry, shortExpiry } from "./expiry";
 import { itemExpiry } from "./pantryGroups";
 import { brandBesideName, storeLinksOf } from "./pantryItem";
 import StoreLink from "./StoreLink";
+import { useKeptPhoto } from "./KeptPhotos";
 
 export type PantryLayout = "simple" | "detailed";
 
@@ -48,8 +48,9 @@ export default function PantryRow({
 }) {
   const detailed = layout === "detailed";
   const photo = pantryPhotoUrl(item);
-  // A photo that wouldn't load (no connection): its letter tile instead.
-  const [failedPhoto, setFailedPhoto] = useState("");
+  // A photo that won't load (no connection, and none kept on the phone):
+  // its letter tile instead, until the server answers again.
+  const shownPhoto = useKeptPhoto(photo);
   const expiry = itemExpiry(item);
   // Simple only warns: a date weeks away isn't news.
   const showExpiry = expiry && (detailed || expiry !== "later");
@@ -106,16 +107,8 @@ export default function PantryRow({
   const storeLinks = storeLinksOf(item);
   return (
     <div className="pantry-row detailed">
-      {photo && failedPhoto !== photo ? (
-        <img
-          key={photo}
-          className="pantry-thumb"
-          src={photo}
-          alt=""
-          loading="lazy"
-          // Without a connection the photo can't load: the letter instead.
-          onError={() => setFailedPhoto(photo)}
-        />
+      {photo && !shownPhoto.gaveUp ? (
+        <img key={photo} className="pantry-thumb" src={shownPhoto.src} alt="" loading="lazy" onError={shownPhoto.onError} />
       ) : (
         <span className="pantry-thumb pantry-tile" aria-hidden="true">
           {item.name.trim().charAt(0).toUpperCase()}

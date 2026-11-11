@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { recipePhotoUrl, type Recipe } from "./pb";
 import RecipePhoto from "./RecipePhoto";
+import { KeptImg, keptStep } from "./KeptPhotos";
 
 // The top of a recipe page: the cover, framed as set, then the gallery's
 // photos (recipePhotos.ts), swiped through sideways with dots saying
@@ -25,9 +26,9 @@ export default function HeroPhotos({
       // Clips a zoomed photo to its box; the heart hangs over the edge.
       <button className="hero-clip hero-button" onClick={() => onOpen(only)} aria-label="Open the photo full size">
         {only === "" ? (
-          <RecipePhoto recipe={recipe} size="full" className="hero" />
+          <RecipePhoto recipe={recipe} size="full" className="hero" fallback={null} />
         ) : (
-          <img className="hero" src={recipePhotoUrl(recipe, only)} alt="" />
+          <KeptImg className="hero" src={recipePhotoUrl(recipe, only)} keptUrl={keptStep(recipe, only)} fallback={null} />
         )}
       </button>
     );
@@ -50,9 +51,9 @@ export default function HeroPhotos({
             aria-label={`Photo ${i + 1} of ${slides.length}, full size`}
           >
             {name === "" ? (
-              <RecipePhoto recipe={recipe} size="full" className="hero" />
+              <RecipePhoto recipe={recipe} size="full" className="hero" fallback={null} />
             ) : (
-              <img className="hero" src={recipePhotoUrl(recipe, name)} alt="" loading={i > 1 ? "lazy" : undefined} />
+              <KeptImg className="hero" src={recipePhotoUrl(recipe, name)} keptUrl={keptStep(recipe, name)} loading={i > 1 ? "lazy" : undefined} fallback={null} />
             )}
           </button>
         ))}

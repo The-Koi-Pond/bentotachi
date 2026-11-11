@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
 import { DEFAULT_QUICK_MINUTES } from "./format";
 import { remember, remembered } from "./phoneStorage";
 import { forgetOfflineCopy } from "./offline";
+import { keepPhotos } from "./photoCache";
 import { isServerAnswer } from "./loginGuard";
 import { viaTailscale } from "./tailscale.ts";
 import { connection, requestFetch } from "./connection.ts";
@@ -57,6 +58,8 @@ pb.afterSend = (response, data) => {
 // logs in again.
 export function logOut({ keepWaiting = false } = {}) {
   forgetOfflineCopy({ keepWaiting });
+  // Kept photos too (photoCache.ts), unless the login merely expired.
+  if (!keepWaiting) void keepPhotos(false);
   pb.authStore.clear();
 }
 

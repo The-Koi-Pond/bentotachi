@@ -49,6 +49,7 @@ import { matchesSearch } from "../recipeSearch";
 import { searchVariants } from "../regionalNames";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
 import { ratingsCopy, recipesCopy, shelvesCopy } from "../offline";
+import { usePhotoStatus } from "../photoCache";
 import { useLiveRecords } from "../useLiveRecords";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
@@ -124,6 +125,8 @@ export default function RecipeList() {
     expand: "added_by",
     copy: recipesCopy,
   });
+  // Photos kept on the phone show offline too (photoCache.ts).
+  const { on: photosKept } = usePhotoStatus();
   // Ratings are extras on the cards; the list still works without them.
   const ratings = useLiveRecords<RecipeRating>("recipe_ratings", { fields: RATING_FIELDS, copy: ratingsCopy }).items;
   // The household's categories (shelves); null until loaded, or if they
@@ -468,8 +471,13 @@ export default function RecipeList() {
     const card = (
       <>
         <span className="card-photo">
-          {recipe.image && !offline ? (
-            <RecipePhoto recipe={recipe} size="card" loading="lazy" />
+          {recipe.image && (!offline || photosKept) ? (
+            <RecipePhoto
+              recipe={recipe}
+              size="card"
+              loading="lazy"
+              fallback={<RecipeStandIn title={recipe.title} className="no-photo" />}
+            />
           ) : (
             <RecipeStandIn title={recipe.title} className="no-photo" />
           )}

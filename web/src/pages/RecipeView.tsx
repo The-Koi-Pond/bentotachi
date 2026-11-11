@@ -63,6 +63,8 @@ import { useStepAmounts } from "../stepAmountsSetting";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
+import { KeptImg } from "../KeptPhotos";
+import { usePhotoStatus } from "../photoCache";
 import { shrinkPhoto } from "../pantryPhoto";
 import { inTurn } from "../inTurn";
 import { copyOf } from "../recipeCopy";
@@ -151,6 +153,9 @@ export default function RecipeView() {
   const quickMinutes = useQuickMinutes();
   // Showing the phone's saved copy because the server can't be reached.
   const [offline, setOffline] = useState(false);
+  // Its photos show offline too when they're kept on the phone (photoCache.ts);
+  // full size (the viewer) still needs the server.
+  const { on: photosKept } = usePhotoStatus();
   // The part being changed right here, if any (one at a time).
   const [editing, setEditing] = useState<Part | null>(null);
   // The photo framer, opened from the cover photo's viewer.
@@ -484,10 +489,11 @@ export default function RecipeView() {
   return (
     <article className="recipe stack">
       {offline && <OfflineNote />}
-      {(recipe.image || gallery.length > 0) && !offline && (
+      {(recipe.image || gallery.length > 0) && (!offline || photosKept) && (
         <div className="hero-wrap">
           <HeroPhotos recipe={recipe} gallery={gallery} onOpen={setViewing} />
-          <FavoriteHeart state={ratings} onPhoto />
+          {/* Offline it couldn't be saved, like the other reactions. */}
+          {!offline && <FavoriteHeart state={ratings} onPhoto />}
         </div>
       )}
       {viewing !== null && !offline && (
@@ -676,7 +682,7 @@ export default function RecipeView() {
               const number = stepNumber;
               const timedStep = { index: i, number, heading: stepHeading };
               const times = stepTimes(withoutSoftMarks(line));
-              const photosHere = offline ? [] : (byStep.get(stepKey(line)) ?? []);
+              const photosHere = offline && !photosKept ? [] : (byStep.get(stepKey(line)) ?? []);
               return (
                 <li key={i}>
                   <button className={`step ${done.has(key) ? "done" : ""}`} onClick={() => toggle(key)} aria-pressed={done.has(key)}>
@@ -711,7 +717,7 @@ export default function RecipeView() {
                     <div className="step-photos">
                       {photosHere.map((name) => (
                         <button key={name} className="step-photo" onClick={() => setViewing(name)} aria-label={`Step ${number}'s photo, full size`}>
-                          <img src={recipePhotoUrl(recipe, name, "600x0")} alt="" loading="lazy" />
+                          <KeptImg src={recipePhotoUrl(recipe, name, "600x0")} loading="lazy" fallback={null} />
                         </button>
                       ))}
                     </div>

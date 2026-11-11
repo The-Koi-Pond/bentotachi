@@ -183,6 +183,11 @@ they say otherwise.
 
 ## Photos and files
 
+- Showing a recipe or pantry photo: `<RecipePhoto>`, or `<KeptImg>` /
+  `useKeptPhoto` (`KeptPhotos.tsx`) for any other one, so it shows its copy
+  kept on the phone when offline (photoCache.ts, Settings' "Keep photos
+  for offline"). A plain `<img>` of a server photo goes blank offline.
+
 - Shrinking any photo before upload: `shrinkPhoto` (`pantryPhoto.ts`; pass
   `PHOTO_SIDE` from `recipePhotos.ts` for recipes; a website import's
   photos are shrunk after saving, `shrinkSavedPhotos` in `recipeImport.ts`).

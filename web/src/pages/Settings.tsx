@@ -9,6 +9,8 @@ import { canSelfUpdate, updateAction, updateDetail, updateLabel, updatesFromPlay
 import deki from "../assets/deki.svg";
 import HouseholdSettings from "../HouseholdSettings";
 import { chooseTheme, useThemeChoice, type ThemeChoice } from "../theme";
+import { keepPhotos, photoCacheAvailable, roughBytes, sizeText, usePhotoStatus } from "../photoCache";
+import { recipesCopy } from "../offline";
 
 // ⋮ → Settings: what you set once and rarely touch, in bento trays by
 // what it's about (docs/VISION.md, "The ⋮ menu and Settings"). The menu
@@ -88,6 +90,12 @@ export default function Settings() {
           {phone && (
             <li>
               <LinkRow to="/backups" label="Backups" detail="Save or restore a backup" />
+            </li>
+          )}
+          {/* Phone-only mode has every photo on the phone already. */}
+          {!phone && photoCacheAvailable() && (
+            <li>
+              <KeepPhotosSetting />
             </li>
           )}
         </ul>
@@ -175,6 +183,31 @@ function Switch({ on, onToggle, label, detail }: { on: boolean; onToggle: () => 
       <span className="switch" aria-hidden="true" />
     </button>
   );
+}
+
+// "Keep photos for offline", on this device only (it's this phone's room):
+// how much room before it's on, then how many are kept (photoCache.ts).
+function KeepPhotosSetting() {
+  const photos = usePhotoStatus();
+  const [error, setError] = useState("");
+  const rough = roughBytes(recipesCopy.read() ?? []);
+  let detail: ReactNode;
+  if (error) detail = <span className="error">{error}</span>;
+  else if (!photos.on) detail = rough ? `Recipe and pantry photos, about ${sizeText(rough)}` : "Recipe and pantry photos, for no signal";
+  else if (photos.filling) detail = `Saving photos… ${photos.kept} of ${photos.wanted}`;
+  else if (photos.full) detail = `No more room on this phone: ${photos.kept} of ${photos.wanted} photos kept`;
+  else if (!photos.kept) detail = "No photos to keep yet";
+  else detail = `${photos.kept} ${photos.kept === 1 ? "photo" : "photos"}, ${sizeText(photos.bytes)} on this phone`;
+
+  async function toggle() {
+    setError("");
+    try {
+      await keepPhotos(!photos.on);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+  return <Switch on={photos.on} onToggle={() => void toggle()} label="Keep photos for offline" detail={detail} />;
 }
 
 // A switch saved on your account (so it's the same on every device), that
