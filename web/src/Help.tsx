@@ -21,12 +21,24 @@ export function useHelp() {
 
 type HelpState = ReturnType<typeof useHelp>;
 
-export function HelpButton({ help, label }: { help: HelpState; label: string }) {
+// children and className: a button that opens a bubble but isn't a "?"
+// (the connection indicator).
+export function HelpButton({
+  help,
+  label,
+  children = "?",
+  className = "help-button",
+}: {
+  help: HelpState;
+  label: string;
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
     <button
       ref={help.anchor}
       type="button"
-      className="help-button"
+      className={className}
       aria-expanded={help.open}
       aria-controls={help.id}
       aria-label={label}
@@ -34,7 +46,7 @@ export function HelpButton({ help, label }: { help: HelpState; label: string }) 
       popoverTarget={canPop ? help.id : undefined}
       onClick={canPop ? undefined : help.toggle}
     >
-      ?
+      {children}
     </button>
   );
 }

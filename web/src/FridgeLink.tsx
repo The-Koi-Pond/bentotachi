@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { pb, type Note } from "./pb";
 import { useLiveRecords } from "./useLiveRecords";
+import { notesCopyReadOnly } from "./offline";
 import { unreadNotes } from "./fridgeDoor";
 import { useFridgeSeen } from "./fridgeSeen";
 import { BentoTitle } from "./Brand";
@@ -10,7 +11,7 @@ import { BentoTitle } from "./Brand";
 // the title, not a separate boxed button), and shows
 // how many notes someone else left since this phone last looked.
 export default function FridgeLink() {
-  const list = useLiveRecords<Note>("notes");
+  const list = useLiveRecords<Note>("notes", { copy: notesCopyReadOnly });
   const seen = useFridgeSeen();
   const unread = unreadNotes(list.items ?? [], pb.authStore.record?.id, seen);
   const label = unread

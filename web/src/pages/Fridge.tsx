@@ -15,6 +15,8 @@ import {
   type User,
 } from "../pb";
 import { useLiveRecords } from "../useLiveRecords";
+import { notesCopy } from "../offline";
+import OfflineNote from "../OfflineNote";
 import { useUndo } from "../undo";
 import { showError } from "../toast";
 import { usePlanMeals, useSingleUser } from "../household";
@@ -45,7 +47,7 @@ export default function Fridge() {
   const [splash] = useState(() => randomSplash());
   const singleUser = useSingleUser();
   const solo = isPhoneMode() || singleUser;
-  const list = useLiveRecords<Note>("notes", { expand: "added_by" });
+  const list = useLiveRecords<Note>("notes", { expand: "added_by", copy: notesCopy });
   const undo = useUndo();
 
   // Opening the page (and staying on it while notes arrive) reads them.
@@ -89,6 +91,7 @@ export default function Fridge() {
       </div>
 
       {list.loadError && <p className="error">{list.loadError}</p>}
+      {list.offline && <OfflineNote>Showing the notes saved on this phone. Writing or taking down notes needs a connection.</OfflineNote>}
       {/* The door itself (docs/VISION.md, "The fridge door"): an enamel
           panel with a handle, a blank note to write on, the notes stuck on
           it. */}
@@ -129,14 +132,18 @@ export default function Fridge() {
                       )}
                       {noteAge(note.created, now)}
                     </span>
-                    <button
-                      className="button small ghost"
-                      onClick={() => peel(note)}
-                      disabled={peeling === note.id}
-                      aria-label={`Take down “${note.text.slice(0, 40)}”`}
-                    >
-                      <CheckIcon /> Done
-                    </button>
+                    {/* Offline (the notes saved on this phone), taking one
+                        down would fail, and look done. */}
+                    {!list.offline && (
+                      <button
+                        className="button small ghost"
+                        onClick={() => peel(note)}
+                        disabled={peeling === note.id}
+                        aria-label={`Take down “${note.text.slice(0, 40)}”`}
+                      >
+                        <CheckIcon /> Done
+                      </button>
+                    )}
                   </div>
                 </li>
                 );

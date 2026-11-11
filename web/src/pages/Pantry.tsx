@@ -39,6 +39,8 @@ import { toStoredDate } from "../dates";
 import DrawerToggle from "../DrawerToggle";
 import { ChevronIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
+import { packetsCopy, pantryCopy, shoppingCopyReadOnly } from "../offline";
+import OfflineNote from "../OfflineNote";
 import { BenMood } from "../Brand";
 import { itemWithBarcode, normaliseBarcode, withBarcode } from "../barcodes";
 import { canScan, lookUpBarcode, scanBarcode, type BarcodeProduct } from "../scanner";
@@ -106,11 +108,11 @@ function savedPlace(): Place | null {
 }
 
 export default function Pantry() {
-  const pantry = useLiveRecords<PantryItem>("pantry_items");
-  const shopping = useLiveRecords<ShoppingItem>("shopping_items");
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
+  const shopping = useLiveRecords<ShoppingItem>("shopping_items", { copy: shoppingCopyReadOnly });
   // Not waited for: the pantry works without them while they load or if
   // they can't (packets.items stays null, and nothing offers to add one).
-  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
   // A finished packet waits a few seconds for Undo before it's deleted.
   const undo = useUndo();
   const [layout, setLayout] = useState<PantryLayout>(savedLayout);
@@ -204,7 +206,9 @@ export default function Pantry() {
   useOnlinePhotos(items ?? NO_ITEMS);
 
   const loadError = pantry.loadError || shopping.loadError;
-  if (!items || !shopping.items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Counting the tins…</p>;
+  // Offline, the pantry's own copy is enough: the shopping list is only for
+  // "on the list" marks, and this phone may never have saved it.
+  if (!items || (!shopping.items && !pantry.offline)) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Counting the tins…</p>;
 
   // `also`: sent with the change but not kept (see setStatus). Whether it saved.
   async function save(item: PantryItem, patch: Partial<PantryItem>, message: string, also = {}) {
@@ -496,8 +500,12 @@ export default function Pantry() {
       try {
         await pantryItems().delete(item.id);
       } catch (err) {
+        // Already gone (a housemate removed it): nothing to put back.
+        if (statusOf(err) === 404) return;
         showError(errorMessage(err));
-        pantry.reload();
+        // Back as it was, rather than reloading: offline a reload keeps
+        // what's on screen (and the phone's copy) without it.
+        pantry.upsert(item);
       }
     });
     return true;
@@ -693,6 +701,10 @@ export default function Pantry() {
           </button>
         </div>
       </div>
+
+      {pantry.offline && (
+        <OfflineNote>Showing the pantry saved on this phone. Changes need a connection.</OfflineNote>
+      )}
 
       {items.length > 0 && (
         <form className="add-row joined" role="search" onSubmit={findOrAdd}>

@@ -48,7 +48,7 @@ import {
 import { matchesSearch } from "../recipeSearch";
 import { searchVariants } from "../regionalNames";
 import { SORTS, sortRecipes, type SortOrder } from "../recipeSort";
-import { ratingsCopy, recipesCopy } from "../offline";
+import { ratingsCopy, recipesCopy, shelvesCopy } from "../offline";
 import { useLiveRecords } from "../useLiveRecords";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
@@ -127,8 +127,9 @@ export default function RecipeList() {
   // Ratings are extras on the cards; the list still works without them.
   const ratings = useLiveRecords<RecipeRating>("recipe_ratings", { fields: RATING_FIELDS, copy: ratingsCopy }).items;
   // The household's categories (shelves); null until loaded, or if they
-  // can't be (offline), which shows the plain list.
-  const { items: categories, setItems: setCategories } = useLiveRecords<RecipeCategory>("recipe_categories");
+  // can't be and none are saved on this phone, which shows the plain list.
+  // Offline they show as saved, but can't be changed (Edit recipes hides).
+  const { items: categories, setItems: setCategories } = useLiveRecords<RecipeCategory>("recipe_categories", { copy: shelvesCopy });
   const [error, setError] = useState("");
   const problem = error || loadError;
   const [search, setSearch] = useState("");
@@ -520,7 +521,7 @@ export default function RecipeList() {
 
   // Shelves are the start page: no search or filter yet.
   const showShelves =
-    !!categories?.length && !offline && !listChosen && !search.trim() && !filtering && !favoritesOnly && !quickOnly;
+    !!categories?.length && !listChosen && !search.trim() && !filtering && !favoritesOnly && !quickOnly;
   const allShelves = showShelves ? shelves(shown, categories!) : [];
   const filledShelves = allShelves.filter((shelf) => shelf.recipes.length > 0);
   const anyShelfOpen = filledShelves.some((shelf) => drawers.isOpen(shelf.id));
@@ -704,7 +705,7 @@ export default function RecipeList() {
               ))}
             </select>
           </label>
-          {!!categories?.length && !offline && (
+          {!!categories?.length && (
             <div className="view-panel-row">
               <span className="view-panel-label">Shelves</span>
               <span className="view-switch" role="group" aria-label="Shelves or one list">
@@ -717,7 +718,7 @@ export default function RecipeList() {
               </span>
             </div>
           )}
-          {categories?.length === 0 && (
+          {categories?.length === 0 && !offline && (
             <Link to="/shelves?new=1" className="view-panel-row view-panel-link">
               <span className="view-panel-label">
                 Make shelves

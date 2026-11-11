@@ -43,8 +43,9 @@ import RecipeReactions, { FavoriteHeart, useRecipeRatings } from "../RecipeReact
 import QuickTime from "../QuickTime";
 import PlanButton from "../PlanButton";
 import { datePart, formatDay, localToday, timeAgo, toStoredDate } from "../dates";
-import { isOffline, saveRecipe, savedRecipes } from "../offline";
+import { cookedCopy, isOffline, packetsCopy, pantryCopy, planCopyReadOnly, saveRecipe, savedRecipes } from "../offline";
 import OfflineNote from "../OfflineNote";
+import { connection, RETRY_EVENT } from "../connection";
 import { useCountry, useSingleUser, useTablespoon } from "../household";
 import { withRegionalHint } from "../regionalNames";
 import { withWeightHint } from "../weights";
@@ -142,7 +143,7 @@ export default function RecipeView() {
   const [done, setDone] = useState<Set<string>>(new Set());
   const ratings = useRecipeRatings(id);
   // "We cooked this" days, shared by the history line and the timer.
-  const cooked = useLiveRecords<CookedEntry>("cooked");
+  const cooked = useLiveRecords<CookedEntry>("cooked", { copy: cookedCopy });
   // "Used anything up?" open after cooking (UsedUpSheet).
   // `again`: it was already marked cooked today when this opened.
   const [usedUp, setUsedUp] = useState<{ again: boolean } | null>(null);
@@ -169,21 +170,34 @@ export default function RecipeView() {
 
   useEffect(() => {
     setScale(savedScale(id));
-    recipes()
-      .getOne(id, { expand: "added_by" })
-      .then((found) => {
-        setRecipe(found);
-        setOffline(false);
-        saveRecipe(found);
-      })
-      .catch((err) => {
-        if (!isOffline(err)) return setError(errorMessage(err));
-        const saved = savedRecipes()?.find((r) => r.id === id);
-        if (saved) {
-          setRecipe(saved);
-          setOffline(true);
-        } else setError("You're offline, and this recipe isn't saved on this phone yet.");
-      });
+  }, [id]);
+
+  // Loaded again when the server answers after being unreachable (Try
+  // again, or the half-minute check: RETRY_EVENT), like the lists. Showing
+  // the copy saved on this phone tells the connection indicator so.
+  useEffect(() => {
+    function load() {
+      recipes()
+        .getOne(id, { expand: "added_by" })
+        .then((found) => {
+          setRecipe(found);
+          setOffline(false);
+          setError("");
+          saveRecipe(found);
+        })
+        .catch((err) => {
+          if (!isOffline(err)) return setError(errorMessage(err));
+          connection.unreachable();
+          const saved = savedRecipes()?.find((r) => r.id === id);
+          if (saved) {
+            setRecipe(saved);
+            setOffline(true);
+          } else setError("You're offline, and this recipe isn't saved on this phone yet.");
+        });
+    }
+    load();
+    window.addEventListener(RETRY_EVENT, load);
+    return () => window.removeEventListener(RETRY_EVENT, load);
   }, [id]);
 
   function toggle(key: string) {
@@ -892,7 +906,7 @@ function IngredientsSection({
   scale: number;
   onScale: (scale: number) => void;
 }) {
-  const pantry = useLiveRecords<PantryItem>("pantry_items");
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const pantryList = pantry.items ?? [];
   const hints = useHints(recipe.source_url ?? "");
   const lines = recipe.ingredients ?? [];
@@ -908,7 +922,7 @@ function IngredientsSection({
   // What the pantry's packets cover of each thing linked to (an item, or
   // every kind in a group), over all of this recipe's lines for it at its
   // size (pantryStock.ts).
-  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
   const linesByTarget = new Map<string, number[]>();
   const linkByTarget = new Map<string, IngredientLink>();
   for (const i of pickable) {
@@ -1234,7 +1248,7 @@ function CookHistory({
   onCooked: () => void;
   onUndo: (entries: CookedEntry[]) => void;
 }) {
-  const plan = useLiveRecords<MealPlanEntry>("meal_plan");
+  const plan = useLiveRecords<MealPlanEntry>("meal_plan", { copy: planCopyReadOnly });
   const planned = plan.items ?? [];
   const today = localToday();
   const days = daysHad(recipeId, planned, cooked, today);

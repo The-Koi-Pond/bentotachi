@@ -14,6 +14,8 @@ import {
   type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
+  type SensorDescriptor,
+  type SensorOptions,
 } from "@dnd-kit/core";
 import { errorMessage, mealPlan, pb, type CookedEntry, type MealPlanEntry, type Recipe } from "../pb";
 import RecipePhoto from "../RecipePhoto";
@@ -34,6 +36,8 @@ import {
 } from "../dates";
 import { CartIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
+import { cookedCopy, planCopy } from "../offline";
+import OfflineNote from "../OfflineNote";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
@@ -70,6 +74,9 @@ interface Slot {
 // The bin that shows while dragging: a meal dropped on it comes off the plan.
 const BIN = "bin";
 
+// Showing the plan saved on this phone: nothing starts a drag.
+const NO_SENSORS: SensorDescriptor<SensorOptions>[] = [];
+
 // A meal lands on the place under your finger (or mouse). With the
 // keyboard there is no pointer, so it goes to the nearest one instead. The
 // bin wins over the day scrolled underneath it.
@@ -92,8 +99,8 @@ function savedView(): View {
 // breakfast or lunch are turned on in Settings → Household). In both views, meals
 // can be dragged to another place; if that place already has one, they swap.
 export default function MealPlan() {
-  const plan = useLiveRecords<MealPlanEntry>("meal_plan", { expand: "recipe" });
-  const cooked = useLiveRecords<CookedEntry>("cooked");
+  const plan = useLiveRecords<MealPlanEntry>("meal_plan", { expand: "recipe", copy: planCopy });
+  const cooked = useLiveRecords<CookedEntry>("cooked", { copy: cookedCopy });
   const [meals] = usePlanMeals();
   // Weeks start on Sunday in the US, Monday elsewhere.
   const firstDay = firstDayFor(useCountry()[0]);
@@ -281,10 +288,13 @@ export default function MealPlan() {
   }
 
   const isList = view === "list";
+  // Offline, the plan is the copy saved on this phone and can't be changed:
+  // no adding, taking off or dragging (a change would fail, and look done).
+  const readOnly = plan.offline;
   // After the plan, like "Add to shopping list" under a recipe's
   // ingredients. Only with recipes planned from today on: that's what it
   // shops for.
-  const shopButton = shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
+  const shopButton = !readOnly && shown.some((entry) => entry.recipe && datePart(entry.date) >= today) && (
     <button className="button add-to-list" onClick={() => setShoppingOpen(true)}>
       <CartIcon size={18} />
       Add these to the shopping list
@@ -340,6 +350,9 @@ export default function MealPlan() {
           </button>
         </div>
       </div>
+      {plan.offline && (
+        <OfflineNote>Showing the plan saved on this phone. Changing it needs a connection.</OfflineNote>
+      )}
       <HelpBox help={help}>
         {isList ? (
           <>
@@ -383,7 +396,7 @@ export default function MealPlan() {
       </div>
 
       <DndContext
-        sensors={sensors}
+        sensors={readOnly ? NO_SENSORS : sensors}
         collisionDetection={dropTarget}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -412,6 +425,7 @@ export default function MealPlan() {
                     dishesAt={(meal) => dishesAt(date, meal)}
                     onAdd={(meal) => setPicking({ date, meal })}
                     onRemove={remove}
+                    readOnly={readOnly}
                   />
                 </Fragment>
               ))}
@@ -440,6 +454,7 @@ export default function MealPlan() {
               dishesAt={(meal) => dishesAt(selected, meal)}
               onAdd={(meal) => setPicking({ date: selected, meal })}
               onRemove={remove}
+              readOnly={readOnly}
             />
             {shopButton}
           </div>
@@ -594,10 +609,12 @@ interface DayProps {
   dishesAt: (meal: Meal) => MealPlanEntry[];
   onAdd: (meal: Meal) => void;
   onRemove: (entry: MealPlanEntry) => void;
+  // Showing the copy saved on this phone: no + Add, ✕ or dragging.
+  readOnly: boolean;
 }
 
 // Under the month grid: the chosen day's meals, or a way to add each.
-function SelectedDay({ date, meals, labelled, dishesAt, onAdd, onRemove }: DayProps) {
+function SelectedDay({ date, meals, labelled, dishesAt, onAdd, onRemove, readOnly }: DayProps) {
   return (
     <section className="selected-day" aria-label={`${labelled ? "Meals" : MEAL_NAMES[meals[0]]} on ${formatDay(date)}`}>
       <h2>{formatDay(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
@@ -609,16 +626,18 @@ function SelectedDay({ date, meals, labelled, dishesAt, onAdd, onRemove }: DayPr
             {dishes.map((entry) => (
               <div key={entry.id} className="dinner-slot">
                 <DinnerCard entry={entry} />
-                <button
-                  className="icon-button small"
-                  onClick={() => onRemove(entry)}
-                  aria-label={`Take ${entryLabel(entry)} off the plan`}
-                >
-                  <CloseIcon />
-                </button>
+                {!readOnly && (
+                  <button
+                    className="icon-button small"
+                    onClick={() => onRemove(entry)}
+                    aria-label={`Take ${entryLabel(entry)} off the plan`}
+                  >
+                    <CloseIcon />
+                  </button>
+                )}
               </div>
             ))}
-            <AddButton meal={meal} another={dishes.length > 0} onAdd={onAdd} />
+            {!readOnly && <AddButton meal={meal} another={dishes.length > 0} onAdd={onAdd} />}
           </div>
         );
       })}
@@ -668,15 +687,17 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
 // One meal's place in a day row: a dinner (or breakfast, or lunch) that can
 // be dragged, or "+ Add" (a small chip when compact). Meals dragged here
 // land in it.
-function MealPlace({ date, meal, labelled, dishesAt, onAdd, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
+function MealPlace({ date, meal, labelled, dishesAt, onAdd, readOnly, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
   const dishes = dishesAt(meal);
   if (compact) {
     return (
       <div ref={setNodeRef} className={`plan-meal compact ${isOver ? "drop-here" : ""}`}>
-        <button className="plan-add" onClick={() => onAdd(meal)} aria-label={`Add ${meal}`}>
-          + {MEAL_NAMES[meal]}
-        </button>
+        {!readOnly && (
+          <button className="plan-add" onClick={() => onAdd(meal)} aria-label={`Add ${meal}`}>
+            + {MEAL_NAMES[meal]}
+          </button>
+        )}
       </div>
     );
   }
@@ -684,16 +705,16 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, compact = false }: D
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
       {dishes.map((entry) => (
-        <DraggableDinner key={entry.id} entry={entry} />
+        <DraggableDinner key={entry.id} entry={entry} readOnly={readOnly} />
       ))}
       {/* Another recipe for it (a side): a quiet + beside its dishes, rather
           than a "+ Dinner" under every planned day (docs/VISION.md). */}
-      {dishes.length > 0 && (
+      {!readOnly && dishes.length > 0 && (
         <button className="plan-add-dish" onClick={() => onAdd(meal)} aria-label={`Add another recipe to ${meal}`}>
           <PlusIcon />
         </button>
       )}
-      {dishes.length === 0 && (
+      {!readOnly && dishes.length === 0 && (
         <button className="plan-add" onClick={() => onAdd(meal)}>
           + Add {meal}
         </button>
@@ -706,18 +727,20 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, compact = false }: D
 // the bin that shows while dragging to take it off the plan (no ✕, so two
 // can share a row; the month view's day list keeps a ✕ for anyone who
 // can't drag).
-function DraggableDinner({ entry }: { entry: MealPlanEntry }) {
-  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id });
+function DraggableDinner({ entry, readOnly }: { entry: MealPlanEntry; readOnly: boolean }) {
+  const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id, disabled: readOnly });
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
-      <button
-        className="drag-handle"
-        aria-label={`Move ${entryLabel(entry)} to another day or meal`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripIcon />
-      </button>
+      {!readOnly && (
+        <button
+          className="drag-handle"
+          aria-label={`Move ${entryLabel(entry)} to another day or meal`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripIcon />
+        </button>
+      )}
       <DinnerCard entry={entry} />
     </div>
   );

@@ -59,11 +59,12 @@ test("a confirmed login isn't asked about again for a while", async () => {
 });
 
 test("a login that couldn't be confirmed is asked about again next time", async () => {
-  const { guard, calls } = setup(["unknown", "signedOut", "ok"]);
+  const { guard, calls } = setup(["offline", "unknown", "signedOut", "ok"]);
+  assert.equal(await guard.ensure(), "offline");
   assert.equal(await guard.ensure(), "unknown");
   assert.equal(await guard.ensure(), "signedOut");
   assert.equal(await guard.ensure(), "ok");
-  assert.equal(calls(), 3);
+  assert.equal(calls(), 4);
 });
 
 test("before changing anything, the login is always checked fresh", async () => {

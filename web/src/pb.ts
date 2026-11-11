@@ -5,6 +5,8 @@ import { DEFAULT_QUICK_MINUTES } from "./format";
 import { remember, remembered } from "./phoneStorage";
 import { forgetOfflineCopy } from "./offline";
 import { isServerAnswer } from "./loginGuard";
+import { viaTailscale } from "./tailscale.ts";
+import { connection, requestFetch } from "./connection.ts";
 
 // In a browser, Bento is served by PocketBase itself, so it talks to "/"
 // (in development Vite forwards that to PocketBase). The Android app carries
@@ -37,6 +39,11 @@ pb.autoCancellation(false);
 // lists show the phone's copy and keep it, and shopping changes wait.
 // Otherwise its page reads as an empty list (wiping that copy) and every
 // save as done.
+// A load with no answer starting in time counts as offline too, rather than
+// leaving a page on "Loading…" for minutes (answerTimeout.ts), and every
+// request tells the connection indicator how it went (connection.ts).
+pb.beforeSend = (url, options) => ({ url, options: { ...options, fetch: requestFetch(url, options, connection) } });
+connection.setCheck(() => pb.health.check({ cache: "no-store" }));
 pb.afterSend = (response, data) => {
   if (!isServerAnswer(response.status, response.headers.get("content-type"), response.headers.get("content-length"))) {
     throw new ClientResponseError({ url: response.url, status: 0, response: { message: "That wasn't Bentotachi's server answering." } });
@@ -383,7 +390,10 @@ export function errorMessage(err: unknown): string {
     message?: string;
     response?: { message?: string; data?: Record<string, { message?: string }> };
   };
-  if (e.status === 0) return "Can't reach the Bentotachi server. Is it running, and are you connected?";
+  if (e.status === 0)
+    return viaTailscale(isAndroidApp ? pb.baseURL : window.location.href)
+      ? "Can't reach the Bentotachi server. It goes through Tailscale, so check this phone's Tailscale is switched on."
+      : "Can't reach the Bentotachi server. Is it running, and are you connected?";
   // Rejected fields come back separately ("name: Value must be unique."),
   // and are more useful than the general "Failed to create record."
   const field = Object.entries(e.response?.data ?? {}).find(([, detail]) => detail?.message);

@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import Toaster from "./Toaster";
 import FridgeLink from "./FridgeLink";
 import SettingsMenu from "./SettingsMenu";
+import ConnectionStatus from "./ConnectionStatus";
 import { BookPlusIcon } from "./icons";
 import TabBar from "./TabBar";
 import StepTimerTray from "./StepTimerTray";
@@ -90,6 +91,7 @@ function Screens() {
         <FridgeLink />
         <nav>
           <AddRecipeButton />
+          <ConnectionStatus />
           <SettingsMenu />
         </nav>
       </header>

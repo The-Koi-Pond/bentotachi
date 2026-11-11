@@ -8,6 +8,7 @@
 // its whole list again is enough; it only does when the list changes,
 // hence a placeholder subscription, taken off again straight away.
 import { pb } from "./pb";
+import { RETRY_EVENT } from "./connection.ts";
 
 let missed = false;
 
@@ -46,6 +47,7 @@ async function resend() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => void resend());
+  window.addEventListener(RETRY_EVENT, () => void resend());
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") void resend();
   });

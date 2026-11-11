@@ -266,7 +266,12 @@ or always Light or Dark, on this device), Recipes (Quick means, nutrition, amoun
 step photos, shelves start closed), Household (country, tablespoon,
 meals on the plan), Your data (import and export, backups) and App (the
 server, checking for updates), with the "A Koi Pond app" credit quietly
-at the very bottom. Profile links to the Household page, which is only
+at the very bottom. Beside ⋮, a connection indicator (Xel, 2026-11-11)
+shows only when something's off: a cloud crossed out in the warning
+colour when the server can't be reached, with a small plum count of
+shopping changes waiting; tapping it opens a bubble saying what's going
+on, when the server last answered, and Try again. Nothing while all's
+well, so the bar stays bare. Profile links to the Household page, which is only
 who's in it and adding someone ("Share Bentotachi" when you're alone;
 none on a phone-only Bentotachi), and ends with Log out (or "Join a
 household" on a phone).

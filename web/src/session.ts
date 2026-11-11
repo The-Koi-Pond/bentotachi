@@ -8,6 +8,7 @@
 
 import { logOut, pb, users, type User } from "./pb";
 import { isPhoneMode, logInOnPhone } from "./phoneMode";
+import { isOffline } from "./offline";
 import { createLoginGuard, isServerRefusal, type LoginState } from "./loginGuard";
 
 export type { LoginState };
@@ -24,6 +25,7 @@ async function renewLogin(): Promise<LoginState> {
     pb.authStore.save(answer.token, answer.record);
     return "ok";
   } catch (err) {
+    if (isOffline(err)) return "offline";
     if (!isServerRefusal(err)) return "unknown";
     // On a phone-only Bento, just log back in with the phone's account.
     if (isPhoneMode() && (await logInOnPhone())) return "ok";

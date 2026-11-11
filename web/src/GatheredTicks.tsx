@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ShoppingItem } from "./pb";
 import { rowStatus, startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
+import { shoppingCopyReadOnly } from "./offline";
 import { sameThing } from "./shoppingMatch";
 import { coverNote } from "./pantryStock";
 
@@ -12,7 +13,7 @@ const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 // waiting on the list can't be added twice. Used by the plan's "Add these
 // to the shopping list" and the list's "From a recipe".
 export function useGatheredTicks(rows: GatheredRow[]) {
-  const shopping = useLiveRecords<ShoppingItem>("shopping_items");
+  const shopping = useLiveRecords<ShoppingItem>("shopping_items", { copy: shoppingCopyReadOnly });
   // Ticks people changed by hand; everything else uses the starting tick.
   const [ticks, setTicks] = useState<Map<string, boolean>>(new Map());
 

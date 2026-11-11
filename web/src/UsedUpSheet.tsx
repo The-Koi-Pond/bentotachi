@@ -52,7 +52,10 @@ export default function UsedUpSheet({
 
   const sheetClosed = useModalSheet(dialogRef, onClose, { show: !!uses });
 
-  // Couldn't load the pantry (offline): nothing to offer.
+  // Couldn't load the pantry (offline): nothing to offer. On purpose no
+  // offline copy here: what it marks used up has to be the pantry as it is
+  // now, or "the last of it" could mark something Out (deleting its packets)
+  // when a housemate has just added another.
   useEffect(() => {
     if (pantry.loadError || packets.loadError) onClose();
   }, [pantry.loadError, packets.loadError, onClose]);

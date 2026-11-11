@@ -4,6 +4,7 @@ import { errorMessage, recipes, type PantryItem, type PantryPacket, type Recipe 
 import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
+import { packetsCopy, pantryCopy } from "./offline";
 import { CloseIcon } from "./icons";
 import { GatheredList, useGatheredTicks } from "./GatheredTicks";
 import { matchesSearch } from "./recipeSearch";
@@ -14,7 +15,7 @@ import { searchVariants } from "./regionalNames";
 // we have starts unticked; "All" ticks everything.
 export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const pantry = useLiveRecords<PantryItem>("pantry_items");
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const [all, setAll] = useState<Recipe[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
@@ -94,7 +95,7 @@ function ChosenRecipe({
   pantryError: string;
   onBack: () => void;
 }) {
-  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
   const rows = gatherIngredients([recipe], pantry ?? [], packets.items ?? []);
   const ticks = useGatheredTicks(rows);
   const [busy, setBusy] = useState(false);

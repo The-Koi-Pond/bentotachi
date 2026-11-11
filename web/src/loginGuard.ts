@@ -4,9 +4,10 @@
 // renewal makes it last days). Used by session.ts; tested in
 // web/test/loginGuard.test.ts.
 
-// "ok": logged in. "unknown": couldn't check (offline, or the server had
+// "ok": logged in. "offline": the server couldn't be reached, so a list can
+// go straight to the phone's copy. "unknown": couldn't check (the server had
 // trouble), so carry on carefully. "signedOut": the login is no longer good.
-export type LoginState = "ok" | "unknown" | "signedOut";
+export type LoginState = "ok" | "offline" | "unknown" | "signedOut";
 
 // Whether a failed renewal is PocketBase itself refusing the login (401 or
 // 403 with its own JSON answer, which names the status), not a public

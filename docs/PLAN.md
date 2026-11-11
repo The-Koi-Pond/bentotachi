@@ -216,7 +216,46 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-(nothing yet)
+- "Can't reach the server" (the connection indicator's bubble, and the
+  error on a page with nothing saved) adds "It goes through Tailscale, so
+  check this phone's Tailscale is switched on." when the server's address
+  is a Tailscale one (100.64.x to 100.127.x, or a .ts.net name), after the
+  household's phones quietly dropped off Tailscale for two days
+  (2026-11-11) and the lists just looked stale.
+- Works in the no-signal corner: the plan, the pantry (with its packets),
+  what was cooked, the fridge door and the recipe shelves are kept on the
+  phone too, like recipes and the shopping list, and show (with an
+  "Offline" note) when the server can't be reached. The plan's copy
+  borrows its recipes from the recipes' copy rather than keeping them
+  twice. Offline they're for reading: the plan hides adding, taking off
+  and dragging, the fridge hides "Done", shelves can't be edited, and a
+  pantry change that can't be sent goes back as it was, with a message.
+  "Used anything up?" after cooking never works from the copy (it could
+  mark something Out that a housemate just bought more of).
+- A server that doesn't answer at all (Tailscale off, a dead corner) no
+  longer leaves pages on "Loading…" for minutes: loading the household's
+  records with no answer starting within 8 seconds counts as offline, and
+  the copy shows (checked in the sandbox: every page in about 8 seconds).
+  Saves aren't limited (one the server made but answered late would be
+  taken back, like a mistaken Out's packets), except shopping list changes
+  (sent again safely) and any save once the server is known to be away.
+  Imports, barcode lookups and photo uploads aren't limited either. While
+  the server can't be reached, it's checked every half minute, and every
+  open list (and an open recipe) reloads by itself when it answers; a page
+  showing its copy counts as "can't be reached", so the check starts even
+  when an earlier answer said otherwise (before, only the shopping list
+  tried again). "Try again" on an Offline note asks the server instead of
+  reloading the page.
+- A connection indicator beside ⋮, only when something's off: a cloud
+  with a line through it when the server can't be reached, with a small
+  count of shopping changes waiting to be sent. Tapping it says what's
+  going on and when the server last answered ("today at 2:14 pm"), the
+  Tailscale reminder for a Tailscale address, the server's address, and
+  Try again. Back online with changes still waiting, it points to the
+  shopping list, where they're sent. Nothing shows while all's well.
+  Checked in the sandbox (phone width, light and dark): shows after 8
+  seconds of no answer, Try again brings everything back at once, and on
+  its own it's back within the half minute.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -1002,6 +1041,35 @@ notes, section 2, 3 and 9) found these too:
 
 Left out on purpose: Paprika's "Analyze Ingredients" (Premium: nutrition
 estimated from a USDA food match per ingredient); big, and an estimate.
+
+## To consider: changing things offline (Xel, 2026-11-11)
+
+Offline, only the shopping list can be changed (ticks and adds wait and
+go later, offlineShopping.ts); the plan, pantry and fridge show their
+saved copy for reading. Xel wants to revisit changing them offline too
+("another time"). Each would need what the shopping list has: changes
+kept in a queue on the phone, sent in order when the server answers,
+safe to send twice (their own ids), and a check that a housemate's change
+meanwhile isn't overwritten. The pantry is the one most wanted in a shop
+(counting what's bought).
+
+## To decide: photos offline, opt-in (Xel, 2026-11-11)
+
+Xel asked whether photos could be kept on the phone too, as something
+people turn on if they have the room. Measured on the Pi (2026-11-11):
+the recipe photos' 600-wide copies (what cards, the plan and step photos
+show) are 90 photos, 18 MB (about 200 KB each; the few WebP ones are
+much bigger, about 600 KB, because the server's thumbnail keeps the
+original format); the pantry's small square photos are 1 MB for 222.
+So a household cookbook is tens of MB, growing with each photo.
+
+Shape so far: a switch in Settings, "Keep photos for offline (about
+N MB)", with the size worked out from the household's photos; the app
+then saves the 600-wide copies (and pantry squares) in the browser's
+own cache (Cache Storage, which has far more room than the text
+copies' storage) and shows them from there when offline; switching it
+off empties that cache. Not decided yet: whether step photos come too,
+and whether it fills over Wi-Fi only.
 
 ## Ideas for later
 

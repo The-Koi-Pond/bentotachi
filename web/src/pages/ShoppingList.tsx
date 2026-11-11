@@ -83,14 +83,6 @@ export default function ShoppingList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offline, items, queue]);
 
-  // The phone may have signal while the server was off (no "back online"
-  // event then), so offline, try again every half minute.
-  useEffect(() => {
-    if (!offline) return;
-    const timer = window.setInterval(reload, 30_000);
-    return () => window.clearInterval(timer);
-  }, [offline, reload]);
-
   // Offline: kept to send later. A failure that turns out to be offline is
   // treated the same, so nothing typed or ticked is lost.
   function keepForLater(change: (queue: QueuedChange[]) => QueuedChange[]) {

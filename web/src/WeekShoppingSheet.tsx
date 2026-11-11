@@ -6,6 +6,7 @@ import { addDays, datePart, formatDay } from "./dates";
 import { gatherIngredients } from "./weekShopping";
 import { addToShoppingList, addedMessage } from "./shoppingAdd";
 import { useLiveRecords } from "./useLiveRecords";
+import { packetsCopy, pantryCopy } from "./offline";
 import { CloseIcon } from "./icons";
 import { MEALS, mealOf } from "./meals";
 import { GatheredList, useGatheredTicks } from "./GatheredTicks";
@@ -28,8 +29,8 @@ export default function WeekShoppingSheet({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const pantry = useLiveRecords<PantryItem>("pantry_items");
-  const packets = useLiveRecords<PantryPacket>("pantry_packets");
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
+  const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
   const [days, setDays] = useState(7);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);

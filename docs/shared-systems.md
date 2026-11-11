@@ -44,11 +44,29 @@ they say otherwise.
   `pantryItems()`, `users()`, ...), not `pb.collection("...")` (only
   `household_settings` and `useLiveRecords` use that).
 - A shared list on screen: `useLiveRecords(collection, { expand, fields,
-  sort, copy })` (load, live updates, reload on return; the offline copy is
-  one of offline.ts's ready-made ones, `recipesCopy`, `ratingsCopy`,
-  `shoppingCopy`, `pantryCopy`, made once outside the page).
+  sort, copy })` (load, live updates, reload on return, and again when the
+  server answers after being unreachable, `RETRY_EVENT` from
+  `connection.ts`; the offline copy is one of offline.ts's ready-made
+  ones, made once outside the page: `recipesCopy`, `ratingsCopy`,
+  `shelvesCopy`, `shoppingCopy`, `pantryCopy`, `packetsCopy`, `planCopy`,
+  `cookedCopy`, `notesCopy`). A page that loads the same list in another
+  shape (without the main page's `expand`) uses the `…CopyReadOnly` one,
+  which never overwrites it.
 - Before loading or sending: `ensureLogin` / `ensureLoginNow` (`session.ts`;
-  an expired login looks like an empty list, not an error).
+  an expired login looks like an empty list, not an error; "offline" when
+  the server can't be reached).
+- A load with no answer starting within 8 seconds counts as offline
+  (`needsQuickAnswer` in `answerTimeout.ts` says which requests: not saves,
+  except shopping list ones or once the server is known to be away; not
+  uploads or the server's own routes). Every request goes out through
+  `requestFetch` (`connection.ts`, set in `pb.beforeSend`).
+- Whether the server can be reached, and when it last answered:
+  `useConnection()` (`connection.ts`; every request reports through
+  `requestFetch`, and a page showing its offline copy calls
+  `connection.unreachable()`; checked every half minute while it's down).
+  Shown by `<ConnectionStatus>` beside ⋮; `connection.checkNow()` asks at
+  once (Try again). A page loading on its own (not `useLiveRecords`)
+  listens for `RETRY_EVENT` to load again, like RecipeView.
 - Saving an edit: send only the changed fields, `changedFields`
   (`changedFields.ts`), so a housemate's change meanwhile isn't put back.
   Pantry items: `editChanges` (`pantryFields.ts`).
@@ -100,7 +118,9 @@ they say otherwise.
   `bottom: var(--timer-tray-height, 0px)`, not offset by the bars, and
   needs no `overflow: hidden` between it and the page (`clip` is fine).
 - Error text for people: `errorMessage` (`pb.ts`); "is it offline?":
-  `isOffline` (`offline.ts`); `<OfflineNote>` to say so. A failed call's
+  `isOffline` (`offline.ts`); `<OfflineNote>` to say so (both add the
+  Tailscale reminder for a Tailscale address, `viaTailscale` in
+  `tailscale.ts`). A failed call's
   status (404, 409…): `statusOf(err)` (`errorStatus.ts`), never a cast.
 - Import size limits: `LIMITS` / `fitRecipe` (`server/pb_hooks/recipe_parse.js`),
   mirrored as `IMPORT_LIMITS` / `fitImported` (`paprikaImport.ts`; a test
@@ -176,7 +196,9 @@ they say otherwise.
   `useModalSheet(dialogRef, onClose)` (`useModalSheet.ts`), whose handler
   goes on the dialog's `onClose` (it ignores the late close event that made
   sheets shut as they opened in `npm run dev`).
-- `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`). Icons:
+- `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`; `HelpButton`
+  takes `children` and `className` for a bubble opened by something other
+  than a "?", like the connection indicator). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
   `PhotoViewer.tsx`. Screen stays on: `useWakeLock`. A pantry level (Have /
   Low / Out) as a picture: `LevelJar` (`icons.tsx`). A recipe without a

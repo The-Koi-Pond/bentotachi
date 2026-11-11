@@ -32,6 +32,28 @@ export function MoreIcon() {
   );
 }
 
+// A cloud with a line through it: the server can't be reached.
+export function CloudOffIcon() {
+  return (
+    <Icon size={20}>
+      <path d="m2 2 20 20" />
+      <path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193" />
+      <path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07" />
+    </Icon>
+  );
+}
+
+// A cloud with an arrow up: changes waiting to be sent.
+export function CloudUploadIcon() {
+  return (
+    <Icon size={20}>
+      <path d="M12 13v8" />
+      <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+      <path d="m8 17 4-4 4 4" />
+    </Icon>
+  );
+}
+
 // Sliders: the Recipes page's "View" options.
 export function SlidersIcon({ size = 18 }: { size?: number }) {
   return (

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import type { RecordModel } from "pocketbase";
+import { ClientResponseError, type RecordModel } from "pocketbase";
 import { errorMessage, pb } from "./pb";
 import { isOffline, type OfflineCopy } from "./offline";
 import { ensureLogin } from "./session";
 import { liveUpdateFailed, stopLive } from "./liveResend";
+import { connection, RETRY_EVENT } from "./connection.ts";
 
 interface LiveOptions<T> {
   expand?: string;
@@ -28,10 +29,12 @@ export function useLiveRecords<T extends RecordModel>(collection: string, { expa
     // First make sure the login is still good: with an expired one the
     // server answers with an empty list, which would replace what's on
     // screen and the phone's copy (session.ts). Signed out, the login screen
-    // shows instead; offline, the load below finds that out itself.
+    // shows instead; offline, the copy shows without waiting for the load to
+    // find that out as well.
     void ensureLogin()
       .then((state) => {
         if (state === "signedOut") return;
+        if (state === "offline") throw new ClientResponseError({ status: 0 });
         return pb
           .collection<T>(collection)
           // Never an old answer the browser kept: offline should look offline.
@@ -45,6 +48,10 @@ export function useLiveRecords<T extends RecordModel>(collection: string, { expa
       })
       .catch((err) => {
         const saved = copy && isOffline(err) ? copy.read() : null;
+        // Each time, not only when it first goes offline (the effect below):
+        // a reload that fails again after a comeback must start the check
+        // again, or the list stays on its copy.
+        if (saved) connection.unreachable();
         if (saved) {
           setItems((current) => current ?? saved);
           setOffline(true);
@@ -52,6 +59,14 @@ export function useLiveRecords<T extends RecordModel>(collection: string, { expa
         } else setLoadError(errorMessage(err));
       });
   }, [collection, expand, fields, sort, copy]);
+
+  // Showing the copy (a load given up on, or the shopping list keeping a
+  // change for later) means the server can't be reached now, whatever an
+  // earlier answer said: so it's checked every half minute, and this list
+  // reloads when it answers (RETRY_EVENT below).
+  useEffect(() => {
+    if (offline) connection.unreachable();
+  }, [offline]);
 
   // The copy follows what's on screen (including changes made offline).
   useEffect(() => {
@@ -92,18 +107,23 @@ export function useLiveRecords<T extends RecordModel>(collection: string, { expa
       });
 
     // Phones pause apps in the background and can miss updates, so reload
-    // whenever the app comes back to the front, or the connection comes back.
+    // whenever the app comes back to the front, or the connection comes back:
+    // the phone's own "online", or the server answering again after it
+    // couldn't be reached (connection.ts checks every half minute, since the
+    // phone can have signal all along while the server or Tailscale is off).
     const onVisible = () => {
       if (document.visibilityState === "visible") reload();
     };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", reload);
+    window.addEventListener(RETRY_EVENT, reload);
 
     return () => {
       stopped = true;
       if (unsubscribe) stopLive(unsubscribe);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", reload);
+      window.removeEventListener(RETRY_EVENT, reload);
     };
   }, [collection, expand, reload, upsert, removeLocally]);
 

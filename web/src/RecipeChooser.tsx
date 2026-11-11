@@ -18,6 +18,7 @@ import { searchVariants } from "./regionalNames";
 import { pantryCheck } from "./pantryLinks";
 import { twinLabels } from "./recipeTwins";
 import { useLiveRecords } from "./useLiveRecords";
+import { pantryCopy } from "./offline";
 import { CloseIcon, HeartIcon, OnigiriIcon, ZapIcon } from "./icons";
 import RecipePhoto from "./RecipePhoto";
 import { MEAL_NAMES, type Meal } from "./meals";
@@ -70,7 +71,7 @@ export default function RecipeChooser({
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [surprised, setSurprised] = useState<{ rolls: number; line: string }>({ rolls: 0, line: "" });
   const [error, setError] = useState("");
-  const pantry = useLiveRecords<PantryItem>("pantry_items");
+  const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
 
   // Open as a modal (dimmed background, focus inside) as soon as it appears.
   const sheetClosed = useModalSheet(dialogRef, onClose);

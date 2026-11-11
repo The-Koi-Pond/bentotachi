@@ -108,6 +108,34 @@ main {
   height: 20px;
 }
 
+/* Beside ⋮ only when something's off (ConnectionStatus.tsx): the cloud in
+   the warning colour when the server can't be reached, with a small count
+   of shopping changes waiting. */
+.connection-button {
+  position: relative;
+  color: var(--muted);
+}
+
+.connection-button.down {
+  color: var(--danger);
+}
+
+.connection-count {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
 /* Settings menu */
 
 .menu {
