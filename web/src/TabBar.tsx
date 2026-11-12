@@ -42,7 +42,7 @@ export default function TabBar() {
           aria-current={current === tab.to ? "page" : undefined}
         >
           {tab.icon}
-          {tab.label}
+          <span className="tab-label">{tab.label}</span>
         </Link>
       ))}
     </nav>

@@ -1,6 +1,6 @@
 import { Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
-import { RECIPE_SITES, categoriesPath, hasCategories, normaliseSiteUrl, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
+import { RECIPE_SITES, categoriesPath, hasCategories, normaliseSiteUrl, sameSite, savedSiteSearchUrl, searchUrl, siteHost } from "../recipeSites";
 import { hasBuiltInBrowser } from "../bentoBrowser";
 import { SiteLink, useSiteOpener } from "../SiteOpener";
 import { errorMessage, pb, savedSites, type SavedSite } from "../pb";
@@ -158,7 +158,7 @@ export default function Browse() {
             ))}
           </ul>
         )}
-        {addingSite && <AddSiteForm onAdded={ours.upsert} onClose={() => setAddingSite(false)} />}
+        {addingSite && <AddSiteForm sites={ours.items ?? []} onAdded={ours.upsert} onClose={() => setAddingSite(false)} />}
       </section>
 
       <section className="stack tray-section">
@@ -202,7 +202,7 @@ export default function Browse() {
 
 // After "+ Add a site" (on the "Our sites" heading): the address and an
 // optional name (it defaults to the site's address, like "example.com").
-function AddSiteForm({ onAdded, onClose }: { onAdded: (site: SavedSite) => void; onClose: () => void }) {
+function AddSiteForm({ sites, onAdded, onClose }: { sites: SavedSite[]; onAdded: (site: SavedSite) => void; onClose: () => void }) {
   const [address, setAddress] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -214,6 +214,11 @@ function AddSiteForm({ onAdded, onClose }: { onAdded: (site: SavedSite) => void;
     const url = normaliseSiteUrl(address);
     if (!url) {
       setError("That doesn't look like a web address. Try something like smittenkitchen.com");
+      return;
+    }
+    const already = sites.find((site) => sameSite(site.url, url));
+    if (already) {
+      setError(`${already.name} is on your list already.`);
       return;
     }
     setBusy(true);

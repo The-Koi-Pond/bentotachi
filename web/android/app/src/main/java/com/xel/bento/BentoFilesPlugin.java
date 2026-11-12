@@ -2,7 +2,9 @@ package com.xel.bento;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.OpenableColumns;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSObject;
@@ -28,7 +30,8 @@ import java.util.concurrent.Executors;
  *   begin()                  starts a new file (in the app's cache).
  *   append({ data })         adds a piece (base64), in order.
  *   save({ name, mime })     asks where to save it, copies it there and
- *                            resolves with { saved }.
+ *                            resolves with { saved, name } (the name it
+ *                            really got).
  *
  * In pieces because one huge message to the app can run out of memory.
  */
@@ -84,18 +87,39 @@ public class BentoFilesPlugin extends Plugin {
         }
         Uri target = result.getData().getData();
         worker.execute(() -> {
+            // On purpose: "saved" only once the file is closed, as some
+            // places (cloud folders) only write it then, and that can fail.
             try (InputStream in = new FileInputStream(pending());
                  OutputStream out = getContext().getContentResolver().openOutputStream(target)) {
                 if (out == null) throw new IOException("couldn't open the place you picked");
                 byte[] buffer = new byte[64 * 1024];
                 int read;
                 while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
-                call.resolve(new JSObject().put("saved", true));
             } catch (Throwable e) {
                 call.reject("Couldn't save the file: " + e.getMessage());
+                return;
             } finally {
                 pending().delete();
             }
+            JSObject answer = new JSObject().put("saved", true);
+            // The name it really got: Android adds " (1)" when the folder
+            // has one by that name already.
+            String name = savedName(target);
+            if (name != null) answer.put("name", name);
+            call.resolve(answer);
         });
+    }
+
+    // The saved file's name, or null if the place it went won't say.
+    private String savedName(Uri uri) {
+        try (Cursor cursor = getContext().getContentResolver().query(uri, new String[] { OpenableColumns.DISPLAY_NAME }, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                String name = cursor.getString(0);
+                if (name != null && !name.isEmpty()) return name;
+            }
+        } catch (Exception e) {
+            // Some places don't say: the name asked for stands.
+        }
+        return null;
     }
 }

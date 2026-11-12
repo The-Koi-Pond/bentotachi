@@ -221,6 +221,11 @@ Not released yet:
   off a carton of 12 after cooking ("about 9 left") and the shopping list
   knows 2 cartons are enough. A packet with no size is still never
   guessed at.
+- From a tester's second report: the tab bar's labels stay inside their
+  tabs at the largest phone text ("Shopp…"); an export says the name
+  Android really saved it as ("… (1).paprikarecipes"); adding a site
+  that's already on the list says so; restoring a file that isn't a
+  backup says so plainly, without the raw zip error.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -1089,6 +1094,32 @@ packet (pantry.pb.js); a hand-typed "milk" isn't linked even when the
 pantry has Milk. Possible shape: link a typed row to a pantry item of the
 same name when it's added, and on "Clear ticked items" offer to add the
 unlinked ones to the pantry. Not decided; not a bug.
+
+## To consider: taking things off the pantry again after cooking (Xel, 2026-11-12)
+
+Twice a tester expected ticking a recipe's ingredients to take them off
+the pantry, and once added packets after marking a recipe cooked, then
+found no way back to "Used anything up?". Today the sheet comes only once,
+when "We cooked this" / "Finished" is pressed (cookedUses.ts,
+UsedUpSheet.tsx); the ingredient ticks are only a checklist, and they
+reset on leaving the recipe. Xel wants it to be intuitive; how is open.
+Some shapes to weigh (mock-up first):
+
+- A "Used anything up?" link beside the cooked stamp ("Cooked today ·
+  Undo"), so the sheet can be opened again that day. Smallest; the sheet
+  already knows what to offer.
+- The ticks feed the sheet: ingredients ticked while cooking come in
+  ticked, unticked ones unticked, so ticking means "I used this". Keeps
+  the one confirming step, so a stray tick never takes anything off.
+- Ticks that take things off straight away, with Undo: the most direct,
+  but a checklist tick that changes the pantry can catch out someone who
+  only ticks to keep their place, and the sheet's "Take them off" step is
+  what lets a household check before anything comes off.
+- Keeping the ticks while the recipe is being cooked (until it's marked
+  cooked, or the next day), so leaving for the timer or the list doesn't
+  lose them.
+
+Not decided; not a bug.
 
 ## Ideas for later
 

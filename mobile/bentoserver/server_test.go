@@ -7,6 +7,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -86,8 +87,16 @@ func TestStartBackupRestore(t *testing.T) {
 	// Something that isn't a backup changes nothing.
 	junk := filepath.Join(t.TempDir(), "junk.zip")
 	_ = os.WriteFile(junk, []byte("not a zip"), 0o644)
-	if _, err := Restore(junk); err == nil {
-		t.Fatal("restoring a junk file should fail")
+	if _, err := Restore(junk); !errors.Is(err, errNotABackup) {
+		t.Fatalf("restoring a junk file should say it isn't a backup: %v", err)
+	}
+	// A zip of something else says the same, and leaves nothing behind.
+	other := zipHolding(t, "photo.jpg")
+	if _, err := Restore(other); !errors.Is(err, errNotABackup) {
+		t.Fatalf("restoring a zip with no data.db should say it isn't a backup: %v", err)
+	}
+	if _, err := os.Stat(lastDirs[0] + "-restoring"); !os.IsNotExist(err) {
+		t.Fatalf("a refused restore should leave nothing unpacked: %v", err)
 	}
 	items = call("GET", "/api/collections/recipes/records", token, nil)["items"].([]any)
 	if len(items) != 1 {
@@ -318,4 +327,19 @@ func TestBadBackupKeepsBackups(t *testing.T) {
 	if _, err := os.Stat(made); err != nil {
 		t.Fatalf("the phone's earlier backup should still be there: %v", err)
 	}
+}
+
+// A real zip holding one small file by this name, and nothing else.
+func zipHolding(t *testing.T, name string) string {
+	path := filepath.Join(t.TempDir(), "other.zip")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := zip.NewWriter(file)
+	entry, _ := writer.Create(name)
+	_, _ = entry.Write([]byte("something else"))
+	_ = writer.Close()
+	_ = file.Close()
+	return path
 }

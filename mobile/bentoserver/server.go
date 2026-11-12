@@ -10,6 +10,7 @@
 package bentoserver
 
 import (
+	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
@@ -262,6 +263,9 @@ func SetPassword(username, password string) error {
 	})
 }
 
+// What Restore says about a file that isn't a backup: shown to people as is.
+var errNotABackup = errors.New("That file isn't a Bentotachi backup. Pick a backup Bentotachi saved (a .zip file).")
+
 // Restore replaces everything with a backup zip (from Backup, or from a
 // PocketBase server), then starts the server again and returns its port. If
 // the backup can't be used, the data from before is put back.
@@ -277,11 +281,18 @@ func Restore(zipPath string) (int, error) {
 	incoming := dataDir + "-restoring"
 	_ = os.RemoveAll(incoming)
 	if err := archive.Extract(zipPath, incoming); err != nil {
-		return port, fmt.Errorf("that file isn't a Bentotachi backup: %w", err)
+		_ = os.RemoveAll(incoming)
+		// Only a file that isn't a zip at all is the wrong file; anything
+		// else (a full phone) keeps its reason, so nobody throws away a
+		// good backup.
+		if errors.Is(err, zip.ErrFormat) {
+			return port, errNotABackup
+		}
+		return port, fmt.Errorf("Couldn't unpack the backup: %w", err)
 	}
 	if _, err := os.Stat(filepath.Join(incoming, "data.db")); err != nil {
 		_ = os.RemoveAll(incoming)
-		return port, errors.New("that file isn't a Bentotachi backup (it has no data.db)")
+		return port, errNotABackup
 	}
 
 	stopApp(app)

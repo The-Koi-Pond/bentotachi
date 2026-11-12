@@ -7,15 +7,15 @@ import { startFile } from "./saveFile";
 // ("Save as a Paprika file", to send to a friend). Written a recipe (and its
 // photo) at a time, so a big collection never has to fit in memory at once.
 // Each recipe's rating is the household's average; `me`'s hearts become
-// Paprika favorites. Says whether it was saved (not cancelled) and whose
-// photos couldn't be fetched (they're saved without).
+// Paprika favorites. Says the name it was saved as (null if cancelled) and
+// whose photos couldn't be fetched (they're saved without).
 export async function savePaprikaFile(
   list: Recipe[],
   ratings: RecipeRating[],
   me: string | undefined,
   name: string,
   onProgress: (text: string) => void
-): Promise<{ saved: boolean; missingPhotos: string[] }> {
+): Promise<{ savedAs: string | null; missingPhotos: string[] }> {
   const file = await startFile();
   let pieces: Uint8Array[] = [];
   const zip = paprikaZip((piece) => pieces.push(piece));
@@ -42,8 +42,8 @@ export async function savePaprikaFile(
   zip.end();
   for (const piece of pieces) await file.add(piece);
   onProgress("Saving…");
-  const saved = await file.save(name, "application/octet-stream");
-  return { saved, missingPhotos };
+  const savedAs = await file.save(name, "application/octet-stream");
+  return { savedAs, missingPhotos };
 }
 
 // A file name without the characters file systems refuse, kept short.

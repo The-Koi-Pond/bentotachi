@@ -130,6 +130,19 @@ export function normaliseSiteUrl(input: string): string | null {
   }
 }
 
+// Whether two addresses are the same site: "https://www.smittenkitchen.com/"
+// and "http://smittenkitchen.com" are; another page on it isn't.
+export function sameSite(a: string, b: string): boolean {
+  const key = (url: string) => {
+    try {
+      return siteHost(url).toLowerCase() + new URL(url).pathname.replace(/\/+$/, "");
+    } catch {
+      return url;
+    }
+  };
+  return key(a) === key(b);
+}
+
 // Searching one of our own sites goes through Google, limited to that site,
 // since every site's own search page works differently.
 export function savedSiteSearchUrl(url: string, words: string): string {

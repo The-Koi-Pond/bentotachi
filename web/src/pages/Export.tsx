@@ -370,9 +370,9 @@ function ExportRecipes() {
       // "Bentotachi recipes 2026-11-07", "Bentotachi Soups 2026-11-07".
       const part = which === "favorites" ? spell("favourites") : shelf ? fileNamePart(shelf.name).slice(0, 40) : "";
       const name = `Bentotachi ${part || "recipes"} ${localToday()}.paprikarecipes`;
-      const { saved, missingPhotos } = await savePaprikaFile(all, ratings, me, name, setProgress);
-      if (saved) {
-        const text = `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${name}”.`;
+      const { savedAs, missingPhotos } = await savePaprikaFile(all, ratings, me, name, setProgress);
+      if (savedAs) {
+        const text = `Saved ${all.length} ${all.length === 1 ? "recipe" : "recipes"} as “${savedAs}”.`;
         // A connection that dropped partway: say so, as the copy is missing them.
         const missing = missingPhotos.length
           ? ` Some photos couldn't be fetched, so ${someNames(missingPhotos)} ${missingPhotos.length === 1 ? "is" : "are"} saved without ${missingPhotos.length === 1 ? "one" : "some"}: export again to include them.`

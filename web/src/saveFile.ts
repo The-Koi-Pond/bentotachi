@@ -3,12 +3,13 @@ import { isAndroidApp } from "./pb";
 
 // Saves a file Bento made (like a recipe export). In a browser it downloads;
 // in the Android app, Android asks where to save it (BentoFilesPlugin.java),
-// as the app can't download. Whether it was saved (false if cancelled).
+// as the app can't download. The name it was saved as (Android adds " (1)"
+// when there's one by that name already), or null if cancelled.
 
 interface FilesPlugin {
   begin(): Promise<void>;
   append(options: { data: string }): Promise<void>;
-  save(options: { name: string; mime: string }): Promise<{ saved: boolean }>;
+  save(options: { name: string; mime: string }): Promise<{ saved: boolean; name?: string }>;
 }
 
 const Files = registerPlugin<FilesPlugin>("BentoFiles");
@@ -26,7 +27,7 @@ function base64(bytes: Uint8Array): string {
 // never has to be in memory whole on a phone: add() the pieces in order,
 // then save() asks where (Android) or downloads it (a browser, which keeps
 // the pieces until then).
-export async function startFile(): Promise<{ add: (bytes: Uint8Array) => Promise<void>; save: (name: string, mime: string) => Promise<boolean> }> {
+export async function startFile(): Promise<{ add: (bytes: Uint8Array) => Promise<void>; save: (name: string, mime: string) => Promise<string | null> }> {
   if (isAndroidApp) {
     await Files.begin();
     // Whatever arrives fills one PIECE-sized buffer, sent to Android each
@@ -52,7 +53,8 @@ export async function startFile(): Promise<{ add: (bytes: Uint8Array) => Promise
       },
       save: async (name, mime) => {
         await flush();
-        return (await Files.save({ name, mime })).saved;
+        const answer = await Files.save({ name, mime });
+        return answer.saved ? answer.name || name : null;
       },
     };
   }
@@ -63,7 +65,7 @@ export async function startFile(): Promise<{ add: (bytes: Uint8Array) => Promise
     },
     save: async (name, mime) => {
       download(name, new Blob(pieces, { type: mime }));
-      return true;
+      return name;
     },
   };
 }

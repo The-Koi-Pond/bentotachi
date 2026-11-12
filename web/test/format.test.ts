@@ -55,6 +55,13 @@ test("cleans up typed site addresses", async () => {
   assert.equal(savedSiteSearchUrl("https://www.example.com/", " beef pie "), "https://www.google.com/search?q=site%3Aexample.com%20beef%20pie");
 });
 
+test("the same site added twice is found, however it's typed", async () => {
+  const { sameSite } = await import("../src/recipeSites.ts");
+  assert.equal(sameSite("https://smittenkitchen.com/", "http://www.SmittenKitchen.com"), true);
+  assert.equal(sameSite("https://example.com/recipes/", "https://example.com/recipes"), true);
+  assert.equal(sameSite("https://example.com/recipes", "https://example.com/"), false);
+});
+
 test("a site's categories page carries its name and link intact, and only a category's says inside", async () => {
   const { categoriesPath } = await import("../src/recipeSites.ts");
   const site = categoriesPath({ name: "Fish & chips?", url: "https://example.com/?a=1&b=2" });

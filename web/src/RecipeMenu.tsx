@@ -119,12 +119,12 @@ export default function RecipeMenu({
   async function saveFile() {
     const ratings = await recipeRatings().getFullList({ filter: pb.filter("recipe = {:id}", { id: recipe.id }) });
     const name = `${fileNamePart(recipe.title) || "Recipe"}.paprikarecipes`;
-    const { saved, missingPhotos } = await savePaprikaFile([recipe], ratings, pb.authStore.record?.id, name, () => {});
-    if (saved) {
+    const { savedAs, missingPhotos } = await savePaprikaFile([recipe], ratings, pb.authStore.record?.id, name, () => {});
+    if (savedAs) {
       showToast(
         missingPhotos.length
-          ? `Saved “${name}”, but a photo wouldn't load, so it's left out: try again to include it.`
-          : `Saved “${name}”. Send it to anyone: Bentotachi, Paprika, Mealie and Tandoor can import it.`
+          ? `Saved “${savedAs}”, but a photo wouldn't load, so it's left out: try again to include it.`
+          : `Saved “${savedAs}”. Send it to anyone: Bentotachi, Paprika, Mealie and Tandoor can import it.`
       );
     }
   }
