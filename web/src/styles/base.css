@@ -68,7 +68,7 @@
     --success: #7fbfae;
     --have: #7fbfae;
     --low: #ffca28;
-    --out: #ef5350;
+    --out: #ff6b66; /* on cards: 5.4, on the background: 6.3 */
     --gold: #ffca28;
     --heart: #f06595;
     --rice: #f4efe4;
@@ -215,6 +215,9 @@ a {
   height: 24px;
   border-radius: 999px;
   background: var(--border);
+  /* The off track alone is 1.4 on a card; this edge makes it 3.3, so the
+     switch can be seen when it's off. */
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 75%, var(--surface));
   transition: background 0.15s;
 }
 
@@ -235,6 +238,7 @@ a {
    (The Koi Pond's BRAND.md). A switch that's on is calm, so it's jade. */
 [aria-checked="true"] > .switch {
   background: var(--jade-strong);
+  box-shadow: none;
 }
 
 [aria-checked="true"] > .switch::after {
@@ -444,7 +448,6 @@ main h1:not(.card h1) {
   background: none;
   border: none;
   border-radius: 8px;
-  opacity: 0.75;
   cursor: pointer;
 }
 
@@ -452,7 +455,6 @@ main h1:not(.card h1) {
 .view-switch button[aria-current="true"] {
   color: var(--text);
   font-weight: 700;
-  opacity: 1;
 }
 
 /* The chopstick: plain wood, a touch thicker at one end. */
@@ -1078,10 +1080,17 @@ legend {
   margin: 0;
 }
 
-/* A person's name in their color. */
+/* A person's name in their color. The palette (PERSON_COLORS in pb.ts) is
+   one set of mid-tones for both themes, too faint to read as text on
+   either, so text takes 65% of the colour and the rest of --text (darker
+   in light, lighter in dark): for the palette and the accent, at least 4.7
+   on cards and the background in both themes. Fills under white text take
+   70% of the colour and the rest black: at least 4.9. (A custom colour from
+   the picker gets the same mixes, with no promise.) Every person-coloured
+   text or fill uses one of these two mixes. */
 .person-name {
   font-weight: 700;
-  color: var(--person, var(--accent));
+  color: color-mix(in srgb, var(--person, var(--accent)) 65%, var(--text));
 }
 
 .small-print {
@@ -1117,7 +1126,7 @@ legend {
   color: #fff;
   font-weight: 700;
   line-height: 1;
-  background: var(--person, var(--accent));
+  background: color-mix(in srgb, var(--person, var(--accent)) 70%, black);
 }
 
 /* "My colour · Teal ?" on one line. */
@@ -1136,7 +1145,6 @@ legend {
   font-size: 0.85em;
   font-weight: 400;
   color: var(--muted);
-  opacity: 0.75;
 }
 
 /* A box with a ✕ inside on the right that empties it (Add recipe's link). */

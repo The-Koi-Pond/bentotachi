@@ -254,7 +254,7 @@
   font-size: 0.78rem;
   font-weight: 800;
   color: #fff;
-  background: var(--person, var(--accent));
+  background: color-mix(in srgb, var(--person, var(--accent)) 70%, black);
   border-radius: 999px;
 }
 
@@ -325,7 +325,7 @@
 }
 
 .thumb-toggle[aria-pressed="true"] {
-  color: var(--person, var(--accent));
+  color: color-mix(in srgb, var(--person, var(--accent)) 65%, var(--text));
 }
 
 /* "★ 4 average" followed by each person's pill. */
@@ -663,7 +663,9 @@
   background: none;
   border: none;
   border-radius: 50%;
-  opacity: 0.45;
+  /* Quiet but findable on a phone, where it never gets hover or focus:
+     3.3 on a card (an icon needs 3). */
+  opacity: 0.75;
   cursor: pointer;
 }
 

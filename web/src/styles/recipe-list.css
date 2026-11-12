@@ -701,14 +701,15 @@
 
 .tag-chip.person-chip {
   font-weight: 600;
-  color: var(--person, var(--accent));
+  color: color-mix(in srgb, var(--person, var(--accent)) 65%, var(--text));
   background: none;
   border-color: var(--person, var(--accent));
 }
 
 .tag-chip.person-chip.selected {
   color: #fff;
-  background: var(--person, var(--accent));
+  background: color-mix(in srgb, var(--person, var(--accent)) 70%, black);
+  border-color: color-mix(in srgb, var(--person, var(--accent)) 70%, black);
 }
 
 .shelf-head.with-handle {

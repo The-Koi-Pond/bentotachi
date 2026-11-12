@@ -189,6 +189,13 @@ beside the last dish's ✕, not a "+ Dinner" under every planned day; on a
 recipe, the details, tags, ratings and cooking history share one box,
 split by thin lines, instead of three boxes.
 
+**Compact look, 44px to tap** (Xel, 2026-11-12, after the design audit):
+rows and buttons keep the compact sizes above, but every control's tap
+area reaches at least 44x44px (PRODUCT.md's floor), with an invisible
+larger hit area where the drawn control is smaller, as `.help-button`'s
+`::before` does. The look stays compact; the target doesn't shrink with
+it.
+
 **Bento touches** (Xel, 2026-11-09, picked from mock-ups on the real
 screens): section headings we write ("Ingredients", "Got it", shelf and
 pantry place names) are in Pond Pebbles too; the pantry's Have / Low / Out

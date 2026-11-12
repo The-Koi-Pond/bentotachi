@@ -328,8 +328,9 @@ export function displayName(user: Pick<User, "name" | "username"> | undefined): 
   return user?.name || user?.username || "Someone";
 }
 
-// The swatches offered in the settings menu: mid-tones that stay readable
-// on both the light and dark backgrounds.
+// The swatches offered in the settings menu: mid-tones for both themes.
+// Text and fills mix them toward readable (base.css, .person-name), so a
+// new swatch needs its contrast checked there.
 export const PERSON_COLORS = [
   { name: "Pink", value: "#d6336c" },
   { name: "Grape", value: "#ae3ec9" },

@@ -222,6 +222,11 @@ Not released yet:
   last open ("To: Party" to change it); something already on another list
   asks before it's added here too, or shows "On Party" in a recipe's or the
   plan's list. The pantry's place menu is the same picker now.
+- Easier to read (the design check-up of 2026-11-12): people's names in
+  their colour, avatars and rating pills, the unpicked side of the
+  two-way switches, "(optional)", dark mode's "Out", the ingredient link
+  icon and the other months' days on the plan all meet the 4.5:1 contrast
+  floor now, in light and dark; a switch that's off has an outline.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -1142,7 +1147,10 @@ the pantry, and once added packets after marking a recipe cooked, then
 found no way back to "Used anything up?". Today the sheet comes only once,
 when "We cooked this" / "Finished" is pressed (cookedUses.ts,
 UsedUpSheet.tsx); the ingredient ticks are only a checklist, and they
-reset on leaving the recipe. Xel wants it to be intuitive; how is open.
+reset on leaving the recipe. That reset is going (Xel, 2026-11-12, after
+the design critique): ingredient and step ticks are kept on the phone per
+recipe until "We cooked this" / "Finished", or the next day. Xel wants it
+to be intuitive; how the pantry fits in is open.
 Some shapes to weigh (mock-up first):
 
 - A "Used anything up?" link beside the cooked stamp ("Cooked today ·
