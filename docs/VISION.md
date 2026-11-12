@@ -194,7 +194,11 @@ rows and buttons keep the compact sizes above, but every control's tap
 area reaches at least 44x44px (PRODUCT.md's floor), with an invisible
 larger hit area where the drawn control is smaller, as `.help-button`'s
 `::before` does. The look stays compact; the target doesn't shrink with
-it.
+it. Rows stacked with no gap can't take an invisible extra, so (Xel,
+2026-11-13) ingredient lines grew from 30 to 36 px like the other rows,
+and a pantry row's name is tappable over its whole 38 px row; the plan's
+dishes, shelf headers, colour swatches and the B/I/U buttons stay as they
+are.
 
 **Bento touches** (Xel, 2026-11-09, picked from mock-ups on the real
 screens): section headings we write ("Ingredients", "Got it", shelf and

@@ -61,6 +61,13 @@ li.divider-label {
   border-top: 1px solid var(--border);
 }
 
+/* Rows 3 px apart and 4 px from the item: the ✕ reaches no further than
+   half that (base.css, "44 px to tap"), or it would take the next row's ✕. */
+.shopping-list li .icon-button.small {
+  --tap-x: 2px;
+  --tap-y: 1px;
+}
+
 .shopping-list label {
   flex: 1;
   flex-direction: row;

@@ -265,6 +265,12 @@ they say otherwise.
   `pantry`, `recipe-list`, `recipe`, `dates`, `settings`, `print`.
 - Words only screen readers hear (a label beside a number that's
   announced on its own): `.screen-reader-only` (`base.css`).
+- A control smaller than 44 px to tap: add it to the two `:where(...)`
+  lists under "44 px to tap" in `base.css` and set `--tap-x` / `--tap-y`
+  to at most half the gap to its neighbour (an invisible `::before`; not
+  for inputs or selects, nor inside a box that clips). A size that holds
+  text: `max(<px>, <em>)`, so it looks the same and grows with the phone's
+  text size.
 - A screen's styles go in its own file. A new piece two screens use goes
   in `base.css`, not a copy in each. Some older shared pieces still live
   in the file of the screen they began on, among them: tag chips

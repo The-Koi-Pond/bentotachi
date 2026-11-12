@@ -111,6 +111,12 @@
   transform: translateY(-50%);
 }
 
+/* It sits on its site's row: reaching further (base.css, "44 px to tap")
+   would take the row's taps. */
+.site-with-categories .site-categories {
+  --tap-y: 0px;
+}
+
 /* A category's name (SiteCategories.tsx), stuck at the top while its
    recipes scroll under it, so it's clear which one you're in. Like the
    recipe page's jump bar: edge to edge on the page's own background. */

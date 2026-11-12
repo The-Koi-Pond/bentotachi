@@ -234,6 +234,12 @@ Not released yet:
   the dinner; an Undo bar or message waits while your finger or the mouse
   is on it. For screen readers: drags say names and days, not codes;
   "are you sure?" reads its question; Undo bars and messages are read out.
+- Easier to tap and to read big (the same check-up): small buttons have a
+  44 px area to tap without looking any different, ingredient lines are
+  36 px, a pantry row's whole height opens it; with the phone's biggest
+  text, recipe names fit (fewer cards a row), the pantry's switch and
+  Have / Low / Out stay on screen, and "We cooked this" moves under its
+  words instead of squeezing them.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

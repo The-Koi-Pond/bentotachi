@@ -112,7 +112,9 @@ body {
   background: var(--bg);
   color: var(--text);
   /* Compact on purpose (docs/VISION.md, "Compact, not airy"). */
-  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* 15 px, in rem so it follows a browser's text size like everything
+     else (a phone's text size scales px too). */
+  font: 0.9375rem/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 h1,
@@ -361,6 +363,7 @@ main h1:not(.card h1) {
 
 .section-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -776,13 +779,14 @@ main h1:not(.card h1) {
 
 /* The "?" beside a heading or box (Help.tsx), and the tip it opens right
    underneath. */
-/* A 22 px circle with a bigger area to tap (::before). */
+/* A 22 px circle with a bigger area to tap ("44 px to tap", below). */
 .help-button {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  /* 22 px, or more with the phone's bigger text, so the "?" stays inside. */
+  width: max(22px, 1.76em);
+  height: max(22px, 1.76em);
   margin-left: 6px;
   padding: 0;
   font: inherit;
@@ -797,10 +801,138 @@ main h1:not(.card h1) {
   cursor: pointer;
 }
 
-.help-button::before {
+/* 44 px to tap, with the compact look (docs/VISION.md, "Compact look,
+   44px to tap"): an invisible ::before reaches --tap-x and --tap-y past a
+   control smaller than that. Each reach is at most half the gap to the
+   next control, so two never cover each other; rows stacked with no gap
+   (ingredients, pantry rows) can't reach further, nor can anything in a
+   box that clips (a plan dish). Inputs and selects can't have a ::before.
+   :where, so a control's own `position` (absolute, sticky) still wins.
+   Checked by measuring every screen, not by eye. The same list twice: */
+:where(
+    .button,
+    .icon-button.small,
+    .view-switch button,
+    .filter-chips button,
+    .topbar .brand,
+    .topbar .icon-button,
+    .pantry-add-to-list,
+    .pantry-name,
+    .place-toggle,
+    .plan-add-dish,
+    .plan-add.another,
+    .place-title > button,
+    .tag-add,
+    .tag-suggestion-row .tag-chip,
+    .list-options-link,
+    .add-notes > .link-button,
+    .extra-times > .link-button,
+    .ingredient-row label,
+    .pantry-link-button,
+    .help-button
+  ) {
+  position: relative;
+}
+
+:where(
+    .button,
+    .icon-button.small,
+    .view-switch button,
+    .filter-chips button,
+    .topbar .brand,
+    .topbar .icon-button,
+    .pantry-add-to-list,
+    .pantry-name,
+    .place-toggle,
+    .plan-add-dish,
+    .plan-add.another,
+    .place-title > button,
+    .tag-add,
+    .tag-suggestion-row .tag-chip,
+    .list-options-link,
+    .add-notes > .link-button,
+    .extra-times > .link-button,
+    .ingredient-row label,
+    .pantry-link-button,
+    .help-button
+  )::before {
   content: "";
   position: absolute;
-  inset: -7px;
+  inset: calc(-1 * var(--tap-y, 0px)) calc(-1 * var(--tap-x, 0px));
+}
+
+.button {
+  --tap-y: 3px;
+}
+
+.button.small,
+.filter-chips button,
+.topbar .brand {
+  --tap-y: 4px;
+}
+
+.icon-button.small {
+  --tap-x: 4px;
+  --tap-y: 4px;
+}
+
+.topbar .icon-button {
+  --tap-x: 3px;
+  --tap-y: 4px;
+}
+
+.view-switch button,
+.pantry-add-to-list {
+  --tap-y: 5px;
+}
+
+.pantry-add-to-list,
+.tag-add,
+.tag-suggestion-row .tag-chip {
+  --tap-x: 3px;
+}
+
+.ingredient-row label {
+  --tap-y: 2px;
+}
+
+/* A place's header can sit 2 px above its first row. */
+.pantry-name,
+.place-toggle {
+  --tap-y: 1px;
+}
+
+.pantry-link-button {
+  --tap-x: 4px;
+  --tap-y: 2px;
+}
+
+.plan-add-dish {
+  --tap-x: 2px;
+}
+
+.plan-add.another,
+.place-title > button,
+.extra-times > .link-button {
+  --tap-y: 6px;
+}
+
+.add-notes > .link-button {
+  --tap-y: 4px;
+}
+
+.list-options-link {
+  --tap-y: 7px;
+}
+
+.help-button {
+  --tap-x: 7px;
+  --tap-y: 7px;
+}
+
+.tag-add,
+.tag-suggestion-row .tag-chip {
+  --tap-y: 3px;
 }
 
 /* Ingredients and Method on the Edit page (RecipeEdit's LinesField): laid

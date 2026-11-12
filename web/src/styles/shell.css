@@ -135,15 +135,16 @@ main {
   position: absolute;
   top: 1px;
   right: 0;
-  min-width: 16px;
-  height: 16px;
+  /* 16 px, or more with the phone's bigger text. */
+  min-width: max(16px, 1.47em);
+  height: max(16px, 1.47em);
   padding: 0 4px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-text);
   font-size: 0.68rem;
   font-weight: 700;
-  line-height: 16px;
+  line-height: max(16px, 1.47em);
   text-align: center;
 }
 

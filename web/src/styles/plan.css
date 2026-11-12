@@ -312,6 +312,11 @@
   min-height: 26px;
 }
 
+/* 3 px from its dish: half that (base.css, "44 px to tap"). */
+.dinner-slot .icon-button.small {
+  --tap-x: 1px;
+}
+
 /* ✕ (the month view's day list) in umeboshi: it takes something off. */
 .dinner-slot .icon-button[aria-label^="Take"] {
   color: var(--accent);

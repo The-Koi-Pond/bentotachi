@@ -11,7 +11,9 @@
   margin: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  /* A variable, as the phone columns' widths are worked out from it. */
+  --grid-gap: 14px;
+  gap: var(--grid-gap);
 }
 
 /* The Recipes page's search and filters (tags, quick, favourites): a bento
@@ -324,11 +326,17 @@
   content: "\200b";
 }
 
-/* Phones: three small cards per row. */
+/* Phones: three small cards per row, fewer once the phone's text is big
+   enough that a name wouldn't fit (a card never narrower than 5.5rem, so
+   still three on a 320 px phone at normal text). The half pixel spares a
+   browser that rounds the thirds up from dropping to two. */
 @media (max-width: 520px) {
   .recipe-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    --grid-gap: 8px;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, max(5.5rem, calc((100% - 2 * var(--grid-gap)) / 3 - 0.5px))), 1fr)
+    );
   }
 
   .recipe-card {
@@ -398,8 +406,8 @@
 
 @media (max-width: 520px) {
   .recipe-grid.big {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    --grid-gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(8.75rem, calc((100% - var(--grid-gap)) / 2 - 0.5px))), 1fr));
   }
 
   .recipe-grid.big .recipe-card-text {
@@ -718,7 +726,7 @@
 
 /* What's inside: the recipes as compartments on the rim. */
 .shelf > .recipe-grid {
-  gap: 5px;
+  --grid-gap: 5px;
   padding: 0 0 5px;
 }
 
