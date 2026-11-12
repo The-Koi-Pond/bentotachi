@@ -101,6 +101,9 @@ function DeleteSection({ user }: { user: User }) {
         await users().delete(user.id);
         logOut();
       }
+      // Starting again from the start: after a fresh set-up, Recipes, not
+      // this page.
+      window.location.hash = "#/";
       window.location.reload();
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });

@@ -229,7 +229,8 @@ Not released yet:
     back" now shows that login instead of a dead button.
   - "Delete everything" forgets every Bentotachi setting on the phone too
     (a server address typed once included), so it starts again at "How will
-    you use Bentotachi?".
+    you use Bentotachi?", and after setting up again opens on Recipes (it
+    used to come back to Profile, found in the phone QA of 2026-11-12).
   - A paused step timer's button says "paused", not "running".
   - The login forms say what's missing ("Type your username."), address
     first, instead of the browser quietly putting the cursor in a box; the
