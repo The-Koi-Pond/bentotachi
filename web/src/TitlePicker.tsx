@@ -5,6 +5,7 @@
 // "+ Add". A popover over the page, like the "?" tips (Help.tsx).
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import { dragAnnouncements } from "./dragWords";
 import { popoverSpot } from "./popoverSpot";
 import { ChevronIcon, GripIcon, TrashIcon } from "./icons";
 
@@ -148,6 +149,7 @@ export default function TitlePicker({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          accessibility={{ announcements: dragAnnouncements((key) => options.find((o) => o.key === key)?.label ?? "it") }}
           onDragEnd={(event) => {
             if (event.over && event.over.id !== event.active.id) onMove(String(event.active.id), String(event.over.id));
           }}

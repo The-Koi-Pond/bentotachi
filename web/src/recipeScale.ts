@@ -2,15 +2,14 @@
 // 4 to 6 servings, it opens at 6 next time. Kept as
 // { recipe id: factor }; "as written" (1) isn't kept.
 
-import { remember, rememberedJson } from "./phoneStorage.ts";
+import { remember, rememberedRecord } from "./phoneStorage.ts";
 
 const KEY = "bento.recipeScales";
 
 type Scales = Record<string, number>;
 
 function read(): Scales {
-  const saved = rememberedJson(KEY);
-  return saved && typeof saved === "object" && !Array.isArray(saved) ? (saved as Scales) : {};
+  return rememberedRecord(KEY) as Scales;
 }
 
 // The scales with this recipe's changed: 1 (as written), or anything that

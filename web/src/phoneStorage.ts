@@ -32,6 +32,14 @@ export function rememberedJson(key: string, where: Where = {}): unknown {
   }
 }
 
+// A remembered { key: value } table (like one entry per recipe), or {} if
+// nothing or something else was saved. Each value's shape is still the
+// caller's to check.
+export function rememberedRecord(key: string, where: Where = {}): Record<string, unknown> {
+  const saved = rememberedJson(key, where);
+  return saved && typeof saved === "object" && !Array.isArray(saved) ? (saved as Record<string, unknown>) : {};
+}
+
 // Forgets everything remembered under keys starting with `prefix`, for good
 // and for this visit: "Delete everything" leaves nothing of Bentotachi's on
 // the phone (the saved server address, timers, settings).

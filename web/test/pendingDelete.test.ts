@@ -59,6 +59,41 @@ test("Undo brings it back, and it's never deleted", async () => {
   assert.equal(undo.current(), null);
 });
 
+test("held, the bar waits; let go, it gets its full time again", async () => {
+  const { timer, done, undo, remove } = setup();
+  remove("milk");
+  timer.advance(5000);
+  undo.hold();
+  timer.advance(60_000);
+  await Promise.resolve();
+  assert.deepEqual(done, [], "nothing deleted while held");
+  undo.release();
+  timer.advance(5999);
+  await Promise.resolve();
+  assert.deepEqual(done, [], "a full six seconds after letting go");
+  timer.advance(1);
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk"]);
+});
+
+test("letting go twice leaves no stray timer to cut the next one short", async () => {
+  const { timer, done, undo, remove } = setup();
+  remove("milk");
+  undo.hold();
+  undo.release();
+  undo.release();
+  timer.advance(3000);
+  remove("eggs");
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk"]);
+  timer.advance(3000);
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk"], "eggs still has 3 of its 6 seconds");
+  timer.advance(3000);
+  await Promise.resolve();
+  assert.deepEqual(done, ["milk", "eggs"]);
+});
+
 test("another removal carries out the one waiting", async () => {
   const { done, undo, remove } = setup();
   remove("milk");

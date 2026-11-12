@@ -77,7 +77,8 @@ they say otherwise.
   time through `inTurn` (`inTurn.ts`; the recipe page's `recipeSaves`), so
   a second quick choice doesn't undo the first.
 - Remembering something on this device (a setting, a view): `remembered` /
-  `rememberedJson` / `remember` (`phoneStorage.ts`), never raw
+  `rememberedJson` / `rememberedRecord` (a `{ key: value }` table, like
+  one per recipe) / `remember` (`phoneStorage.ts`), never raw
   `localStorage`; with `{ thisVisit: true }` for this visit only (never raw
   `sessionStorage`). Offline copies of lists: `read` / `write` and the `*_KEY`
   names (`offline.ts`); offline shopping changes: `offlineShopping.ts` and
@@ -149,7 +150,7 @@ they say otherwise.
   read with). Showing one in kitchen fractions: `kitchenFraction`
   (`scaling.ts`).
 - Scaling: `scaleLine`, `servingsCount` (`scaling.ts`); remembered size:
-  `recipeScale.ts`.
+  `recipeScale.ts`; remembered ticks while cooking: `recipeTicks.ts`.
 - Unit hints: `withWeightHint`, `withVolumeHint` (+ `recipeMeasures`),
   `withTemperatureHint`, `withLengthHint`, `withRegionalHint` (their own files).
 
@@ -241,8 +242,16 @@ they say otherwise.
   of its places or lists, with "Edit …" (the pantry's places, the shopping
   lists): `<TitlePicker>` (`TitlePicker.tsx`). Moving one thing to
   where another is, as dragging does (shelves, places): `moved`
-  (`listOrder.ts`). A message with a second
-  button: `showToast(text, { action, extra })`. An item's quick card:
+  (`listOrder.ts`); what a screen reader hears while dragging, in names
+  rather than ids: every `DndContext` passes `accessibility={{
+  announcements: dragAnnouncements(...) }}` (`dragWords.ts`). A message
+  with a second button: `showToast(text, { action, extra })`. A passing
+  message a screen reader should hear (a bar's or toast's words, which
+  carry no role themselves): `announce(text)` (`announce.ts`, read out by
+  `<Toaster />`'s live regions). A bar with a button that goes by itself
+  waits while touched or focused: `useHoldWhileTouched(bar, hold,
+  release)` (`undo.tsx`; pointer and focus counted apart, and a new `bar`
+  starts unheld). An item's quick card:
   `<PantryCard>`. Packet rules (`pantryPackets.ts`): a packet as saved or
   put back `packetToSave`, the last one making it Out `lastPacketRunsOut`,
   what adding one changes on the item `itemAfterPacket` / `learnsBarcode`.

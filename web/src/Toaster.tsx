@@ -1,19 +1,53 @@
 import { useLayoutEffect, useRef, type RefObject } from "react";
-import { hideToast, useToast } from "./toast";
+import { hideToast, holdToast, releaseToast, useToast, type Toast } from "./toast";
+import { useHoldWhileTouched } from "./undo";
+import { useAnnouncement } from "./announce";
 
 // Shows toast.ts's message at the bottom of the screen; a tap puts it away.
 // One with a button ("Undo") looks like the Undo bar: the button does its
 // job and puts it away, and the message itself doesn't (it's a smaller
-// target than a mis-tap).
+// target than a mis-tap). Screen readers hear every message from the live
+// regions here, which are always on the page (announce.ts says why).
 export default function Toaster() {
   const toast = useToast();
   const ref = useRef<HTMLParagraphElement>(null);
   useAboveBars(ref, toast?.id);
-  if (!toast) return null;
+  const held = useHoldWhileTouched(toast?.id, holdToast, releaseToast);
+  return (
+    <>
+      <LiveRegions />
+      {toast && <Message toast={toast} paragraph={ref} held={held} />}
+    </>
+  );
+}
+
+function LiveRegions() {
+  const { text, urgent } = useAnnouncement();
+  return (
+    <>
+      <p className="screen-reader-only" role="status">
+        {urgent ? "" : text}
+      </p>
+      <p className="screen-reader-only" role="alert">
+        {urgent ? text : ""}
+      </p>
+    </>
+  );
+}
+
+function Message({
+  toast,
+  paragraph,
+  held,
+}: {
+  toast: Toast;
+  paragraph: RefObject<HTMLParagraphElement | null>;
+  held: ReturnType<typeof useHoldWhileTouched>;
+}) {
   const { action, extra } = toast;
   if (action)
     return (
-      <p key={toast.id} ref={ref} className="toast notice-toast undo-toast" role="status">
+      <p key={toast.id} ref={paragraph} className="toast notice-toast undo-toast" {...held}>
         <span>{toast.text}</span>
         {[extra, action].map(
           (button) =>
@@ -35,10 +69,10 @@ export default function Toaster() {
   return (
     <p
       key={toast.id}
-      ref={ref}
+      ref={paragraph}
       className={toast.error ? "toast notice-toast toast-error" : "toast notice-toast"}
-      role={toast.error ? "alert" : "status"}
       onClick={hideToast}
+      {...held}
     >
       {toast.text}
     </p>

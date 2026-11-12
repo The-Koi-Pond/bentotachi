@@ -65,6 +65,7 @@ import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
+import { dragAnnouncements } from "../dragWords";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -852,6 +853,12 @@ export default function RecipeList() {
         <DndContext
           sensors={sensors}
           collisionDetection={shelfDropTarget}
+          accessibility={{
+            announcements: dragAnnouncements((id) => {
+              const shelf = categories?.find((c) => c.id === id);
+              return shelf ? `the ${shelf.name} shelf` : "the shelf";
+            }),
+          }}
           onDragStart={(event) => setDraggingShelf(String(event.active.id))}
           onDragEnd={(event) => {
             setDraggingShelf(null);

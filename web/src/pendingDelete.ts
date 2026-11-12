@@ -48,6 +48,16 @@ export function createPendingDelete(timer: Timer = realTimer, seconds = UNDO_SEC
       handle = timer.set(() => void finish(true), seconds * 1000);
     },
     undo: () => finish(false),
+    // While a finger, the mouse or the keyboard is on the bar (reaching for
+    // Undo), it waits; let go, and it gets its full time again.
+    hold() {
+      timer.clear(handle);
+      handle = undefined;
+    },
+    release() {
+      if (!pending || handle !== undefined) return;
+      handle = timer.set(() => void finish(true), seconds * 1000);
+    },
     settle: () => finish(true),
     leave: () => finish(true),
     current: () => pending,

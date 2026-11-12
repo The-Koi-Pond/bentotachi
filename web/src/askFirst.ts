@@ -12,6 +12,9 @@ export interface AskOptions {
   danger?: boolean;
 }
 
+// Each box's question gets its own id, for when one asks over another.
+let asked = 0;
+
 export async function askFirst(question: string, options: AskOptions): Promise<boolean> {
   return (await askBetween(question, options)) === "yes";
 }
@@ -24,6 +27,11 @@ export function askBetween(question: string, { yes, no = "Cancel", danger = fals
     dialog.className = "ask-dialog";
     const text = document.createElement("p");
     text.textContent = question;
+    // The question names the box, so a screen reader reads it out with the
+    // focused button, not "Delete, button" alone.
+    text.id = `ask-question-${++asked}`;
+    dialog.setAttribute("role", "alertdialog");
+    dialog.setAttribute("aria-labelledby", text.id);
     const buttons = document.createElement("div");
     buttons.className = "ask-buttons";
     const noButton = button(no, "button");

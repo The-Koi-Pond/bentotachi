@@ -4,7 +4,9 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
+  MouseSensor,
   PointerSensor,
+  TouchSensor,
   closestCenter,
   pointerWithin,
   useDraggable,
@@ -47,6 +49,7 @@ import { useCountry, usePlanMeals } from "../household";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
 import { pageScroller } from "../pageScroll";
+import { dragAnnouncements } from "../dragWords";
 import {
   MEALS,
   MEAL_NAMES,
@@ -130,9 +133,16 @@ export default function MealPlan() {
 
   // Drag from the handle with a mouse or finger (after moving a few pixels,
   // so a tap isn't a drag), or with the keyboard (Space, arrows, Space).
-  const sensors = useSensors(
+  const listSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor)
+  );
+  // In the month grid the pictures fill the days, so a finger that lands on
+  // one is usually scrolling: a finger has to press and hold before it
+  // drags (moving first scrolls instead). A mouse still drags straight away.
+  const monthSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
   // Opens at the top, title and all, with today second in the list (a page
@@ -288,6 +298,20 @@ export default function MealPlan() {
   }
 
   const isList = view === "list";
+  // What a screen reader hears while a dish is dragged: its name, and the
+  // day (and meal) or the bin it's over.
+  const announcements = dragAnnouncements(
+    (id) => {
+      const entry = shown.find((e) => e.id === id);
+      return entry ? entryLabel(entry) : "the dish";
+    },
+    (id) => {
+      if (id === BIN) return "the bin, to take it off the plan";
+      const { date, meal } = id.includes("|") ? parseSlot(id) : { date: id, meal: null };
+      const day = formatDay(date, { weekday: "long", day: "numeric", month: "long" });
+      return meal ? `${day}, ${MEAL_NAMES[meal].toLowerCase()}` : day;
+    }
+  );
   // Offline, the plan is the copy saved on this phone and can't be changed:
   // no adding, taking off or dragging (a change would fail, and look done).
   const readOnly = plan.offline;
@@ -366,8 +390,8 @@ export default function MealPlan() {
           </>
         ) : (
           <p>
-            Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Drag a picture to move it to another
-            day, or to the bin at the bottom to take it off.
+            Tap a day to see or add its {meals.length === 1 ? `${word}s` : "meals"}. Press and hold a picture, then drag
+            it to another day, or to the bin at the bottom to take it off.
           </p>
         )}
       </HelpBox>
@@ -396,8 +420,9 @@ export default function MealPlan() {
       </div>
 
       <DndContext
-        sensors={readOnly ? NO_SENSORS : sensors}
+        sensors={readOnly ? NO_SENSORS : isList ? listSensors : monthSensors}
         collisionDetection={dropTarget}
+        accessibility={{ announcements }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragCancel={() => setDragging(null)}
@@ -574,11 +599,18 @@ function MonthCell({
 }
 
 // A meal's picture in a month cell; dragging it moves the meal. (A tap
-// still selects the day, because a drag only starts after moving a little.)
+// still selects the day: a finger drags only after a press and hold, a
+// mouse after moving a little.) The hold mustn't open the browser's own
+// long-press menu for the picture.
 function DraggableThumb({ entry }: { entry: MealPlanEntry }) {
   const { setNodeRef, listeners, isDragging } = useDraggable({ id: entry.id });
   return (
-    <span ref={setNodeRef} className={`cell-thumb-wrap ${isDragging ? "dragging" : ""}`} {...listeners}>
+    <span
+      ref={setNodeRef}
+      className={`cell-thumb-wrap ${isDragging ? "dragging" : ""}`}
+      onContextMenu={(event) => event.preventDefault()}
+      {...listeners}
+    >
       <CellThumb entry={entry} />
     </span>
   );

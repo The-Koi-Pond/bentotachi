@@ -16,7 +16,8 @@ import {
   type PantryStatus,
   type ShoppingItem,
 } from "../pb";
-import { useUndo } from "../undo";
+import { useHoldWhileTouched, useUndo } from "../undo";
+import { announce } from "../announce";
 import { showError, showToast } from "../toast";
 import { UNDO_SECONDS } from "../pendingDelete";
 import {
@@ -196,11 +197,21 @@ export default function Pantry() {
   // has put it there since it asked): that goes by itself too, like other
   // Undos.
   const onlyUndo = !!runOut && (!runOut.ask || isOnList(runOut.item));
+  // Waits while a finger, the mouse or the keyboard is on it (reaching for
+  // Undo); let go, and it gets its full time again. Held is per bar: the
+  // next one to come up starts unheld.
+  const [heldBar, setHeldBar] = useState<typeof runOut>(null);
+  const runOutHeld = !!runOut && heldBar === runOut;
+  const runOutTouch = useHoldWhileTouched(
+    runOut,
+    () => setHeldBar(runOut),
+    () => setHeldBar(null)
+  );
   useEffect(() => {
-    if (!runOut || !onlyUndo) return;
+    if (!runOut || !onlyUndo || runOutHeld) return;
     const timer = window.setTimeout(() => setRunOut((current) => (current === runOut ? null : current)), UNDO_SECONDS * 1000);
     return () => window.clearTimeout(timer);
-  }, [runOut, onlyUndo]);
+  }, [runOut, onlyUndo, runOutHeld]);
   // Less any just removed (Undo can still bring them back).
   const items = pantry.items?.filter((item) => !undo.hidden.has(item.id));
   // For a place edit's Undo, seconds later: the places items are in by then
@@ -284,7 +295,10 @@ export default function Pantry() {
             await save(item, { status: to, expires: item.expires }, "");
           }
         : undefined;
-    if (ask || restore) setRunOut({ item, ask, restore, message: outWords });
+    if (ask || restore) {
+      setRunOut({ item, ask, restore, message: outWords });
+      announce(ask ? `${outWords} Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?` : outWords);
+    }
     // The server clears them; off the screen straight away.
     for (const packet of cleared) packets.removeLocally(packet.id);
     // Out clears the expiry date on the server too; here so it's gone from
@@ -866,7 +880,7 @@ export default function Pantry() {
       {/* Gone by itself once it's no longer out, or someone puts it on the
           list meanwhile. */}
       {stillAsking && (
-        <p className="toast undo-toast" role="status">
+        <p className="toast undo-toast" {...runOutTouch}>
           <span>
             {runOut.message}
             {asking && ` Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?`}

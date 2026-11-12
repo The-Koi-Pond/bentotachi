@@ -89,6 +89,7 @@ import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
 import { scaleLine, servingsWording } from "../scaling";
 import { saveScale, savedScale } from "../recipeScale";
+import { linesOf, saveTicks, savedTicks } from "../recipeTicks";
 import { runsForStep, stepTimes } from "../stepTimers";
 import { siteHost } from "../recipeSites";
 import RecipeJumpBar from "../RecipeJumpBar";
@@ -143,8 +144,12 @@ export default function RecipeView() {
   // and units.
   const hints = useHints(recipe?.source_url ?? "");
   const [stepAmountsOn] = useStepAmounts();
-  // Ticked-off ingredients and steps, only for this cooking session.
+  // Ticked-off ingredients and steps, kept on this device until it's marked
+  // cooked or the day is over (recipeTicks.ts).
   const [done, setDone] = useState<Set<string>>(new Set());
+  // The ticks "We cooked this" cleared, until it's undone or the recipe
+  // changes.
+  const ticksBeforeCooked = useRef<Set<string> | null>(null);
   const ratings = useRecipeRatings(id);
   // "We cooked this" days, shared by the history line and the timer.
   const cooked = useLiveRecords<CookedEntry>("cooked", { copy: cookedCopy });
@@ -208,13 +213,19 @@ export default function RecipeView() {
     return () => window.removeEventListener(RETRY_EVENT, load);
   }, [id]);
 
+  // The ticks this recipe had, and again whenever its lines change.
+  const lines = recipe ? linesOf(recipe.ingredients, recipe.steps) : "";
+  useEffect(() => {
+    ticksBeforeCooked.current = null;
+    if (lines) setDone(savedTicks(id, localToday(), lines));
+  }, [id, lines]);
+
   function toggle(key: string) {
-    setDone((previous) => {
-      const next = new Set(previous);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    const next = new Set(done);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setDone(next);
+    saveTicks(id, localToday(), lines, next);
   }
 
   if (error) return <p className="error">{error}</p>;
@@ -441,9 +452,15 @@ export default function RecipeView() {
   // Finished, "We cooked this" or the timer: marked cooked, then "Used
   // anything up?" (UsedUpSheet, which only opens when there's something to
   // offer).
+  // Cooked: the ticks have done their job, so it starts clean next time.
+  // Undoing "cooked" puts them back, in case it was pressed by mistake.
   async function finishCooking() {
     const again = cookedToday;
-    if (await markCooked()) setUsedUp({ again });
+    if (!(await markCooked())) return;
+    if (done.size) ticksBeforeCooked.current = done;
+    setDone(new Set());
+    saveTicks(id, localToday(), lines, new Set());
+    setUsedUp({ again });
   }
   async function undoCooked(entries: CookedEntry[]) {
     try {
@@ -453,6 +470,15 @@ export default function RecipeView() {
       }
     } catch (err) {
       showError(`Couldn't undo it: ${errorMessage(err)}`);
+      return;
+    }
+    // Ticked since, as well: the cook may have carried on before noticing.
+    const before = ticksBeforeCooked.current;
+    ticksBeforeCooked.current = null;
+    if (before) {
+      const ticks = new Set([...before, ...done]);
+      setDone(ticks);
+      saveTicks(id, localToday(), lines, ticks);
     }
   }
 

@@ -227,6 +227,13 @@ Not released yet:
   two-way switches, "(optional)", dark mode's "Out", the ingredient link
   icon and the other months' days on the plan all meet the 4.5:1 contrast
   floor now, in light and dark; a switch that's off has an outline.
+- Kinder to busy hands (the same check-up): ticked ingredients and steps
+  stay ticked when you pop over to the shopping list (until "We cooked
+  this", or the next day); in the plan's month view a meal's picture is
+  picked up with a press and hold, so a swipe scrolls instead of moving
+  the dinner; an Undo bar or message waits while your finger or the mouse
+  is on it. For screen readers: drags say names and days, not codes;
+  "are you sure?" reads its question; Undo bars and messages are read out.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -1146,11 +1153,11 @@ Twice a tester expected ticking a recipe's ingredients to take them off
 the pantry, and once added packets after marking a recipe cooked, then
 found no way back to "Used anything up?". Today the sheet comes only once,
 when "We cooked this" / "Finished" is pressed (cookedUses.ts,
-UsedUpSheet.tsx); the ingredient ticks are only a checklist, and they
-reset on leaving the recipe. That reset is going (Xel, 2026-11-12, after
-the design critique): ingredient and step ticks are kept on the phone per
-recipe until "We cooked this" / "Finished", or the next day. Xel wants it
-to be intuitive; how the pantry fits in is open.
+UsedUpSheet.tsx); the ingredient ticks are only a checklist. Since
+2026-11-12 they're kept on the phone per recipe until "We cooked this" /
+"Finished", or the next day (Xel, after the design critique;
+recipeTicks.ts). Xel wants it to be intuitive; how the pantry fits in is
+open.
 Some shapes to weigh (mock-up first):
 
 - A "Used anything up?" link beside the cooked stamp ("Cooked today ·

@@ -777,12 +777,16 @@
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-/* The dinner picture fills the rest of the day. Dragging it doesn't scroll. */
+/* The dinner picture fills the rest of the day. A finger on it still
+   scrolls the page; only a press and hold picks it up (MealPlan.tsx), so no
+   callout or text selection on the hold. */
 .cell-thumb-wrap {
   flex: 1;
   min-height: 0;
   display: flex;
-  touch-action: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
   cursor: grab;
 }
 

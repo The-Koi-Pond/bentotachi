@@ -4,6 +4,7 @@
 // own errors (beside their box) or a page that can't load (it says so
 // instead). <Toaster /> (App.tsx) shows it; docs/VISION.md, "Messages".
 import { useSyncExternalStore } from "react";
+import { announce } from "./announce.ts";
 
 export interface Toast {
   id: number;
@@ -35,9 +36,24 @@ export function showToast(
 ) {
   if (!text) return;
   current = { id: ++count, text, error, action, extra };
-  clearTimeout(timer);
-  timer = setTimeout(hideToast, error ? ERROR_TOAST_MS : TOAST_MS);
+  startTimer();
+  announce(text, { urgent: error });
   emit();
+}
+
+function startTimer() {
+  clearTimeout(timer);
+  if (current) timer = setTimeout(hideToast, current.error ? ERROR_TOAST_MS : TOAST_MS);
+}
+
+// While a finger, the mouse or the keyboard is on the message (reaching for
+// its Undo), it stays; let go, and it gets its full time again.
+export function holdToast() {
+  clearTimeout(timer);
+}
+
+export function releaseToast() {
+  startTimer();
 }
 
 export function hideToast() {
