@@ -32,6 +32,21 @@ export function rememberedJson(key: string, where: Where = {}): unknown {
   }
 }
 
+// Forgets everything remembered under keys starting with `prefix`, for good
+// and for this visit: "Delete everything" leaves nothing of Bentotachi's on
+// the phone (the saved server address, timers, settings).
+export function forgetAll(prefix: string) {
+  for (const thisVisit of [false, true]) {
+    try {
+      const kept = storage({ thisVisit });
+      const keys = Array.from({ length: kept.length }, (_, i) => kept.key(i)).filter((key): key is string => !!key?.startsWith(prefix));
+      for (const key of keys) kept.removeItem(key);
+    } catch {
+      // Storage blocked: there's nothing in it to forget.
+    }
+  }
+}
+
 // null forgets it.
 export function remember(key: string, value: string | null, where: Where = {}) {
   try {

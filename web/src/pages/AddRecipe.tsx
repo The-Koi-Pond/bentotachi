@@ -10,6 +10,7 @@ import { readPastedRecipe } from "../pastedRecipe";
 import { CloseIcon } from "../icons";
 import { savedPageLink, trimSavedPage } from "../savedPage";
 import { BenMood } from "../Brand";
+import { normaliseSiteUrl, sharedLink } from "../recipeSites";
 
 // An import error, with its "add it by hand" turned into the link to the
 // add-by-hand form. Errors that don't say it get "You can still add it by
@@ -105,9 +106,23 @@ export default function AddRecipe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restored]);
 
+  // A link typed without "https://" ("www.site.com/soup") gets it, rather
+  // than the browser's own check stopping it without a word (the form has
+  // noValidate).
   function submit(event: FormEvent) {
     event.preventDefault();
-    void importLink(url);
+    if (!url.trim()) {
+      setError("Paste the recipe page's link first.");
+      return;
+    }
+    // A shared message with the link in it ("Easy lasagne https://…") works too.
+    const link = normaliseSiteUrl(url) ?? sharedLink(url);
+    if (!link) {
+      setError("That doesn't look like a link. Copy the recipe page's address, then paste it here.");
+      return;
+    }
+    if (link !== url.trim()) setUrl(link);
+    void importLink(link);
   }
 
   // A page the app's browser loaded (now, or before Android closed Bento).
@@ -193,7 +208,7 @@ export default function AddRecipe() {
 
   return (
     <div className="stack narrow">
-      <form className="card stack" onSubmit={submit}>
+      <form className="card stack" onSubmit={submit} noValidate>
         <h2>
           Import from a link
           <HelpButton help={linkHelp} label="What links work" />

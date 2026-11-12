@@ -1,7 +1,8 @@
 import { registerPlugin } from "@capacitor/core";
 import { isAndroidApp, logOut, pb, users } from "./pb";
 import { read as readList, SHOPPING_QUEUE_KEY } from "./offline";
-import { remember, remembered, rememberedJson } from "./phoneStorage";
+import { forgetAll, remember, remembered, rememberedJson } from "./phoneStorage";
+import { dropAllAlerts } from "./timerAlerts";
 import { askBetween, askFirst } from "./askFirst";
 
 // Phone-only mode ("Just me, on this phone"): Bento's own server runs inside
@@ -18,8 +19,11 @@ interface LocalServerPlugin {
   erase(): Promise<void>;
   rescue(): Promise<{ saved: boolean }>;
   start(): Promise<{ url: string }>;
-  backup(): Promise<{ saved: boolean }>;
+  // bytes: the saved file's size (left out by an older app).
+  backup(): Promise<{ saved: boolean; bytes?: number }>;
   restore(): Promise<{ restored: boolean; url?: string }>;
+  onlyAccount(): Promise<{ username: string }>;
+  setPassword(options: { username: string; password: string }): Promise<void>;
 }
 
 const LocalServer = registerPlugin<LocalServerPlugin>("BentoLocalServer");
@@ -75,6 +79,44 @@ export async function logInOnPhone(): Promise<boolean> {
   }
 }
 
+// The saved login failed and the phone's data has a single account: a
+// backup restored on a new phone, or after "Delete everything" (its random
+// password only ever lived on the phone that made it). That account becomes
+// this phone's, with a new random password, saved here before the server
+// changes it, as when setting up (so closing the app in between can't lock
+// anyone out). A household's backup has several accounts: nothing happens,
+// and the login screen asks which is theirs. Whether it's logged in now.
+async function takeOverOnlyAccount(): Promise<boolean> {
+  try {
+    const { username } = await LocalServer.onlyAccount();
+    if (!username) return false;
+    const account = { username, password: randomPassword() };
+    const before = remembered(ACCOUNT_KEY);
+    rememberPhoneAccount(account);
+    // Not saved (the phone's storage is full): changing the server's
+    // password now would leave nobody knowing it.
+    if (phoneAccount()?.password !== account.password) return false;
+    try {
+      await LocalServer.setPassword(account);
+    } catch (err) {
+      // Not changed on the server: the saved login stays what it was.
+      remember(ACCOUNT_KEY, before);
+      throw err;
+    }
+    return await logInOnPhone();
+  } catch (err) {
+    console.warn("Couldn't take over the restored account", err);
+    return false;
+  }
+}
+
+// The phone's account, logged in: the saved one, or the data's only one.
+// Also on every start (PhoneStartup), so a takeover Android cut short (the
+// app closed between a restore and logging in) finishes next time.
+export async function logInOrTakeOver(): Promise<boolean> {
+  return (await logInOnPhone()) || (await takeOverOnlyAccount());
+}
+
 // The phone's server has no account yet but no name was given: the app
 // was closed during first-time setup, after the account was saved here but
 // before the server made it, so "Welcome back" didn't ask for one.
@@ -86,7 +128,21 @@ export class PhoneNeedsName extends Error {
 
 // "Just me, on this phone": starts the server, makes the account the first
 // time (or logs back into it), and remembers phone mode.
+// Whether "Just me, on this phone" is starting up right now (Android's
+// Back waits for it rather than leaving it half done).
+let settingUp = false;
+export const isSettingUpPhone = () => settingUp;
+
 export async function setUpPhone(name: string) {
+  settingUp = true;
+  try {
+    await setUpPhoneNow(name);
+  } finally {
+    settingUp = false;
+  }
+}
+
+async function setUpPhoneNow(name: string) {
   await startPhoneServer();
   const { needsSetup } = await pb.send<{ needsSetup: boolean }>("/api/cookbook/setup", {});
   if (needsSetup && !name.trim()) throw new PhoneNeedsName();
@@ -105,7 +161,16 @@ export async function setUpPhone(name: string) {
     }
   }
   remember(MODE_KEY, "phone");
-  if (!(await logInOnPhone())) throw new Error("Bentotachi is already set up on this phone with another account. Log in with it below.");
+  if (!(await logInOrTakeOver())) throw new PhoneNeedsLogin();
+}
+
+// Set up already, but its account couldn't be logged in to by itself (a
+// household's backup restored, with several accounts): the login screen's
+// phone form asks for theirs. Login reloads for it.
+export class PhoneNeedsLogin extends Error {
+  constructor() {
+    super("Log in with your account from the backup you restored.");
+  }
 }
 
 // Back to choosing on the login screen. The phone's server and its data
@@ -149,20 +214,22 @@ export async function switchToServer() {
 }
 
 // "Delete my account" on a phone-only Bento: everything on this phone goes
-// (the server's data, the saved login, the offline copies), and the app
-// starts again as if new.
+// (the server's data, the saved login, the offline copies, and every other
+// "bento." setting, a server address typed once included), and the app
+// starts again as if new, at "How will you use Bentotachi?".
 export async function erasePhone() {
   await LocalServer.erase();
-  remember(MODE_KEY, null);
-  remember(ACCOUNT_KEY, null);
-  remember(LAST_BACKUP_KEY, null);
+  // Running step timers go too, notifications and all.
+  await dropAllAlerts();
+  forgetAll("bento.");
   logOut();
 }
 
-export async function backUpPhone(): Promise<boolean> {
-  const { saved } = await LocalServer.backup();
-  if (saved) remember(LAST_BACKUP_KEY, new Date().toISOString());
-  return saved;
+// Whether it was saved, and its size when known.
+export async function backUpPhone(): Promise<{ saved: boolean; bytes?: number }> {
+  const answer = await LocalServer.backup();
+  if (answer.saved) remember(LAST_BACKUP_KEY, new Date().toISOString());
+  return answer;
 }
 
 // Android sometimes closes Bentotachi in the background while the "save as"
@@ -203,8 +270,9 @@ export function lastBackup(): Date | null {
 }
 
 // Replaces everything with a backup the person picks. Afterwards they're
-// logged in again if the backup has this phone's account; otherwise the login
-// screen asks for one of the backup's accounts.
+// logged in again if the backup has this phone's account, or only one
+// account (taken over: takeOverOnlyAccount); otherwise the login screen asks
+// for one of the backup's accounts.
 export async function restorePhone(): Promise<boolean> {
   try {
     const result = await LocalServer.restore();
@@ -218,7 +286,7 @@ export async function restorePhone(): Promise<boolean> {
   // Everything was replaced: the offline copies, and changes waiting to be
   // sent, belonged to what was here before.
   logOut();
-  await logInOnPhone();
+  await logInOrTakeOver();
   return true;
 }
 

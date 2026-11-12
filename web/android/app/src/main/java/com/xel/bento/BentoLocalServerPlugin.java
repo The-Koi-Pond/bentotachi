@@ -28,11 +28,13 @@ import java.util.concurrent.Executors;
  * this phone. The web app calls:
  *
  *   start()   starts it (if it isn't already) and resolves with { url }.
- *   backup()  makes a backup and asks where to save it: { saved }.
+ *   backup()  makes a backup and asks where to save it: { saved, bytes }.
  *   restore() asks for a backup file and puts it in place: { restored, url }.
  *   supported() whether this phone can run it (an ARM phone): { supported }.
  *   erase()   stops it and deletes everything it kept.
  *   rescue()  when it won't start: saves its data as a backup anyway: { saved }.
+ *   onlyAccount() the data's one account after a restore: { username } ("" for several).
+ *   setPassword({ username, password }) gives it (and its admin) this phone's password.
  *
  * Bento's server code (server/pb_hooks and pb_migrations) comes inside the
  * app (see copyBentoServerCode in build.gradle) and is copied out to the
@@ -77,6 +79,38 @@ public class BentoLocalServerPlugin extends Plugin {
                 // Throwable, not Exception: a phone the server wasn't built
                 // for can't even load it.
                 call.reject("Bentotachi couldn't start on this phone: " + e.getMessage());
+            }
+        });
+    }
+
+    // A restored backup's one account, for this phone to take over (see
+    // Bentoserver.onlyAccount): { username }, "" when there are several.
+    @PluginMethod
+    public void onlyAccount(PluginCall call) {
+        worker.execute(() -> {
+            try {
+                call.resolve(new JSObject().put("username", Bentoserver.onlyAccount()));
+            } catch (Exception e) {
+                call.reject(e.getMessage());
+            }
+        });
+    }
+
+    // Gives that account this phone's new hidden password.
+    @PluginMethod
+    public void setPassword(PluginCall call) {
+        String username = call.getString("username");
+        String password = call.getString("password");
+        if (username == null || password == null) {
+            call.reject("No account or password given");
+            return;
+        }
+        worker.execute(() -> {
+            try {
+                Bentoserver.setPassword(username, password);
+                call.resolve();
+            } catch (Exception e) {
+                call.reject(e.getMessage());
             }
         });
     }
@@ -179,8 +213,11 @@ public class BentoLocalServerPlugin extends Plugin {
                 // rescue()'s zip is a whole extra copy of the data, now saved
                 // where the person picked. backup()'s stays: the next backup
                 // replaces it.
+                long bytes = backup.length();
                 if (backup.getName().equals(RESCUED_ZIP)) backup.delete();
-                call.resolve(new JSObject().put("saved", true));
+                // Its size, for "Backup saved (2.0 MB)": some phones' pickers
+                // show a fresh file as 0 B.
+                call.resolve(new JSObject().put("saved", true).put("bytes", bytes));
             } catch (Throwable e) {
                 call.reject("Couldn't save the backup: " + e.getMessage());
             }

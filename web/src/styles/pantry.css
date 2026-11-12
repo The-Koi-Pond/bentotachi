@@ -490,10 +490,15 @@
   border-top: 1px solid var(--border);
 }
 
-/* "+ More details" under a new pantry item's name and place. */
+/* "+ More details" under a new pantry item's name and place. A finger-sized
+   target (it was 24px tall, just under the place picker, which took taps
+   meant for it): the padding grows it to 40px, filling the gaps either side
+   without covering its neighbours; the negative margin keeps it where it was. */
 .more-details {
   align-self: flex-start;
   text-align: left;
+  padding-block: 10px;
+  margin-block: -8px;
 }
 
 /* "+ New place…": a text box with a Cancel button beside it. */

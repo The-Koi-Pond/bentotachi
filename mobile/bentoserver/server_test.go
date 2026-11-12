@@ -121,6 +121,113 @@ func TestStartBackupRestore(t *testing.T) {
 	}
 }
 
+// A phone-only backup restored where its random password isn't known (a new
+// phone, or after "Delete everything" and a fresh start under another name):
+// its one account can be taken over with a new password, and its data is
+// there. A household's backup, with several accounts, can't.
+func TestTakeOverRestoredAccount(t *testing.T) {
+	server, _ := filepath.Abs(filepath.Join("..", "..", "server"))
+	hooks, migrations := filepath.Join(server, "pb_hooks"), filepath.Join(server, "pb_migrations")
+	port, err := Start(filepath.Join(t.TempDir(), "pb_data"), hooks, migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer Stop()
+	base := fmt.Sprintf("http://127.0.0.1:%d", port)
+	call := func(method, path, token string, body any) (int, map[string]any) {
+		t.Helper()
+		data, _ := json.Marshal(body)
+		request, _ := http.NewRequest(method, base+path, bytes.NewReader(data))
+		request.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			request.Header.Set("Authorization", token)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		raw, _ := io.ReadAll(response.Body)
+		var result map[string]any
+		_ = json.Unmarshal(raw, &result)
+		return response.StatusCode, result
+	}
+	login := func(username, password string) string {
+		t.Helper()
+		status, answer := call("POST", "/api/collections/users/auth-with-password", "", map[string]string{"identity": username, "password": password})
+		if status != 200 {
+			return ""
+		}
+		return answer["token"].(string)
+	}
+
+	// The first phone: account "sam", a recipe, a backup.
+	call("POST", "/api/cookbook/setup", "", map[string]string{"username": "sam", "name": "Sam", "password": "first-phones-secret"})
+	call("POST", "/api/collections/recipes/records", login("sam", "first-phones-secret"), map[string]string{"title": "Soup"})
+	backup, err := Backup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	kept := filepath.Join(t.TempDir(), "sams-backup.zip")
+	if data, err := os.ReadFile(backup); err != nil || os.WriteFile(kept, data, 0o644) != nil {
+		t.Fatal("couldn't keep the backup", err)
+	}
+
+	// "Delete everything", then a fresh start as someone else.
+	Stop()
+	port, err = Start(filepath.Join(t.TempDir(), "pb_data"), hooks, migrations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base = fmt.Sprintf("http://127.0.0.1:%d", port)
+	call("POST", "/api/cookbook/setup", "", map[string]string{"username": "fresh", "name": "Fresh", "password": "new-phones-secret"})
+
+	// Restored: the phone's saved login no longer works, as the tester found.
+	if port, err = Restore(kept); err != nil {
+		t.Fatal(err)
+	}
+	base = fmt.Sprintf("http://127.0.0.1:%d", port)
+	if login("fresh", "new-phones-secret") != "" {
+		t.Fatal("the account from before the restore shouldn't exist any more")
+	}
+	username, err := OnlyAccount()
+	if err != nil || username != "sam" {
+		t.Fatalf("the backup's one account should be sam: %q %v", username, err)
+	}
+	if err := SetPassword(username, "new-phones-secret"); err != nil {
+		t.Fatal(err)
+	}
+	token := login("sam", "new-phones-secret")
+	if token == "" {
+		t.Fatal("the taken-over account should log in with the phone's new password")
+	}
+	if login("sam", "first-phones-secret") != "" {
+		t.Fatal("the old password shouldn't work any more")
+	}
+	// The admin login Backups shows (username@bento.local, same password)
+	// follows, for moving the data to a server later.
+	adminLogin := func(password string) int {
+		status, _ := call("POST", "/api/collections/_superusers/auth-with-password", "", map[string]string{"identity": "sam@bento.local", "password": password})
+		return status
+	}
+	if adminLogin("new-phones-secret") != 200 || adminLogin("first-phones-secret") == 200 {
+		t.Fatal("the admin account should take the new password too, and only it")
+	}
+	status, recipes := call("GET", "/api/collections/recipes/records", token, nil)
+	if status != 200 || len(recipes["items"].([]any)) != 1 {
+		t.Fatalf("the backup's recipe should be there: %d %v", status, recipes)
+	}
+
+	// A household's backup has several accounts: nobody's taken over.
+	call("POST", "/api/collections/users/records", token, map[string]string{"username": "alex", "password": "alexs-password", "passwordConfirm": "alexs-password"})
+	if username, err := OnlyAccount(); err != nil || username != "" {
+		t.Fatalf("with two accounts there's no one to take over: %q %v", username, err)
+	}
+	if err := SetPassword("nobody", "x-long-password"); err == nil {
+		t.Fatal("setting the password of an account that isn't there should fail")
+	}
+}
+
 // The phone makes no nightly backups, though the auto_backups migration
 // still stores the household servers' schedule, and the next backup tidies
 // away nightly ones an earlier version left behind.

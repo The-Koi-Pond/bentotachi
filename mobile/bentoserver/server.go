@@ -206,6 +206,62 @@ func Rescue(dataDir string) (string, error) {
 	return zip, nil
 }
 
+// OnlyAccount returns the username of the data's one account, or "" when
+// there are none or several (a household's backup: someone has to say which
+// is theirs, by logging in with it). For taking over a restored backup's
+// account: a phone-only account's password is random and was only ever kept
+// on the phone that made it, so a backup restored on a new phone, or after
+// "Delete everything", would otherwise be locked.
+func OnlyAccount() (string, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if app == nil {
+		return "", errors.New("Bentotachi's server isn't running")
+	}
+	accounts, err := app.FindAllRecords("users")
+	if err != nil {
+		return "", fmt.Errorf("couldn't read the accounts: %w", err)
+	}
+	if len(accounts) != 1 {
+		return "", nil
+	}
+	return accounts[0].GetString("username"), nil
+}
+
+// SetPassword gives an account a new password (the phone's new hidden one,
+// see OnlyAccount), and its admin account (username@bento.local, made with
+// the same password at setup, household.pb.js) too, together: Backups shows
+// that admin login for moving the data to a server later. Only the app calls
+// it, through its plugin: the server's web routes can't.
+func SetPassword(username, password string) error {
+	mu.Lock()
+	defer mu.Unlock()
+	if app == nil {
+		return errors.New("Bentotachi's server isn't running")
+	}
+	return app.RunInTransaction(func(tx core.App) error {
+		account, err := tx.FindFirstRecordByData("users", "username", username)
+		if err != nil {
+			return fmt.Errorf("there's no account %q: %w", username, err)
+		}
+		account.SetPassword(password)
+		if err := tx.Save(account); err != nil {
+			return fmt.Errorf("couldn't set the password: %w", err)
+		}
+		admin, err := tx.FindAuthRecordByEmail(core.CollectionNameSuperusers, username+"@bento.local")
+		if err != nil {
+			// No admin account of that name (a backup made elsewhere): only
+			// the app's login changes.
+			return nil
+		}
+		admin.SetPassword(password)
+		if err := tx.Save(admin); err != nil {
+			return fmt.Errorf("couldn't set the admin password: %w", err)
+		}
+		return nil
+	})
+}
+
 // Restore replaces everything with a backup zip (from Backup, or from a
 // PocketBase server), then starts the server again and returns its port. If
 // the backup can't be used, the data from before is put back.

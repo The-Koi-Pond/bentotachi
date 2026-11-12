@@ -12,6 +12,7 @@ import {
   type BackupNote,
 } from "../phoneMode";
 import { formatDay, localToday, timeAgo } from "../dates";
+import { sizeText } from "../format";
 import { BenMood } from "../Brand";
 import { remember, remembered } from "../phoneStorage";
 
@@ -59,8 +60,9 @@ export default function Backups() {
     setBusy(true);
     setStatus(null);
     try {
-      if (await backUpPhone()) {
-        setStatus({ text: "Backup saved.", isError: false });
+      const { saved, bytes } = await backUpPhone();
+      if (saved) {
+        setStatus({ text: bytes ? `Backup saved (${sizeText(bytes)}).` : "Backup saved.", isError: false });
         setLast(lastBackup());
       }
     } catch (err) {
@@ -104,7 +106,10 @@ export default function Backups() {
 
       <section className="card stack">
         <h2>Save a backup</h2>
-        <p className="muted">Everything in one file. Save it somewhere off this phone, like Google Drive.</p>
+        <p className="muted">
+          Everything in one file. Save it somewhere off this phone, like Google Drive. It isn't locked with a password, so
+          keep it somewhere only you can open.
+        </p>
         <p className={last ? "small-note" : "small-note warning-text"}>
           {last
             ? `Last saved ${timeAgo(localToday(last), localToday())} (${formatDay(localToday(last), { weekday: "short", day: "numeric", month: "short" })}).`

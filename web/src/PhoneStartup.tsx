@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { BentoLogo } from "./Brand";
 import { errorMessage, pb } from "./pb";
-import { leavePhoneMode, logInOnPhone, rescuePhone, startPhoneServer } from "./phoneMode";
+import { leavePhoneMode, logInOrTakeOver, rescuePhone, startPhoneServer } from "./phoneMode";
 
 // In phone-only mode, Bento's server has to be running before anything else
 // loads: this starts it (a moment the first time, as it sets up its
@@ -16,7 +16,7 @@ export default function PhoneStartup({ children }: { children: ReactNode }) {
     setState("starting");
     try {
       await startPhoneServer();
-      if (!pb.authStore.isValid) await logInOnPhone();
+      if (!pb.authStore.isValid) await logInOrTakeOver();
       setState("ready");
     } catch (err) {
       setState({ error: errorMessage(err) });

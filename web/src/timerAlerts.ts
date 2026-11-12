@@ -124,6 +124,19 @@ export function dropAlert(timer: Pick<StepTimer, "id">) {
   }).catch(() => {});
 }
 
+// Every timer's notification, waiting or showing: "Delete everything" forgets
+// the timers, so nothing could take theirs back later.
+export async function dropAllAlerts() {
+  if (!isAndroidApp) return;
+  try {
+    const { notifications } = await LocalNotifications.getPending();
+    if (notifications.length) await LocalNotifications.cancel({ notifications: notifications.map(({ id }) => ({ id })) });
+    await LocalNotifications.removeAllDeliveredNotifications();
+  } catch {
+    // Notifications not allowed or not there: nothing to take back.
+  }
+}
+
 // Tapping a timer's notification opens its recipe.
 if (isAndroidApp) {
   void LocalNotifications.addListener("localNotificationActionPerformed", ({ notification }) => {

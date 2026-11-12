@@ -28,7 +28,10 @@ interface Release {
 
 export type UpdateState =
   | { status: "idle" | "checking" }
-  | { status: "current"; installed: string }
+  // `askedAt`: when the person tapped "Check for updates" for this answer,
+  // so for a minute it says it looked (the answer comes too fast to see
+  // "Checking…").
+  | { status: "current"; installed: string; askedAt?: number }
   | { status: "available"; installed: string; latest: Release }
   // Downloading (Play) or opening Android's installer (the household's app).
   | { status: "installing"; installed: string; latest: Release }
@@ -62,12 +65,14 @@ export function updateLabel(update: UpdateState): string {
 }
 
 // The small line under it.
-export function updateDetail(update: UpdateState): string {
+export function updateDetail(update: UpdateState, now = Date.now()): string {
   switch (update.status) {
     case "checking":
       return "Checking…";
     case "current":
-      return `As fresh as it gets (Bentotachi ${update.installed})`;
+      return update.askedAt !== undefined && now - update.askedAt < 60_000
+        ? `Checked just now: as fresh as it gets (Bentotachi ${update.installed})`
+        : `As fresh as it gets (Bentotachi ${update.installed})`;
     case "available":
       return `You have ${update.installed}`;
     case "installing":
@@ -82,10 +87,11 @@ export function updateDetail(update: UpdateState): string {
 }
 
 // The button's action for each state.
-export function updateAction(update: UpdateState): Promise<void> {
+export async function updateAction(update: UpdateState): Promise<void> {
   if (update.status === "available") return installUpdate();
   if (update.status === "downloaded") return restartToUpdate();
-  return checkForUpdate();
+  await checkForUpdate();
+  if (state.status === "current") setState({ ...state, askedAt: Date.now() });
 }
 
 // The Google Play app never updates itself (Play's rules: Play does it).

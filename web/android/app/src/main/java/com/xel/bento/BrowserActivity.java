@@ -317,7 +317,10 @@ public class BrowserActivity extends AppCompatActivity {
                 JSONObject page = new JSONObject(json);
                 if (!page.optBoolean("hasRecipe")) {
                     Toast.makeText(this, "No recipe on this page. Open the recipe itself, then tap Save.", Toast.LENGTH_LONG).show();
-                    resetSaveButton();
+                    // The button says so too, for a few seconds: a pop-up is
+                    // gone in a moment, and some phones don't show them.
+                    save.setText("No recipe here");
+                    save.postDelayed(this::resetSaveButton, 3500);
                     return;
                 }
                 keepSavedPage(new SavedPage(webView.getUrl(), page.getString("html"), ""));

@@ -1,10 +1,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BentoLogo, BentoTitle } from "../Brand";
+import { handleBackHere } from "../androidBack";
 import { cleanUsername, MIN_PASSWORD } from "../accounts";
 import { statusOf } from "../errorStatus";
 import { isOffline } from "../offline";
 import { errorMessage, isAndroidApp, normaliseServerUrl, pb, savedServerUrl, setServerUrl, users } from "../pb";
-import { isPhoneMode, leavePhoneMode, phoneAccount, phoneModeSupported, PhoneNeedsName, rememberPhoneAccount, setUpPhone } from "../phoneMode";
+import {
+  isPhoneMode,
+  isSettingUpPhone,
+  leavePhoneMode,
+  phoneAccount,
+  phoneModeSupported,
+  PhoneNeedsLogin,
+  PhoneNeedsName,
+  rememberPhoneAccount,
+  setUpPhone,
+} from "../phoneMode";
 
 // The login screen. On a brand-new server (no accounts yet) it becomes
 // "Set up your Bento" instead, to make the first account. In the app, with
@@ -33,6 +44,20 @@ export default function Login() {
       if (!ok) setStep("server");
     });
   }, []);
+
+  // Android's Back from the phone or household step returns to the choice,
+  // as their "← Back" link does (shown where the choice is offered).
+  const canChoose = isAndroidApp && !phone && phoneOk === true;
+  useEffect(() => {
+    if (!canChoose || step === "choose") return;
+    handleBackHere(() => {
+      // Starting phone-only mode: Back waits (the setup carries on either
+      // way, and leaving the step would hide it).
+      if (!isSettingUpPhone()) setStep("choose");
+      return true;
+    });
+    return () => handleBackHere(null);
+  }, [canChoose, step]);
 
   // Asks the server whether it has any accounts yet. In the app this waits
   // for a server address.
@@ -185,11 +210,19 @@ function PhoneSetupForm() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    // Checked here, not by the browser (noValidate: see LoginForm).
+    if (!returning && !name.trim()) return setError("Type your name.");
     setBusy(true);
     setError("");
     try {
       await setUpPhone(name);
     } catch (err) {
+      // Several accounts here: the phone login form, which shows once the
+      // app starts again in phone-only mode (Login chooses it on opening).
+      if (err instanceof PhoneNeedsLogin) {
+        window.location.reload();
+        return;
+      }
       // Not really back: the name box after all.
       if (err instanceof PhoneNeedsName) setReturning(false);
       setError(errorMessage(err));
@@ -198,7 +231,7 @@ function PhoneSetupForm() {
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack" onSubmit={submit} noValidate>
       <div className="setup-intro">
         <h2>{returning ? "Welcome back" : "Bentotachi on this phone"}</h2>
         <p className="muted">
@@ -229,10 +262,11 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (isAndroidApp && !phone && !server.trim()) {
-      setError("Type the server address first.");
-      return;
-    }
+    // Checked here, address first, rather than by the browser, which on a
+    // phone only puts the cursor in the empty box without saying why.
+    if (isAndroidApp && !phone && !server.trim()) return setError("Type the server address first.");
+    if (!username.trim()) return setError("Type your username.");
+    if (!password) return setError("Type your password.");
     setBusy(true);
     setError("");
     if (isAndroidApp && !phone) setServerUrl(normaliseServerUrl(server));
@@ -251,7 +285,7 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack" onSubmit={submit} noValidate>
       <label>
         Username
         <input
@@ -295,6 +329,8 @@ function SetupForm({ server }: { server: string }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    // Each box checked here, in order (the form has noValidate: see LoginForm).
+    if (!name.trim()) return setError("Type your name.");
     if (username.length < 2) return setError("Usernames need at least 2 characters.");
     if (password.length < MIN_PASSWORD) return setError(`The password needs at least ${MIN_PASSWORD} characters.`);
     if (password !== again) return setError("The two passwords don't match.");
@@ -311,7 +347,7 @@ function SetupForm({ server }: { server: string }) {
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack" onSubmit={submit} noValidate>
       <div className="setup-intro">
         <h2>Set up your Bentotachi</h2>
         <p className="muted">

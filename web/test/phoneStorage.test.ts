@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { remember, remembered, rememberedJson } from "../src/phoneStorage.ts";
+import { forgetAll, remember, remembered, rememberedJson } from "../src/phoneStorage.ts";
 
 const store = new Map<string, string>();
 const working = {
@@ -45,4 +45,35 @@ test("blocked or full storage reads as nothing and skips writes, without throwin
   assert.equal(rememberedJson("bento.test"), null);
   assert.doesNotThrow(() => remember("bento.test", "x"));
   assert.doesNotThrow(() => remember("bento.test", null));
+});
+
+// A Storage with keys(), as forgetAll walks them.
+function listable() {
+  const kept = new Map<string, string>();
+  return {
+    kept,
+    storage: {
+      get length() {
+        return kept.size;
+      },
+      key: (i: number) => [...kept.keys()][i] ?? null,
+      getItem: (key: string) => kept.get(key) ?? null,
+      setItem: (key: string, value: string) => void kept.set(key, value),
+      removeItem: (key: string) => void kept.delete(key),
+    },
+  };
+}
+
+test("forgetting everything Bentotachi's, for good and for this visit, and nothing else", () => {
+  const forGood = listable();
+  const thisVisit = listable();
+  use(forGood.storage);
+  Object.defineProperty(globalThis, "sessionStorage", { value: thisVisit.storage, configurable: true });
+  for (const key of ["bento.serverUrl", "bento.phoneAccount", "bento.stepTimers", "pocketbase_auth"]) remember(key, "x");
+  remember("bento.browseSearch", "soup", { thisVisit: true });
+  forgetAll("bento.");
+  assert.deepEqual([...forGood.kept.keys()], ["pocketbase_auth"]);
+  assert.deepEqual([...thisVisit.kept.keys()], []);
+  use(blocked);
+  assert.doesNotThrow(() => forgetAll("bento."));
 });

@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PHOTO_CACHE, countKept, fillPhotos, keepPhotos, keptPhoto, photoStatus, roughBytes, sizeText, wantedPhotos } from "../src/photoCache.ts";
+import { PHOTO_CACHE, countKept, fillPhotos, keepPhotos, keptPhoto, photoStatus, roughBytes, wantedPhotos } from "../src/photoCache.ts";
 import type { PantryItem, Recipe } from "../src/pb";
 
 const address = {
@@ -25,11 +25,8 @@ test("the photos worth keeping: covers, step photos and pantry squares, each onc
   );
 });
 
-test("how much room, roughly, and in words", () => {
+test("how much room, roughly", () => {
   assert.equal(roughBytes([recipe("a", "a.jpg", ["s1.jpg"]), recipe("b", "")]), 400_000);
-  assert.equal(sizeText(18_400_000), "18 MB");
-  assert.equal(sizeText(400_000), "400 KB");
-  assert.equal(sizeText(0), "1 KB");
 });
 
 // Cache Storage's Cache, as much of it as fillPhotos uses. Like the real

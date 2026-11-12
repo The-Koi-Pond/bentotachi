@@ -697,17 +697,19 @@ export default function RecipeView() {
                   {times.length > 0 && (
                     <div className="step-timers">
                       {times.map((time) => {
-                        const running = timers.some((t) => runsForStep(t, recipe.id, timedStep, time.label));
+                        // Its timer, counting down or paused in the tray.
+                        const timer = timers.find((t) => runsForStep(t, recipe.id, timedStep, time.label));
+                        const state = timer ? (timer.endsAt === null ? "paused" : "running") : null;
                         return (
                           <button
                             key={time.label}
                             className="timer-chip"
                             onClick={() => startTimer(recipe.id, recipe.title, timedStep, time)}
-                            disabled={running}
-                            aria-label={running ? `Step ${number}'s ${time.label} timer is running` : `Start a ${time.label} timer for step ${number}`}
+                            disabled={state !== null}
+                            aria-label={state ? `Step ${number}'s ${time.label} timer is ${state}` : `Start a ${time.label} timer for step ${number}`}
                           >
                             <TimerIcon size={14} />
-                            {running ? `${time.label}, running` : time.label}
+                            {state ? `${time.label}, ${state}` : time.label}
                           </button>
                         );
                       })}

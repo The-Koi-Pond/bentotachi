@@ -9,7 +9,8 @@ import { canSelfUpdate, updateAction, updateDetail, updateLabel, updatesFromPlay
 import deki from "../assets/deki.svg";
 import HouseholdSettings from "../HouseholdSettings";
 import { chooseTheme, useThemeChoice, type ThemeChoice } from "../theme";
-import { keepPhotos, photoCacheAvailable, roughBytes, sizeText, usePhotoStatus } from "../photoCache";
+import { keepPhotos, photoCacheAvailable, roughBytes, usePhotoStatus } from "../photoCache";
+import { sizeText } from "../format";
 import { recipesCopy } from "../offline";
 
 // ⋮ → Settings: what you set once and rarely touch, in bento trays by

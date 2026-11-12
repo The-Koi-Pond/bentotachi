@@ -84,12 +84,6 @@ export function roughBytes(recipes: Recipe[]): number {
   return recipes.reduce((sum, recipe) => sum + ((recipe.image ? 1 : 0) + (recipe.photos?.length ?? 0)) * RECIPE_PHOTO_BYTES, 0);
 }
 
-// "18 MB", "800 KB".
-export function sizeText(bytes: number): string {
-  if (bytes < 1_000_000) return `${Math.max(1, Math.round(bytes / 1000))} KB`;
-  return `${Math.round(bytes / 1_000_000)} MB`;
-}
-
 // An address the way the cache gives it back ("HTTP://MyPi:80/x" is
 // "http://mypi/x"), so a kept photo is always recognised as kept, not
 // dropped and fetched again on every run.

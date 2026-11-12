@@ -216,6 +216,35 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
+- From a tester's bug report (2026-11-12; 17 issues checked against the
+  code, one serious):
+  - Restoring a phone-only backup no longer locks you out. Its account's
+    password was random and only ever kept on the phone that made it, so
+    after "Delete everything", a reinstall or on a new phone the restore
+    asked for a password nobody had seen. Now, when the saved login fails
+    and the data has a single account, this phone takes it over with a new
+    hidden password (phoneMode.ts takeOverOnlyAccount; the phone server's
+    OnlyAccount / SetPassword, through the plugin only). A household's
+    backup, with several accounts, still asks which is yours, and "Welcome
+    back" now shows that login instead of a dead button.
+  - "Delete everything" forgets every Bentotachi setting on the phone too
+    (a server address typed once included), so it starts again at "How will
+    you use Bentotachi?".
+  - A paused step timer's button says "paused", not "running".
+  - The login forms say what's missing ("Type your username."), address
+    first, instead of the browser quietly putting the cursor in a box; the
+    phone's Back on the login steps goes back to the first choice.
+  - "Check for updates" with nothing new says "Checked just now: as fresh
+    as it gets".
+  - A recipe link typed without "https://" works; text that isn't a link
+    says so.
+  - The built-in browser's Save button says "No recipe here" for a few
+    seconds on a page without one (the pop-up was easy to miss).
+  - Play fetches the barcode scanner when the app is installed, so the
+    first scan isn't "not ready".
+  - "+ More details" in the pantry's add form is easier to tap.
+  - "Backup saved (2 MB)." with its size, and the Backups page says the file
+    isn't locked with a password.
 - Photos offline, opt-in (Xel's call, 2026-11-11): Settings → Your data →
   "Keep photos for offline", on this device, off unless turned on; it
   says the rough size first ("about 18 MB", 200 KB a recipe photo), then
@@ -1070,6 +1099,16 @@ then saves the 600-wide copies (and pantry squares) in the browser's
 own cache (Cache Storage, which has far more room than the text
 copies' storage) and shows them from there when offline; switching it
 off empties that cache.
+
+## To consider: bought things into the pantry (a tester, 2026-11-12)
+
+A tester expected ticking or clearing bought shopping-list rows to offer
+adding them to the pantry. Today only a row linked to a pantry item (one
+added because the item ran out) sets that item back to Have and adds a
+packet (pantry.pb.js); a hand-typed "milk" isn't linked even when the
+pantry has Milk. Possible shape: link a typed row to a pantry item of the
+same name when it's added, and on "Clear ticked items" offer to add the
+unlinked ones to the pantry. Not decided; not a bug.
 
 ## Ideas for later
 

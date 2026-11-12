@@ -1,7 +1,14 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, totalMinutes } from "../src/format.ts";
+import { continuesNumbering, extraTimes, formatMinutes, headingOf, isQuick, sizeText, totalMinutes } from "../src/format.ts";
+
+test("a size in words", () => {
+  assert.equal(sizeText(18_400_000), "18 MB");
+  assert.equal(sizeText(2_006_398), "2 MB");
+  assert.equal(sizeText(400_000), "400 KB");
+  assert.equal(sizeText(0), "1 KB");
+});
 
 const recipe = (prep: number, cook: number, total: number) => ({ prep_minutes: prep, cook_minutes: cook, total_minutes: total });
 

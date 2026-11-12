@@ -142,6 +142,8 @@ they say otherwise.
 
 ## Numbers, amounts and units
 
+- A file's or photos' size in words ("18 MB", "800 KB"): `sizeText`
+  (`format.ts`).
 - Reading a number in recipe text: `NUMBER`, `parseNumber`, `amountRange`
   (`weights.ts`; `NUMBER` is also what `stepAmounts.ts` and `scaling.ts`
   read with). Showing one in kitchen fractions: `kitchenFraction`

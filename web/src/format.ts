@@ -79,3 +79,9 @@ export function formatMinutes(minutes: number): string {
   if (!hours) return `${rest} min`;
   return rest ? `${hours} h ${rest} min` : `${hours} h`;
 }
+
+// A file's or photos' size: "18 MB", "800 KB".
+export function sizeText(bytes: number): string {
+  if (bytes < 1_000_000) return `${Math.max(1, Math.round(bytes / 1000))} KB`;
+  return `${Math.round(bytes / 1_000_000)} MB`;
+}

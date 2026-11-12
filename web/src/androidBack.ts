@@ -6,6 +6,14 @@ import { isAndroidApp } from "./pb";
 // otherwise go back a screen like any other app, and only leave from the
 // first screen, by sending Bento to the background (what Android expects)
 // rather than shutting it.
+// A screen with steps of its own that the address doesn't know about (the
+// login screen's "How will you use Bentotachi?" and the step after it) can
+// take Back first: return true to say it went back a step.
+let stepBack: (() => boolean) | null = null;
+export function handleBackHere(handler: (() => boolean) | null) {
+  stepBack = handler;
+}
+
 export function setUpBackGesture() {
   if (!isAndroidApp) return;
   void App.addListener("backButton", ({ canGoBack }) => {
@@ -20,6 +28,8 @@ export function setUpBackGesture() {
     // that's still saving, like "Used anything up?").
     else if (openDialog) {
       if (openDialog.dispatchEvent(new Event("cancel", { cancelable: true }))) openDialog.close();
+    } else if (stepBack?.()) {
+      // That screen went back a step itself.
     } else if (canGoBack) window.history.back();
     else void App.minimizeApp();
   });
