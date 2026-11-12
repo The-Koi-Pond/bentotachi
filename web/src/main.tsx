@@ -19,6 +19,7 @@ import "./styles/dates.css";
 import "./styles/settings.css";
 import "./styles/print.css";
 import { applyTheme, savedTheme } from "./theme";
+import { SystemBarColours } from "./SystemBarColours";
 
 setUpBackGesture();
 // Light or dark as chosen in Settings, before anything is drawn.
@@ -26,6 +27,7 @@ applyTheme(savedTheme());
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <SystemBarColours />
     {/* Phone-only mode starts Bento's own server first (see phoneMode.ts). */}
     {isPhoneMode() ? (
       <PhoneStartup>

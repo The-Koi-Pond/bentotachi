@@ -1,4 +1,4 @@
-import { useEffect, useState, type ImgHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ImgHTMLAttributes, type ReactNode } from "react";
 import { pantryItems, pantryPhotoUrl, recipeImageUrl, recipePhotoUrl, recipes } from "./pb";
 import { connection, RETRY_EVENT, useConnection } from "./connection.ts";
 import {
@@ -80,15 +80,50 @@ export function useKeptPhoto(url: string, keptUrl = url) {
   };
 }
 
+// Tells `onGaveUp` whether its photo gave up, each time that changes.
+export function useReportGaveUp(gaveUp: boolean, onGaveUp?: (gaveUp: boolean) => void) {
+  useEffect(() => {
+    onGaveUp?.(gaveUp);
+  }, [gaveUp, onGaveUp]);
+}
+
+// For a list of photos in buttons (step photos, a gallery): which gave up,
+// by name, so their buttons are hidden too (a screen reader or keyboard
+// would still reach an empty one). The buttons stay in the page, hidden,
+// so a photo that comes back (the server answers again) shows again.
+export function useGaveUpPhotos(): [Set<string>, (name: string) => (gaveUp: boolean) => void] {
+  const [gone, setGone] = useState<Set<string>>(() => new Set());
+  const reporters = useRef(new Map<string, (gaveUp: boolean) => void>());
+  const reporter = (name: string) => {
+    let report = reporters.current.get(name);
+    if (!report) {
+      report = (gaveUp: boolean) =>
+        setGone((current) => {
+          if (current.has(name) === gaveUp) return current;
+          const next = new Set(current);
+          if (gaveUp) next.add(name);
+          else next.delete(name);
+          return next;
+        });
+      reporters.current.set(name, report);
+    }
+    return report;
+  };
+  return [gone, reporter];
+}
+
 // An <img> that shows its kept copy offline (useKeptPhoto), or `fallback`
-// when no photo will come (a broken image otherwise).
+// when no photo will come (a broken image otherwise). `onGaveUp`: hears
+// when that changes (useGaveUpPhotos).
 export function KeptImg({
   src,
   keptUrl,
   fallback,
+  onGaveUp,
   ...rest
-}: { src: string; keptUrl?: string; fallback?: ReactNode } & ImgHTMLAttributes<HTMLImageElement>) {
+}: { src: string; keptUrl?: string; fallback?: ReactNode; onGaveUp?: (gaveUp: boolean) => void } & ImgHTMLAttributes<HTMLImageElement>) {
   const photo = useKeptPhoto(src, keptUrl);
+  useReportGaveUp(photo.gaveUp, onGaveUp);
   if (photo.gaveUp && fallback !== undefined) return <>{fallback}</>;
   return <img alt="" {...rest} src={photo.src} onError={photo.onError} />;
 }

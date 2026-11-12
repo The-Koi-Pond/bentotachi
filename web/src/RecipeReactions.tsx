@@ -12,6 +12,7 @@ import {
 import { CloseIcon, HeartIcon, OnigiriIcon, PlusIcon, ThumbsDownIcon, ThumbsUpIcon } from "./icons";
 import { addReasons, MAX_REASON_LENGTH, MAX_REASONS, suggestedReasons } from "./dislikeReasons";
 import { useSingleUser, useSpell } from "./household";
+import { RETRY_EVENT } from "./connection";
 
 type Mine = Pick<RecipeRating, "stars" | "favorite" | "approved" | "disliked" | "dislike_reasons">;
 
@@ -30,10 +31,26 @@ export function useRecipeRatings(recipeId: string) {
   useEffect(() => {
     creating.current = null;
     if (!recipeId) return;
-    recipeRatings()
-      .getFullList({ filter: pb.filter("recipe = {:id}", { id: recipeId }), expand: "user" })
-      .then(setRatings)
-      .catch((err) => setError(errorMessage(err)));
+    let stopped = false;
+    const load = () =>
+      recipeRatings()
+        .getFullList({ filter: pb.filter("recipe = {:id}", { id: recipeId }), expand: "user" })
+        .then((list) => {
+          if (stopped) return;
+          setRatings(list);
+          setError("");
+        })
+        .catch((err) => {
+          if (!stopped) setError(errorMessage(err));
+        });
+    void load();
+    // Opened with no connection: the heart and stars come back once the
+    // server answers again, like the lists (useLiveRecords).
+    window.addEventListener(RETRY_EVENT, load);
+    return () => {
+      stopped = true;
+      window.removeEventListener(RETRY_EVENT, load);
+    };
   }, [recipeId]);
 
   const mine = ratings?.find((r) => r.user === me?.id);

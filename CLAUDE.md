@@ -57,7 +57,8 @@ How to run: `README.md`.
     `web`) runs everything below on its own (web/scripts/run-tests.mjs),
     without building or sending anything: use it before saying it works.
     `npm run release` and `npm run deploy` run both suites first, the date
-    tests again in two far-off time zones, knip (web/knip.json: files,
+    tests again in two far-off time zones, TypeScript's check (`npx tsc
+    --noEmit -p tsconfig.json`), knip (web/knip.json: files,
     exports and packages nothing uses; an export only its own file uses
     loses its `export`; `npm run knip` alone), oxlint for React's rules for
     hooks (web/.oxlintrc.json; ESLint's rule names and disable comments;

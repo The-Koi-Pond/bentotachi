@@ -226,6 +226,13 @@ Not released yet:
   Android really saved it as ("… (1).paprikarecipes"); adding a site
   that's already on the list says so; restoring a file that isn't a
   backup says so plainly, without the raw zip error.
+- Dark in the app now darkens Android's own bars too: their icons on every
+  Android, and their colour on Android 14 and older (it left light strips
+  above and below; BentoBarsPlugin.java, SystemBarColours.tsx).
+- Opening a recipe with no signal, its heart and ratings come back once
+  the connection does; a photo that can't show offline takes its button
+  and gallery dot with it; Import & export recognises a Bentotachi backup
+  and says to restore it from Backups.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

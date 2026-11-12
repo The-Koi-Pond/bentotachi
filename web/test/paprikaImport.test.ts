@@ -296,6 +296,15 @@ test("a file's recipes come one at a time, in order", () => {
   assert.deepEqual([...paprikaEntries(recipe("Solo")).recipes()].map((r) => r?.name), ["Solo"]);
   assert.equal(paprikaEntries(new Uint8Array(0)).count, 0);
   assert.deepEqual([...paprikaEntries(new Uint8Array(0)).recipes()], []);
+  assert.equal(entries.backup, false);
+});
+
+test("a Bentotachi backup is told apart from a Paprika file, so it's not imported as nothing", () => {
+  const backup = zipSync({ "data.db": strToU8("SQLite format 3"), "auxiliary.db": strToU8("x"), "storage/abc/photo.jpg": strToU8("jpg") }, { level: 0 });
+  assert.equal(paprikaEntries(backup).backup, true);
+  // A Paprika file that happens to hold a recipe named "data.db" stays one.
+  const paprika = zipSync({ "data.db.paprikarecipe": strToU8("x") }, { level: 0 });
+  assert.equal(paprikaEntries(paprika).backup, false);
 });
 
 test("many entries come in order across several batches", () => {

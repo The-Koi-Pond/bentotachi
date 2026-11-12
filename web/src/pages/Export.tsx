@@ -28,6 +28,7 @@ import {
 import { MAX_PHOTOS, PHOTO_SIDE, photoStepsFor, uploadName } from "../recipePhotos";
 import { shrinkPhoto } from "../pantryPhoto";
 import { localToday } from "../dates";
+import { isPhoneMode } from "../phoneMode";
 import { sameTitle } from "../recipeTwins";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSpell } from "../household";
@@ -126,6 +127,15 @@ function ImportRecipes() {
       // Unpacked a few MB at a time, so a big collection fits in a phone's
       // memory (paprikaEntries).
       const entries = paprikaEntries(bytes);
+      if (entries.backup) {
+        setStatus({
+          text: isPhoneMode()
+            ? "That's a Bentotachi backup, not recipes to import. To bring it back, go to Settings → Backups → Restore a backup… and choose it there."
+            : "That's a Bentotachi backup, not recipes to import. A phone's backup goes back on the phone (Settings → Backups → Restore a backup…); a household server's is restored on the server.",
+          isError: true,
+        });
+        return;
+      }
       const existing = await recipes().getFullList({ fields: "id,title,source_url,ingredients" });
       const me = pb.authStore.record?.id;
       let added = 0;

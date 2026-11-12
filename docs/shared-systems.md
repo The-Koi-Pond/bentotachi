@@ -189,6 +189,8 @@ they say otherwise.
   `useKeptPhoto` (`KeptPhotos.tsx`) for any other one, so it shows its copy
   kept on the phone when offline (photoCache.ts, Settings' "Keep photos
   for offline"). A plain `<img>` of a server photo goes blank offline.
+  Photos inside buttons (a gallery, step photos): `useGaveUpPhotos` with
+  their `onGaveUp`, so a photo that won't come hides its button too.
 
 - Shrinking any photo before upload: `shrinkPhoto` (`pantryPhoto.ts`; pass
   `PHOTO_SIDE` from `recipePhotos.ts` for recipes; a website import's

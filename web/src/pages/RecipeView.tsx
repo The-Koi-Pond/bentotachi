@@ -63,7 +63,7 @@ import { useStepAmounts } from "../stepAmountsSetting";
 import PhotoFramer from "../PhotoFramer";
 import PhotoViewer from "../PhotoViewer";
 import HeroPhotos from "../HeroPhotos";
-import { KeptImg } from "../KeptPhotos";
+import { KeptImg, useGaveUpPhotos } from "../KeptPhotos";
 import { usePhotoStatus } from "../photoCache";
 import { shrinkPhoto } from "../pantryPhoto";
 import { inTurn } from "../inTurn";
@@ -156,6 +156,7 @@ export default function RecipeView() {
   // Its photos show offline too when they're kept on the phone (photoCache.ts);
   // full size (the viewer) still needs the server.
   const { on: photosKept } = usePhotoStatus();
+  const [goneStepPhotos, stepPhotoGaveUp] = useGaveUpPhotos();
   // The part being changed right here, if any (one at a time).
   const [editing, setEditing] = useState<Part | null>(null);
   // The photo framer, opened from the cover photo's viewer.
@@ -718,8 +719,14 @@ export default function RecipeView() {
                   {photosHere.length > 0 && (
                     <div className="step-photos">
                       {photosHere.map((name) => (
-                        <button key={name} className="step-photo" onClick={() => setViewing(name)} aria-label={`Step ${number}'s photo, full size`}>
-                          <KeptImg src={recipePhotoUrl(recipe, name, "600x0")} loading="lazy" fallback={null} />
+                        <button
+                          key={name}
+                          className="step-photo"
+                          onClick={() => setViewing(name)}
+                          aria-label={`Step ${number}'s photo, full size`}
+                          hidden={goneStepPhotos.has(name)}
+                        >
+                          <KeptImg src={recipePhotoUrl(recipe, name, "600x0")} loading="lazy" fallback={null} onGaveUp={stepPhotoGaveUp(name)} />
                         </button>
                       ))}
                     </div>

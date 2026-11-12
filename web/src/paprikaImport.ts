@@ -92,11 +92,17 @@ const BATCH_BYTES = 8 * 1024 * 1024;
 // of gzipped JSON; a single .paprikarecipe is one gzipped JSON. Never all
 // at once: a big collection's photos make the file hundreds of MB, and
 // unpacking it whole took 4-5 times that in memory, enough for Android to
-// close the app on many phones.
-export function paprikaEntries(bytes: Uint8Array): { count: number; recipes: () => Generator<Record<string, unknown> | null> } {
+// close the app on many phones. `backup`: it's a Bentotachi backup (a zip
+// holding data.db), which Backups restores rather than imports.
+export function paprikaEntries(bytes: Uint8Array): {
+  count: number;
+  backup: boolean;
+  recipes: () => Generator<Record<string, unknown> | null>;
+} {
   if (!ZIP(bytes)) {
     return {
       count: bytes.length ? 1 : 0,
+      backup: false,
       recipes: function* () {
         if (bytes.length) yield recipeIn(bytes);
       },
@@ -114,6 +120,7 @@ export function paprikaEntries(bytes: Uint8Array): { count: number; recipes: () 
   });
   return {
     count: names.length,
+    backup: names.includes("data.db"),
     recipes: function* () {
       let from = 0;
       while (from < names.length) {

@@ -1,7 +1,7 @@
 import type { ImgHTMLAttributes, ReactNode } from "react";
 import { recipeImageUrl, type Recipe } from "./pb";
 import { framingOf, framingStyle, type Framing } from "./photoFraming";
-import { keptCover, useKeptPhoto } from "./KeptPhotos";
+import { keptCover, useKeptPhoto, useReportGaveUp } from "./KeptPhotos";
 
 // A recipe's photo, framed the way it was set in the photo framer. "card"
 // is a 600-wide copy for cards and thumbnails (the whole photo, so any
@@ -9,15 +9,23 @@ import { keptCover, useKeptPhoto } from "./KeptPhotos";
 // "full" is the photo itself, for the recipe page. `framing` overrides the
 // saved one (the Edit page shows a change before it's saved). Offline, the
 // copy kept on the phone (KeptPhotos.tsx), if photos are kept; `fallback`
-// when no photo will come.
+// when no photo will come, and `onGaveUp` hears when that changes.
 export default function RecipePhoto({
   recipe,
   size,
   framing,
   fallback,
+  onGaveUp,
   ...rest
-}: { recipe: Recipe; size: "card" | "full"; framing?: Framing; fallback?: ReactNode } & ImgHTMLAttributes<HTMLImageElement>) {
+}: {
+  recipe: Recipe;
+  size: "card" | "full";
+  framing?: Framing;
+  fallback?: ReactNode;
+  onGaveUp?: (gaveUp: boolean) => void;
+} & ImgHTMLAttributes<HTMLImageElement>) {
   const photo = useKeptPhoto(recipeImageUrl(recipe, size === "card" ? "600x0" : undefined), keptCover(recipe));
+  useReportGaveUp(photo.gaveUp, onGaveUp);
   if (photo.gaveUp && fallback !== undefined) return <>{fallback}</>;
   return (
     <img

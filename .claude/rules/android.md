@@ -28,7 +28,15 @@ paths:
   BentoBrowserPlugin (built-in browser, Save to Bento), BentoUpdaterPlugin
   (app updates), BentoSharePlugin (links shared to Bento), BentoScannerPlugin
   (barcodes, Google's scanner: no camera permission), BentoFilesPlugin
-  (saving exports), BentoLocalServerPlugin (phone-only mode).
+  (saving exports), BentoLocalServerPlugin (phone-only mode), BentoBarsPlugin
+  (Android's own bars in the app's Light or Dark colours,
+  SystemBarColours.tsx).
+- An Android 11 emulator, "Bentotachi_Android11" (since 2026-11-12), for
+  what only older Androids show (the bars above). Its built-in web view is
+  Chrome 83, too old for the app's JavaScript, so the page stays blank;
+  native plugins can still be called from the web view's debugger
+  (`Capacitor.Plugins.<Name>.<method>()` over a forwarded
+  webview_devtools_remote socket).
 - Phone-only mode ("Just me, on this phone"): the Pi's same server runs
   inside the app on 127.0.0.1 (mobile/bentoserver, Go; see
   mobile/README.md). **Every APK carries `server/pb_hooks` and

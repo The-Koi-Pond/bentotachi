@@ -1114,6 +1114,14 @@ footer .person-name:focus-visible {
   width: 100%;
 }
 
+/* A photo that won't come (offline, not kept): its button goes too
+   (useGaveUpPhotos), though .hero-clip sets display. */
+.hero-button[hidden],
+.hero-slide[hidden],
+.step-photo[hidden] {
+  display: none;
+}
+
 /* Several photos at the top (HeroPhotos.tsx): swiped sideways, each the
    same shape, with dots under them. */
 .hero-strip {
