@@ -216,73 +216,7 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-- From a tester's bug report (2026-11-12; 17 issues checked against the
-  code, one serious):
-  - Restoring a phone-only backup no longer locks you out. Its account's
-    password was random and only ever kept on the phone that made it, so
-    after "Delete everything", a reinstall or on a new phone the restore
-    asked for a password nobody had seen. Now, when the saved login fails
-    and the data has a single account, this phone takes it over with a new
-    hidden password (phoneMode.ts takeOverOnlyAccount; the phone server's
-    OnlyAccount / SetPassword, through the plugin only). A household's
-    backup, with several accounts, still asks which is yours, and "Welcome
-    back" now shows that login instead of a dead button.
-  - "Delete everything" forgets every Bentotachi setting on the phone too
-    (a server address typed once included), so it starts again at "How will
-    you use Bentotachi?", and after setting up again opens on Recipes (it
-    used to come back to Profile, found in the phone QA of 2026-11-12).
-  - A paused step timer's button says "paused", not "running".
-  - The login forms say what's missing ("Type your username."), address
-    first, instead of the browser quietly putting the cursor in a box; the
-    phone's Back on the login steps goes back to the first choice.
-  - "Check for updates" with nothing new says "Checked just now: as fresh
-    as it gets".
-  - A recipe link typed without "https://" works; text that isn't a link
-    says so.
-  - The built-in browser's Save button says "No recipe here" for a few
-    seconds on a page without one (the pop-up was easy to miss).
-  - Play fetches the barcode scanner when the app is installed, so the
-    first scan isn't "not ready".
-  - "+ More details" in the pantry's add form is easier to tap.
-  - "Backup saved (2 MB)." with its size, and the Backups page says the file
-    isn't locked with a password.
-- Photos offline, opt-in (Xel's call, 2026-11-11): Settings → Your data →
-  "Keep photos for offline", on this device, off unless turned on; it
-  says the rough size first ("about 18 MB", 200 KB a recipe photo), then
-  how many are kept and their real size. On, the phone keeps the 600-wide
-  copies of every recipe's cover and step photos and the pantry's small
-  squares in Cache Storage (photoCache.ts), fetched one at a time over any
-  connection when the app opens, comes back to the front (every ten
-  minutes at most) and when the server answers again; deleted or replaced
-  photos are dropped. Offline (the server known away, or a photo failing),
-  cards, the recipe page's photos (as their 600-wide copies), step photos
-  and pantry photos show the kept copy (KeptPhotos.tsx), and the Offline
-  note no longer says "without photos". Full size (the viewer) still needs
-  the server. Turning it off empties the cache at once; logging out too.
-  Not offered where Cache Storage doesn't exist (a browser on a plain-http
-  address, like the PC's on the Pi) nor in phone-only mode (the photos are
-  on the phone already). Checked in the sandbox with the server cut off.
-- From a tester's look at Categories (2026-11-12): a category's name
-  shows once (the tick list's own heading went) and stays pinned at the
-  top while its recipes scroll; on Browse, a site with Categories is one
-  whole row again (all of it opens the site, every row's › lines up at the
-  end) with the button inside it, just before the ›.
-- Servings read as one line: "6 people" is "Serves 6" (not "Makes 6
-  people"), "Serves 4-6" no longer reads "Makes Serves 4-6", and "12
-  cookies" stays "Makes 12 cookies" (servingsWording, scaling.ts). The
-  edit forms' box is "Servings".
-- The recipe page's − and + for servings are plum, like the other actions
-  (they were meant to be, but base.css's grey won).
-- Containers and counts are amounts on the shopping list: running out of
-  Ice cream with "1 tub ice cream" already on it uses that row instead of
-  adding a second (also punnet, bunch, dozen, carton, sachet; "a dozen
-  large eggs" is eggs now), and a new pantry item from "1 tub ice cream"
-  is named "Ice cream".
-- Undo after renaming or deleting a place keeps "Edit places" open (the
-  tap on the Undo bar closed it).
-- A link to a page that's gone (error 404 or 410) says "That page isn't
-  there any more. Check the link." instead of calling it the site
-  refusing Bentotachi (importing, and Categories).
+(nothing yet)
 
 Earlier releases, newest first: docs/RELEASES.md.
 
