@@ -146,3 +146,25 @@ test("nothing is offered when it can't tell: counts of things, unreadable packet
   // Lines not in the pantry at all.
   assert.deepEqual(cookedUses(["a pinch of salt"], null, [], []), []);
 });
+
+test("counts: 3 eggs from a carton of 12 leaves 9, and loose onions come off one each", () => {
+  const eggs = item("egg", "Eggs");
+  const carton = packet("egg", "12 eggs");
+  const [use] = cookedUses(["3 eggs"], null, [eggs], [carton]);
+  assert.deepEqual(use.leave, { packet: carton, left: "9" });
+  assert.deepEqual([use.title, use.note], ["Eggs: 3 of the 12", "About 9 left"]);
+  // The next time, from what's left.
+  const opened = { ...(carton as object), left: "9" } as never;
+  const [again] = cookedUses(["4 eggs"], null, [eggs], [opened]);
+  assert.deepEqual(again.leave, { packet: opened, left: "5" });
+  assert.equal(again.title, "Eggs: 4 of the 9 left");
+  const onion = item("on", "Onion");
+  const loose = [packet("on", "1"), packet("on", "1"), packet("on", "1"), packet("on", "1")];
+  const [onions] = cookedUses(["1 onion, diced"], null, [onion], loose);
+  assert.deepEqual([onions.title, ids(onions.finish)], ["Onion: 1 of 4", ids(loose.slice(0, 1))]);
+  // A number of something else, though the item is named: not 2 celery.
+  assert.deepEqual(cookedUses(["2 celery stalks, diced"], null, [item("cel", "Celery")], [packet("cel", "1")]), []);
+  // "1 egg yolk", or a carton with no size: nothing guessed.
+  assert.deepEqual(cookedUses(["1 egg yolk"], null, [eggs], [packet("egg", "12")]), []);
+  assert.deepEqual(cookedUses(["3 eggs"], null, [eggs], [packet("egg", "")]), []);
+});

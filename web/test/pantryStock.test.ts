@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { coverNote, coverOf, coversFor, stillToBuy, worthBuying } from "../src/pantryStock.ts";
+import { coverNote, coverOf, coversFor, packetAmount, quantityOf, stillToBuy, worthBuying } from "../src/pantryStock.ts";
 import { lineMeasure } from "../src/scaling.ts";
 
 const sizes = (...list: string[]) => list.map((size) => ({ size }));
@@ -189,4 +189,66 @@ test("a line's measure is read where scaling reads it", () => {
   assert.equal(lineMeasure("2 onions"), null);
   assert.equal(lineMeasure("1 (400 g) can tomatoes"), null);
   assert.equal(lineMeasure("Juice of 1 lemon"), null);
+});
+
+const eggs = (...lines: string[]) => lines.map((line) => ({ line, names: ["Eggs"] }));
+
+test("counts: a carton of 12 eggs covers 3 eggs, and what's short is bought in whole ones", () => {
+  assert.deepEqual(coverOf(eggs("3 eggs"), sizes("12 eggs", "12 eggs")), { kind: "enough", have: "2 × 12 eggs" });
+  assert.deepEqual(coverOf(eggs("3 eggs"), [{ size: "12 eggs" }, { size: "12 eggs", left: "9" }]), { kind: "enough", have: "21 eggs" });
+  const short = coverOf(eggs("3 eggs"), [{ size: "12", left: "1" }]);
+  assert.equal(coverNote(short), "Have 1");
+  assert.equal(stillToBuy("3 eggs", short), "2 eggs");
+  // A range stays whole ones too: never "2¼-3 eggs".
+  assert.equal(stillToBuy("3-4 eggs", coverOf(eggs("3-4 eggs"), [{ size: "12", left: "1" }])), "3-4 eggs");
+  // Counts are exact: 19 eggs aren't nearly enough for 20.
+  assert.equal(coverOf(eggs("20 eggs"), [{ size: "12" }, { size: "12", left: "7" }]).kind, "short");
+  // Loose ones, a size of 1 each.
+  const onions = coverOf([{ line: "5 onions", names: ["Onion"] }], sizes("1", "1"));
+  assert.equal(coverNote(onions), "Have 2");
+  assert.equal(stillToBuy("5 onions", onions), "3 onions");
+});
+
+test("counts: coversFor counts a line by its own item's names", () => {
+  const packets = [{ id: "p1", item: "egg", brand: "", size: "12", created: "2026-11-01" }];
+  const covers = coversFor([{ key: "eggs", items: [{ id: "egg", name: "Eggs" }], needs: need("3 large eggs"), anyKind: false }], packets);
+  assert.deepEqual(covers.get("eggs"), { kind: "enough", have: "12" });
+  // A number of something else, though the item is named.
+  const celery = coversFor([{ key: "c", items: [{ id: "egg", name: "Celery" }], needs: need("2 celery stalks"), anyKind: false }], packets);
+  assert.deepEqual(celery.get("c"), { kind: "unknown" });
+});
+
+test("counts: the ways a packet's size says how many", () => {
+  for (const [size, count] of [["12", 12], ["12 eggs", 12], ["dozen", 12], ["half dozen", 6], ["6 pcs", 6], ["12-pack", 12], ["10 units", 10], ["6 x 63 g", 6]] as const)
+    assert.equal(packetAmount({ size, left: "" })?.amount, count, size);
+  assert.equal(packetAmount({ size: "700 g", left: "" })?.kind, "mass");
+  assert.equal(packetAmount({ size: "3 cans", left: "" }), null);
+  // More likely grams with no unit than a count.
+  assert.equal(packetAmount({ size: "1000", left: "" }), null);
+  assert.equal(packetAmount({ size: "", left: "" }), null);
+});
+
+test("counts: only a whole number of the thing itself, never a part or a number of something else", () => {
+  const names = ["Eggs", "Onion", "Lemon", "Garlic", "Chickpeas", "Tomatoes", "Bread", "Celery", "Basil", "Ginger", "Lime", "Thyme", "Bacon", "Cucumber", "Spinach"];
+  const count = (line: string) => quantityOf(line, undefined, { names });
+  for (const [line, n] of [["3 eggs", 3], ["2 large eggs, beaten", 2], ["2 large free-range eggs", 2], ["3-4 eggs", 4], ["1 onion, diced", 1], ["2 red onions", 2], ["2 onions finely chopped", 2], ["3 eggs (room temperature)", 3], ["2 tomatoes and 1 onion", 2], ["a dozen eggs", 12], ["1 lemon, juiced", 1]] as const)
+    assert.deepEqual(count(line), { kind: "count", amount: n }, line);
+  for (const line of [
+    "½ onion", "1 1/2 onions", "1.5 onions", "1 egg yolk", "2 egg whites", "2 cloves garlic", "1 garlic clove", "1 tin chickpeas",
+    "1 (400 g) can tomatoes", "2 x 400 g tins tomatoes", "2 large tins tomatoes", "3 slices bread", "4 thick slices of bread", "Juice of 1 lemon", "4 people",
+    "2 celery stalks, diced", "2 celery ribs", "1 celery stick", "6 basil leaves", "2 kaffir lime leaves", "2 lemon wedges", "5cm piece ginger",
+    "2-inch piece ginger", "10cm cucumber", "3 thyme sprigs", "4 bacon rashers", "1 small handful spinach",
+    // Another thing named after it, or by it.
+    "12 cherry tomatoes", "4 spring onions", "2 green onions", "4 quail eggs", "4 Scotch eggs", "6 cocktail onions",
+    "2 tomato wraps", "1 onion bhaji", "2 eggs Benedict",
+  ])
+    assert.equal(count(line), null, line);
+  // Only a count of the item it's for: "3 eggs" isn't 3 of anything else,
+  // and with no names nothing is counted.
+  assert.equal(quantityOf("3 eggs", undefined, { names: ["Milk"] }), null);
+  assert.equal(quantityOf("3 eggs"), null);
+  // Grams against a count can't tell; no size is never guessed.
+  assert.deepEqual(coverOf(eggs("200 g eggs"), sizes("12 eggs")), { kind: "unknown" });
+  assert.deepEqual(coverOf([{ line: "2 onions", names: ["Onion"] }], sizes("1 kg")), { kind: "unknown" });
+  assert.deepEqual(coverOf(eggs("3 eggs"), sizes("12 eggs", "")), { kind: "unknown" });
 });

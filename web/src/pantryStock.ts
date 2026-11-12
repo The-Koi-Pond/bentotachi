@@ -1,18 +1,21 @@
 // How much of a recipe's ingredient the pantry's packets cover, so the list
-// gets only what's short ("1.3 kg linguine" with 200 g in). Every packet
-// counts as full (they don't say how much is left; docs/PLAN.md). Where it
-// can't tell ("2 onions", no sizes), Have / Low / Out decides as before.
+// gets only what's short ("1.3 kg linguine" with 200 g in, "3 eggs" with a
+// carton of 12). A packet counts as full unless cooking left some ("left").
+// Where it can't tell (no sizes, or grams against a count), Have / Low /
+// Out decides as before.
 // Tested in web/test/pantryStock.test.ts.
 
 import type { PantryItem, PantryPacket } from "./pb";
 import type { RecipeMeasures } from "./volumes.ts";
 import { lineMeasure, scaleLine } from "./scaling.ts";
 import { packetsOf } from "./pantryPackets.ts";
+import { findMention } from "./wordMatch.ts";
+import { otherNames } from "./regionalNames.ts";
 
-type Kind = "mass" | "volume";
+type Kind = "mass" | "volume" | "count";
 export interface Quantity {
   kind: Kind;
-  // In grams or millilitres.
+  // In grams or millilitres, or how many ("12" eggs).
   amount: number;
 }
 
@@ -47,19 +50,105 @@ function perUnit(unit: string, measures: RecipeMeasures): { kind: Kind; size: nu
   return null;
 }
 
-// How much a line or a packet size says, in grams or millilitres, or null
-// when it isn't a measure ("2 onions").
-export function quantityOf(text: string, measures: RecipeMeasures = US_MEASURES): Quantity | null {
+// Words after a number that make it a number of something else, not of the
+// thing itself: "1 tin chickpeas", "2 cloves garlic", "3 slices bread".
+const NOT_COUNTED =
+  /^(tins?|cans?|jars?|packets?|packs?|bags?|box(es)?|bottles?|cartons?|sachets?|tubs?|punnets?|bunch(es)?|cloves?|sprigs?|slices?|heads?|stalks?|ribs?|sticks?|handfuls?|pinch(es)?|dash(es)?|drops?|leaves|leaf|rashers?|fillets?|pieces?|wedges?|segments?|knobs?|squares?|strips?|sheets?|cubes?|scoops?|shots?|splash(es)?|whites?|yolks?|sizes?|times?|serves?|servings?|portions?|people|cm|mm|inch(es)?|%)(?![a-z])/;
+
+// A bare number bigger than this ("1000") is more likely grams typed without
+// a unit than a count: the biggest egg tray is 30.
+const MOST_BARE = 60;
+
+// Words that may come between a count and the thing ("2 large free-range
+// eggs"). Only these: any other is likely another thing named after it
+// ("cherry tomatoes", "spring onions", "quail eggs"), so it can't tell.
+const DESCRIBING = new Set(
+  "large medium small big extra jumbo whole fresh ripe free range organic red brown white yellow purple golden firm raw peeled unpeeled cold".split(" ")
+);
+
+// What may follow the thing's name: the end, punctuation, "and", or a
+// word saying how it's prepared ("chopped", "finely"). Not another word,
+// which makes it something else ("corn tortillas", "apple pies").
+const AFTER_NAME = /^(\s*($|[,;:(\-–—/)])|\s+(and|plus|or|to|for|at)\b|\s+[a-z]+(ed|ly)\b)/;
+
+// A part of the thing, anywhere in the line: "1 egg yolk", "2 garlic cloves".
+const PART = /\b(yolks?|whites? of|egg whites?|cloves?|zest|juice|rind)\b/;
+
+// After a packet size's count: "6 pcs", "12-pack", "10 units".
+const COUNT_WORD = /^-?(pack|pk|pcs?|ct|count|each|units?)(?![a-z])\s*/;
+
+// Whether `rest` (a line after its number) names the thing counted: one of
+// `names` straight after the number, give or take describing words
+// ("large eggs"), and then nothing that makes it another thing ("celery
+// stalks", "corn tortillas").
+function namesThing(rest: string, names: string[]): boolean {
+  return names.some((name) => {
+    const at = findMention(rest, name);
+    if (!at) return false;
+    const before = rest.slice(0, at.start).toLowerCase().replace(/[-,]/g, " ").trim();
+    if (before && !before.split(/\s+/).every((word) => DESCRIBING.has(word))) return false;
+    return AFTER_NAME.test(rest.slice(at.end).toLowerCase());
+  });
+}
+
+// A count: a recipe line's whole number of the thing itself ("3 eggs", "2
+// large onions", "3-4 eggs" as 4) when one of `names` is that thing, or a
+// packet's size ("12", "12 eggs", "dozen", "6 pcs", and as a `packet` "12 x
+// 60 g"), or null. Not a part ("½ onion", "1 egg yolk"), nor a number of
+// something else ("2 celery stalks", "5 cm ginger", "500 g"). Without
+// `names` a line's number isn't checked against the thing (stillToBuy, on
+// a line already found to be a count).
+function countOf(text: string, { packet = false, names }: { packet?: boolean; names?: string[] } = {}): number | null {
+  const words = text.trim().toLowerCase();
+  const dozen = words.match(/^(?:(\d+)\s+|a\s+|half\s+(?:a\s+)?)?dozen(?![a-z])/);
+  if (dozen) return /^half/.test(words) ? 6 : 12 * Number(dozen[1] ?? 1);
+  const lead = words.match(/^(\d+)(?:\s*[-–]\s*(\d+))?(?![\d.,/])\s*(.*)$/);
+  if (!lead || PART.test(words)) return null;
+  const n = Number(lead[2] ?? lead[1]);
+  let rest = lead[3];
+  if (!(n > 0)) return null;
+  // "12 x 60 g": twelve of them, each 60 g. In a recipe it's more often
+  // "2 x 400 g tins", a count of tins.
+  if (/^[x×]\s*\d/.test(rest)) return packet ? n : null;
+  if (packet) {
+    rest = rest.replace(COUNT_WORD, "");
+    if (!rest && n > MOST_BARE) return null;
+  }
+  // "1 (400 g) can tomatoes": what's after the brackets says what's counted.
+  rest = rest.replace(/^\([^)]*\)\s*/, "");
+  if (/^[\d½¼¾⅓⅔⅛]/.test(rest) || NOT_COUNTED.test(rest)) return null;
+  const firstWord = rest.split(/[\s,(]/)[0];
+  if (firstWord && perUnit(firstWord, US_MEASURES)) return null;
+  if (!packet && names && !namesThing(rest, names)) return null;
+  return n;
+}
+
+// How much a line or a packet size says: in grams or millilitres, or how
+// many (countOf), or null when it can't tell ("½ onion", "1 tin beans"). A
+// line is a count only of one of `names` (a pantry item's names), so with
+// none given it never is.
+export function quantityOf(
+  text: string,
+  measures: RecipeMeasures = US_MEASURES,
+  { packet = false, names = [] }: { packet?: boolean; names?: string[] } = {}
+): Quantity | null {
   const measure = lineMeasure(text);
   const unit = measure && perUnit(measure.unit, measures);
-  if (!measure || !unit || !(measure.amount > 0)) return null;
-  return { kind: unit.kind, amount: measure.amount * unit.size };
+  if (measure && unit && measure.amount > 0) return { kind: unit.kind, amount: measure.amount * unit.size };
+  const count = countOf(text, { packet, names });
+  return count === null ? null : { kind: "count", amount: count };
+}
+
+// The names a line counting one of these items may use: each one's name
+// and its other region's ("eggplant", "aubergine").
+export function namesOf(items: Pick<PantryItem, "name">[]): string[] {
+  return items.flatMap((item) => (item.name ? [item.name, ...otherNames(item.name)] : []));
 }
 
 // How much is in a packet: what's left of it once cooking used some, else
 // its size.
 export function packetAmount(packet: Pick<PantryPacket, "size" | "left">): Quantity | null {
-  return quantityOf((packet.left || packet.size) ?? "");
+  return quantityOf((packet.left || packet.size) ?? "", US_MEASURES, { packet: true });
 }
 
 type Sized = Pick<PantryPacket, "size" | "left">;
@@ -76,8 +165,9 @@ function stockOf(packets: Sized[]): Quantity | null {
 
 const twoDecimals = (n: number) => String(Math.round(n * 100) / 100);
 
-// An amount as people would say it: "750 ml", "1.25 kg".
+// An amount as people would say it: "750 ml", "1.25 kg", "9" (of them).
 export function amountLabel({ kind, amount }: Quantity): string {
+  if (kind === "count") return twoDecimals(amount);
   const [small, big] = kind === "mass" ? ["g", "kg"] : ["ml", "L"];
   return amount >= 1000 ? `${twoDecimals(amount / 1000)} ${big}` : `${Math.round(amount)} ${small}`;
 }
@@ -85,20 +175,29 @@ export function amountLabel({ kind, amount }: Quantity): string {
 // What's in stock, as people would say it: "500 g", "2 × 500 g", or the
 // total when the packets differ or some are partly used ("1.25 kg").
 function stockLabel(packets: Sized[], stock: Quantity): string {
-  if (packets.some((packet) => packet.left)) return amountLabel(stock);
   const sizes = packets.map((packet) => (packet.size ?? "").trim());
-  if (sizes.every((size) => size === sizes[0])) return sizes.length > 1 ? `${sizes.length} × ${sizes[0]}` : sizes[0];
-  return amountLabel(stock);
+  const bareCounts = stock.kind === "count" && sizes.every((size) => /^\d+$/.test(size));
+  if (!bareCounts && !packets.some((packet) => packet.left) && sizes.every((size) => size === sizes[0]))
+    return sizes.length > 1 ? `${sizes.length} × ${sizes[0]}` : sizes[0];
+  return stock.kind === "count" ? countLabel(stock.amount, sizes) : amountLabel(stock);
 }
 
-type Need = { line: string; measures?: RecipeMeasures };
+// A total count with the word its sizes use: "21 eggs" from "12 eggs"
+// cartons, else just "21".
+function countLabel(amount: number, sizes: string[]): string {
+  const word = sizes.map((size) => size.match(/^\d+\s+([a-z]+)$/i)?.[1]).find((w) => w && !COUNT_WORD.test(w.toLowerCase()));
+  return word && amount !== 1 ? `${amountLabel({ kind: "count", amount })} ${word}` : amountLabel({ kind: "count", amount });
+}
 
-// The total of some lines in grams or millilitres, or null if any can't be
-// read in that kind of measure.
+// `names`: what the item is called, so "3 eggs" can count eggs (namesOf).
+type Need = { line: string; measures?: RecipeMeasures; names?: string[] };
+
+// The total of some lines in grams or millilitres, or how many, or null if
+// any can't be read in that kind of measure.
 function totalOf(needs: Need[], kind: Kind): number | null {
   let total = 0;
-  for (const { line, measures } of needs) {
-    const quantity = quantityOf(line, measures ?? US_MEASURES);
+  for (const { line, measures, names } of needs) {
+    const quantity = quantityOf(line, measures ?? US_MEASURES, { names });
     if (!quantity || quantity.kind !== kind) return null;
     total += quantity.amount;
   }
@@ -120,8 +219,10 @@ export function coverOf(needs: Need[], packets: Sized[], { setAside = [] as Quan
   const have = used > 0 ? (left > 0 ? `${amountLabel({ kind: stock.kind, amount: left })} spare` : "none spare") : stockLabel(packets, stock);
   // On purpose: a few percent short counts as enough. Labels and units
   // differ that much (a 32 fl oz carton is 946 ml, 4 cups 960 ml), and
-  // "⅛ cup broth" or "0 L stock" on the list helps nobody.
-  if (left >= needed * (1 - NEAR_ENOUGH)) return { kind: "enough", have };
+  // "⅛ cup broth" or "0 L stock" on the list helps nobody. Counts are
+  // exact: 19 eggs aren't enough for 20.
+  const nearEnough = stock.kind === "count" ? 0 : NEAR_ENOUGH;
+  if (left >= needed * (1 - nearEnough)) return { kind: "enough", have };
   return { kind: "short", have, still: (needed - left) / needed };
 }
 
@@ -132,10 +233,15 @@ export function coverOf(needs: Need[], packets: Sized[], { setAside = [] as Quan
 // bag isn't counted twice. A kind takes at most what its packets hold (none
 // when it has none), or all of them when its lines can't be measured.
 export function coversFor(
-  groups: { key: string; items: Pick<PantryItem, "id">[]; needs: Need[]; anyKind: boolean }[],
+  groups: { key: string; items: Pick<PantryItem, "id" | "name">[]; needs: Need[]; anyKind: boolean }[],
   packets: Pick<PantryPacket, "id" | "item" | "brand" | "size" | "created">[]
 ): Map<string, Cover> {
   const covers = new Map<string, Cover>();
+  // Each line may count what its own group's items are called.
+  groups = groups.map((group) => {
+    const names = namesOf(group.items);
+    return { ...group, needs: group.needs.map((need) => ({ ...need, names: need.names ?? names })) };
+  });
   const packetsFor = (items: Pick<PantryItem, "id">[]) => items.flatMap((item) => packetsOf(packets, item.id));
   const takes = (other: { items: Pick<PantryItem, "id">[]; needs: Need[] }): Quantity | null => {
     const own = stockOf(packetsFor(other.items));
@@ -175,10 +281,15 @@ export function worthBuying(item: Pick<PantryItem, "status"> | null, cover: Cove
 // up rather than to the nearest ("1 lb" with 200 g in is "⅔ lb", not "½").
 export function stillToBuy(line: string, cover: Cover): string {
   if (cover.kind !== "short") return line;
-  const target = (lineMeasure(line)?.amount ?? 0) * cover.still;
+  // A line short of a count was already found to count its item.
+  const amount = (text: string) => lineMeasure(text)?.amount ?? countOf(text) ?? undefined;
+  const target = (amount(line) ?? 0) * cover.still;
+  const counted = !lineMeasure(line) && countOf(line) !== null;
   for (let factor = cover.still; factor < 1; factor *= 1.02) {
     const scaled = scaleLine(line, factor);
-    if ((lineMeasure(scaled)?.amount ?? Infinity) >= target * 0.999) return scaled;
+    // A count only in whole ones: "2 eggs" to buy, never "1½ eggs".
+    if (counted && countOf(scaled) === null) continue;
+    if ((amount(scaled) ?? Infinity) >= target * 0.999) return scaled;
   }
   return line;
 }

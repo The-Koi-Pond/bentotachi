@@ -6,7 +6,7 @@
 // everything" for the full form (PantryForms.tsx).
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { PantryItem, PantryPacket } from "./pb";
-import { nextPacket, packetName, type PacketDetails } from "./pantryPackets";
+import { isLooseSize, nextPacket, packetName, type PacketDetails } from "./pantryPackets";
 import { otherProducts, preferredProduct, productName } from "./pantryProducts";
 import { describeExpiry } from "./expiry";
 import { brandsOf } from "./pantryItem";
@@ -68,7 +68,7 @@ export default function PantryCard({
         {packets && (
           <button className="button primary small" onClick={() => more(next)}>
             + 1 more
-            {preferred ? (
+            {!next.brand.trim() && isLooseSize(next.size) ? null : preferred ? (
               <span className="pantry-card-size">
                 · <span title={spell("Favourite")}>★</span> {productName(preferred)}
               </span>

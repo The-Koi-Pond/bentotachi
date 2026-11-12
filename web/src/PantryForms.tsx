@@ -745,7 +745,7 @@ function PacketsField({
               onChange={(e) => setDetails({ ...details, size: e.target.value })}
               onKeyDown={enterAdds}
               maxLength={60}
-              placeholder="like 1 kg"
+              placeholder="like 1 kg, or 12 for eggs"
             />
           </label>
           <label>

@@ -26,6 +26,10 @@ export function packetName(packet: Pick<PantryPacket, "brand" | "size">): string
   return [packet.brand, packet.size].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
 }
 
+// A size of one, for things counted one at a time (an onion): the pantry
+// counts it, but a label needn't say "1".
+export const isLooseSize = (size: string | undefined) => (size ?? "").trim() === "1";
+
 // An item's packets grouped, one group per brand, size and state ("3 ×
 // 400 g"): the label leaves out the item's favourite brand (it's under the
 // name already), and `packets` are oldest first, so the first is the one to
@@ -49,9 +53,11 @@ export function packetGroups<
     const brand = norm(packet.brand ?? "") === norm(favouriteBrand) ? "" : packet.brand ?? "";
     // A partly used one (cooking left "100 g") is its own counter.
     const left = (packet.left ?? "").trim();
-    const base = packetName({ brand, size: packet.size });
+    // A loose one (size "1", an onion) says "2 × One", not "2 × 1".
+    const size = isLooseSize(packet.size) ? "" : packet.size ?? "";
+    const base = packetName({ brand, size });
     const label = left ? [base, `about ${left} left`].filter(Boolean).join(", ") : base;
-    const key = `${norm(brand)}|${norm(packet.size ?? "")}|${norm(left)}|${(packet.expires ?? "").slice(0, 10)}|${packet.opened ? "open" : ""}|${boughtDay(packet)}`;
+    const key = `${norm(brand)}|${norm(size)}|${norm(left)}|${(packet.expires ?? "").slice(0, 10)}|${packet.opened ? "open" : ""}|${boughtDay(packet)}`;
     const group = groups.get(key) ?? { label, count: 0, packets: [] };
     group.count += 1;
     group.packets.push(packet);
@@ -251,10 +257,12 @@ export function withDetails(
 }
 
 // Open Food Facts' sizes as people write them: "1000 g" stays, but "1kg" ->
-// "1 kg", "500ML" -> "500 ml", and anything long is cut.
+// "1 kg", "500ML" -> "500 ml", a count "x12" -> "12", and anything long is
+// cut.
 export function tidySize(text: string): string {
   return text
     .trim()
+    .replace(/^[x×]\s*(\d+)$/i, "$1")
     .replace(/(\d)\s*(kg|g|ml|l|cl)\b/gi, (_, digit: string, unit: string) => `${digit} ${unit.toLowerCase() === "l" ? "L" : unit.toLowerCase()}`)
     .replace(/\s+/g, " ")
     .slice(0, 60);

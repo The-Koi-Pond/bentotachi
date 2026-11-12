@@ -214,6 +214,14 @@ test("sizes are tidied the way people write them", () => {
   assert.equal(tidySize("500ML"), "500 ml");
   assert.equal(tidySize("2l"), "2 L");
   assert.equal(tidySize(" 1000  g "), "1000 g");
+  // A loose one's size of 1 is counted, but its label doesn't say "1".
+  assert.deepEqual(
+    packetGroups([{ brand: "", size: "1" }, { brand: "", size: "1" }]).map((g) => [g.label, g.count]),
+    [["", 2]]
+  );
+  // A count stays one the pantry can read.
+  assert.equal(tidySize("x12"), "12");
+  assert.equal(tidySize("12 pcs"), "12 pcs");
   assert.equal(tidySize("6 x 375ml"), "6 x 375 ml");
   assert.equal(tidySize("1 lb"), "1 lb");
   assert.equal(tidySize("x".repeat(80)).length, 60);

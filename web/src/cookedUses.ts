@@ -8,7 +8,7 @@ import { headingOf } from "./format.ts";
 import { linkFor } from "./pantryLinks.ts";
 import { scaleLine } from "./scaling.ts";
 import { packetName, packetsOf } from "./pantryPackets.ts";
-import { amountLabel, packetAmount, quantityOf } from "./pantryStock.ts";
+import { amountLabel, namesOf, packetAmount, quantityOf } from "./pantryStock.ts";
 import type { RecipeMeasures } from "./volumes.ts";
 
 export interface Use {
@@ -75,8 +75,11 @@ function packetsToUse(item: PantryItem, lines: string[], ordered: PantryPacket[]
     const finish = ordered.slice(0, n);
     return finish.length ? finished(item, finish, null, ordered.length) : null;
   }
-  const needs = lines.map((line) => quantityOf(line, measures));
+  const names = namesOf([item]);
+  const needs = lines.map((line) => quantityOf(line, measures, { names }));
   const first = packetAmount(ordered[0]);
+  // One egg left of 30 is still an egg.
+  const crumbs = first?.kind === "count" ? 0 : CRUMBS;
   if (!first || needs.some((need) => !need || need.kind !== first.kind)) return null;
   let need = needs.reduce((sum, q) => sum + q!.amount, 0);
   const finish: PantryPacket[] = [];
@@ -86,7 +89,7 @@ function packetsToUse(item: PantryItem, lines: string[], ordered: PantryPacket[]
     if (need <= 0) break;
     const has = packetAmount(packet);
     if (!has || has.kind !== first.kind) return null;
-    if (need >= has.amount * (1 - CRUMBS)) {
+    if (need >= has.amount * (1 - crumbs)) {
       finish.push(packet);
       need -= has.amount;
     } else {
@@ -97,9 +100,19 @@ function packetsToUse(item: PantryItem, lines: string[], ordered: PantryPacket[]
   }
   if (!finish.length && !leave) return null;
   if (leave && !finish.length) {
+    const usedLabel = amountLabel({ kind: first.kind, amount: used });
+    // A count reads "3 of the Sunny Farms 12", or "3 of the 9 left", not
+    // "3 of the 12 eggs one".
+    const counted = packetAmount(leave.packet);
+    const from =
+      first.kind !== "count" || !counted
+        ? `the ${packetName(leave.packet) || "open"} one`
+        : leave.packet.left
+          ? `the ${amountLabel(counted)} left`
+          : `the ${[leave.packet.brand?.trim(), amountLabel(counted)].filter(Boolean).join(" ")}`;
     return {
       item,
-      title: `${item.name}: ${amountLabel({ kind: first.kind, amount: used })} of the ${packetName(leave.packet) || "open"} one`,
+      title: `${item.name}: ${usedLabel} of ${from}`,
       note: `About ${leave.left} left`,
       ticked: true,
       finish,

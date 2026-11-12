@@ -216,7 +216,11 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-(nothing yet)
+- Counted things in the pantry: a packet's size can be a count ("12
+  eggs", "dozen", "6 pcs", or "1" for a loose onion), so "3 eggs" comes
+  off a carton of 12 after cooking ("about 9 left") and the shopping list
+  knows 2 cartons are enough. A packet with no size is still never
+  guessed at.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -819,6 +823,47 @@ bag that's really there). Xel's pick: adding a packet by hand (scanning,
 "+ 1 packet", a counter's +) within a few hours of a tick having added
 one to that item asks first: "The shopping list already added a White
 Mill 1 kg an hour ago." That's the one / Add another.
+
+## Next: counted things in the pantry (Xel, 2026-11-12)
+
+A carton of eggs is 12 eggs, and "3 eggs" in a recipe should come off it.
+Today a packet's size is read only as a weight or a volume ("500 g",
+"1 L"; pantryStock.ts quantityOf), so counts never come off, and a packet
+with no size ("+ 1 more") could be one egg or a whole carton, so cooking
+skips it rather than guess. This also settles the "1 onion" question
+(a tester's report, 2026-11-12): instead of guessing at sizeless packets,
+sizes learn to be counts. Decided (Xel, 2026-11-12):
+
+- A size can be a count: "12 eggs", "dozen", "6 pcs", "12". A carton is
+  12 eggs; two cartons are 24, like two bags of flour.
+- Cooking takes counts off: "3 eggs" against a 12-egg carton leaves "9
+  left" (the packet's `left`, as "200 g" leaves "300 g" today). A count only
+  matches its own item (a bare number before the item's name, "2 onions"),
+  never a carton size on something else; "1 egg yolk" or "half an onion"
+  stay skipped, like anything it can't measure.
+- A barcode scan fills the count in when the product database says one
+  ("12", "12 pcs"); when it gives a weight instead, you set it once and the
+  item keeps it as its usual size.
+- Loose things: an item whose usual size is "1" (an onion) counts one per
+  "+ 1 more", so "1 onion" comes off.
+- No size stays unknown, never guessed: the "3 eggs uses up three cartons"
+  mistake stays impossible.
+
+Built 2026-11-12 (mock-up first: packet size box, a pantry row, the
+cooking sheet). A count is read in pantryStock.ts (`quantityOf`, with
+`packet` for a size: "12 x 60 g" is 12 eggs, but in a recipe "2 x 400 g
+tins" isn't 2 tomatoes). A line counts only when the item's own name
+follows the number, with nothing but describing words before it ("2 large
+free-range eggs") and nothing after it that makes it another thing ("2
+celery stalks", "12 cherry tomatoes", "4 spring onions", "2 corn
+tortillas" all stay "can't tell"; found in review). So the shopping list's "Enough: 2 × 12 eggs" /
+"Have 1" and the "Used anything up?" sheet use it with no change of their
+own. What's short is bought in whole ones ("2 eggs", never "1½"). A
+corrected scanned size was already remembered for its barcode
+(server/pb_hooks/pantry_products.js rememberProduct), so the next scan says
+12 by itself; Open Food Facts' "x12" now reads as "12". Left out of the
+mock-up: the row summary "21 eggs · 2 cartons" and a "Used some…" button
+(the labels already say "about 9 left"; using some by hand would be new).
 
 ## Next: tell Play users when an update is out (Xel, 2026-11-08)
 

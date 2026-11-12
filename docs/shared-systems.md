@@ -93,8 +93,8 @@ they say otherwise.
   (`pantryLinks.ts`).
   How much the pantry's packets cover of what a recipe needs, and whether
   it's worth buying: `coversFor` / `coverOf`, `worthBuying`, `stillToBuy`,
-  `coverNote` (`pantryStock.ts`); an amount in grams or millilitres:
-  `quantityOf`, a packet's (what's left, else its size): `packetAmount`,
+  `coverNote` (`pantryStock.ts`); an amount in grams or millilitres, or a
+  count ("3 eggs", a "12 eggs" carton): `quantityOf`, a packet's (what's left, else its size): `packetAmount`,
   saying one: `amountLabel`; a line's measured amount: `lineMeasure`
   (`scaling.ts`). What a cooked recipe used up: `cookedUses`
   (`cookedUses.ts`), offered by `<UsedUpSheet>`.
