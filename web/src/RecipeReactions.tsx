@@ -27,22 +27,34 @@ export function useRecipeRatings(recipeId: string) {
   // too), so a quick second tap waits for it and changes that row, rather
   // than changing a row with no id yet. Forgotten if it fails.
   const creating = useRef<Promise<RecipeRating> | null>(null);
+  // How many times your own row was changed here, so a reload that was
+  // already on its way doesn't put back what it was before.
+  const edits = useRef(0);
 
   useEffect(() => {
     creating.current = null;
     if (!recipeId) return;
     let stopped = false;
-    const load = () =>
-      recipeRatings()
+    const load = () => {
+      const editsBefore = edits.current;
+      return recipeRatings()
         .getFullList({ filter: pb.filter("recipe = {:id}", { id: recipeId }), expand: "user" })
         .then((list) => {
           if (stopped) return;
-          setRatings(list);
+          // Your own row changed meanwhile (a heart tapped as the connection
+          // came back): the list may predate it, so yours stays as shown.
+          const myId = pb.authStore.record?.id;
+          setRatings((current) =>
+            edits.current === editsBefore || !current
+              ? list
+              : [...list.filter((r) => r.user !== myId), ...current.filter((r) => r.user === myId)]
+          );
           setError("");
         })
         .catch((err) => {
           if (!stopped) setError(errorMessage(err));
         });
+    };
     void load();
     // Opened with no connection: the heart and stars come back once the
     // server answers again, like the lists (useLiveRecords).
@@ -60,6 +72,7 @@ export function useRecipeRatings(recipeId: string) {
   async function saveMine(patch: Partial<Mine>) {
     if (!me || !ratings) return;
     setError("");
+    edits.current += 1;
     const before = ratings;
     const draft = {
       ...(mine ?? {

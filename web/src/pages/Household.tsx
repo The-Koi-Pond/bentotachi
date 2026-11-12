@@ -155,7 +155,7 @@ function AddPerson({ onAdded }: { onAdded: (user: User) => void }) {
           <h2>Add someone</h2>
           <label>
             Their name
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Alex" required autoFocus />
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="like Alex" required autoFocus />
           </label>
           <label>
             Username
@@ -167,7 +167,7 @@ function AddPerson({ onAdded }: { onAdded: (user: User) => void }) {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              placeholder="e.g. alex"
+              placeholder="like alex"
               required
             />
           </label>

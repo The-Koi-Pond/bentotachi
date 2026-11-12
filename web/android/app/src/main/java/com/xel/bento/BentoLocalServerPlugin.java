@@ -206,21 +206,23 @@ public class BentoLocalServerPlugin extends Plugin {
             return;
         }
         worker.execute(() -> {
+            // On purpose: "saved" only once the file is closed, as some
+            // places (cloud folders) only write it then, and that can fail.
             try (InputStream in = new FileInputStream(backup);
                  OutputStream out = getContext().getContentResolver().openOutputStream(target)) {
                 if (out == null) throw new IOException("couldn't open the place you picked");
                 copy(in, out);
-                // rescue()'s zip is a whole extra copy of the data, now saved
-                // where the person picked. backup()'s stays: the next backup
-                // replaces it.
-                long bytes = backup.length();
-                if (backup.getName().equals(RESCUED_ZIP)) backup.delete();
-                // Its size, for "Backup saved (2.0 MB)": some phones' pickers
-                // show a fresh file as 0 B.
-                call.resolve(new JSObject().put("saved", true).put("bytes", bytes));
             } catch (Throwable e) {
                 call.reject("Couldn't save the backup: " + e.getMessage());
+                return;
             }
+            // rescue()'s zip is a whole extra copy of the data, now saved where
+            // the person picked. backup()'s stays: the next backup replaces it.
+            long bytes = backup.length();
+            if (backup.getName().equals(RESCUED_ZIP)) backup.delete();
+            // Its size, for "Backup saved (2.0 MB)": some phones' pickers show
+            // a fresh file as 0 B.
+            call.resolve(new JSObject().put("saved", true).put("bytes", bytes));
         });
     }
 

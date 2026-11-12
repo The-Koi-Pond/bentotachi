@@ -67,7 +67,7 @@ export default function Browse() {
             type="search"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="e.g. lasagne"
+            placeholder="like lasagne"
             aria-label="Search recipe sites"
             enterKeyHint="search"
           />

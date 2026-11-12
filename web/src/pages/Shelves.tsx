@@ -182,7 +182,7 @@ function CategoryForm({
       <h2>{category ? `Edit “${category.name}”` : "New shelf"}</h2>
       <label>
         Name
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Desserts" required autoFocus />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="like Desserts" required autoFocus />
       </label>
 
       <div className="stack">
@@ -218,7 +218,7 @@ function CategoryForm({
               addTag(typed);
             }
           }}
-          placeholder="e.g. one-pot"
+          placeholder="like one-pot"
         />
       </label>
       {wanted && !tags.includes(wanted) && !counts.has(wanted) && (

@@ -256,7 +256,7 @@ function PlaceFields({
         options={withCurrent(places, fields.location)}
         emptyLabel="Not sorted"
         newLabel="+ New place…"
-        newPlaceholder="New place, e.g. Pantry shelf"
+        newPlaceholder="New place, like Pantry shelf"
         onChange={(location) => onChange({ location, subcategory: "" })}
         help={{
           button: <HelpButton help={placeHelp} label="How places work" />,
@@ -334,7 +334,7 @@ function KindOfField({ existing, fields, onChange }: FieldProps) {
         value={fields.kindOf}
         onChange={(e) => onChange({ kindOf: e.target.value })}
         maxLength={60}
-        placeholder="e.g. Pasta"
+        placeholder="like Pasta"
         list={`${kindId}-list`}
       />
       <datalist id={`${kindId}-list`}>
@@ -356,7 +356,7 @@ function NoteField({ fields, onChange }: FieldProps) {
         value={fields.note}
         onChange={(e) => onChange({ note: e.target.value })}
         maxLength={200}
-        placeholder="e.g. 3 cans"
+        placeholder="like 3 cans"
       />
     </label>
   );
@@ -374,7 +374,7 @@ function BrandField({ fields, onChange }: FieldProps) {
           value={fields.brand}
           onChange={(e) => onChange({ brand: e.target.value })}
           maxLength={120}
-          placeholder="e.g. White Mill"
+          placeholder="like White Mill"
         />
       </label>
       {/* Older items listed every brand bought ("Coles, White Mill"): pick

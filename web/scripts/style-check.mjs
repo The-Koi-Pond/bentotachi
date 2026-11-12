@@ -272,7 +272,7 @@ const running = { server: null };
 // One width and theme, on its own fresh server and cleared browser storage,
 // so every pass starts from the same household and taps the same things.
 async function pass(browser, app, { width, scheme }, results) {
-  const view = `${width === 370 ? "phone" : "desktop"}, ${scheme}`;
+  const view = `${width === 370 ? "small phone" : width === 400 ? "phone" : "desktop"}, ${scheme}`;
   const server = await startTestServer({ port: PORT, prefix: "bentotachi-styles-data-", extraArgs: ["--publicDir", app] });
   running.server = server;
   try {
@@ -398,7 +398,9 @@ async function main() {
     const app = build(folder, before, after);
     browser = await openBrowser(join(folder, "browser"));
     const results = { looks: 0, elements: 0, found: keyframeDifferences(before, after), skipped: [], restless: [] };
-    const passes = (quick ? [370] : [370, 1200]).flatMap((width) => (quick ? ["light"] : ["light", "dark"]).map((scheme) => ({ width, scheme })));
+    // 400: most phones (the household's are 393 to 412 wide), where the
+    // 520 px rules apply but the 380 px one doesn't.
+    const passes = (quick ? [370] : [370, 400, 1200]).flatMap((width) => (quick ? ["light"] : ["light", "dark"]).map((scheme) => ({ width, scheme })));
     for (const each of passes) await pass(browser, app, each, results);
     return report(results, passes.length);
   } finally {

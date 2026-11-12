@@ -297,8 +297,10 @@ they say otherwise.
   - It can't see: hover and keyboard-focus looks; a drag in progress, or
     anything else only on screen mid-gesture (the plan's bin, a peeling
     fridge note), in any look; anything behind a tap that isn't in
-    `OPENERS`; widths other than 370 and 1200 px; the app's own Light /
-    Dark choice (it switches the device's setting, which Auto follows);
+    `OPENERS`; widths other than 370, 400 and 1200 px; the app's own Light /
+    Dark choice (it switches the device's setting, which Auto follows; a
+    dark block nested inside another block, which only Auto would reach,
+    is refused by web/test/themeBlocks.test.ts);
     whether a font really loads (an absolute address that's wrong passes).
   - Its made-up pantry is marked so no item looks for its photo online:
     nothing in a run may wait on Open Food Facts or a store's website.

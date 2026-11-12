@@ -232,7 +232,9 @@ Not released yet:
 - Opening a recipe with no signal, its heart and ratings come back once
   the connection does; a photo that can't show offline takes its button
   and gallery dot with it; Import & export recognises a Bentotachi backup
-  and says to restore it from Backups.
+  and says to restore it from Backups. A heart tapped just as the
+  connection comes back stays put, and "Backup saved" waits until the
+  file is really written.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

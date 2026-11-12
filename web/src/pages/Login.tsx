@@ -243,7 +243,7 @@ function PhoneSetupForm() {
       {!returning && (
         <label>
           Your name
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required autoFocus />
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="like Sam" required autoFocus />
         </label>
       )}
       {error && <p className="error">{error}</p>}
@@ -295,7 +295,7 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
           spellCheck={false}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="e.g. xel"
+          placeholder="like xel"
           required
         />
       </label>
@@ -358,7 +358,7 @@ function SetupForm({ server }: { server: string }) {
       <label>
         Your name
         <span className="hint">Your name around Bentotachi, like on ratings.</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Sam" required />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="like Sam" required />
       </label>
       <label>
         Username
@@ -371,7 +371,7 @@ function SetupForm({ server }: { server: string }) {
           value={username}
           onChange={(e) => setUsername(cleanUsername(e.target.value))}
           maxLength={30}
-          placeholder="e.g. sam"
+          placeholder="like sam"
           required
         />
       </label>
