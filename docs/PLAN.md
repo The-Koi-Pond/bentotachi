@@ -216,28 +216,7 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-- Counted things in the pantry: a packet's size can be a count ("12
-  eggs", "dozen", "6 pcs", or "1" for a loose onion), so "3 eggs" comes
-  off a carton of 12 after cooking ("about 9 left") and the shopping list
-  knows 2 cartons are enough. A packet with no size is still never
-  guessed at.
-- From a tester's second report: the tab bar's labels stay inside their
-  tabs at the largest phone text ("Shopp…"); an export says the name
-  Android really saved it as ("… (1).paprikarecipes"); adding a site
-  that's already on the list says so; restoring a file that isn't a
-  backup says so plainly, without the raw zip error.
-- Dark in the app now darkens Android's own bars too: their icons on every
-  Android, and their colour on Android 14 and older (it left light strips
-  above and below; BentoBarsPlugin.java, SystemBarColours.tsx).
-- Opening a recipe with no signal, its heart and ratings come back once
-  the connection does; a photo that can't show offline takes its button
-  and gallery dot with it; Import & export recognises a Bentotachi backup
-  and says to restore it from Backups. A heart tapped just as the
-  connection comes back stays put, and "Backup saved" waits until the
-  file is really written.
-- Browse: BBC Food's Categories button is back, its categories' recipes
-  now read (cards that are links around a heading; recipe_parse.js
-  `recipeLinks`).
+(nothing yet)
 
 Earlier releases, newest first: docs/RELEASES.md.
 
