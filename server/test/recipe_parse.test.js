@@ -65,6 +65,26 @@ test("a page without cards can still list recipes through its JSON-LD ItemList",
   ]);
 });
 
+test("a page whose cards are links around a heading (BBC Food's collections) lists them, and not its menus", () => {
+  const promo = (slug, title) =>
+    `<div class="gel-layout__item"><a class="promo" href="/food/recipes/${slug}"><div class="promo__image">` +
+    `<img alt="" class="lazyload" data-src="https://img.example/${slug}.jpg"></div>` +
+    `<h3 class="promo__title">${title}</h3><span class="promo__type">Main course</span></a></div>`;
+  const menu = `<nav><a href="/food/recipes/a-z">Recipes A to Z</a><a href="/food/chefs">Chefs</a></nav>`;
+  const footer = `<footer><a href="/food/recipes/about"><span>About</span></a></footer>`;
+  const list = recipeLinks(
+    categoryPage([menu, promo("carrot_soup_1919", "Carrot and coriander soup"), promo("leek_soup_1920", "Leek and potato soup"), footer]),
+    "https://www.bbc.co.uk/food/collections/easy_soup"
+  );
+  assert.deepEqual(list.recipes, [
+    { url: "https://www.bbc.co.uk/food/recipes/carrot_soup_1919", title: "Carrot and coriander soup", image: "https://img.example/carrot_soup_1919.jpg" },
+    { url: "https://www.bbc.co.uk/food/recipes/leek_soup_1920", title: "Leek and potato soup", image: "https://img.example/leek_soup_1920.jpg" },
+  ]);
+  // Cards with <article> still win: the fallback only runs when they find too few.
+  const both = recipeLinks(categoryPage([card("pho", "Pho"), card("laksa", "Laksa"), promo("x_1", "Other")]), "https://www.site.example/category/soups/");
+  assert.deepEqual(both.recipes.map((r) => r.title), ["Pho", "Laksa"]);
+});
+
 test("a recipe page's comments aren't a list: each 'Reply' is the page itself", () => {
   const comment = (n) =>
     `<article id="div-comment-${n}" class="comment-body"><p>Lovely!</p>` +

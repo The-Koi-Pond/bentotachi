@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets Bento offer its own updates (Android still asks the person). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- A step's timer buzzes when it's done (no prompt: Android grants it). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- allowBackup off: Android's own copy to Google can't hold a phone-only
          Bento reliably (it stops at 25 MB, and could copy the database
          mid-write), so Bento's Backups page is the one way, and the privacy
@@ -23,7 +29,6 @@
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
-            android:label="${appLabel}"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
@@ -74,12 +79,4 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
     </application>
-
-    <!-- Permissions -->
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Lets Bento offer its own updates (Android still asks the person). -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <!-- A step's timer buzzes when it's done (no prompt: Android grants it). -->
-    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

@@ -387,10 +387,10 @@ var UNCLOSED_LENGTH = 10000;
 
 // Each tag in `html` ("<b>", "</b>", "<a href=…>"), in order: use(match,
 // where it starts, just after it ends), with match[1] "/" for a closing tag
-// and match[2] its name. Steps from "<" to "<" rather than running one
-// regex along the page: in PocketBase's engine a page with any non-ASCII
-// letter made every step of that regex slower the longer the page, and a
-// page of 40,000 tags took seconds.
+// and match[2] its name; `use` returning true stops. Steps from "<" to "<"
+// rather than running one regex along the page: in PocketBase's engine a
+// page with any non-ASCII letter made every step of that regex slower the
+// longer the page, and a page of 40,000 tags took seconds.
 function eachTag(html, use) {
   var TAG = /^<(\/?)([a-z][a-z0-9]*)\b[^<>]*>$/i;
   var at = html.indexOf("<");
@@ -405,10 +405,18 @@ function eachTag(html, use) {
       continue;
     }
     var m = html.slice(at, close + 1).match(TAG);
-    if (m) use(m, at, close + 1);
+    if (m && use(m, at, close + 1) === true) return;
     at = nextOpen;
   }
 }
+
+// Tags closingTags notes at most: a real page has a few thousand; a hostile
+// one of millions of unclosed tags took gigabytes. Elements opening past it
+// have no entry, so elementAt looks for their end itself, but only as far
+// as an unclosed one reaches; elements still open when it stops end like
+// unclosed ones (the next of their name, or UNCLOSED_LENGTH), which can cut
+// one short on such a page.
+var MOST_TAGS = 200000;
 
 function closingTags(html) {
   var closes = {};
@@ -416,7 +424,9 @@ function closingTags(html) {
   var waiting = {};
   var around = [];
   var unclosed = [];
+  var seen = 0;
   eachTag(html, function (m, index, after) {
+    if (++seen > MOST_TAGS) return true;
     var tag = m[2].toLowerCase();
     if (VOID_TAGS[tag]) return;
     if (!m[1]) {
@@ -461,11 +471,15 @@ function elementAt(html, start, closes) {
   if (VOID_TAGS[tag] || /\/>$/.test(open[0])) return { tag: tag, openTag: open[0], inner: "", end: innerStart };
   var close = closes && closes[start];
   if (close) return { tag: tag, openTag: open[0], inner: html.slice(innerStart, close.at), end: close.end };
+  // Not in `closes`: past closingTags' MOST_TAGS on a hostile page. Looked
+  // for only as far as an unclosed element reaches (UNCLOSED_LENGTH), or
+  // thousands of lookups each scanning to the page's end took minutes.
+  var text = closes ? html.slice(0, Math.min(html.length, innerStart + UNCLOSED_LENGTH)) : html;
   var re = new RegExp("<(/?)" + tag + "\\b[^<>]*>", "gi");
   re.lastIndex = innerStart;
   var depth = 1;
   var m;
-  while ((m = re.exec(html)) !== null) {
+  while ((m = re.exec(text)) !== null) {
     if (m[1]) {
       depth -= 1;
       if (depth === 0) return { tag: tag, openTag: open[0], inner: html.slice(innerStart, m.index), end: re.lastIndex };
@@ -473,7 +487,7 @@ function elementAt(html, start, closes) {
       depth += 1;
     }
   }
-  return { tag: tag, openTag: open[0], inner: html.slice(innerStart), end: html.length };
+  return { tag: tag, openTag: open[0], inner: text.slice(innerStart), end: text.length };
 }
 
 // An attribute's value from an opening tag, or "".
@@ -1183,6 +1197,22 @@ function recipeLinks(html, pageUrl, options) {
     itemListEntries(findJsonLdBlocks(html), 0, entries);
     entries.forEach(function (entry) {
       add(entry.url, entry.title, entry.image);
+    });
+  }
+
+  // Last: cards that are each a link around a heading (and a photo), with
+  // no <article> or list to go by (BBC Food's collections). Only links
+  // holding a heading, so the site's menus and footer don't count.
+  if (recipes.length < 2) {
+    var cardLinks = 0;
+    eachClosed(html, /<a\b[^<>]*>/gi, "a", function (link) {
+      if (cardLinks++ >= 2000) return true;
+      var heading = "";
+      eachClosed(link.inner, /<h[2-5]\b[^<>]*>/gi, "h[1-6]", function (element) {
+        heading = cleanText(element.inner);
+        return true;
+      });
+      if (heading) add(attribute(link.open[0], "href"), heading, cardImage(link.inner));
     });
   }
   recipes = inMainFolder(recipes);

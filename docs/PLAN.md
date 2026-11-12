@@ -235,6 +235,9 @@ Not released yet:
   and says to restore it from Backups. A heart tapped just as the
   connection comes back stays put, and "Backup saved" waits until the
   file is really written.
+- Browse: BBC Food's Categories button is back, its categories' recipes
+  now read (cards that are links around a heading; recipe_parse.js
+  `recipeLinks`).
 
 Earlier releases, newest first: docs/RELEASES.md.
 

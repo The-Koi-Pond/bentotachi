@@ -12,10 +12,9 @@
 // doesn't show the note.
 //
 // `noCategories`: Bento's server couldn't read this site's categories, or
-// the recipes in them, when checked (2026-11-11: it refused, its menu's
-// links don't look like categories, or, for BBC Food, its category pages
-// list recipes without the cards recipeLinks reads), so Browse leaves its
-// Categories button out. The rest gave categories with recipes in them.
+// the recipes in them, when checked (2026-11-11: it refused, or its menu's
+// links don't look like categories), so Browse leaves its Categories button
+// out. The rest gave categories with recipes in them.
 // The blocking sites have no button either.
 
 export interface RecipeSite {
@@ -55,7 +54,6 @@ export const RECIPE_SITES: RecipeSite[] = [
     home: "https://www.bbc.co.uk/food",
     search: "https://www.bbc.co.uk/food/search?q={q}",
     about: "Recipes from BBC cooking shows and chefs",
-    noCategories: true,
   },
   {
     name: "Just One Cookbook",

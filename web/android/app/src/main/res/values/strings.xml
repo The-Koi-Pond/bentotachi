@@ -1,11 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Bentotachi</string>
-    <string name="title_activity_main">Bentotachi</string>
     <!-- The name in Android's share menu. -->
     <string name="share_label">Save to Bentotachi</string>
     <!-- The name in "Open with" and the share menu for a file (a Paprika file). -->
     <string name="import_label">Import into Bentotachi</string>
-    <string name="package_name">com.xel.bento</string>
-    <string name="custom_url_scheme">com.xel.bento</string>
 </resources>
