@@ -114,6 +114,9 @@ export const SHOPPING = [
   ["Coffee", true],
 ];
 
+// Another shopping list beside the main one, and what's on it.
+export const OTHER_LIST = { name: "Party", items: ["Candles", "Sparkling water", "Bananas"] };
+
 // [days from today, meal, recipe title]
 export const PLAN = [
   [-1, "dinner", "Beef stew"],

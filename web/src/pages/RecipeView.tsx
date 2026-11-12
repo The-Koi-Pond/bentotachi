@@ -39,6 +39,8 @@ import {
 import PantryLinkSheet from "../PantryLinkSheet";
 import { useLiveRecords } from "../useLiveRecords";
 import { addToShoppingList, addedMessage } from "../shoppingAdd";
+import { useShoppingLists } from "../useShoppingLists";
+import ShoppingListChoice from "../ShoppingListChoice";
 import RecipeReactions, { FavoriteHeart, useRecipeRatings } from "../RecipeReactions";
 import QuickTime from "../QuickTime";
 import PlanButton from "../PlanButton";
@@ -928,6 +930,9 @@ function IngredientsSection({
   const pickable = lines.flatMap((line, i) => (headingOf(line) === null ? [i] : []));
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<Set<number>>(new Set());
+  // Adds go to the list last open, or the one picked here ("To: Party").
+  const shop = useShoppingLists();
+  const listName = shop.several ? shop.nameOf(shop.open) : "";
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   // The line whose pantry link is being changed.
@@ -1043,7 +1048,7 @@ function IngredientsSection({
             };
           })
       ).map(({ text, pantryItem }) => ({ text, pantryItem: pantryItem?.id ?? "", recipe: recipe.id }));
-      setStatus({ text: addedMessage(await addToShoppingList(things)), isError: false });
+      setStatus({ text: addedMessage(await addToShoppingList(things, { list: shop.open, mainId: shop.mainId }), listName), isError: false });
       setPicking(false);
       setChoosing(false);
     } catch (err) {
@@ -1126,6 +1131,7 @@ function IngredientsSection({
           <button className="button ghost" disabled={busy} onClick={() => setChoosing(false)}>
             Cancel
           </button>
+          <ShoppingListChoice lists={shop.lists} value={shop.open} onChange={shop.choose} />
         </div>
       )}
       {picking && (
@@ -1141,8 +1147,9 @@ function IngredientsSection({
           <button className="button ghost" onClick={() => setPicking(false)} disabled={busy}>
             Cancel
           </button>
+          <ShoppingListChoice lists={shop.lists} value={shop.open} onChange={shop.choose} />
           <button className="button primary" disabled={picked.size === 0 || busy} onClick={() => void addPicked()}>
-            {busy ? "Adding…" : picked.size ? `Add ${picked.size} to shopping list` : "Add to shopping list"}
+            {busy ? "Adding…" : picked.size ? `Add ${picked.size} to ${listName || "shopping list"}` : `Add to ${listName || "shopping list"}`}
           </button>
         </div>
       )}

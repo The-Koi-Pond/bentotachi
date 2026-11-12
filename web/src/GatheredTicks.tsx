@@ -1,5 +1,7 @@
 import { useState } from "react";
-import type { ShoppingItem } from "./pb";
+import type { ShoppingItem, ShoppingList } from "./pb";
+import type { ToList } from "./shoppingAdd";
+import { rowsOn, waitingElsewhere } from "./shoppingLists";
 import { rowStatus, startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
 import { shoppingCopyReadOnly } from "./offline";
@@ -8,24 +10,30 @@ import { coverNote } from "./pantryStock";
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
 
-// Ticking gathered ingredients (weekShopping.ts) to add to the shopping
-// list: what the pantry says we have starts unticked, and what's already
-// waiting on the list can't be added twice. Used by the plan's "Add these
-// to the shopping list" and the list's "From a recipe".
-export function useGatheredTicks(rows: GatheredRow[]) {
+// Ticking gathered ingredients (weekShopping.ts) to add to a shopping list
+// (`to`): what the pantry says we have starts unticked, what's already
+// waiting on that list can't be added twice, and what's waiting on another
+// list ("On Party") starts unticked, to tick if it's wanted here too. Used
+// by the plan's "Add these to the shopping list" and the list's "From a
+// recipe".
+export function useGatheredTicks(rows: GatheredRow[], to: ToList, lists: Pick<ShoppingList, "id" | "name" | "main" | "created">[]) {
   const shopping = useLiveRecords<ShoppingItem>("shopping_items", { copy: shoppingCopyReadOnly });
   // Ticks people changed by hand; everything else uses the starting tick.
   const [ticks, setTicks] = useState<Map<string, boolean>>(new Map());
 
-  const waiting = (shopping.items ?? []).filter((item) => !item.checked);
-  const onList = (row: GatheredRow) =>
-    waiting.some((item) => sameThing({ text: row.text, pantryItem: row.pantryItem?.id ?? "" }, item));
-  const isTicked = (row: GatheredRow) => !onList(row) && (ticks.get(row.key) ?? startsTicked(row));
+  const all = shopping.items ?? [];
+  const waiting = rowsOn(all, to.list || to.mainId, to.mainId).filter((item) => !item.checked);
+  const thing = (row: GatheredRow) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "" });
+  const onList = (row: GatheredRow) => waiting.some((item) => sameThing(thing(row), item));
+  // The other list it's waiting on, by name, or "".
+  const elsewhere = (row: GatheredRow) => waitingElsewhere(thing(row), all, to.list || to.mainId, lists)?.name ?? "";
+  const isTicked = (row: GatheredRow) => !onList(row) && (ticks.get(row.key) ?? (startsTicked(row) && !elsewhere(row)));
 
   return {
     loading: !shopping.items,
     loadError: shopping.loadError,
     onList,
+    elsewhere,
     isTicked,
     ticked: rows.filter(isTicked),
     toggle: (row: GatheredRow) => setTicks((previous) => new Map(previous).set(row.key, !isTicked(row))),
@@ -49,6 +57,7 @@ export function GatheredList({
     <ul className="checklist week-list">
       {rows.map((row) => {
         const already = ticks.onList(row);
+        const otherList = already ? "" : ticks.elsewhere(row);
         const status = rowStatus(row) ?? undefined;
         // "Enough: 2 × 500 g" or "Have 200 g" when the packets can tell,
         // instead of Have / Low / Out.
@@ -64,6 +73,8 @@ export function GatheredList({
               </span>
               {already ? (
                 <span className="muted week-row-state">On the list</span>
+              ) : otherList ? (
+                <span className="muted week-row-state">On {otherList}</span>
               ) : note ? (
                 <span className={`week-row-state status-${noteStatus}`}>
                   <span className={`status-dot status-${noteStatus}`} aria-hidden="true" />

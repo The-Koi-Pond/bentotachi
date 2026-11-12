@@ -216,7 +216,12 @@ out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
 Not released yet:
 
-(nothing yet)
+- Several shopping lists: the list's title is a menu of lists ("Party · 4
+  to buy", "Edit lists…" to make, rename or delete one; the main one
+  stays). Adding from a recipe, the plan or the pantry goes to the list
+  last open ("To: Party" to change it); something already on another list
+  asks before it's added here too, or shows "On Party" in a recipe's or the
+  plan's list. The pantry's place menu is the same picker now.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -819,6 +824,50 @@ bag that's really there). Xel's pick: adding a packet by hand (scanning,
 "+ 1 packet", a counter's +) within a few hours of a tick having added
 one to that item asks first: "The shopping list already added a White
 Mill 1 kg an hour ago." That's the one / Add another.
+
+## Next: several shopping lists (Xel, 2026-11-12)
+
+Xel: separate lists, as a nicety for households who want them "for
+whatever reason" (a party next week beside the weekly shop, the hardware
+store). Picked over one list grouped by shop. A household with one list
+sees nothing new.
+
+Mocked up and agreed 2026-11-12 (Xel: "looks good", plus the question
+for something on another list):
+
+- Everyone starts with one list, "Shopping list", the main one: it can be
+  renamed but not deleted, and rows with no list are on it (older apps on
+  a household server, and the server's own "ran out" add, keep working).
+  With one list, nothing else changes but the title's ⌄.
+- The list's title is a menu, like the Pantry's places: each list with how
+  many are still to buy, then "Edit lists…" (add, rename, delete). The
+  phone remembers the list last open.
+- Deleting a list asks first and takes its rows with it (Undo, like a
+  removed row).
+- Adding from a recipe, the week's plan or the pantry goes to the list last
+  open, and its sheet says which with a small picker ("To: Party ⌄"), only
+  once there's more than one list. "Open the list" opens that one.
+- "Already on the list" (the pantry's cart icon) counts any list; a
+  duplicate within one list is still refused. Adding one thing that's on
+  another list asks first (Xel, 2026-11-12): "Milk is already on Party.
+  Add it to Shopping list too?" (Add it here too / Leave it). Adding a
+  recipe's or the plan's lines shows "On Party" beside such a line,
+  unticked; ticking it adds it here too. The server's "ran out, put it on
+  the list" for older apps goes to the main list.
+- Ticking, aisles, "As added", Clear ticked and the offline queue work per
+  list as now; a queued add remembers its list.
+
+Built 2026-11-12. The migration (1765411200_shopping_lists.js) makes
+`shopping_lists` with the main list and gives `shopping_items` a `list`
+(deleting a list deletes its rows); tried on a copy of the Pi's newest
+backup (one main list, every row on it). The title menu is the pantry's
+picker made general (TitlePicker.tsx); the rules are in shoppingLists.ts,
+the hook in useShoppingLists.ts, "To:" in ShoppingListChoice.tsx. Two
+changes from the proposal: the title always has its ⌄ (that's where a
+second list is made), and deleting a list asks first, naming how many
+things go with it, instead of Undo (Undo would have to remake the list and
+every row). pantry.pb.js needed no change: a row with no list is on the
+main one.
 
 ## Next: counted things in the pantry (Xel, 2026-11-12)
 

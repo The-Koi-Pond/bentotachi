@@ -15,6 +15,7 @@ import type {
   RecipeCategory,
   RecipeRating,
   ShoppingItem,
+  ShoppingList,
   User,
 } from "./pb";
 import { statusOf } from "./errorStatus.ts";
@@ -23,6 +24,7 @@ import { remember, rememberedJson } from "./phoneStorage.ts";
 const RECIPES_KEY = "bento.offline.recipes";
 const RATINGS_KEY = "bento.offline.ratings";
 const SHOPPING_KEY = "bento.offline.shopping";
+const LISTS_KEY = "bento.offline.shoppingLists";
 const PANTRY_KEY = "bento.offline.pantry";
 const PACKETS_KEY = "bento.offline.packets";
 const SHELVES_KEY = "bento.offline.shelves";
@@ -84,6 +86,7 @@ export const recipesCopy = copyAt<Recipe>(RECIPES_KEY, plain);
 export const ratingsCopy = copyAt<RecipeRating>(RATINGS_KEY);
 export const shelvesCopy = copyAt<RecipeCategory>(SHELVES_KEY);
 export const shoppingCopy = copyAt<ShoppingItem>(SHOPPING_KEY);
+export const shoppingListsCopy = copyAt<ShoppingList>(LISTS_KEY);
 export const pantryCopy = copyAt<PantryItem>(PANTRY_KEY);
 export const packetsCopy = copyAt<PantryPacket>(PACKETS_KEY);
 export const cookedCopy = copyAt<CookedEntry>(COOKED_KEY);
@@ -143,6 +146,7 @@ export function forgetOfflineCopy({ keepWaiting = false } = {}) {
     RATINGS_KEY,
     SHELVES_KEY,
     SHOPPING_KEY,
+    LISTS_KEY,
     PANTRY_KEY,
     PACKETS_KEY,
     PLAN_KEY,

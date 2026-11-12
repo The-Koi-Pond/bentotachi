@@ -10,6 +10,8 @@ import { packetsCopy, pantryCopy } from "./offline";
 import { CloseIcon } from "./icons";
 import { MEALS, mealOf } from "./meals";
 import { GatheredList, useGatheredTicks } from "./GatheredTicks";
+import { useShoppingLists } from "./useShoppingLists";
+import ShoppingListChoice from "./ShoppingListChoice";
 
 const RANGES = [7, 14];
 
@@ -50,7 +52,11 @@ export default function WeekShoppingSheet({
     packets.items ?? []
   );
 
-  const ticks = useGatheredTicks(rows);
+  // To the list last open, or the one picked here ("To: Party").
+  const shop = useShoppingLists();
+  const to = { list: shop.open, mainId: shop.mainId };
+  const listName = shop.several ? shop.nameOf(shop.open) : "";
+  const ticks = useGatheredTicks(rows, to, shop.lists);
   const ticked = ticks.ticked;
 
   async function add() {
@@ -58,9 +64,10 @@ export default function WeekShoppingSheet({
     setStatus(null);
     try {
       const result = await addToShoppingList(
-        ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId }))
+        ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId })),
+        to
       );
-      setStatus({ text: addedMessage(result), isError: false });
+      setStatus({ text: addedMessage(result, listName), isError: false });
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
@@ -116,8 +123,9 @@ export default function WeekShoppingSheet({
         )}
 
         <div className="actions">
+          <ShoppingListChoice lists={shop.lists} value={shop.open} onChange={shop.choose} />
           <button className="button primary" disabled={busy || loading || ticked.length === 0} onClick={add}>
-            {busy ? "Adding…" : ticked.length ? `Add ${ticked.length} to shopping list` : "Add to shopping list"}
+            {busy ? "Adding…" : ticked.length ? `Add ${ticked.length} to ${listName || "shopping list"}` : `Add to ${listName || "shopping list"}`}
           </button>
         </div>
         {status && (

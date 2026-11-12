@@ -1,38 +1,64 @@
-// The pantry page's title as a picker (docs/VISION.md, "Pantry places"):
-// "Pantry ▾" for every place, or one place ("Fridge ▾") so the page shows
-// just that. Tapping it lists the places by name, then "Edit places…": each
-// name to change (renaming it), its grip to drag it into another spot, 🗑
-// to delete it, and "+ Add". A popover over the page, like the "?" tips
-// (Help.tsx).
+// A page's title as a picker: the pantry's places ("Fridge ▾", docs/VISION.md,
+// "Pantry places") and the shopping lists ("Party ▾"). Tapping it lists the
+// options by name, then "Edit …": each name to change, 🗑 to delete it, a
+// grip to drag it into another spot (when the page keeps an order), and
+// "+ Add". A popover over the page, like the "?" tips (Help.tsx).
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { popoverSpot } from "./popoverSpot";
 import { ChevronIcon, GripIcon, TrashIcon } from "./icons";
-import type { Place } from "./pantryGroups";
 
 const canPop = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
 
-export default function PlacePicker({
-  places,
+export interface TitleOption {
+  key: string;
+  label: string;
+  // Beside its name in the menu ("4 to buy").
+  note?: string;
+  // Left out of "Edit …" (the pantry's "Other").
+  editable?: boolean;
+  // Renamed but never deleted (the main shopping list).
+  deletable?: boolean;
+}
+
+// What the menu says, for each page.
+export interface TitleWords {
+  // The title when no option is picked ("Pantry").
+  title: string;
+  // "choose a place", after the title, for screen readers.
+  choose: string;
+  // "Edit places…", and its group's name "Edit places".
+  edit: string;
+  // "New place", the new name's placeholder.
+  newName: string;
+  // "All places", offered first when picking none is allowed.
+  all?: string;
+  // The longest name the server keeps.
+  maxLength: number;
+}
+
+export default function TitlePicker({
+  options,
   current,
+  words,
   onPick,
   onAdd,
   onRename,
   onDelete,
   onMove,
 }: {
-  places: Place[];
-  // null: all places.
-  current: Place | null;
-  onPick: (place: Place | null) => void;
+  options: TitleOption[];
+  // The picked option's key; null: none ("All places").
+  current: string | null;
+  words: TitleWords;
+  onPick: (key: string | null) => void;
   onAdd: (label: string) => void;
-  // Renames a place for every item in it.
-  // Done when it's renamed, or the merge it would be was turned down.
-  onRename: (place: Place, label: string) => Promise<void>;
+  // Done when it's renamed, or a merge it would be was turned down.
+  onRename: (key: string, label: string) => Promise<void>;
   // Done when it's deleted, or its question was answered no.
-  onDelete: (place: Place) => Promise<void>;
-  // One place dragged to where another is (their keys).
-  onMove: (fromKey: string, toKey: string) => void;
+  onDelete: (key: string) => Promise<void>;
+  // One dragged to where another is (their keys); without it, no grips.
+  onMove?: (fromKey: string, toKey: string) => void;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -61,9 +87,9 @@ export default function PlacePicker({
     position();
     window.addEventListener("resize", position);
     return () => window.removeEventListener("resize", position);
-  }, [open, editing, places.length, position]);
+  }, [open, editing, options.length, position]);
 
-  function pick(chosen: Place | null) {
+  function pick(chosen: string | null) {
     onPick(chosen);
     if (canPop) menu.current?.hidePopover();
     setOpen(false);
@@ -103,50 +129,63 @@ export default function PlacePicker({
     };
   }, [editing]);
 
-  // "Other" is items with no place: nothing to rename or delete.
-  const editable = places.filter((p) => p.key !== "");
+  const editable = options.filter((o) => o.editable !== false);
+  const picked = options.find((o) => o.key === current);
+  const rows = editable.map((o) => (
+    <OptionRow
+      key={o.key}
+      option={o}
+      draggable={!!onMove}
+      maxLength={words.maxLength}
+      onRename={(label) => stillEditing(() => onRename(o.key, label))}
+      onDelete={o.deletable === false ? undefined : () => void stillEditing(() => onDelete(o.key))}
+    />
+  ));
 
-  const options = editing ? (
-    <div className="place-edit" role="group" aria-label="Edit places">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={(event) => {
-          if (event.over && event.over.id !== event.active.id) onMove(String(event.active.id), String(event.over.id));
-        }}
-      >
-        {editable.map((p) => (
-          <PlaceRow
-            key={p.key}
-            place={p}
-            onRename={(label) => stillEditing(() => onRename(p, label))}
-            onDelete={() => void stillEditing(() => onDelete(p))}
-          />
-        ))}
-      </DndContext>
-      <NewPlace onAdd={onAdd} />
+  const items = editing ? (
+    <div className="place-edit" role="group" aria-label={words.edit.replace(/…$/, "")}>
+      {onMove ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(event) => {
+            if (event.over && event.over.id !== event.active.id) onMove(String(event.active.id), String(event.over.id));
+          }}
+        >
+          {rows}
+        </DndContext>
+      ) : (
+        rows
+      )}
+      <NewOption placeholder={words.newName} maxLength={words.maxLength} onAdd={onAdd} />
       <button type="button" className="button primary small place-edit-done" onClick={() => setEditing(false)}>
         Done
       </button>
     </div>
   ) : (
     <>
-      <button type="button" aria-current={current === null} onClick={() => pick(null)}>
-        All places
-      </button>
-      <hr />
-      {places.map((p) => (
-        <button key={p.key} type="button" aria-current={current?.key === p.key} onClick={() => pick(p)}>
-          {p.label}
+      {words.all && (
+        <>
+          <button type="button" aria-current={current === null} onClick={() => pick(null)}>
+            {words.all}
+          </button>
+          <hr />
+        </>
+      )}
+      {options.map((o) => (
+        <button key={o.key} type="button" aria-current={current === o.key} onClick={() => pick(o.key)}>
+          {o.label}
+          {o.note && <span className="place-menu-note">{o.note}</span>}
         </button>
       ))}
       <hr />
       <button type="button" className="place-edit-button" onClick={() => setEditing(true)}>
-        Edit places…
+        {words.edit}
       </button>
     </>
   );
 
+  const title = picked ? picked.label : words.title;
   return (
     <>
       <h1 className="place-title">
@@ -155,11 +194,11 @@ export default function PlacePicker({
           type="button"
           aria-expanded={open}
           aria-controls={id}
-          aria-label={`${current ? current.label : "Pantry"}: choose a place`}
+          aria-label={`${title}: ${words.choose}`}
           popoverTarget={canPop ? id : undefined}
           onClick={canPop ? undefined : () => setOpen(!open)}
         >
-          {current ? current.label : "Pantry"}
+          {title}
           <span className="place-title-caret" aria-hidden="true">
             <ChevronIcon />
           </span>
@@ -181,12 +220,12 @@ export default function PlacePicker({
             if (event.newState === "closed") setEditing(false);
           }}
         >
-          {options}
+          {items}
         </div>
       ) : (
         open && (
           <div id={id} className="place-menu place-menu-inline">
-            {options}
+            {items}
           </div>
         )
       )}
@@ -194,34 +233,46 @@ export default function PlacePicker({
   );
 }
 
-// One place in "Edit places": its grip, its name to change (saved when you
-// leave the box or press Enter), and 🗑. Dropped on another, it takes that
-// one's spot.
-function PlaceRow({ place, onRename, onDelete }: { place: Place; onRename: (label: string) => Promise<void>; onDelete: () => void }) {
-  const [name, setName] = useState(place.label);
-  const drag = useDraggable({ id: place.key });
-  const drop = useDroppable({ id: place.key });
+// One option in "Edit …": its grip (when there's an order), its name to
+// change (saved when you leave the box or press Enter), and 🗑 (when it can
+// be deleted). Dropped on another, it takes that one's spot.
+function OptionRow({
+  option,
+  draggable,
+  maxLength,
+  onRename,
+  onDelete,
+}: {
+  option: TitleOption;
+  draggable: boolean;
+  maxLength: number;
+  onRename: (label: string) => Promise<void>;
+  onDelete?: () => void;
+}) {
+  const [name, setName] = useState(option.label);
+  const drag = useDraggable({ id: option.key, disabled: !draggable });
+  const drop = useDroppable({ id: option.key, disabled: !draggable });
   // Enter renames, and the merge question it can ask takes the focus, so
   // leaving the box would rename (and ask) again.
   const renaming = useRef(false);
   // Its name now: a rename that only changes capitals keeps this row, so
   // the box follows it rather than the name from before.
-  const latest = useRef(place.label);
+  const latest = useRef(option.label);
   useEffect(() => {
-    latest.current = place.label;
-    setName(place.label);
-  }, [place.label]);
+    latest.current = option.label;
+    setName(option.label);
+  }, [option.label]);
   const commit = () => {
     if (renaming.current) return;
     const label = name.trim();
-    if (label && label !== place.label) {
+    if (label && label !== option.label) {
       renaming.current = true;
       void onRename(label).finally(() => {
         renaming.current = false;
         // Not renamed (refused, or the merge turned down): its name again.
         setName(latest.current);
       });
-    } else setName(place.label);
+    } else setName(option.label);
   };
   const classes = ["place-row", drag.isDragging ? "dragging" : "", drop.isOver && !drag.isDragging ? "drop-here" : ""];
   return (
@@ -234,9 +285,11 @@ function PlaceRow({ place, onRename, onDelete }: { place: Place; onRename: (labe
       // Follows the finger up and down only.
       style={drag.transform ? { transform: `translate3d(0, ${drag.transform.y}px, 0)` } : undefined}
     >
-      <button type="button" className="drag-handle place-handle" aria-label={`Move ${place.label}`} title="Drag to move" {...drag.attributes} {...drag.listeners}>
-        <GripIcon />
-      </button>
+      {draggable && (
+        <button type="button" className="drag-handle place-handle" aria-label={`Move ${option.label}`} title="Drag to move" {...drag.attributes} {...drag.listeners}>
+          <GripIcon />
+        </button>
+      )}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -247,18 +300,23 @@ function PlaceRow({ place, onRename, onDelete }: { place: Place; onRename: (labe
             commit();
           }
         }}
-        maxLength={100}
-        aria-label={`Rename ${place.label}`}
+        maxLength={maxLength}
+        aria-label={`Rename ${option.label}`}
       />
-      <button type="button" className="icon-button place-delete" onClick={onDelete} aria-label={`Delete ${place.label}`} title={`Delete ${place.label}`}>
-        <TrashIcon size={18} />
-      </button>
+      {onDelete ? (
+        <button type="button" className="icon-button place-delete" onClick={onDelete} aria-label={`Delete ${option.label}`} title={`Delete ${option.label}`}>
+          <TrashIcon size={18} />
+        </button>
+      ) : (
+        // Keeps the boxes lined up with the rows that have 🗑.
+        <span className="place-delete" aria-hidden="true" />
+      )}
     </span>
   );
 }
 
-// "+ Add" a place, by name.
-function NewPlace({ onAdd }: { onAdd: (label: string) => void }) {
+// "+ Add" one, by name.
+function NewOption({ placeholder, maxLength, onAdd }: { placeholder: string; maxLength: number; onAdd: (label: string) => void }) {
   const [name, setName] = useState("");
   function add(event: FormEvent) {
     event.preventDefault();
@@ -268,7 +326,7 @@ function NewPlace({ onAdd }: { onAdd: (label: string) => void }) {
   }
   return (
     <form className="place-row" onSubmit={add}>
-      <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="New place" aria-label="New place's name" />
+      <input value={name} onChange={(e) => setName(e.target.value)} maxLength={maxLength} placeholder={placeholder} aria-label={`${placeholder}'s name`} />
       <button className="button small" disabled={!name.trim()}>
         + Add
       </button>

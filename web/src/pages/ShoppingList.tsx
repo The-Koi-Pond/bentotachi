@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
-import { errorMessage, pb, shoppingItems, type PantryItem, type ShoppingItem } from "../pb";
+import { errorMessage, pb, shoppingItems, shoppingLists, type PantryItem, type ShoppingItem } from "../pb";
 import { BookIcon, CloseIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import StoreLink from "../StoreLink";
@@ -19,6 +19,14 @@ import { BenMood } from "../Brand";
 import RecipeShoppingSheet from "../RecipeShoppingSheet";
 import { sameThing } from "../shoppingMatch";
 import { remember, remembered } from "../phoneStorage";
+import { askFirst } from "../askFirst";
+import TitlePicker, { type TitleWords } from "../TitlePicker";
+import { useShoppingLists } from "../useShoppingLists";
+import { rowsOn, storedList, toBuyOn, waitingElsewhere } from "../shoppingLists";
+
+// The title's menu of lists (TitlePicker; docs/PLAN.md, "several shopping
+// lists").
+const LIST_WORDS: TitleWords = { title: "Shopping list", choose: "choose a list", edit: "Edit lists…", newName: "New list", maxLength: 60 };
 
 // What's still to buy, grouped by aisle in walking order (aisles.ts), or
 // simply in the order it was added. Remembered on this device.
@@ -38,6 +46,8 @@ export default function ShoppingList() {
   // Kept live, so changes made in the pantry show up here too.
   const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const pantryById = new Map((pantry.items ?? []).map((p) => [p.id, p]));
+  // The household's lists, and the one shown (the one last open here).
+  const shop = useShoppingLists();
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
   const [fromRecipe, setFromRecipe] = useState(false);
@@ -69,8 +79,10 @@ export default function ShoppingList() {
         // sure of it first. If it's no longer good, the login screen shows
         // and the changes wait for the next login (session.ts).
         loggedIn: async () => (await ensureLoginNow()) === "ok",
-        add: (text, checked, record) => shoppingItems().create({ ...(record && { id: record }), text, checked, added_by: pb.authStore.record?.id }),
+        add: (text, checked, record, list) =>
+          shoppingItems().create({ ...(record && { id: record }), text, checked, list, added_by: pb.authStore.record?.id }),
         check: (id, checked) => shoppingItems().update(id, { checked }),
+        onMoved: (text) => showToast(`“${text}” went on ${shop.nameOf(shop.mainId) || "the shopping list"}: its list was deleted meanwhile.`),
       })
       .then((result) => {
         if (!result) return;
@@ -108,14 +120,25 @@ export default function ShoppingList() {
       showToast(`“${same.text}” is back on the list. That didn't last long.`);
       return toggle(same);
     }
-    if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date()));
+    // Waiting on another list: maybe that's where it was meant to be.
+    const elsewhere = waitingElsewhere({ text: value, pantryItem: "" }, everything, shop.open, shop.lists);
+    const list = storedList(shop.open, shop.mainId);
+    if (
+      elsewhere &&
+      !(await askFirst(`“${value}” is already on ${elsewhere.name}. Add it to ${shop.nameOf(shop.open)} too?`, {
+        yes: "Add it here too",
+        no: "Leave it",
+      }))
+    )
+      return;
+    if (offline) return keepForLater((queue) => queueAdd(queue, value, new Date(), { list }));
     // Its id picked here: if the server saved it but the answer was lost,
     // sending it again later can't add a second one.
     const record = newRecordId();
     try {
-      upsert(await shoppingItems().create({ id: record, text: value, checked: false, added_by: pb.authStore.record?.id }));
+      upsert(await shoppingItems().create({ id: record, text: value, checked: false, list, added_by: pb.authStore.record?.id }));
     } catch (err) {
-      if (isOffline(err)) return keepForLater((queue) => queueAdd(queue, value, new Date(), Math.random, record));
+      if (isOffline(err)) return keepForLater((queue) => queueAdd(queue, value, new Date(), { record, list }));
       setText(value);
       showError(errorMessage(err));
     }
@@ -185,10 +208,51 @@ export default function ShoppingList() {
     );
   }
 
+  // "Edit lists…": making, renaming and deleting lists need a connection.
+  async function addList(name: string) {
+    if (offline) return showError("Making a list needs a connection.");
+    try {
+      const made = await shoppingLists().create({ name, added_by: pb.authStore.record?.id });
+      shop.live.upsert(made);
+      shop.choose(made.id);
+    } catch (err) {
+      showError(errorMessage(err));
+    }
+  }
+
+  async function renameList(id: string, name: string) {
+    if (offline) return showError("Renaming a list needs a connection.");
+    try {
+      shop.live.upsert(await shoppingLists().update(id, { name }));
+    } catch (err) {
+      showError(errorMessage(err));
+    }
+  }
+
+  // Asks first, saying what goes with it: the server deletes a list's rows
+  // with it, so there's no Undo.
+  async function deleteList(id: string) {
+    if (offline) return showError("Deleting a list needs a connection.");
+    const on = rowsOn(everything, id, shop.mainId).length;
+    const name = shop.nameOf(id);
+    const question = on ? `Delete “${name}” and the ${on} ${on === 1 ? "thing" : "things"} on it?` : `Delete “${name}”?`;
+    if (!(await askFirst(question, { yes: "Delete list", danger: true }))) return;
+    try {
+      await shoppingLists().delete(id);
+      shop.live.removeLocally(id);
+      for (const row of rowsOn(items ?? [], id, shop.mainId)) removeLocally(row.id);
+      if (shop.open === id) shop.choose(shop.mainId);
+    } catch (err) {
+      showError(errorMessage(err));
+    }
+  }
+
   if (!items) return loadError ? <p className="error">{loadError}</p> : <p className="muted">Loading the list…</p>;
 
+  // Every list's rows (for "already on another list"), then the open one's.
+  const everything = withQueued(items, queue).filter((item) => !undo.hidden.has(item.id));
   // Still to buy: in the order they were added. Got it: most recent first.
-  const shown = withQueued(items, queue).filter((item) => !undo.hidden.has(item.id));
+  const shown = rowsOn(everything, shop.open, shop.mainId);
   const toBuy = shown.filter((i) => !i.checked).sort((a, b) => a.created.localeCompare(b.created));
   const ticked = shown.filter((i) => i.checked).sort((a, b) => b.updated.localeCompare(a.updated));
   const waiting = queue.length;
@@ -200,7 +264,23 @@ export default function ShoppingList() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        <h1>Shopping list</h1>
+        {shop.lists.length > 0 ? (
+          <TitlePicker
+            options={shop.lists.map((list) => {
+              const left = toBuyOn(everything, list.id, shop.mainId);
+              return { key: list.id, label: list.name, note: left ? `${left} to buy` : "", deletable: !list.main };
+            })}
+            current={shop.open}
+            words={LIST_WORDS}
+            onPick={(key) => key && shop.choose(key)}
+            onAdd={(name) => void addList(name)}
+            onRename={renameList}
+            onDelete={deleteList}
+          />
+        ) : (
+          // A server from before lists, or none loaded yet offline.
+          <h1>Shopping list</h1>
+        )}
         <div className="view-switch" role="group" aria-label="Order">
           <button aria-pressed={order === "aisle"} onClick={() => changeOrder("aisle")}>
             By aisle
@@ -246,7 +326,7 @@ export default function ShoppingList() {
           Add
         </button>
       </form>
-      {fromRecipe && <RecipeShoppingSheet onClose={() => setFromRecipe(false)} />}
+      {fromRecipe && <RecipeShoppingSheet list={{ list: shop.open, mainId: shop.mainId }} listName={shop.several ? shop.nameOf(shop.open) : ""} onClose={() => setFromRecipe(false)} />}
 
       {toBuy.length === 0 && ticked.length === 0 && (
         <div className="with-ben">

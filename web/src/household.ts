@@ -152,7 +152,7 @@ export function useTablespoon(): [number, (ml: number) => Promise<void>] {
 }
 
 // The pantry places the household keeps, in its order, even while empty
-// ("Edit places", PlacePicker.tsx); [] until someone edits them. A change
+// ("Edit places", TitlePicker.tsx); [] until someone edits them. A change
 // is made to the list as the server has it at that moment: this copy is
 // loaded once, and a phone open since the morning would otherwise save over
 // another phone's new (empty) place or order.

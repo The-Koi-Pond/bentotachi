@@ -133,6 +133,8 @@ export interface ShoppingItem extends RecordModel {
   checked: boolean;
   recipe: string;
   pantry_item: string;
+  // Its list; "" (older apps, the server's "ran out" add) is the main one.
+  list: string;
   added_by: string;
   created: string;
   updated: string;
@@ -140,6 +142,17 @@ export interface ShoppingItem extends RecordModel {
 }
 
 export const shoppingItems = () => pb.collection<ShoppingItem>("shopping_items");
+
+// One of the household's shopping lists; the main one can't be deleted.
+export interface ShoppingList extends RecordModel {
+  name: string;
+  main: boolean;
+  added_by: string;
+  created: string;
+  updated: string;
+}
+
+export const shoppingLists = () => pb.collection<ShoppingList>("shopping_lists");
 
 export type PantryStatus = "have" | "low" | "out";
 

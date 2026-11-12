@@ -237,8 +237,9 @@ they say otherwise.
   item's barcodes and store links from them and fold in older apps'
   changes: `server/pb_hooks/pantry_products.js`. A store link box:
   `<StoreLinkField>` (`StoreLinkField.tsx`). A calendar asked for without
-  a date box: `<DateDialog>` (`DateField.tsx`). The pantry's place picker
-  (its title): `<PlacePicker>` (`PlacePicker.tsx`). Moving one thing to
+  a date box: `<DateDialog>` (`DateField.tsx`). A page's title as a menu
+  of its places or lists, with "Edit …" (the pantry's places, the shopping
+  lists): `<TitlePicker>` (`TitlePicker.tsx`). Moving one thing to
   where another is, as dragging does (shelves, places): `moved`
   (`listOrder.ts`). A message with a second
   button: `showToast(text, { action, extra })`. An item's quick card:

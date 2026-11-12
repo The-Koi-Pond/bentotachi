@@ -13,8 +13,9 @@ export type QueuedChange =
   // ticked off since). `record`: the id it's saved under, picked here, so
   // one that reached the server with its answer lost (a shop's patchy
   // signal) isn't added again: the server refuses a second with that id.
-  // Missing on ones queued before.
-  | { kind: "add"; id: string; text: string; checked: boolean; at: string; record?: string }
+  // Missing on ones queued before. `list`: the shopping list it's for
+  // (missing, or "": the main one, as on ones queued before lists).
+  | { kind: "add"; id: string; text: string; checked: boolean; at: string; record?: string; list?: string }
   // Ticked off (or back on): sent as the final state, not a toggle, so
   // sending it twice does no harm.
   | { kind: "check"; id: string; checked: boolean; at: string };
@@ -30,10 +31,16 @@ export function newRecordId(random = Math.random): string {
 }
 
 // `record`: the id it's to be saved under (one already tried, when the
-// first try looked offline), else a new one.
-export function queueAdd(queue: QueuedChange[], text: string, now: Date, random = Math.random, record = newRecordId(random)): QueuedChange[] {
+// first try looked offline), else a new one. `list`: the shopping list it's
+// for ("" for the main one).
+export function queueAdd(
+  queue: QueuedChange[],
+  text: string,
+  now: Date,
+  { random = Math.random, record = newRecordId(random), list = "" }: { random?: () => number; record?: string; list?: string } = {}
+): QueuedChange[] {
   const id = `${OFFLINE_ID_PREFIX}${now.getTime()}-${Math.floor(random() * 1e6)}`;
-  return [...queue, { kind: "add", id, text, checked: false, at: serverDate(now), record }];
+  return [...queue, { kind: "add", id, text, checked: false, at: serverDate(now), record, list }];
 }
 
 // One change per item: the latest. Ticking something added offline just
@@ -55,7 +62,7 @@ export function withQueued(items: ShoppingItem[], queue: QueuedChange[]): Shoppi
   });
   const added = queue.flatMap((c) =>
     c.kind === "add"
-      ? [{ id: c.id, text: c.text, checked: c.checked, recipe: "", pantry_item: "", added_by: "", created: c.at, updated: c.at } as ShoppingItem]
+      ? [{ id: c.id, text: c.text, checked: c.checked, recipe: "", pantry_item: "", list: c.list ?? "", added_by: "", created: c.at, updated: c.at } as ShoppingItem]
       : []
   );
   return [...shown, ...added];
@@ -68,26 +75,44 @@ export function withQueued(items: ShoppingItem[], queue: QueuedChange[]): Shoppi
 // login with the same 400/404, which is why sendQueued checks it first.
 const turnedDown = (err: unknown) => [400, 404].includes(statusOf(err));
 
+// Turned down because its list is gone (another phone deleted it meanwhile):
+// PocketBase names the field it couldn't save.
+const listGone = (err: unknown) =>
+  statusOf(err) === 400 && !!(err as { response?: { data?: Record<string, unknown> } }).response?.data?.list;
+
 // Sends the changes in order, stopping at the first that can't go now.
 // Returns the ones handled: sent, or turned down for good. The rest stay
 // waiting (see withoutHandled). loggedIn renews the login first (see
-// session.ts); if that isn't sure, nothing is sent.
+// session.ts); if that isn't sure, nothing is sent. Something added to a
+// list deleted meanwhile goes on the main list instead (it was typed:
+// never just dropped), and `onMoved` hears what.
 export async function sendQueued(
   queue: QueuedChange[],
   send: {
     loggedIn: () => Promise<boolean>;
-    // `record`: the id to save it under ("" lets the server pick one).
-    add: (text: string, checked: boolean, record: string) => Promise<unknown>;
+    // `record`: the id to save it under ("" lets the server pick one);
+    // `list`: its shopping list ("" for the main one).
+    add: (text: string, checked: boolean, record: string, list: string) => Promise<unknown>;
     check: (id: string, checked: boolean) => Promise<unknown>;
+    onMoved?: (text: string) => void;
   }
 ): Promise<QueuedChange[]> {
   const handled: QueuedChange[] = [];
   if (!(await send.loggedIn())) return handled;
+  const add = async (change: Extract<QueuedChange, { kind: "add" }>) => {
+    try {
+      await send.add(change.text, change.checked, change.record ?? "", change.list ?? "");
+    } catch (err) {
+      if (!change.list || !listGone(err)) throw err;
+      await send.add(change.text, change.checked, change.record ?? "", "");
+      send.onMoved?.(change.text);
+    }
+  };
   for (const change of queue) {
     try {
       // Sent before with its answer lost: the server refuses a second one
       // with that id (400), which counts as handled below.
-      if (change.kind === "add") await send.add(change.text, change.checked, change.record ?? "");
+      if (change.kind === "add") await add(change);
       else await send.check(change.id, change.checked);
     } catch (err) {
       if (!turnedDown(err)) break;

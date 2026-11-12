@@ -29,13 +29,63 @@ test("ticks offline show straight away, one per item", () => {
 });
 
 test("things added offline show, and ticking them changes what's added", () => {
-  let queue = queueAdd([], "Bread", now, () => 0.5);
+  let queue = queueAdd([], "Bread", now, { random: () => 0.5 });
   const id = queue[0].id;
   assert.ok(isUnsent(id));
   queue = queueCheck(queue, id, true, now);
   assert.equal(queue.length, 1);
   const shown = withQueued([item("milk1", "Milk")], queue);
   assert.deepEqual(shown.map((i) => [i.text, i.checked]), [["Milk", false], ["Bread", true]]);
+});
+
+test("something added offline remembers its list, shows on it, and is sent to it", async () => {
+  const queue = queueAdd([], "Candles", now, { list: "party" });
+  assert.equal(withQueued([], queue)[0].list, "party");
+  const sent: string[] = [];
+  await sendQueued(queue, {
+    loggedIn: async () => true,
+    add: async (text, _checked, _record, list) => {
+      sent.push(`${text} to ${list}`);
+    },
+    check: async () => {},
+  });
+  assert.deepEqual(sent, ["Candles to party"]);
+  // Queued before lists: the main one ("").
+  const older = [{ kind: "add" as const, id: "offline-1-1", text: "Milk", checked: false, at: "2026-11-01 10:00:00.000Z" }];
+  assert.equal(withQueued([], older)[0].list, "");
+});
+
+test("something added offline to a list deleted meanwhile goes on the main list, and says so", async () => {
+  const queue = queueAdd([], "Ice", now, { list: "party" });
+  const sent: string[] = [];
+  const moved: string[] = [];
+  const refusedList = Object.assign(new Error("list gone"), { status: 400, response: { data: { list: { code: "validation_missing_rel_records" } } } });
+  const handled = await sendQueued(queue, {
+    loggedIn: async () => true,
+    add: async (text, _checked, _record, list) => {
+      if (list === "party") throw refusedList;
+      sent.push(`${text} to ${list || "main"}`);
+    },
+    check: async () => {},
+    onMoved: (text) => moved.push(text),
+  });
+  assert.deepEqual(sent, ["Ice to main"]);
+  assert.deepEqual(moved, ["Ice"]);
+  assert.equal(handled.length, 1);
+  // Any other refusal still counts as turned down, as before.
+  const other = Object.assign(new Error("bad"), { status: 400, response: { data: { text: { code: "validation_required" } } } });
+  const sentOther: string[] = [];
+  await sendQueued(queueAdd([], "Ice", now, { list: "party" }), {
+    loggedIn: async () => true,
+    add: async (text, _c, _r, list) => {
+      sentOther.push(list);
+      throw other;
+    },
+    check: async () => {
+      throw other;
+    },
+  });
+  assert.deepEqual(sentOther, ["party"]);
 });
 
 test("a tick for something removed meanwhile is skipped", () => {

@@ -1085,7 +1085,8 @@
   align-self: stretch;
 }
 
-/* The pantry's title as a place picker (PlacePicker.tsx): "Fridge ⌄". */
+/* A page's title as a picker (TitlePicker.tsx): the pantry's places
+   ("Fridge ⌄") and the shopping lists ("Party ⌄"). */
 .place-title {
   margin: 0;
 }
@@ -1180,6 +1181,20 @@
   color: var(--accent);
 }
 
+/* Beside an option's name: "4 to buy". */
+.place-menu > button:has(.place-menu-note) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.place-menu-note {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 /* "Edit places": each name in its box with 🗑 beside it, then a box to add
    one, then Done. */
 .place-edit {
@@ -1204,6 +1219,11 @@
 .place-delete {
   flex: none;
   color: var(--danger);
+}
+
+/* In place of 🗑 on one that can't be deleted, so the boxes line up. */
+span.place-delete {
+  width: 44px;
 }
 
 /* Its grip; the place being dragged lifts above the rest, and the one it

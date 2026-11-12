@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useModalSheet } from "./useModalSheet";
-import { errorMessage, recipes, type PantryItem, type PantryPacket, type Recipe } from "./pb";
+import { errorMessage, recipes, type PantryItem, type PantryPacket, type Recipe, type ShoppingList } from "./pb";
 import { gatherIngredients } from "./weekShopping";
-import { addToShoppingList, addedMessage } from "./shoppingAdd";
+import { addToShoppingList, addedMessage, type ToList } from "./shoppingAdd";
+import { useShoppingLists } from "./useShoppingLists";
 import { useLiveRecords } from "./useLiveRecords";
 import { packetsCopy, pantryCopy } from "./offline";
 import { CloseIcon } from "./icons";
@@ -11,9 +12,11 @@ import { matchesSearch } from "./recipeSearch";
 import { searchVariants } from "./regionalNames";
 
 // "From a recipe" on the shopping list: find a recipe,
-// then add its ingredients without leaving the list. What the pantry says
-// we have starts unticked; "All" ticks everything.
-export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }) {
+// then add its ingredients without leaving the list (the one open, `list`;
+// `listName` says which when there are several). What the pantry says we
+// have starts unticked; "All" ticks everything.
+export default function RecipeShoppingSheet({ list, listName, onClose }: { list: ToList; listName: string; onClose: () => void }) {
+  const shop = useShoppingLists();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const [all, setAll] = useState<Recipe[] | null>(null);
@@ -51,7 +54,15 @@ export default function RecipeShoppingSheet({ onClose }: { onClose: () => void }
           </button>
         </div>
         {chosen ? (
-          <ChosenRecipe recipe={chosen} pantry={pantry.items} pantryError={pantry.loadError} onBack={() => setChosen(null)} />
+          <ChosenRecipe
+            recipe={chosen}
+            pantry={pantry.items}
+            pantryError={pantry.loadError}
+            list={list}
+            listName={listName}
+            lists={shop.lists}
+            onBack={() => setChosen(null)}
+          />
         ) : (
           <>
             <input
@@ -88,16 +99,22 @@ function ChosenRecipe({
   recipe,
   pantry,
   pantryError,
+  list,
+  listName,
+  lists,
   onBack,
 }: {
   recipe: Recipe;
   pantry: PantryItem[] | null;
   pantryError: string;
+  list: ToList;
+  listName: string;
+  lists: ShoppingList[];
   onBack: () => void;
 }) {
   const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
   const rows = gatherIngredients([recipe], pantry ?? [], packets.items ?? []);
-  const ticks = useGatheredTicks(rows);
+  const ticks = useGatheredTicks(rows, list, lists);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -106,9 +123,10 @@ function ChosenRecipe({
     setStatus(null);
     try {
       const result = await addToShoppingList(
-        ticks.ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId }))
+        ticks.ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId })),
+        list
       );
-      setStatus({ text: addedMessage(result), isError: false });
+      setStatus({ text: addedMessage(result, listName), isError: false });
     } catch (err) {
       setStatus({ text: errorMessage(err), isError: true });
     } finally {
@@ -138,7 +156,7 @@ function ChosenRecipe({
       )}
       <div className="actions">
         <button className="button primary" disabled={busy || loading || ticks.ticked.length === 0} onClick={() => void add()}>
-          {busy ? "Adding…" : ticks.ticked.length ? `Add ${ticks.ticked.length} to the list` : "Add to the list"}
+          {busy ? "Adding…" : ticks.ticked.length ? `Add ${ticks.ticked.length} to ${listName || "the list"}` : `Add to ${listName || "the list"}`}
         </button>
       </div>
       {status && (

@@ -2,7 +2,7 @@
 // sandbox-data.mjs. Shared by the sandbox and the style check, so both show
 // the same household. Never for a server with real data on it.
 import { addDays, localToday, toStoredDate } from "../src/dates.ts";
-import { MEMBERS, NOTES, PANTRY, PASSWORD, PLAN, RECIPES, SHOPPING } from "./sandbox-data.mjs";
+import { MEMBERS, NOTES, OTHER_LIST, PANTRY, PASSWORD, PLAN, RECIPES, SHOPPING } from "./sandbox-data.mjs";
 
 // A calendar date `offset` days from today, as the server stores it.
 export const sandboxDay = (offset) => toStoredDate(addDays(localToday(), offset));
@@ -44,6 +44,8 @@ export async function fillSandbox(api) {
     await call(token, "POST", "/collections/pantry_items/records", { name, location, subcategory, status, expires: useBy === null ? "" : sandboxDay(useBy) });
   }
   for (const [text, checked] of SHOPPING) await call(token, "POST", "/collections/shopping_items/records", { text, checked });
+  const other = await call(token, "POST", "/collections/shopping_lists/records", { name: OTHER_LIST.name });
+  for (const text of OTHER_LIST.items) await call(token, "POST", "/collections/shopping_items/records", { text, checked: false, list: other.id });
   for (const [offset, meal, title] of PLAN) {
     await call(token, "POST", "/collections/meal_plan/records", { date: sandboxDay(offset), meal, recipe: recipeIds[title], note: "" });
     // What was planned before today was cooked.

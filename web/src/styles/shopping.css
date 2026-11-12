@@ -170,3 +170,24 @@ li.divider-label {
   align-self: flex-start;
   font-weight: 600;
 }
+
+/* "To: Party ⌄" beside the add buttons, when there are several lists
+   (ShoppingListChoice.tsx): first in its row, the buttons after it. */
+.list-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  color: var(--muted);
+}
+
+.list-choice select {
+  width: auto;
+  max-width: 12em;
+  font-weight: 600;
+}
+
+/* In the recipe's add choices it takes a whole row. */
+.add-choices .list-choice {
+  grid-column: 1 / -1;
+}

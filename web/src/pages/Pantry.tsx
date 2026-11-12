@@ -65,13 +65,15 @@ import PantryCard from "../PantryCard";
 import { ScanResult } from "../PantryScan";
 import { AddPantryItem, EditPantryItem, type Scanned } from "../PantryForms";
 import { DateDialog } from "../DateField";
-import PlacePicker from "../PlacePicker";
+import TitlePicker, { type TitleWords } from "../TitlePicker";
 import { usePantryPlaces } from "../household";
 import { moved } from "../listOrder";
 import { confirmDiscard, hasUnsavedChanges } from "../unsavedChanges";
 import { askFirst } from "../askFirst";
 import { remember, remembered, rememberedJson } from "../phoneStorage";
 import { onTheList, onTheListAs } from "../shoppingMatch";
+import { useShoppingLists } from "../useShoppingLists";
+import { storedList } from "../shoppingLists";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -98,7 +100,10 @@ function saveClosedPlaces(closed: Set<string>) {
   remember(CLOSED_PLACES_KEY, JSON.stringify([...closed]));
 }
 
-// The place the page shows (PlacePicker), on this device; null (every
+// The title's menu of places (TitlePicker).
+const PLACE_WORDS: TitleWords = { title: "Pantry", choose: "choose a place", edit: "Edit places…", newName: "New place", all: "All places", maxLength: 100 };
+
+// The place the page shows (TitlePicker), on this device; null (every
 // place) until someone picks one, so nothing seems missing at first.
 const PLACE_KEY = "bento.pantryPlace";
 const OTHER_TAKEN = "“Other” is where things with no place go. Pick another name.";
@@ -110,6 +115,9 @@ function savedPlace(): Place | null {
 export default function Pantry() {
   const pantry = useLiveRecords<PantryItem>("pantry_items", { copy: pantryCopy });
   const shopping = useLiveRecords<ShoppingItem>("shopping_items", { copy: shoppingCopyReadOnly });
+  // Something put on the list goes on the one last open (useShoppingLists);
+  // "on the list" means any of them.
+  const shop = useShoppingLists();
   // Not waited for: the pantry works without them while they load or if
   // they can't (packets.items stays null, and nothing offers to add one).
   const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
@@ -422,11 +430,17 @@ export default function Pantry() {
     try {
       if (as) {
         if (!as.pantry_item) shopping.upsert(await shoppingItems().update(as.id, { pantry_item: item.id }));
-        showToast(`Already on the list as “${as.text}”.`);
+        showToast(`Already on ${(shop.several && shop.nameOf(as.list)) || "the list"} as “${as.text}”.`);
         return;
       }
       shopping.upsert(
-        await shoppingItems().create({ text: item.name, checked: false, pantry_item: item.id, added_by: pb.authStore.record?.id })
+        await shoppingItems().create({
+          text: item.name,
+          checked: false,
+          pantry_item: item.id,
+          list: storedList(shop.open, shop.mainId),
+          added_by: pb.authStore.record?.id,
+        })
       );
     } catch (err) {
       showError(errorMessage(err));
@@ -683,13 +697,21 @@ export default function Pantry() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        {items.length > 0 ? <PlacePicker
-            places={places}
-            current={place}
-            onPick={choosePlace}
+        {items.length > 0 ? <TitlePicker
+            // "Other" is things with no place: nothing to rename or delete.
+            options={places.map((p) => ({ key: p.key, label: p.label, editable: p.key !== "" }))}
+            current={place?.key ?? null}
+            words={PLACE_WORDS}
+            onPick={(key) => choosePlace(key === null ? null : (places.find((p) => p.key === key) ?? null))}
             onAdd={(label) => void addPlace(label)}
-            onRename={renamePlace}
-            onDelete={deletePlace}
+            onRename={async (key, label) => {
+              const from = places.find((p) => p.key === key);
+              if (from) await renamePlace(from, label);
+            }}
+            onDelete={async (key) => {
+              const gone = places.find((p) => p.key === key);
+              if (gone) await deletePlace(gone);
+            }}
             onMove={movePlace}
           /> : <h1>Pantry</h1>}
         <div className="view-switch" role="group" aria-label="Layout">
@@ -847,7 +869,7 @@ export default function Pantry() {
         <p className="toast undo-toast" role="status">
           <span>
             {runOut.message}
-            {asking && " Put it on the shopping list?"}
+            {asking && ` Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?`}
           </span>
           <span className="toast-actions">
             {asking && (
