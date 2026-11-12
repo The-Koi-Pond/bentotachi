@@ -21,7 +21,10 @@ missing. `docs/REVIEW.md` is the 2026-10-31 check-up behind it (privacy,
 account deletion, phone-only mode), with its reasons.
 What Bentotachi is, its promises, voice (cheeky, but the joke never
 replaces the information) and look: `docs/VISION.md`. Check new screens,
-wording and features against it. For app text, its voice wins over the
+wording and features against it. `PRODUCT.md` (repo root) is the short
+product record the Impeccable design skill reads (`/impeccable …`, switched
+on for this folder in `.claude/settings.local.json`): keep it in step with
+VISION.md. For app text, its voice wins over the
 global writing rules (`~/.claude/rules/writing.md`) where they differ.
 Shared helpers and components, riskiest first: `docs/shared-systems.md`.
 How to run: `README.md`.

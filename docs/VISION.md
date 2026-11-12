@@ -65,14 +65,13 @@ Cheeky and silly wherever it can afford to be, while staying clear.
   be silly next to it: "It even works in the supermarket's no-signal
   corner" (it works offline), "skips the blogger's life story" (it imports
   just the recipe).
-- **Serious moments stay plain.** Deleting, losing data, backups, restores,
-  passwords and the privacy policy get calm, clear wording and no jokes:
-  people need to trust them. *(guess)*
+- **Serious moments stay plain** (decided 2026-11-12). Deleting, losing
+  data, backups, restores, passwords and the privacy policy get calm,
+  clear wording and no jokes: people need to trust them.
 - **Buttons and warnings say what they do** ("Delete everything", "Save a
-  backup"), never a pun. *(guess)*
-- **Where the cheek goes in the app:** empty screens ("No recipes yet"),
-  hints, success messages and small print. *(guess: the app's text is
-  plain so far; the website has the voice.)*
+  backup"), never a pun (decided 2026-11-12).
+- **Where the cheek goes in the app** (decided 2026-11-12): empty screens
+  ("No recipes yet"), hints, success messages and small print.
 - **Running jokes:** the screaming (the mascot, "besides screaming",
   "complaints about the screaming"), and the onigiri being "fine,
   actually". Use them, don't wear them out.
