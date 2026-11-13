@@ -6,6 +6,57 @@ for the next release stays in PLAN.md, "Waiting for the next app
 release"; when a release goes out, its list moves to the top of this file.
 Each release from 1.9.0 on is tagged in git (`v1.23.0`).
 
+Released in 1.28.0 (2026-11-13, deployed the same day):
+
+- Several shopping lists: the list's title is a menu of lists ("Party · 4
+  to buy", "Edit lists…" to make, rename or delete one; the main one
+  stays). Adding from a recipe, the plan or the pantry goes to the list
+  last open ("To: Party" to change it); something already on another list
+  asks before it's added here too, or shows "On Party" in a recipe's or the
+  plan's list. The pantry's place menu is the same picker now.
+- Easier to read (the design check-up of 2026-11-12): people's names in
+  their colour, avatars and rating pills, the unpicked side of the
+  two-way switches, "(optional)", dark mode's "Out", the ingredient link
+  icon and the other months' days on the plan all meet the 4.5:1 contrast
+  floor now, in light and dark; a switch that's off has an outline.
+- Kinder to busy hands (the same check-up): ticked ingredients and steps
+  stay ticked when you pop over to the shopping list (until "We cooked
+  this", or the next day); in the plan's month view a meal's picture is
+  picked up with a press and hold, so a swipe scrolls instead of moving
+  the dinner; an Undo bar or message waits while your finger or the mouse
+  is on it. For screen readers: drags say names and days, not codes;
+  "are you sure?" reads its question; Undo bars and messages are read out.
+- Easier to tap and to read big (the same check-up): small buttons have a
+  44 px area to tap without looking any different, ingredient lines are
+  36 px, a pantry row's whole height opens it; with the phone's biggest
+  text, recipe names fit (fewer cards a row), the pantry's switch and
+  Have / Low / Out stay on screen, and "Cooked it" moves under its
+  words instead of squeezing them.
+- Clearer words (the same check-up): marking a recipe cooked is "✓ Cooked
+  it" on all three of its buttons (it was "We cooked this", "Finished"
+  and the timer's "Finished"); the screen stays on by itself while a step
+  timer or "Time it" runs; Shopping and Pantry have a "?" saying their
+  title is a menu; a place's "2 to check" is now "2 low or due"; Add
+  recipe has a title; an empty recipe name says "A recipe needs a name."
+- Ingredients higher on a recipe (the same check-up): the box at the top
+  keeps what you need before cooking (description, servings and times,
+  tags, "Time it"); ratings and "Last had · Cooked it" moved to a box after
+  the method; on a phone the photo is shorter, so the first ingredients
+  show without scrolling.
+- A last polish (the same check-up): screen readers hear an error under a
+  form as it appears (a wrong password, a failed save); ticked steps, the
+  timer's next stage and the week view's grip are quiet without going
+  faint; the hint inside a box reads in dark mode; with the phone's
+  biggest text, step numbers, the plan's day names and the ‹ › − + buttons
+  grow, and the recipe chooser's buttons wrap; the pantry card lost its
+  side stripe.
+- Moving without dragging: a tap on the ⠿ (or Enter; dragging still
+  works) opens a small menu. Shelves (in Edit) and pantry places: "Move
+  up", "Move down". A dish on the plan's list: "To the day before", "To
+  the day after", "Pick a day…", "Take it off the plan" (with Undo); one
+  sent past the days shown says where it went. TalkBack reads the ⠿ as a
+  button whose hint names the menu.
+
 Released in 1.27.0 (2026-11-12, deployed the same day):
 
 - Counted things in the pantry: a packet's size can be a count ("12
