@@ -24,7 +24,11 @@ replaces the information) and look: `docs/VISION.md`. Check new screens,
 wording and features against it. `PRODUCT.md` (repo root) is the short
 product record the Impeccable design skill reads (`/impeccable …`, switched
 on for this folder in `.claude/settings.local.json`): keep it in step with
-VISION.md. For app text, its voice wins over the
+VISION.md. `DESIGN.md` (repo root, with `.impeccable/design.json`) is the
+visual system as built (tokens, components, named rules; written
+2026-11-13 by `/impeccable document`): follow it for new screens, and run
+`/impeccable document` again after a change to the look so it doesn't
+drift from `web/src/styles`. For app text, its voice wins over the
 global writing rules (`~/.claude/rules/writing.md`) where they differ.
 Shared helpers and components, riskiest first: `docs/shared-systems.md`.
 How to run: `README.md`.

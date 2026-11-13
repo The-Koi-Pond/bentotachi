@@ -154,7 +154,7 @@ own shape, so moods can change the eyes, add sweat, take a bite out of it.
 | Jade, the second accent (the leaf) | #5A9A8A | #5A9A8A |
 | Jade tags, website note | #E2EFEB soft jade | #1D3330 |
 | Jade selected tag | #3F7668, white text | #7FBFAE, dark text |
-| Jade text ("Saved.") | #3A7062 | #8FD3C1 |
+| Jade text ("Saved.", the selected tag) | #3F7668 | #7FBFAE |
 
 **Umeboshi and jade** (jade decided 2026-11-01: teal is Xel's favourite;
 umeboshi replaced orange on 2026-11-04). Cream with a terracotta orange
@@ -221,8 +221,9 @@ instead of a thin line; a round "Cooked" stamp sits beside "Last had"; a
 recipe without a photo shows a small drawn bento box with its first
 letter instead of 🍲 (kept soft after seeing it live: a faint box and
 leaf, the plum, and a big letter); and two-way switches (Simple | Detailed, List |
-Month…) show the chosen one with a wooden chopstick underline and the
-other faded, Xel's own design (instead of an iPhone-style pill).
+Month…) show the chosen one bold with a wooden chopstick underline and the
+other in quiet text (no longer faded, since 2026-11-12: faded was too faint
+to read), Xel's own design (instead of an iPhone-style pill).
 
 **Bento trays** (Xel, 2026-11-09, picked live from dark lacquer, natural
 wood and soft jade rims): things that belong together sit in a tray, a

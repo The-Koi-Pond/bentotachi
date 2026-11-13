@@ -1,0 +1,965 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T04:51:16.362Z",
+  "title": "Design System: Bentotachi",
+  "extensions": {
+    "colorMeta": {
+      "tea-rice": {
+        "role": "neutral",
+        "displayName": "Tea-Rice",
+        "purpose": "Page background and the inside of text boxes (light).",
+        "canonical": "#f3f6f4",
+        "oklch": "oklch(97% 0.004 157.2)",
+        "cssVar": "--bg",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242525",
+          "#414241",
+          "#5f6260",
+          "#808381",
+          "#a4a5a4",
+          "#c8c9c9",
+          "#eeeeee"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface White",
+        "purpose": "Cards, compartments, top bar, buttons, menus, sheets (light).",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100% 0 89.9)",
+        "cssVar": "--surface",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "soy-ink": {
+        "role": "neutral",
+        "displayName": "Soy Ink",
+        "purpose": "Body text; fill of a chosen filter chip and of toasts (light).",
+        "canonical": "#2b2420",
+        "oklch": "oklch(26.7% 0.013 51.6)",
+        "cssVar": "--text",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#272423",
+          "#46413e",
+          "#675f5b",
+          "#89807c",
+          "#aaa4a0",
+          "#ccc8c6",
+          "#efeeed"
+        ]
+      },
+      "quiet-grey": {
+        "role": "neutral",
+        "displayName": "Quiet Grey",
+        "purpose": "Everything quiet: hints, placeholders, unchosen, done (light).",
+        "canonical": "#5f6b67",
+        "oklch": "oklch(51.6% 0.016 173.7)",
+        "cssVar": "--muted",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#222625",
+          "#3c4441",
+          "#596460",
+          "#7a8581",
+          "#9fa7a4",
+          "#c6cac9",
+          "#edefee"
+        ]
+      },
+      "border-mist": {
+        "role": "neutral",
+        "displayName": "Border Mist",
+        "purpose": "1 px borders and an off switch's track (light).",
+        "canonical": "#d8dddb",
+        "oklch": "oklch(89.3% 0.006 170.4)",
+        "cssVar": "--border",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242525",
+          "#404342",
+          "#5e6261",
+          "#7f8382",
+          "#a3a6a5",
+          "#c8c9c9",
+          "#eeefee"
+        ]
+      },
+      "umeboshi": {
+        "role": "primary",
+        "displayName": "Umeboshi",
+        "purpose": "Doing: buttons, links, the selected thing, focus rings (light).",
+        "canonical": "#a82d4a",
+        "oklch": "oklch(49.5% 0.159 11.6)",
+        "cssVar": "--accent",
+        "tonalRamp": [
+          "#140709",
+          "#3f151d",
+          "#702233",
+          "#a62e4a",
+          "#ca566b",
+          "#dd8a94",
+          "#ecbabf",
+          "#fee8ea"
+        ]
+      },
+      "on-umeboshi": {
+        "role": "primary",
+        "displayName": "On Umeboshi",
+        "purpose": "Text on an Umeboshi fill (light).",
+        "canonical": "#ffffff",
+        "oklch": "oklch(100% 0 89.9)",
+        "cssVar": "--accent-text",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "umeboshi-soft": {
+        "role": "primary",
+        "displayName": "Umeboshi Soft",
+        "purpose": "Hover wash, step numbers, inline tips, update banner (light).",
+        "canonical": "#f4e4e7",
+        "oklch": "oklch(93.2% 0.018 4.5)",
+        "cssVar": "--accent-soft",
+        "tonalRamp": [
+          "#0c0b0b",
+          "#282425",
+          "#483f41",
+          "#6b5d60",
+          "#8c7e81",
+          "#aca2a4",
+          "#cdc7c8",
+          "#f0eeee"
+        ]
+      },
+      "jade-soft": {
+        "role": "secondary",
+        "displayName": "Jade Soft",
+        "purpose": "Tags, the active tab, plan dishes, active toolbar filter (light).",
+        "canonical": "#e2efeb",
+        "oklch": "oklch(94.1% 0.015 175.7)",
+        "cssVar": "--jade-soft",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#222625",
+          "#3d4442",
+          "#596461",
+          "#7a8582",
+          "#9fa7a5",
+          "#c6cac9",
+          "#edefee"
+        ]
+      },
+      "jade-strong": {
+        "role": "secondary",
+        "displayName": "Jade Strong",
+        "purpose": "Jade text and solid fills: success, switch on, ticks, selected tag (light).",
+        "canonical": "#3f7668",
+        "oklch": "oklch(52.4% 0.063 175.3)",
+        "cssVar": "--jade-strong",
+        "tonalRamp": [
+          "#070c0b",
+          "#172924",
+          "#274a41",
+          "#376d5f",
+          "#5b8e80",
+          "#8baea4",
+          "#bbcec8",
+          "#e8f1ee"
+        ]
+      },
+      "jade-leaf": {
+        "role": "secondary",
+        "displayName": "Jade Leaf",
+        "purpose": "The title's leaf and baran: shapes only, never text.",
+        "canonical": "#5a9a8a",
+        "oklch": "oklch(63.8% 0.071 176.1)",
+        "tonalRamp": [
+          "#070d0b",
+          "#152a24",
+          "#224b41",
+          "#2f6e60",
+          "#559081",
+          "#87afa4",
+          "#b9cfc8",
+          "#e8f1ee"
+        ]
+      },
+      "rim": {
+        "role": "neutral",
+        "displayName": "Rim",
+        "purpose": "A bento tray's rim and the tab bar (light).",
+        "canonical": "#b9d6cd",
+        "oklch": "oklch(85.2% 0.033 174.8)",
+        "cssVar": "--rim",
+        "tonalRamp": [
+          "#090c0b",
+          "#1e2725",
+          "#354641",
+          "#4e6860",
+          "#708981",
+          "#98aaa4",
+          "#c2ccc8",
+          "#ebf0ee"
+        ]
+      },
+      "rim-text": {
+        "role": "neutral",
+        "displayName": "Rim Text",
+        "purpose": "Words written on a tray's rim (light).",
+        "canonical": "#24312d",
+        "oklch": "oklch(30% 0.019 174.2)",
+        "cssVar": "--rim-text",
+        "tonalRamp": [
+          "#0a0c0b",
+          "#212625",
+          "#3b4441",
+          "#576560",
+          "#788681",
+          "#9ea8a4",
+          "#c5cbc9",
+          "#edefee"
+        ]
+      },
+      "waribashi-wood": {
+        "role": "tertiary",
+        "displayName": "Waribashi Wood",
+        "purpose": "The chopstick underline and magnets, both themes. Never text.",
+        "canonical": "#a87a43",
+        "oklch": "oklch(61.4% 0.092 69.6)",
+        "tonalRamp": [
+          "#0f0a06",
+          "#312210",
+          "#583b18",
+          "#82571f",
+          "#a47947",
+          "#be9f7d",
+          "#d8c6b3",
+          "#f5ede5"
+        ]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Danger",
+        "purpose": "Errors, delete buttons, warning text (light).",
+        "canonical": "#b3261e",
+        "oklch": "oklch(50.1% 0.178 28.7)",
+        "cssVar": "--danger",
+        "tonalRamp": [
+          "#150705",
+          "#42140f",
+          "#761d17",
+          "#af251d",
+          "#d35245",
+          "#e4887b",
+          "#f0bab2",
+          "#ffe9e5"
+        ]
+      },
+      "pantry-have": {
+        "role": "status",
+        "displayName": "Pantry Have",
+        "purpose": "A full pantry jar (light).",
+        "canonical": "#3f7668",
+        "oklch": "oklch(52.4% 0.063 175.3)",
+        "cssVar": "--have",
+        "tonalRamp": [
+          "#070c0b",
+          "#172924",
+          "#274a41",
+          "#376d5f",
+          "#5b8e80",
+          "#8baea4",
+          "#bbcec8",
+          "#e8f1ee"
+        ]
+      },
+      "pantry-low": {
+        "role": "status",
+        "displayName": "Pantry Low",
+        "purpose": "A low pantry jar; also the gold of Quick (light).",
+        "canonical": "#e0a100",
+        "oklch": "oklch(75% 0.155 80.4)",
+        "cssVar": "--low",
+        "tonalRamp": [
+          "#100a02",
+          "#322201",
+          "#573d01",
+          "#7e5a05",
+          "#a97904",
+          "#c69e58",
+          "#dcc6a0",
+          "#f7eddd"
+        ]
+      },
+      "pantry-out": {
+        "role": "status",
+        "displayName": "Pantry Out",
+        "purpose": "An empty pantry jar (light).",
+        "canonical": "#c62828",
+        "oklch": "oklch(53.9% 0.194 26.7)",
+        "cssVar": "--out",
+        "tonalRamp": [
+          "#160605",
+          "#44110e",
+          "#7a1615",
+          "#b4151b",
+          "#d94a43",
+          "#e9847a",
+          "#f4b8b1",
+          "#fee9e6"
+        ]
+      },
+      "heart": {
+        "role": "status",
+        "displayName": "Heart",
+        "purpose": "The favourite heart shape only (light; #f06595 dark).",
+        "canonical": "#d6336c",
+        "oklch": "oklch(58.8% 0.201 5.2)",
+        "cssVar": "--heart",
+        "tonalRamp": [
+          "#150609",
+          "#440e1f",
+          "#790f38",
+          "#b30152",
+          "#d84373",
+          "#e8809a",
+          "#f3b6c2",
+          "#fee8ec"
+        ]
+      },
+      "rice": {
+        "role": "status",
+        "displayName": "Rice",
+        "purpose": "An onigiri rating's rice (light; #f4efe4 dark).",
+        "canonical": "#fffdf6",
+        "oklch": "oklch(99.4% 0.009 93.6)",
+        "cssVar": "--rice",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#262523",
+          "#43423e",
+          "#63615b",
+          "#84827c",
+          "#a6a5a1",
+          "#cac9c7",
+          "#efeeed"
+        ]
+      },
+      "rice-line": {
+        "role": "status",
+        "displayName": "Rice Line",
+        "purpose": "An onigiri rating's outline (light; #f4efe4 dark).",
+        "canonical": "#3a2f28",
+        "oklch": "oklch(31.5% 0.02 54.3)",
+        "cssVar": "--rice-line",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#282421",
+          "#48403b",
+          "#6b5e57",
+          "#8c8078",
+          "#aca39d",
+          "#cdc8c5",
+          "#f0eeec"
+        ]
+      },
+      "nori": {
+        "role": "status",
+        "displayName": "Nori",
+        "purpose": "An onigiri rating's nori (light; #1c2624 dark).",
+        "canonical": "#24312d",
+        "oklch": "oklch(30% 0.019 174.2)",
+        "cssVar": "--nori",
+        "tonalRamp": [
+          "#0a0c0b",
+          "#212625",
+          "#3b4441",
+          "#576560",
+          "#788681",
+          "#9ea8a4",
+          "#c5cbc9",
+          "#edefee"
+        ]
+      },
+      "rice-off": {
+        "role": "status",
+        "displayName": "Rice Off",
+        "purpose": "An empty onigiri rating's outline (light; #4a5653 dark).",
+        "canonical": "#c9cfcc",
+        "oklch": "oklch(84.9% 0.008 164.9)",
+        "cssVar": "--rice-off",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242625",
+          "#3f4341",
+          "#5d6360",
+          "#7f8481",
+          "#a2a6a4",
+          "#c7cac9",
+          "#eeefee"
+        ]
+      },
+      "pond-at-night": {
+        "role": "neutral",
+        "displayName": "Pond at Night",
+        "purpose": "Page background (dark).",
+        "canonical": "#141b1b",
+        "oklch": "oklch(21.5% 0.01 196.4)",
+        "cssVar": "--bg",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#232626",
+          "#3e4343",
+          "#5b6363",
+          "#7c8484",
+          "#a0a6a6",
+          "#c6caca",
+          "#edefef"
+        ]
+      },
+      "pond-surface": {
+        "role": "neutral",
+        "displayName": "Pond Surface",
+        "purpose": "Cards and compartments (dark).",
+        "canonical": "#202928",
+        "oklch": "oklch(27.2% 0.013 188.2)",
+        "cssVar": "--surface",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#222625",
+          "#3d4443",
+          "#5a6462",
+          "#7b8584",
+          "#a0a7a6",
+          "#c6caca",
+          "#edefef"
+        ]
+      },
+      "pond-text": {
+        "role": "neutral",
+        "displayName": "Pond Text",
+        "purpose": "Body text (dark).",
+        "canonical": "#f1ebe5",
+        "oklch": "oklch(94.3% 0.01 67.7)",
+        "cssVar": "--text",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#262523",
+          "#45413e",
+          "#65605b",
+          "#86817c",
+          "#a8a4a1",
+          "#cbc9c6",
+          "#efeeed"
+        ]
+      },
+      "pond-quiet": {
+        "role": "neutral",
+        "displayName": "Pond Quiet",
+        "purpose": "Quiet text (dark).",
+        "canonical": "#a9b3ae",
+        "oklch": "oklch(75.7% 0.013 164.7)",
+        "cssVar": "--muted",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#232624",
+          "#3e4441",
+          "#5b645f",
+          "#7c8580",
+          "#a0a7a4",
+          "#c6cac8",
+          "#edefee"
+        ]
+      },
+      "pond-border": {
+        "role": "neutral",
+        "displayName": "Pond Border",
+        "purpose": "Borders (dark).",
+        "canonical": "#34403e",
+        "oklch": "oklch(36% 0.016 184.2)",
+        "cssVar": "--border",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#222625",
+          "#3c4443",
+          "#586462",
+          "#798583",
+          "#9ea7a6",
+          "#c5cac9",
+          "#edefee"
+        ]
+      },
+      "umeboshi-night": {
+        "role": "primary",
+        "displayName": "Umeboshi at Night",
+        "purpose": "Doing (dark); dark text on it.",
+        "canonical": "#ee7d92",
+        "oklch": "oklch(72.2% 0.14 9.4)",
+        "cssVar": "--accent",
+        "tonalRamp": [
+          "#130809",
+          "#3c181f",
+          "#6b2837",
+          "#9f3850",
+          "#c25d71",
+          "#d78d99",
+          "#e8bcc2",
+          "#fce9eb"
+        ]
+      },
+      "umeboshi-soft-night": {
+        "role": "primary",
+        "displayName": "Umeboshi Soft at Night",
+        "purpose": "Hover wash and step numbers (dark).",
+        "canonical": "#33282c",
+        "oklch": "oklch(29.1% 0.018 354.4)",
+        "cssVar": "--accent-soft",
+        "tonalRamp": [
+          "#0c0b0b",
+          "#282425",
+          "#483f42",
+          "#6a5d62",
+          "#8b7e83",
+          "#aba2a5",
+          "#cdc7c9",
+          "#f0eeee"
+        ]
+      },
+      "jade-soft-night": {
+        "role": "secondary",
+        "displayName": "Jade Soft at Night",
+        "purpose": "Tags and the active tab (dark).",
+        "canonical": "#1d3330",
+        "oklch": "oklch(30.2% 0.029 184.9)",
+        "cssVar": "--jade-soft",
+        "tonalRamp": [
+          "#090c0b",
+          "#1f2726",
+          "#364643",
+          "#506763",
+          "#718884",
+          "#99a9a6",
+          "#c2cbca",
+          "#ebefef"
+        ]
+      },
+      "jade-strong-night": {
+        "role": "secondary",
+        "displayName": "Jade Strong at Night",
+        "purpose": "Jade text and fills (dark).",
+        "canonical": "#7fbfae",
+        "oklch": "oklch(75.6% 0.07 175.8)",
+        "cssVar": "--jade-strong",
+        "tonalRamp": [
+          "#070d0b",
+          "#152a24",
+          "#224b41",
+          "#306e60",
+          "#558f81",
+          "#88afa4",
+          "#b9cfc8",
+          "#e8f1ee"
+        ]
+      },
+      "rim-night": {
+        "role": "neutral",
+        "displayName": "Rim at Night",
+        "purpose": "A tray's rim (dark).",
+        "canonical": "#2c4a44",
+        "oklch": "oklch(38.3% 0.037 180.1)",
+        "cssVar": "--rim",
+        "tonalRamp": [
+          "#090c0b",
+          "#1d2825",
+          "#334742",
+          "#4a6862",
+          "#6c8a83",
+          "#95aaa5",
+          "#c0ccc9",
+          "#ebf0ee"
+        ]
+      },
+      "rim-text-night": {
+        "role": "neutral",
+        "displayName": "Rim Text at Night",
+        "purpose": "Words on a rim (dark).",
+        "canonical": "#e2efeb",
+        "oklch": "oklch(94.1% 0.015 175.7)",
+        "cssVar": "--rim-text",
+        "tonalRamp": [
+          "#0a0b0b",
+          "#222625",
+          "#3d4442",
+          "#596461",
+          "#7a8582",
+          "#9fa7a5",
+          "#c6cac9",
+          "#edefee"
+        ]
+      },
+      "danger-night": {
+        "role": "status",
+        "displayName": "Danger at Night",
+        "purpose": "Errors (dark), pushed orange away from the pink accent.",
+        "canonical": "#ff8a65",
+        "oklch": "oklch(75.5% 0.151 38.3)",
+        "cssVar": "--danger",
+        "tonalRamp": [
+          "#130805",
+          "#3e180d",
+          "#6f2911",
+          "#a43912",
+          "#c75f3e",
+          "#da8f78",
+          "#eabeb0",
+          "#fdeae4"
+        ]
+      },
+      "pantry-low-night": {
+        "role": "status",
+        "displayName": "Pantry Low at Night",
+        "purpose": "A low jar (dark).",
+        "canonical": "#ffca28",
+        "oklch": "oklch(86.2% 0.168 88.3)",
+        "cssVar": "--low",
+        "tonalRamp": [
+          "#100a01",
+          "#302301",
+          "#533f01",
+          "#785d05",
+          "#a17d06",
+          "#c1a14e",
+          "#d9c89c",
+          "#f5eedc"
+        ]
+      },
+      "pantry-out-night": {
+        "role": "status",
+        "displayName": "Pantry Out at Night",
+        "purpose": "An empty jar (dark).",
+        "canonical": "#ff6b66",
+        "oklch": "oklch(71.1% 0.182 24.8)",
+        "cssVar": "--out",
+        "tonalRamp": [
+          "#150706",
+          "#421212",
+          "#771b1d",
+          "#b02027",
+          "#d54f4c",
+          "#e58780",
+          "#f1b9b4",
+          "#fee9e7"
+        ]
+      }
+    },
+    "themes": {
+      "light": "Tea-rice: the :root block in web/src/styles/base.css.",
+      "dark": "Pond at night: the same tokens redefined in @media (prefers-color-scheme: dark). web/src/theme.ts rewrites those media rules to 'all' or 'not all' when someone picks Dark or Light in Settings, so every dark rule must live in such a block."
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles, in Pond Pebbles."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings the app writes, shelf and pantry place names on tray rims; Pond Pebbles. Dark mode adds a tight dark text-shadow outline."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog and sheet headings (1.1rem in a sheet) and a recipe's own name; the phone's font."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Everything else: 15 px in rem."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, field labels, legends; 0.92rem on small buttons and chips."
+      },
+      "label-small": {
+        "displayName": "Label Small",
+        "purpose": "Drawer counts, link buttons (0.88rem), badges (0.78rem, 700)."
+      },
+      "hint": {
+        "displayName": "Hint",
+        "purpose": "Hints under fields and the \"?\" tips."
+      }
+    },
+    "shadows": [
+      {
+        "name": "dialog",
+        "value": "0 10px 30px rgb(0 0 0 / 0.3)",
+        "purpose": "The app's own \"are you sure?\" dialog, over a 45% black backdrop."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -8px 30px rgb(0 0 0 / 0.25)",
+        "purpose": "A panel sliding up from the bottom (the dinner chooser)."
+      },
+      {
+        "name": "menu",
+        "value": "0 8px 24px rgb(0 0 0 / 0.15)",
+        "purpose": "The ⋮ menu panel."
+      },
+      {
+        "name": "popover",
+        "value": "0 6px 20px rgb(0 0 0 / 0.18)",
+        "purpose": "A \"?\" help bubble."
+      },
+      {
+        "name": "picker",
+        "value": "0 8px 28px rgb(0 0 0 / 0.22)",
+        "purpose": "Date and similar pickers over the page."
+      },
+      {
+        "name": "floating-bar",
+        "value": "0 4px 16px rgb(0 0 0 / 0.18)",
+        "purpose": "The step-timer tray above the tab bar; toasts use 0 4px 16px rgba(0, 0, 0, 0.2)."
+      },
+      {
+        "name": "dragged",
+        "value": "0 10px 24px rgb(0 0 0 / 0.25)",
+        "purpose": "A dish or shelf lifted while dragged."
+      },
+      {
+        "name": "small-lift",
+        "value": "0 1px 4px rgb(0 0 0 / 0.2)",
+        "purpose": "A small object resting on another: pick mark (also switch thumb 0 1px 2px / 0.3, heart over a photo 0 2px 8px / 0.25, brand note 0 2px 4px / 0.14, fridge notes 0 2px 6px / 0.12)."
+      },
+      {
+        "name": "drop-ring",
+        "value": "0 0 0 2px var(--accent)",
+        "purpose": "Where a dragged thing would land; a ring, not depth."
+      },
+      {
+        "name": "dark-heading-outline",
+        "value": "text-shadow: -1px 0 0 rgb(0 0 0 / 0.6), 1px 0 0 rgb(0 0 0 / 0.6), 0 -1px 0 rgb(0 0 0 / 0.6), 0 1px 0 rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.48)",
+        "purpose": "Dark mode only: lets light Pond Pebbles headings stand off the rim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "switch",
+        "value": "0.15s",
+        "purpose": "A toggle switch's track colour and thumb slide; a drawer's chevron turning."
+      },
+      {
+        "name": "brand-note",
+        "value": "120ms ease-out",
+        "purpose": "The brand's sticky note straightening under the pointer."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "With prefers-reduced-motion, every transition and animation is off."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "content-max",
+        "value": "760px"
+      },
+      {
+        "name": "form-max",
+        "value": "520px"
+      },
+      {
+        "name": "recipe-card-min",
+        "value": "220px"
+      }
+    ],
+    "sizing": {
+      "tapArea": "44px minimum; an invisible ::before reaches --tap-x / --tap-y past smaller controls",
+      "textZoom": "max(<px>, calc(<rem|em> * var(--text-zoom, 1))) for any size that holds text",
+      "rows": "36-38px list rows; 38px buttons; 36px small buttons and chips"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action in a row (Save, Add), last on the right. Umeboshi pill.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 6px 14px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--accent-text, #fff); background: var(--accent, #a82d4a); border: 1px solid var(--accent, #a82d4a); border-radius: 999px; cursor: pointer; } .ds-btn-primary:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; } .ds-btn-primary:disabled { opacity: 0.6; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The default button: white pill with a thin border (Cancel, Keep editing).",
+      "html": "<button class=\"ds-btn\">Keep editing</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 6px 14px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--text, #2b2420); background: var(--surface, #fff); border: 1px solid var(--border, #d8dddb); border-radius: 999px; cursor: pointer; } .ds-btn:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Delete and the like: outlined in the danger colour, pushed to the left of a row.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 6px 14px; font: inherit; font-size: 0.9375rem; font-weight: 600; color: var(--danger, #b3261e); background: transparent; border: 1px solid var(--danger, #b3261e); border-radius: 999px; cursor: pointer; } .ds-btn-danger:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; }"
+    },
+    {
+      "name": "Filter Chips",
+      "kind": "chip",
+      "refersTo": "chip-filter",
+      "description": "Pill filters; the chosen one fills with ink. Tags are jade instead.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">All</button><button class=\"ds-chip\" aria-pressed=\"false\">Fridge</button><button class=\"ds-chip\" aria-pressed=\"false\">Low or due</button><span class=\"ds-tag\">vegetarian</span></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .ds-chip { min-height: 36px; padding: 4px 14px; font: inherit; font-size: 0.92rem; color: var(--text, #2b2420); background: var(--surface, #fff); border: 1px solid var(--border, #d8dddb); border-radius: 999px; cursor: pointer; } .ds-chip[aria-pressed=\"true\"] { color: var(--bg, #f3f6f4); background: var(--text, #2b2420); border-color: var(--text, #2b2420); } .ds-chip:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; } .ds-tag { padding: 3px 10px; font-size: 0.85rem; color: var(--text, #2b2420); background: var(--jade-soft, #e2efeb); border-radius: 999px; }"
+    },
+    {
+      "name": "Joined Search Box",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A page's main box and its button as compartments of one tray; focus outlines the whole tray.",
+      "html": "<form class=\"ds-joined\" onsubmit=\"return false\"><input class=\"ds-joined-input\" placeholder=\"Add to the list\" aria-label=\"Add to the list\"><button class=\"ds-joined-btn\">Add</button></form>",
+      "css": ".ds-joined { display: flex; gap: 4px; padding: 4px; background: var(--rim, #b9d6cd); border-radius: 12px; } .ds-joined:has(input:focus-visible, button:focus-visible) { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; } .ds-joined-input { flex: 1; min-width: 0; padding: 7px 12px; font: inherit; font-size: 0.9375rem; color: var(--text, #2b2420); background: var(--surface, #fff); border: none; border-radius: 8px; } .ds-joined-input::placeholder { color: var(--muted, #5f6b67); opacity: 1; } .ds-joined-input:focus-visible { outline: none; } .ds-joined-btn { padding: 6px 18px; font: inherit; font-weight: 600; color: var(--accent-text, #fff); background: var(--accent, #a82d4a); border: none; border-radius: 8px; cursor: pointer; } .ds-joined-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent-text, #fff); }"
+    },
+    {
+      "name": "Bento Tray",
+      "kind": "card",
+      "refersTo": "tray",
+      "description": "The signature container: heading on a jade rim, contents in white compartments.",
+      "html": "<section class=\"ds-tray\"><h2 class=\"ds-tray-head\">Got it</h2><p class=\"ds-compartment\">Milk</p><p class=\"ds-compartment\">Rice, 2 kg</p></section>",
+      "css": ".ds-tray { display: flex; flex-direction: column; gap: 5px; padding: 0 5px 5px; background: var(--rim, #b9d6cd); border-radius: 12px; } .ds-tray-head { margin: 0; padding: 7px 8px 0; font: 400 1.25rem/1.2 \"Pond Pebbles\", system-ui, sans-serif; letter-spacing: 0.01em; color: var(--rim-text, #24312d); } .ds-compartment { margin: 0; padding: 10px 12px; font-size: 0.9375rem; color: var(--text, #2b2420); background: var(--surface, #fff); border-radius: 8px; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "The bottom tab bar as a tray: tabs as compartments, the current one jade with a plum label.",
+      "html": "<nav class=\"ds-tabbar\"><a class=\"ds-tab ds-tab-active\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z\"/></svg><span>Recipes</span></a><a class=\"ds-tab\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg><span>Plan</span></a><a class=\"ds-tab\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 4h2l2.5 11h11L21 7H6.2\"/><circle cx=\"9\" cy=\"19\" r=\"1.5\"/><circle cx=\"17\" cy=\"19\" r=\"1.5\"/></svg><span>Shopping</span></a><a class=\"ds-tab\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"6\" y=\"7\" width=\"12\" height=\"14\" rx=\"2\"/><path d=\"M8 3h8v4H8z\"/></svg><span>Pantry</span></a></nav>",
+      "css": ".ds-tabbar { display: flex; gap: 4px; height: 60px; padding: 4px; background: var(--rim, #b9d6cd); } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; font-size: 0.8rem; font-weight: 600; color: var(--muted, #5f6b67); text-decoration: none; background: var(--surface, #fff); border-radius: 8px; } .ds-tab:hover { color: var(--text, #2b2420); } .ds-tab-active, .ds-tab-active:hover { color: var(--accent, #a82d4a); background: var(--jade-soft, #e2efeb); } .ds-tab:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: -3px; }"
+    },
+    {
+      "name": "Chopstick Switch",
+      "kind": "custom",
+      "refersTo": "view-switch",
+      "description": "Two-way switch: the chosen side bold with a wooden chopstick under it, the other in quiet text.",
+      "html": "<div class=\"ds-switch\" role=\"group\" aria-label=\"View\"><button aria-pressed=\"true\">List</button><button aria-pressed=\"false\">Month</button></div>",
+      "css": ".ds-switch { display: inline-flex; padding: 2px 4px; background: var(--surface, #fff); border: 1px solid var(--border, #d8dddb); border-radius: 12px; } .ds-switch button { position: relative; min-height: 32px; padding: 2px 12px 6px; font: inherit; font-size: 0.88rem; font-weight: 500; color: var(--muted, #5f6b67); background: none; border: none; border-radius: 8px; cursor: pointer; } .ds-switch button[aria-pressed=\"true\"] { color: var(--text, #2b2420); font-weight: 700; } .ds-switch button[aria-pressed=\"true\"]::after { content: \"\"; position: absolute; left: 10px; right: 10px; bottom: 3px; height: 4px; background: #a87a43; border-radius: 3px 2px 2px 3px; clip-path: polygon(0 0, 100% 25%, 100% 75%, 0 100%); } .ds-switch button:focus-visible { outline: 3px solid var(--accent, #a82d4a); outline-offset: 1px; }"
+    },
+    {
+      "name": "Cooked Stamp",
+      "kind": "custom",
+      "description": "The round hanko beside \"Last had\": a double plum ring, a little crooked.",
+      "html": "<span class=\"ds-hanko\" aria-label=\"Cooked\">Cooked</span>",
+      "css": ".ds-hanko { display: inline-grid; place-content: center; width: 46px; height: 46px; border: 2px solid var(--accent, #a82d4a); border-radius: 50%; box-shadow: inset 0 0 0 2px var(--surface, #fff), inset 0 0 0 3.5px var(--accent, #a82d4a); color: var(--accent, #a82d4a); font: 400 0.6rem/1.05 \"Pond Pebbles\", system-ui, sans-serif; text-align: center; text-transform: uppercase; transform: rotate(-9deg); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Household Bento",
+    "overview": "Everything is packed in its compartment. Things that belong together sit in a tray: a soft jade rim with rounded compartments inside, the chosen one filled. Umeboshi plum sits on tea-rice the way the pickled plum sits on rice, and it marks what you can do. A wooden chopstick (waribashi wood) underlines the chosen thing. Nothing floats loose: loose lines between trays and page titles start where a tray's compartments start, and buttons beside them line up with the trays' edges.\n\nThe feel is compact, homely and cheeky. Compact, not airy: 15 px text, about 8 px between things, list rows 36 to 38 px tall, so the whole shopping list or eight days of the plan fit on one screen. Homely: warm, lived-in materials (a jar for the pantry level, a brush stroke for a bought item, a round \"Cooked\" stamp, a fridge door with magnets) rather than generic app chrome. Cheeky in the corners only: Ben the screaming onigiri and the jokes live in empty screens, hints and small print, never on a button or in the way of the facts.\n\nThe surface is flat. Depth comes from tonal layering (white compartments on a jade rim on a tea-rice page), not from shadows. Shadows exist only on things that genuinely float over the page. The cream-and-terracotta palette people now read as AI-made is rejected outright; that is why the page is tea-rice and the accent is umeboshi. The phone's own font carries the reading; the drawn title, Ben and Pond Pebbles carry the personality. The art and Pond Pebbles were made with AI help and are never described as hand-drawn or hand-lettered.",
+    "keyCharacteristics": [
+      "Bento trays: a jade rim (5 px) around white 8 px-rounded compartments, inside a 12 px-rounded tray.",
+      "Two accents with fixed jobs: umeboshi plum does things, jade labels things and brings good news.",
+      "Compact density with a 44 px tap area under every control.",
+      "Flat at rest; shadows only for floating layers.",
+      "Pond Pebbles for the titles and section headings the app writes; the phone's font for everything else.",
+      "Light \"tea-rice\" and dark \"pond at night\", with every contrast ratio kept the same."
+    ],
+    "rules": [
+      {
+        "name": "The Plum Does, Jade Tells Rule",
+        "body": "Umeboshi is for doing: buttons, links, the selected thing, focus. Jade is for labels and good news: tags, success, \"have\", switches that are on. Jade never fills a button.",
+        "section": "colors"
+      },
+      {
+        "name": "The Leaf Is Not Text Rule",
+        "body": "The plain jade leaf (#5a9a8a) is 3:1 on the background, so it draws shapes only. Jade words use Jade Strong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Traffic Light Rule",
+        "body": "Have, Low and Out stay green, amber and red in both themes, whatever the palette around them does. They mean something at a glance.",
+        "section": "colors"
+      },
+      {
+        "name": "The Person Mix Rule",
+        "body": "A person's colour is never used raw. As text it is 65% the colour and 35% soy ink (`color-mix(in srgb, var(--person) 65%, var(--text))`), as a fill under white text 70% the colour and 30% black. Every person-coloured text or fill uses one of these two mixes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Muted, Not Faded Rule",
+        "body": "Something quiet takes Quiet Grey, never opacity, so its words still read at 4.5:1. Opacity is for disabled controls, a thing being dragged, and soft decoration that carries no words.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pebbles For What We Write Rule",
+        "body": "Pond Pebbles sets page titles and the section headings the app writes, nothing else: never buttons, body text, dialog titles, counts or badges beside a heading, or anything people type (a recipe's name stays in the phone's font).",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "No uppercase, letter-spaced labels or kickers above headings, and no dotted word lists. Taglines and labels are real sentences in sentence case. The only uppercase in the system is the lettering pressed into the round \"Cooked\" stamp.",
+        "section": "typography"
+      },
+      {
+        "name": "The Compact, Not Airy Rule",
+        "body": "New screens use the same 15 px text, 8 px rhythm and 36 to 38 px rows, not roomier defaults. More of the list on one screen is the point.",
+        "section": "layout"
+      },
+      {
+        "name": "The 44 To Tap Rule",
+        "body": "Every control is at least 44 by 44 px to tap, even when it is drawn smaller: an invisible `::before` reaches `--tap-x` / `--tap-y` past it, each reach at most half the gap to the next control. The look stays compact; the target never shrinks with it.",
+        "section": "layout"
+      },
+      {
+        "name": "The Text-Zoom Rule",
+        "body": "Android's web view enlarges font sizes but not rem or em in other lengths, so any size that holds text is written `max(<px>, calc(<rem or em> * var(--text-zoom, 1)))`. It looks the same in a browser and grows with the phone's biggest text.",
+        "section": "layout"
+      },
+      {
+        "name": "The Tray, Not Shadow Rule",
+        "body": "Grouping and hierarchy come from rims, compartments and tone. A card or tray never gets a shadow to stand out.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Floating Only Rule",
+        "body": "A drop shadow means the thing is above the page (a dialog, sheet, menu, bubble, toast, timer tray, or something being dragged) or a small object sitting on another. If it scrolls with the page and holds content, it is flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** group related things in a bento tray: Rim (#b9d6cd / #2c4a44) with 8 px-rounded Surface White compartments, heading on the rim, the chosen compartment filled.",
+      "**Do** use Umeboshi for anything you tap to act (buttons, links, the selected thing, the 3 px focus ring) and jade for labels, tags, \"have\" and good news.",
+      "**Do** keep 15 px body text, an 8 px rhythm and 36 to 38 px rows, with every control reaching 44 by 44 px to tap.",
+      "**Do** write sizes that hold text as `max(<px>, calc(<rem> * var(--text-zoom, 1)))`.",
+      "**Do** make quiet things Quiet Grey (#5f6b67 / #a9b3ae), never faded.",
+      "**Do** mix person colours toward Soy Ink for text (65%) and toward black for fills under white text (70%).",
+      "**Do** mark the chosen side of a two-way switch bold with the wooden chopstick underline.",
+      "**Do** put every dark-mode rule in a `@media (prefers-color-scheme: dark)` block, so the app's own Light / Dark choice (`web/src/theme.ts`) can switch it.",
+      "**Do** keep text contrast at least 4.5:1 (3:1 for large text) in both themes."
+    ],
+    "donts": [
+      "**Don't** fill a button with jade, or set words in the plain jade leaf (#5a9a8a).",
+      "**Don't** give cards or trays a shadow; shadows are for dialogs, sheets, menus, bubbles, toasts, the timer tray and dragged things.",
+      "**Don't** put a tray inside a tray; buttons, text boxes, tips, pop-ups and the chopstick switches stay plain.",
+      "**Don't** use uppercase, letter-spaced eyebrow labels or dotted word lists.",
+      "**Don't** set buttons, body text, dialog titles or anything people type in Pond Pebbles.",
+      "**Don't** recolour Have / Low / Out away from green, amber and red.",
+      "**Don't** use opacity to make text quiet.",
+      "**Don't** drift back toward cream backgrounds with a terracotta accent.",
+      "**Don't** let a joke replace what a button or warning does.",
+      "**Don't** describe the title, Ben or Pond Pebbles as hand-drawn or hand-lettered."
+    ]
+  }
+}
