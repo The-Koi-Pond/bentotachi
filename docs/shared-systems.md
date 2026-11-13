@@ -226,7 +226,9 @@ they say otherwise.
   sheets shut as they opened in `npm run dev`).
 - `?` tips: `useHelp` / `HelpButton` / `HelpBox` (`Help.tsx`; `HelpButton`
   takes `children` and `className` for a bubble opened by something other
-  than a "?", like the connection indicator). Icons:
+  than a "?", like the connection indicator). A page title's "?", beside
+  the h1 but outside it: `<TitleWithHelp help={…}>` (`Help.tsx`). The
+  phone's "reduce motion": `lessMotion()` (`motion.ts`). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
   `PhotoViewer.tsx`. Screen stays on: `useKeepAwake(active)` while
   something runs (the timers), `useWakeLock` for the menu's switch
@@ -260,7 +262,9 @@ they say otherwise.
   who can't drag): `<GripMenu>` (`GripMenu.tsx`), whose `DndContext` takes
   `gripKeys` and `gripInstructions` (`dragWords.ts`); a small menu placed from its button
   and closed on a tap outside (the recipe's ⋯ too): `usePopMenu`
-  (`usePopMenu.ts`, panel `menu-panel pop-menu`); what a screen reader hears while dragging, in names
+  (`usePopMenu.ts`, panel `menu-panel pop-menu`); a `role="menu"` panel's
+  keys (first item on open, arrows, Escape back to its button):
+  `useMenuKeys` (`menuKeys.ts`, which usePopMenu and the ⋮ menu use); what a screen reader hears while dragging, in names
   rather than ids: every `DndContext` passes `accessibility={{
   announcements: dragAnnouncements(...) }}` (`dragWords.ts`). A message
   with a second button: `showToast(text, { action, extra })`. A passing

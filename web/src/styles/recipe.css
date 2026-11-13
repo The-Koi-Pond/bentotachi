@@ -87,6 +87,12 @@
   background: var(--bg);
 }
 
+/* Tabbing down the recipe scrolls what's focused clear of the bar, not
+   under it (the bar is about 52 px, more with the phone's bigger text). */
+.page-scroll:has(.recipe-jump) {
+  scroll-padding-top: calc(60px * var(--text-zoom, 1));
+}
+
 .recipe-jump .view-switch button {
   padding: 2px 16px;
 }

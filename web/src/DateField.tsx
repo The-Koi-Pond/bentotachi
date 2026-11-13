@@ -170,12 +170,13 @@ export function DateDialog({
     <dialog
       ref={dialog}
       className="date-pop date-dialog"
+      aria-label={label}
       onCancel={(event) => {
         event.preventDefault();
         onDone(null);
       }}
     >
-      <Calendar start={start} empty="No date" label={label} required={required} onResize={() => {}} onDone={onDone} />
+      <Calendar start={start} empty="No date" label={label} required={required} inDialog onResize={() => {}} onDone={onDone} />
     </dialog>
   );
 }
@@ -187,6 +188,7 @@ function Calendar({
   empty,
   label,
   required,
+  inDialog = false,
   onResize,
   onDone,
 }: {
@@ -194,6 +196,9 @@ function Calendar({
   empty: string;
   label: string;
   required: boolean;
+  // Inside DateDialog's <dialog>, which is the dialog (and carries the
+  // name), so a screen reader doesn't hear two.
+  inDialog?: boolean;
   onResize: () => void;
   onDone: (date: string | null) => void;
 }) {
@@ -233,7 +238,7 @@ function Calendar({
   };
 
   return (
-    <div className="calendar" role="dialog" aria-label={label}>
+    <div className="calendar" role={inDialog ? undefined : "dialog"} aria-label={inDialog ? undefined : label}>
       <p className="calendar-label">{label}</p>
       <div className="calendar-head">
         {view === "typing" ? (

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useMenuKeys } from "./menuKeys";
 import { Link } from "react-router";
 import { displayName, personStyle, useCurrentUser } from "./pb";
 import { useWakeLock } from "./useWakeLock";
@@ -21,28 +22,26 @@ export default function SettingsMenu() {
   const phone = isPhoneMode();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const updateWaiting = update.status === "available" || update.status === "downloaded" || update.status === "installing";
 
-  // Close when tapping anywhere else or pressing Escape.
+  // Close when tapping anywhere else; Escape and the arrow keys are
+  // menuKeys.ts's.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
     document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useMenuKeys(open, menuRef, buttonRef, close);
 
   return (
     <div className="menu" ref={menuRef}>
       <button
+        ref={buttonRef}
         className="icon-button"
         aria-label="Settings"
         aria-haspopup="menu"

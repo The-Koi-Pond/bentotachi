@@ -120,6 +120,8 @@ export default function Pantry() {
   // Something put on the list goes on the one last open (useShoppingLists);
   // "on the list" means any of them.
   const shop = useShoppingLists();
+  // The run-out bar's question, shown and read out (announce) alike.
+  const putItOn = ` Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?`;
   const help = useHelp();
   // Not waited for: the pantry works without them while they load or if
   // they can't (packets.items stays null, and nothing offers to add one).
@@ -299,7 +301,7 @@ export default function Pantry() {
         : undefined;
     if (ask || restore) {
       setRunOut({ item, ask, restore, message: outWords });
-      announce(ask ? `${outWords} Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?` : outWords);
+      announce(ask ? outWords + putItOn : outWords);
     }
     // The server clears them; off the screen straight away.
     for (const packet of cleared) packets.removeLocally(packet.id);
@@ -890,7 +892,7 @@ export default function Pantry() {
         <p className="toast undo-toast" {...runOutTouch}>
           <span>
             {runOut.message}
-            {asking && ` Put it on ${shop.several ? shop.nameOf(shop.open) : "the shopping list"}?`}
+            {asking && putItOn}
           </span>
           <span className="toast-actions">
             {asking && (

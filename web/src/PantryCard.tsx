@@ -14,6 +14,7 @@ import StockLabels from "./StockLabels";
 import { PencilIcon } from "./icons";
 import type { PantryLayout } from "./PantryRow";
 import { useSpell } from "./household";
+import { lessMotion } from "./motion";
 
 export default function PantryCard({
   item,
@@ -39,7 +40,7 @@ export default function PantryCard({
   // (Braces on purpose: newer browsers return a promise from scrollIntoView,
   // which React would take for a clean-up function and crash on.)
   useEffect(() => {
-    ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    ref.current?.scrollIntoView({ block: "nearest", behavior: lessMotion() ? "auto" : "smooth" });
   }, []);
   const spell = useSpell();
   const [adding, setAdding] = useState(false);

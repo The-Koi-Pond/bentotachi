@@ -539,6 +539,13 @@ main h1:not(.card h1) {
   padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
 }
 
+/* A button straight in a sheet ("Not a pantry item (like water)") keeps
+   its height when the sheet is full: its min-height would otherwise let
+   it shrink, and with big text its words spill over what's below. */
+.sheet-panel > .button {
+  flex-shrink: 0;
+}
+
 .sheet-head {
   display: flex;
   align-items: center;
@@ -777,6 +784,17 @@ main h1:not(.card h1) {
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 400;
+}
+
+/* A page title and its "?" on one line (TitleWithHelp, Help.tsx). */
+.title-with-help {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.title-with-help > h1 {
+  min-width: 0;
 }
 
 /* The "?" beside a heading or box (Help.tsx), and the tip it opens right

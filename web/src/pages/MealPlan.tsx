@@ -40,7 +40,7 @@ import { CartIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from "../icons";
 import { useLiveRecords } from "../useLiveRecords";
 import { cookedCopy, planCopy } from "../offline";
 import OfflineNote from "../OfflineNote";
-import { HelpBox, HelpButton, useHelp } from "../Help";
+import { HelpBox, HelpButton, TitleWithHelp, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
@@ -311,11 +311,14 @@ export default function MealPlan() {
 
   const isList = view === "list";
   // What a screen reader hears while a dish is dragged: its name, and the
-  // day (and meal) or the bin it's over.
+  // day (and meal) or the bin it's over. In the month view a picture moves
+  // its whole meal: "Beef stew and 1 more".
   const announcements = dragAnnouncements(
     (id) => {
       const entry = shown.find((e) => e.id === id);
-      return entry ? entryLabel(entry) : "the dish";
+      if (!entry) return "the dish";
+      const others = isList ? 0 : (bySlot.get(slotKey(datePart(entry.date), mealOf(entry)))?.length ?? 1) - 1;
+      return others > 0 ? `${entryLabel(entry)} and ${others} more` : entryLabel(entry);
     },
     (id) => {
       if (id === BIN) return "the bin, to take it off the plan";
@@ -373,10 +376,9 @@ export default function MealPlan() {
   return (
     <div className="stack narrow">
       <div className="section-head">
-        <h1>
-          {planTitle(meals)}
-          <HelpButton help={help} label="How the plan works" />
-        </h1>
+        <TitleWithHelp help={<HelpButton help={help} label="How the plan works" />}>
+          <h1>{planTitle(meals)}</h1>
+        </TitleWithHelp>
         <div className="view-switch" role="group" aria-label="View">
           <button aria-pressed={isList} onClick={() => changeView("list")}>
             List

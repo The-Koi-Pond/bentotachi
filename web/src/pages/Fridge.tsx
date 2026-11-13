@@ -36,6 +36,7 @@ import {
 } from "../fridgeDoor";
 import { markFridgeSeen } from "../fridgeSeen";
 import { CheckIcon } from "../icons";
+import { lessMotion } from "../motion";
 import { BenMood } from "../Brand";
 import { useUnsavedChanges } from "../unsavedChanges";
 
@@ -63,7 +64,7 @@ export default function Fridge() {
   // Done: the note peels off, then is taken down (with Undo). Straight away
   // for anyone who has the phone set to reduce motion.
   function peel(note: Note) {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return takeDown(note);
+    if (lessMotion()) return takeDown(note);
     setPeeling(note.id);
     window.setTimeout(() => {
       setPeeling(null);

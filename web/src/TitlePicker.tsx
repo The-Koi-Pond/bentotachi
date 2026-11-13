@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type R
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { dragAnnouncements, gripInstructions, gripKeys } from "./dragWords";
 import { popoverSpot } from "./popoverSpot";
+import { TitleWithHelp } from "./Help";
 import { ChevronIcon, TrashIcon } from "./icons";
 import GripMenu from "./GripMenu";
 import { upDownMoves, type GripMove } from "./listOrder";
@@ -203,23 +204,24 @@ export default function TitlePicker({
   const title = picked ? picked.label : words.title;
   return (
     <>
-      <h1 className="place-title">
-        <button
-          ref={anchor}
-          type="button"
-          aria-expanded={open}
-          aria-controls={id}
-          aria-label={`${title}: ${words.choose}`}
-          popoverTarget={canPop ? id : undefined}
-          onClick={canPop ? undefined : () => setOpen(!open)}
-        >
-          {title}
-          <span className="place-title-caret" aria-hidden="true">
-            <ChevronIcon />
-          </span>
-        </button>
-        {help}
-      </h1>
+      <TitleWithHelp help={help}>
+        <h1 className="place-title">
+          <button
+            ref={anchor}
+            type="button"
+            aria-expanded={open}
+            aria-controls={id}
+            aria-label={`${title}: ${words.choose}`}
+            popoverTarget={canPop ? id : undefined}
+            onClick={canPop ? undefined : () => setOpen(!open)}
+          >
+            {title}
+            <span className="place-title-caret" aria-hidden="true">
+              <ChevronIcon />
+            </span>
+          </button>
+        </h1>
+      </TitleWithHelp>
       {canPop ? (
         <div
           ref={menu}

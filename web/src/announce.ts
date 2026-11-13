@@ -26,12 +26,14 @@ export function announce(text: string, { urgent = false }: { urgent?: boolean } 
   setTimeout(() => set({ text, urgent }), 50);
 }
 
+// Module-level, so React doesn't resubscribe on every render.
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export function useAnnouncement(): Announcement {
-  return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    () => current
-  );
+  return useSyncExternalStore(subscribe, () => current);
 }

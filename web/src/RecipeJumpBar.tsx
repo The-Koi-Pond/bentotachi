@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { currentSection, jumpTarget, stillTapped, type JumpSection } from "./recipeJump";
 import { pageScrollStart, pageScroller, pageScrollTarget } from "./pageScroll";
+import { lessMotion } from "./motion";
 
 // The recipe page's Ingredients · Method · Notes switch: it sits above the
 // ingredients and sticks at the top while you scroll through them,
@@ -58,8 +59,7 @@ export default function RecipeJumpBar({ sections }: { sections: { id: string; la
     // A smooth jump takes well under a second and a half.
     tapped.current = { key: id, from: scrolled, to, arrived: Math.abs(scrolled - to) <= 2, until: Date.now() + 1500 };
     setCurrent(id);
-    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    page.scrollTo({ top: next.scrollTo, behavior: smooth ? "smooth" : "auto" });
+    page.scrollTo({ top: next.scrollTo, behavior: lessMotion() ? "auto" : "smooth" });
   }
 
   if (sections.length < 2) return null;

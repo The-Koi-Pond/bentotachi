@@ -214,7 +214,25 @@ Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes). When a release goes
 out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
-Not released yet: nothing (1.29.0 went out on 2026-11-13).
+Not released yet:
+
+- Ticks while cooking last 12 hours after the last tick, instead of until
+  midnight: cooking past midnight keeps them, and a recipe left open
+  overnight lets go of them when the app comes back to the front.
+- "Cooked it" pressed while the recipe's details are being edited stops
+  "Time it" too (it carried on, keeping the screen on).
+- For keyboards and screen readers: the ⋮, ⋯ and ⠿ menus go to their first
+  item when opened, the arrow keys (and Home / End) move through them, and
+  Escape goes back to the button; the plan's, pantry's and shopping list's
+  "?" sit beside the title instead of inside it (the heading list read
+  "Pantry How the pantry works"); the "Move to" calendar is one dialog,
+  with a name; the month view's drag read-out says "Beef stew and 1 more"
+  when a picture moves a whole meal; tabbing down a recipe keeps what's
+  focused clear of the Ingredients · Method · Notes bar. The pantry card's
+  scroll into view jumps for anyone set to reduce motion.
+- "Not a pantry item (like water)" in the pantry link sheet keeps its
+  height with the phone's biggest text, rather than spilling its words
+  over the name box.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

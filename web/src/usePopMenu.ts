@@ -2,8 +2,9 @@
 // placed on the screen from the button, below it or, without room there,
 // above it, kept clear of the top bar, the tab bar and the timers' tray, and
 // no taller than the space between them. Closes on a tap outside, Escape, or
-// the page moving. Its panel carries `menu-panel pop-menu` (shell.css).
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+// the page moving; its keys are menuKeys.ts's. Its panel carries `menu-panel pop-menu` (shell.css).
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useMenuKeys } from "./menuKeys";
 import { pageScrollTarget } from "./pageScroll";
 
 // `align`: which of the button's edges the panel lines up with. `T`: the
@@ -41,13 +42,6 @@ export function usePopMenu<T extends HTMLElement = HTMLDivElement>({ align = "ri
     const onPointerDown = (event: PointerEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      // Only this menu: a cancelled Escape doesn't also close a popover
-      // it sits in ("Edit places…").
-      event.preventDefault();
-      setOpen(false);
-    };
     // It's placed on the screen, not the page, so moving the page closes it.
     const onMove = () => setOpen(false);
     // So does turning the phone, but not the keyboard going away (only the
@@ -56,23 +50,23 @@ export function usePopMenu<T extends HTMLElement = HTMLDivElement>({ align = "ri
     const onResize = () => window.innerWidth !== width && setOpen(false);
     const page = pageScrollTarget();
     document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
     page.addEventListener("scroll", onMove, { passive: true });
     window.addEventListener("resize", onResize);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
       page.removeEventListener("scroll", onMove);
       window.removeEventListener("resize", onResize);
     };
   }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useMenuKeys(open, menuRef, buttonRef, close);
 
   return {
     open,
     place,
     menuRef,
     buttonRef,
-    close: () => setOpen(false),
+    close,
     toggle: () => (open ? setOpen(false) : openMenu()),
   };
 }

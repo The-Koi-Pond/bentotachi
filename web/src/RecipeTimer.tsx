@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { errorMessage, type Recipe } from "./pb";
 import { formatMinutes, totalMinutes } from "./format";
 import { PauseIcon, PlayIcon, StopIcon } from "./icons";
@@ -34,6 +34,14 @@ function store(recipeId: string, state: TimerState | null) {
   remember(key(recipeId), state && JSON.stringify(state));
 }
 
+// The recipe's other "Cooked it": the timing is over too, rather than
+// running on (and keeping the screen on). Done on the stored timing, so it
+// works while the timer is hidden (the details being edited) as well.
+export function finishTiming(recipeId: string, at: number) {
+  const current = load(recipeId);
+  if (current && current.stage !== "done") store(recipeId, finished(current, at));
+}
+
 export default function RecipeTimer({
   recipe,
   onSave,
@@ -44,8 +52,8 @@ export default function RecipeTimer({
   onSave: (changes: Partial<Recipe>) => Promise<void>;
   // Finishing means it was cooked: the recipe page marks it cooked today.
   onFinished: () => void;
-  // When the page's other "Cooked it" was pressed (0: not yet): the timing
-  // is over too, rather than running on (and keeping the screen on).
+  // When the page's other "Cooked it" was pressed (0: not yet), after
+  // finishTiming: shows the finished timing.
   cookedAt: number;
 }) {
   const [state, setStateRaw] = useState<TimerState | null>(() => load(recipe.id));
@@ -64,19 +72,10 @@ export default function RecipeTimer({
   // The screen stays on while it runs, like a step timer.
   useKeepAwake(running);
 
-  // Only a press while it's on screen: it's hidden while the details are
-  // edited, and coming back must not end a stopwatch started after an
-  // earlier press.
-  const seenCookedAt = useRef(cookedAt);
   useEffect(() => {
-    if (cookedAt === seenCookedAt.current) return;
-    seenCookedAt.current = cookedAt;
-    const current = load(recipe.id);
-    if (!current || current.stage === "done") return;
-    const next = finished(current, cookedAt);
-    store(recipe.id, next);
-    setStateRaw(next);
-    setNow(cookedAt);
+    if (!cookedAt) return;
+    setStateRaw(load(recipe.id));
+    setNow(Date.now());
   }, [cookedAt, recipe.id]);
   useEffect(() => {
     if (!running) return;

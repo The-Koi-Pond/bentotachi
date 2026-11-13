@@ -51,6 +51,18 @@ export function HelpButton({
   );
 }
 
+// A page title with its "?" beside it, outside the heading, so a screen
+// reader's list of headings says "Pantry", not "Pantry How the pantry works".
+export function TitleWithHelp({ help, children }: { help?: ReactNode; children: ReactNode }) {
+  if (!help) return children;
+  return (
+    <div className="title-with-help">
+      {children}
+      {help}
+    </div>
+  );
+}
+
 export function HelpBox({ help, children }: { help: HelpState; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null);
   const { open, setOpen, anchor } = help;

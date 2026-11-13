@@ -83,7 +83,7 @@ import {
   stepPhotos,
   uploadName,
 } from "../recipePhotos";
-import RecipeTimer from "../RecipeTimer";
+import RecipeTimer, { finishTiming } from "../RecipeTimer";
 import UsedUpSheet from "../UsedUpSheet";
 import ScaleControl, { scaledServings } from "../ScaleControl";
 import RecipeMenu from "../RecipeMenu";
@@ -145,7 +145,7 @@ export default function RecipeView() {
   const hints = useHints(recipe?.source_url ?? "");
   const [stepAmountsOn] = useStepAmounts();
   // Ticked-off ingredients and steps, kept on this device until it's marked
-  // cooked or the day is over (recipeTicks.ts).
+  // cooked or 12 hours after the last tick (recipeTicks.ts).
   const [done, setDone] = useState<Set<string>>(new Set());
   // The ticks "Cooked it" cleared, until it's undone or the recipe
   // changes.
@@ -156,8 +156,8 @@ export default function RecipeView() {
   // "Used anything up?" open after cooking (UsedUpSheet).
   // `again`: it was already marked cooked today when this opened.
   const [usedUp, setUsedUp] = useState<{ again: boolean } | null>(null);
-  // When "Cooked it" was last pressed here, so a running "Time it" stops
-  // too (RecipeTimer).
+  // When "Cooked it" was last pressed here, so "Time it" shows its timing
+  // finished (finishTiming in RecipeTimer.tsx).
   const [cookedAt, setCookedAt] = useState(0);
   const closeUsedUp = useCallback(() => setUsedUp(null), []);
   const quickMinutes = useQuickMinutes();
@@ -216,19 +216,30 @@ export default function RecipeView() {
     return () => window.removeEventListener(RETRY_EVENT, load);
   }, [id]);
 
-  // The ticks this recipe had, and again whenever its lines change.
+  // The ticks this recipe had, and again whenever its lines change. Read
+  // again when the app comes back to the front, so a recipe left open
+  // overnight lets go of last night's ticks.
   const lines = recipe ? linesOf(recipe.ingredients, recipe.steps) : "";
   useEffect(() => {
     ticksBeforeCooked.current = null;
-    if (lines) setDone(savedTicks(id, localToday(), lines));
+    if (!lines) return;
+    setDone(savedTicks(id, lines));
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setDone(savedTicks(id, lines));
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [id, lines]);
 
   function toggle(key: string) {
-    const next = new Set(done);
+    // Nothing saved any more (12 hours on, with the page never hidden, like
+    // a kitchen screen kept on): this tick starts a fresh set.
+    const stale = done.size > 0 && savedTicks(id, lines).size === 0;
+    const next = new Set(stale ? [] : done);
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setDone(next);
-    saveTicks(id, localToday(), lines, next);
+    saveTicks(id, lines, next);
   }
 
   if (error) return <p className="error">{error}</p>;
@@ -461,8 +472,10 @@ export default function RecipeView() {
     if (!(await markCooked())) return;
     if (done.size) ticksBeforeCooked.current = done;
     setDone(new Set());
-    saveTicks(id, localToday(), lines, new Set());
-    setCookedAt(Date.now());
+    saveTicks(id, lines, new Set());
+    const at = Date.now();
+    finishTiming(id, at);
+    setCookedAt(at);
     setUsedUp({ again });
   }
   async function undoCooked(entries: CookedEntry[]) {
@@ -481,7 +494,7 @@ export default function RecipeView() {
     if (before) {
       const ticks = new Set([...before, ...done]);
       setDone(ticks);
-      saveTicks(id, localToday(), lines, ticks);
+      saveTicks(id, lines, ticks);
     }
   }
 
