@@ -1,5 +1,5 @@
-// "Nice. Used anything up?": after a recipe is marked cooked (Finished at
-// the end of the method, "We cooked this", or its timer), what it worked out
+// "Nice. Used anything up?": after a recipe is marked cooked ("Cooked it"
+// at the top, at the end of the method, or on its timer), what it worked out
 // the meal used from the pantry, already ticked (cookedUses.ts). Ticked ones
 // come off the pantry; Skip leaves it. Only opens when there's something to
 // offer.

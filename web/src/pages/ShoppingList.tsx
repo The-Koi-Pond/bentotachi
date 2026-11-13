@@ -23,6 +23,7 @@ import { askFirst } from "../askFirst";
 import TitlePicker, { type TitleWords } from "../TitlePicker";
 import { useShoppingLists } from "../useShoppingLists";
 import { rowsOn, storedList, toBuyOn, waitingElsewhere } from "../shoppingLists";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 
 // The title's menu of lists (TitlePicker; docs/PLAN.md, "several shopping
 // lists").
@@ -48,6 +49,7 @@ export default function ShoppingList() {
   const pantryById = new Map((pantry.items ?? []).map((p) => [p.id, p]));
   // The household's lists, and the one shown (the one last open here).
   const shop = useShoppingLists();
+  const help = useHelp();
   const [order, setOrder] = useState<Order>(savedOrder);
   const [text, setText] = useState("");
   const [fromRecipe, setFromRecipe] = useState(false);
@@ -276,6 +278,7 @@ export default function ShoppingList() {
             onAdd={(name) => void addList(name)}
             onRename={renameList}
             onDelete={deleteList}
+            help={<HelpButton help={help} label="How the lists work" />}
           />
         ) : (
           // A server from before lists, or none loaded yet offline.
@@ -290,6 +293,10 @@ export default function ShoppingList() {
           </button>
         </div>
       </div>
+      <HelpBox help={help}>
+        <p>Tap the list's name to switch lists, or to make one for the party, the hardware store or the next big shop.</p>
+        <p>Adding from a recipe, the plan or the pantry goes to the list you last had open.</p>
+      </HelpBox>
       {offline && (
         <OfflineNote onRetry={reload} heading="Can't reach the server. Your shopping list didn't get the memo.">
           The copy on your phone still works. Keep shopping, and we'll sync your changes when we reconnect.

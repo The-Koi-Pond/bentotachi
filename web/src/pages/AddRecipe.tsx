@@ -208,6 +208,7 @@ export default function AddRecipe() {
 
   return (
     <div className="stack narrow">
+      <h1>Add a recipe</h1>
       <form className="card stack" onSubmit={submit} noValidate>
         <h2>
           Import from a link

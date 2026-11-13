@@ -3,10 +3,12 @@ import { Link } from "react-router";
 import { CloseIcon } from "./icons";
 import { alertShown, dropAlert, holdAlert } from "./timerAlerts";
 import { remember, rememberedJson } from "./phoneStorage";
+import { useKeepAwake } from "./useWakeLock";
 import {
   JUST_ENDED_MS,
   beepsInApp,
   countdown,
+  keepsScreenOn,
   pausedTimer,
   remaining,
   resumedTimer,
@@ -22,7 +24,7 @@ import {
 // Bentotachi on screen, it beeps and buzzes here. In the background or with
 // the phone locked, the Android app's notification rings it
 // (timerAlerts.ts); without one (a browser, or notifications not allowed)
-// it beeps when Bentotachi is opened again, and ⋮ → Keep screen on helps.
+// it beeps when Bentotachi is opened again. The screen stays on meanwhile.
 
 const KEY = "bento.stepTimers";
 
@@ -137,13 +139,16 @@ export default function StepTimerTray() {
   const [now, setNow] = useState(() => Date.now());
   const tray = useRef<HTMLDivElement>(null);
 
-  // Ticks once a second while any timer is running.
-  const running = list.some((timer) => timer.endsAt !== null && remaining(timer, now) > 0);
+  // The screen stays on while one counts down and just after (stepTimers.ts,
+  // keepsScreenOn), so it can be seen across the kitchen without a tap.
+  // Ticks once a second meanwhile, which is also what lets it go.
+  const awake = keepsScreenOn(list, now);
+  useKeepAwake(awake);
   useEffect(() => {
-    if (!running) return;
+    if (!awake) return;
     const tick = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(tick);
-  }, [running]);
+  }, [awake]);
   // A timer just started or resumed counts from now, not from the last tick
   // (which stopped while nothing ran): a new 30 minutes would show "30:09".
   // Before paint, so the wrong time never shows.

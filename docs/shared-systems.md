@@ -217,7 +217,9 @@ they say otherwise.
   takes `children` and `className` for a bubble opened by something other
   than a "?", like the connection indicator). Icons:
   `icons.tsx`. Open/closed sections: `DrawerToggle.tsx`. Photos full screen:
-  `PhotoViewer.tsx`. Screen stays on: `useWakeLock`. A pantry level (Have /
+  `PhotoViewer.tsx`. Screen stays on: `useKeepAwake(active)` while
+  something runs (the timers), `useWakeLock` for the menu's switch
+  (`useWakeLock.ts`). A pantry level (Have /
   Low / Out) as a picture: `LevelJar` (`icons.tsx`). A recipe without a
   photo: `<RecipeStandIn>` (`RecipeStandIn.tsx`), never an emoji. A bento
   tray (things that belong together): the `--rim` / `--rim-text` colours,

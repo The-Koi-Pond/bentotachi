@@ -113,7 +113,7 @@
 }
 
 /* A place: a drawer (see .shelf, .pantry-place), its front opening and
-   closing it (with "3 to check"), its items inside, with the subcategories
+   closing it (with "3 low or due"), its items inside, with the subcategories
    as small headings. */
 .pantry-place h2 {
   margin: 0;
@@ -1099,7 +1099,7 @@
   margin: 0;
 }
 
-.place-title > button {
+.place-title > button:not(.help-button) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1113,7 +1113,7 @@
   cursor: pointer;
 }
 
-.place-title > button:focus-visible {
+.place-title > button:not(.help-button):focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
@@ -1126,7 +1126,7 @@
   transition: transform 0.15s;
 }
 
-.place-title > button[aria-expanded="true"] .place-title-caret {
+.place-title > button:not(.help-button)[aria-expanded="true"] .place-title-caret {
   transform: rotate(-90deg);
 }
 

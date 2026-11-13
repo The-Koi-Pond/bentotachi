@@ -1,5 +1,5 @@
 // When recipes were last had, from two places: past nights on the dinner
-// plan, and "We cooked this" (the button on a recipe, or finishing its
+// plan, and "Cooked it" (the buttons on a recipe, or finishing its
 // timer), which also covers meals that were never planned. A day counts
 // once, however it was recorded. Dates are plain "2026-11-02" (dates.ts).
 

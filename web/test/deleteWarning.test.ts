@@ -23,9 +23,13 @@ test("asks about one recipe by name, and several by count and name", () => {
 test("says what else a recipe delete removes", () => {
   assert.equal(alsoDeleted({ planned: 0, cooked: 0, ratings: 0 }), "");
   assert.equal(alsoDeleted({ planned: 1, cooked: 0, ratings: 0 }), "Its 1 night on the dinner plan will be deleted too.");
-  assert.equal(alsoDeleted({ planned: 0, cooked: 2, ratings: 3 }), "Its 2 “We cooked this” days and 3 ratings will be deleted too.");
+  assert.equal(alsoDeleted({ planned: 0, cooked: 2, ratings: 3 }), "Its 2 days it was cooked and 3 ratings will be deleted too.");
   assert.equal(
     alsoDeleted({ planned: 2, cooked: 1, ratings: 1 }),
-    "Its 2 nights on the dinner plan, 1 “We cooked this” day and 1 rating will be deleted too.",
+    "Its 2 nights on the dinner plan, 1 day it was cooked and 1 rating will be deleted too.",
+  );
+  assert.equal(
+    alsoDeleted({ planned: 2, cooked: 5, ratings: 1 }, true),
+    "Their 2 nights on the dinner plan, 5 days they were cooked and 1 rating will be deleted too.",
   );
 });

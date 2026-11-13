@@ -247,7 +247,16 @@ export default function RecipeEdit() {
 
       <label>
         Name
-        <input {...field("title")} required />
+        <input
+          {...field("title")}
+          required
+          // Spaces alone aren't a name (the server would refuse it in its
+          // own words); the app's words in the browser's "fill this in"
+          // bubble.
+          pattern=".*\S.*"
+          onInvalid={(event) => event.currentTarget.setCustomValidity("A recipe needs a name.")}
+          onInput={(event) => event.currentTarget.setCustomValidity("")}
+        />
       </label>
       <label>
         <span className="label-text">

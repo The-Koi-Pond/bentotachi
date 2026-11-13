@@ -238,8 +238,14 @@ Not released yet:
   44 px area to tap without looking any different, ingredient lines are
   36 px, a pantry row's whole height opens it; with the phone's biggest
   text, recipe names fit (fewer cards a row), the pantry's switch and
-  Have / Low / Out stay on screen, and "We cooked this" moves under its
+  Have / Low / Out stay on screen, and "Cooked it" moves under its
   words instead of squeezing them.
+- Clearer words (the same check-up): marking a recipe cooked is "✓ Cooked
+  it" on all three of its buttons (it was "We cooked this", "Finished"
+  and the timer's "Finished"); the screen stays on by itself while a step
+  timer or "Time it" runs; Shopping and Pantry have a "?" saying their
+  title is a menu; a place's "2 to check" is now "2 low or due"; Add
+  recipe has a title; an empty recipe name says "A recipe needs a name."
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -772,7 +778,9 @@ less managing by hand. Xel, later the same day: rather a **Finished**
 button at the end of the method, which marks it cooked and then asks
 (the moment you know what you used). Open: what the top "We cooked this"
 does then (keep it with the same sheet, keep it as a plain record, or
-remove it); the cooking timer's finish already counts as cooked too. Open, for the mock-up: packets count as full and
+remove it); the cooking timer's finish already counts as cooked too.
+(Settled since: all three open the same sheet, and since 2026-11-13 all
+three say "Cooked it".) Open, for the mock-up: packets count as full and
 don't record what's left (decided earlier, as tracking it by hand was
 too much work), so a recipe using 400 g of a 500 g bag either finishes
 the bag (wrong: 100 g is left) or leaves it (wrong next time: counted as
@@ -1158,10 +1166,9 @@ unlinked ones to the pantry. Not decided; not a bug.
 Twice a tester expected ticking a recipe's ingredients to take them off
 the pantry, and once added packets after marking a recipe cooked, then
 found no way back to "Used anything up?". Today the sheet comes only once,
-when "We cooked this" / "Finished" is pressed (cookedUses.ts,
-UsedUpSheet.tsx); the ingredient ticks are only a checklist. Since
-2026-11-12 they're kept on the phone per recipe until "We cooked this" /
-"Finished", or the next day (Xel, after the design critique;
+when "Cooked it" is pressed (cookedUses.ts, UsedUpSheet.tsx); the
+ingredient ticks are only a checklist. Since 2026-11-12 they're kept on
+the phone per recipe until "Cooked it", or the next day (Xel, after the design critique;
 recipeTicks.ts). Xel wants it to be intuitive; how the pantry fits in is
 open.
 Some shapes to weigh (mock-up first):

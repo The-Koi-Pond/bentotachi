@@ -541,6 +541,9 @@ export default function RecipeList() {
 
   return (
     <div className={`stack ${editing ? "editing" : ""}`}>
+      {/* The home page starts with the search, no title; screen readers
+          still get one to land on, like every other page. */}
+      <h1 className="screen-reader-only">Recipes</h1>
       <div className="toolbar">
         <input
           type="search"

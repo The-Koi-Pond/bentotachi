@@ -136,7 +136,7 @@ test("use soon: expired, or within the next few days", () => {
   assert.equal(needsChecking(on("2026-11-20"), now), false);
 });
 
-test("to check: low, out, or to use up soon", () => {
+test("low or due: low, out, or to use up soon", () => {
   assert.equal(needsChecking({ status: "low", expires: "" }), true);
   assert.equal(needsChecking({ status: "out", expires: "" }), true);
   assert.equal(needsChecking({ status: "have", expires: "2000-01-01 00:00:00.000Z" }), true);

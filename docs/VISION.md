@@ -100,6 +100,13 @@ Cheeky and silly wherever it can afford to be, while staying clear.
   "+ 1 more", "+ Add one", "How many in stock", "the 2 in stock are
   cleared", "400 g of the 500 g one". (The code and database still call
   them packets.)
+- **One name for one action** (Xel, 2026-11-13, after the design
+  critique): marking a recipe cooked is "✓ Cooked it" everywhere (the top
+  of a recipe, the end of its method, the "Time it" timer), not "We cooked
+  this" (wrong for one person) or "Finished". A place's count of what's
+  Low, Out or due to be used soon is "2 low or due". Things easy to miss
+  (a title that's a menu) get a line in the page's "?" tip, not a hint
+  that pops up; the screen stays on by itself while a timer runs.
 
 ## Look
 

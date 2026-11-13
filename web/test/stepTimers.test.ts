@@ -1,7 +1,20 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { JUST_ENDED_MS, beepsInApp, countdown, formatDuration, pausedTimer, remaining, resumedTimer, runsForStep, startStepTimer, stepTimes } from "../src/stepTimers.ts";
+import {
+  AWAKE_AFTER_END_MS,
+  JUST_ENDED_MS,
+  beepsInApp,
+  countdown,
+  formatDuration,
+  keepsScreenOn,
+  pausedTimer,
+  remaining,
+  resumedTimer,
+  runsForStep,
+  startStepTimer,
+  stepTimes,
+} from "../src/stepTimers.ts";
 
 const labels = (step: string) => stepTimes(step).map((t) => `${t.label}=${t.seconds}`);
 
@@ -93,6 +106,15 @@ test("a step timer belongs to its own step, even when two steps share a number",
   assert.equal(runsForStep({ ...timer, rang: true }, "r1", sauce, "10 min"), false);
   // No heading: none kept.
   assert.equal("heading" in startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0), false);
+});
+
+test("the screen stays on while a timer runs and for a little after it ends", () => {
+  const timer = startStepTimer("r1", "Soup", SOUP_STEP_2, { label: "10 min", seconds: 600 }, 0);
+  assert.equal(keepsScreenOn([], 0), false, "no timers, no reason");
+  assert.equal(keepsScreenOn([timer], 300_000), true, "counting down");
+  assert.equal(keepsScreenOn([timer], 600_000 + 1000), true, "just rang: still on to be seen");
+  assert.equal(keepsScreenOn([timer], 600_000 + AWAKE_AFTER_END_MS), false, "then it may dim");
+  assert.equal(keepsScreenOn([pausedTimer(timer, 60_000)], 60_000), false, "paused doesn't hold it");
 });
 
 test("a step timer saved before timers kept their step's place goes by its number", () => {

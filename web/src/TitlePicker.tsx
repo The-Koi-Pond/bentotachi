@@ -3,7 +3,7 @@
 // options by name, then "Edit …": each name to change, 🗑 to delete it, a
 // grip to drag it into another spot (when the page keeps an order), and
 // "+ Add". A popover over the page, like the "?" tips (Help.tsx).
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { dragAnnouncements } from "./dragWords";
 import { popoverSpot } from "./popoverSpot";
@@ -47,6 +47,7 @@ export default function TitlePicker({
   onRename,
   onDelete,
   onMove,
+  help,
 }: {
   options: TitleOption[];
   // The picked option's key; null: none ("All places").
@@ -60,6 +61,8 @@ export default function TitlePicker({
   onDelete: (key: string) => Promise<void>;
   // One dragged to where another is (their keys); without it, no grips.
   onMove?: (fromKey: string, toKey: string) => void;
+  // A "?" after the title, inside its heading (Help.tsx's HelpButton).
+  help?: ReactNode;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -205,6 +208,7 @@ export default function TitlePicker({
             <ChevronIcon />
           </span>
         </button>
+        {help}
       </h1>
       {canPop ? (
         <div

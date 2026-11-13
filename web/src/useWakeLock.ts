@@ -1,33 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-// Stops the phone screen from dimming while cooking. Phones release the lock
-// when the app goes to the background, so it is taken again on return.
-export function useWakeLock() {
-  const supported = typeof navigator !== "undefined" && "wakeLock" in navigator;
-  const [on, setOn] = useState(false);
-  const lock = useRef<WakeLockSentinel | null>(null);
+const supported = typeof navigator !== "undefined" && "wakeLock" in navigator;
 
-  const acquire = useCallback(async () => {
-    try {
-      lock.current = await navigator.wakeLock.request("screen");
-    } catch {
-      setOn(false);
-    }
-  }, []);
-
+// Keeps the phone screen from dimming while `active`: a timer running, or
+// the menu's "Keep screen on". Several can hold it at once; the screen stays
+// on while any does. Phones release the lock when the app goes to the
+// background, so it is taken again on return. `refused` hears when the
+// phone says no (battery saver, say).
+export function useKeepAwake(active: boolean, refused?: () => void) {
   useEffect(() => {
-    if (!on) return;
+    if (!active || !supported) return;
+    let stopped = false;
+    let lock: WakeLockSentinel | null = null;
+    const acquire = async () => {
+      if (lock && !lock.released) return;
+      try {
+        const sentinel = await navigator.wakeLock.request("screen");
+        // Let go meanwhile, or another request got there first (a quick
+        // switch away and back): never keep one nobody will release.
+        if (stopped || (lock && !lock.released)) void sentinel.release();
+        else lock = sentinel;
+      } catch {
+        // Refused: the screen dims as it normally would.
+        refused?.();
+      }
+    };
     void acquire();
     const onVisible = () => {
       if (document.visibilityState === "visible") void acquire();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      stopped = true;
       document.removeEventListener("visibilitychange", onVisible);
-      void lock.current?.release();
-      lock.current = null;
+      void lock?.release();
     };
-  }, [on, acquire]);
+  }, [active, refused]);
+}
 
+// The menu's "Keep screen on" switch.
+export function useWakeLock() {
+  const [on, setOn] = useState(false);
+  const refused = useCallback(() => setOn(false), []);
+  useKeepAwake(on, refused);
   return { supported, on, toggle: () => setOn((value) => !value) };
 }

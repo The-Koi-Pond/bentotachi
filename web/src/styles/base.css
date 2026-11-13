@@ -821,7 +821,7 @@ main h1:not(.card h1) {
     .place-toggle,
     .plan-add-dish,
     .plan-add.another,
-    .place-title > button,
+    .place-title > button:not(.help-button),
     .tag-add,
     .tag-suggestion-row .tag-chip,
     .list-options-link,
@@ -846,7 +846,7 @@ main h1:not(.card h1) {
     .place-toggle,
     .plan-add-dish,
     .plan-add.another,
-    .place-title > button,
+    .place-title > button:not(.help-button),
     .tag-add,
     .tag-suggestion-row .tag-chip,
     .list-options-link,
@@ -912,7 +912,7 @@ main h1:not(.card h1) {
 }
 
 .plan-add.another,
-.place-title > button,
+.place-title > button:not(.help-button),
 .extra-times > .link-button {
   --tap-y: 6px;
 }

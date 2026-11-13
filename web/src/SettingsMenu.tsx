@@ -71,7 +71,7 @@ export default function SettingsMenu() {
             <button role="menuitemcheckbox" aria-checked={wakeLock.on} onClick={wakeLock.toggle}>
               <span className="menu-item-text">
                 Keep screen on
-                <span className="menu-item-detail">While you cook</span>
+                <span className="menu-item-detail">Running timers already do</span>
               </span>
               <span className="switch" aria-hidden="true" />
             </button>

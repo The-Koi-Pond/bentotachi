@@ -777,7 +777,7 @@
   margin: 0;
 }
 
-/* "✓ Finished" at the end of a recipe's method. */
+/* "✓ Cooked it" at the end of a recipe's method. */
 .finished-cooking {
   display: flex;
   flex-direction: column;
@@ -1424,8 +1424,8 @@ footer .person-name:focus-visible {
   font-size: 0.88rem;
 }
 
-/* "Last had … · We cooked this" under the ratings on a recipe page. */
-/* "We cooked this" goes under the words once they'd be squeezed into a
+/* "Last had … · Cooked it" under the ratings on a recipe page. */
+/* "Cooked it" goes under the words once they'd be squeezed into a
    column narrower than about "Last had Wed," (big text, a narrow phone). */
 .cook-history {
   display: flex;

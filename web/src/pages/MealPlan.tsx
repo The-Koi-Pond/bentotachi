@@ -181,7 +181,7 @@ export default function MealPlan() {
       if (date >= today && entry.recipe) upcoming.set(entry.recipe, [...(upcoming.get(entry.recipe) ?? []), date]);
   }
   // And when each recipe was last had: on the plan before today, or marked
-  // "We cooked this" (see cookHistory.ts).
+  // "Cooked it" (see cookHistory.ts).
   const lastHad = lastHadByRecipe(plan.items, cooked.items ?? [], today);
 
   // Plans a meal: a recipe, or a note like "Take-away night" instead.

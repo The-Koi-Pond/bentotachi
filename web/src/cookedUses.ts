@@ -1,5 +1,5 @@
-// What a cooked recipe used from the pantry, offered after "Finished" (or
-// "We cooked this") as "Used anything up?": whole packets used up oldest
+// What a cooked recipe used from the pantry, offered after "Cooked it"
+// (any of its buttons) as "Used anything up?": whole packets used up oldest
 // first (a partly used one before those), and the last one used only in
 // part keeps "about 100 g left". Tested in web/test/cookedUses.test.ts.
 

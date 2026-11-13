@@ -147,15 +147,18 @@ export default function RecipeView() {
   // Ticked-off ingredients and steps, kept on this device until it's marked
   // cooked or the day is over (recipeTicks.ts).
   const [done, setDone] = useState<Set<string>>(new Set());
-  // The ticks "We cooked this" cleared, until it's undone or the recipe
+  // The ticks "Cooked it" cleared, until it's undone or the recipe
   // changes.
   const ticksBeforeCooked = useRef<Set<string> | null>(null);
   const ratings = useRecipeRatings(id);
-  // "We cooked this" days, shared by the history line and the timer.
+  // "Cooked it" days, shared by the history line and the timer.
   const cooked = useLiveRecords<CookedEntry>("cooked", { copy: cookedCopy });
   // "Used anything up?" open after cooking (UsedUpSheet).
   // `again`: it was already marked cooked today when this opened.
   const [usedUp, setUsedUp] = useState<{ again: boolean } | null>(null);
+  // When "Cooked it" was last pressed here, so a running "Time it" stops
+  // too (RecipeTimer).
+  const [cookedAt, setCookedAt] = useState(0);
   const closeUsedUp = useCallback(() => setUsedUp(null), []);
   const quickMinutes = useQuickMinutes();
   // Showing the phone's saved copy because the server can't be reached.
@@ -436,8 +439,8 @@ export default function RecipeView() {
     return photosAddedText(picked.length, files.length, { hasCover });
   }
 
-  // "We cooked this" (or finishing the timer): today, by whoever's logged
-  // in. Once a day is enough.
+  // "Cooked it" (here, at the end of the method, or the timer's): today, by
+  // whoever's logged in. Once a day is enough.
   const cookedToday = (cooked.items ?? []).some((entry) => entry.recipe === current.id && datePart(entry.date) === localToday());
   async function markCooked(): Promise<boolean> {
     if (cookedToday) return true;
@@ -449,17 +452,17 @@ export default function RecipeView() {
       return false;
     }
   }
-  // Finished, "We cooked this" or the timer: marked cooked, then "Used
-  // anything up?" (UsedUpSheet, which only opens when there's something to
-  // offer).
-  // Cooked: the ticks have done their job, so it starts clean next time.
-  // Undoing "cooked" puts them back, in case it was pressed by mistake.
+  // Any "Cooked it": marked cooked, then "Used anything up?" (UsedUpSheet,
+  // which only opens when there's something to offer). The ticks have done
+  // their job, so it starts clean next time; undoing "cooked" puts them
+  // back, in case it was pressed by mistake.
   async function finishCooking() {
     const again = cookedToday;
     if (!(await markCooked())) return;
     if (done.size) ticksBeforeCooked.current = done;
     setDone(new Set());
     saveTicks(id, localToday(), lines, new Set());
+    setCookedAt(Date.now());
     setUsedUp({ again });
   }
   async function undoCooked(entries: CookedEntry[]) {
@@ -632,7 +635,7 @@ export default function RecipeView() {
               onUndo={(entries) => void undoCooked(entries)}
             />
             {/* Timing it while cooking, to save how long it really takes. */}
-            {editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} />}
+            {editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} cookedAt={cookedAt} />}
           </>
         )}
       </section>
@@ -769,7 +772,7 @@ export default function RecipeView() {
         {!offline && editing !== "steps" && (recipe.steps ?? []).length > 0 && (
           <div className="finished-cooking">
             <button className="button primary" onClick={() => void finishCooking()}>
-              ✓ Finished
+              <span className="button-mark" aria-hidden="true">✓</span> Cooked it
             </button>
             <span className="muted">Marks it cooked today, then asks what it used up</span>
           </div>
@@ -1283,7 +1286,7 @@ function DescriptionPreview({ text }: { text: string }) {
 
 // When we last had this, going by past nights on the dinner plan, and when
 // it's next planned: "Last had 2 weeks ago (Tue, Oct 14) · 3 times · Next: Mon, Nov 2".
-// Counted from past nights on the dinner plan and "We cooked this" (see
+// Counted from past nights on the dinner plan and "Cooked it" (see
 // cookHistory.ts). The button records today; once it has, it offers Undo.
 function CookHistory({
   recipeId,
@@ -1339,7 +1342,7 @@ function CookHistory({
         </button>
       ) : (
         <button className="button small cooked-button" onClick={onCooked}>
-          <span className="button-mark" aria-hidden="true">✓</span> We cooked this
+          <span className="button-mark" aria-hidden="true">✓</span> Cooked it
         </button>
       )}
     </div>

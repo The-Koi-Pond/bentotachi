@@ -30,7 +30,7 @@ function namedList(titles: string[]): string {
 export function alsoDeleted({ planned, cooked, ratings }: RecipeExtras, several = false): string {
   const parts = [
     planned && counted(planned, "night on the dinner plan", "nights on the dinner plan"),
-    cooked && counted(cooked, "“We cooked this” day", "“We cooked this” days"),
+    cooked && counted(cooked, `day ${several ? "they were" : "it was"} cooked`, `days ${several ? "they were" : "it was"} cooked`),
     ratings && counted(ratings, "rating", "ratings"),
   ].filter(Boolean) as string[];
   if (!parts.length) return "";

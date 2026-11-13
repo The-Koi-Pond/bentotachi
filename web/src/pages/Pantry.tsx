@@ -75,6 +75,7 @@ import { remember, remembered, rememberedJson } from "../phoneStorage";
 import { onTheList, onTheListAs } from "../shoppingMatch";
 import { useShoppingLists } from "../useShoppingLists";
 import { storedList } from "../shoppingLists";
+import { HelpBox, HelpButton, useHelp } from "../Help";
 
 // The same empty list each time, so the photo filler doesn't re-run while
 // the pantry is loading.
@@ -119,6 +120,7 @@ export default function Pantry() {
   // Something put on the list goes on the one last open (useShoppingLists);
   // "on the list" means any of them.
   const shop = useShoppingLists();
+  const help = useHelp();
   // Not waited for: the pantry works without them while they load or if
   // they can't (packets.items stays null, and nothing offers to add one).
   const packets = useLiveRecords<PantryPacket>("pantry_packets", { copy: packetsCopy });
@@ -727,6 +729,7 @@ export default function Pantry() {
               if (gone) await deletePlace(gone);
             }}
             onMove={movePlace}
+            help={<HelpButton help={help} label="How the pantry works" />}
           /> : <h1>Pantry</h1>}
         <div className="view-switch" role="group" aria-label="Layout">
           <button aria-pressed={layout === "simple"} onClick={() => changeLayout("simple")}>
@@ -737,6 +740,10 @@ export default function Pantry() {
           </button>
         </div>
       </div>
+      <HelpBox help={help}>
+        <p>Tap the title to see one place at a time, or to add, rename and reorder places.</p>
+        <p>"Low or due" on a place counts what's Low or Out, or should be used soon.</p>
+      </HelpBox>
 
       {pantry.offline && (
         <OfflineNote>Showing the pantry saved on this phone. Changes need a connection.</OfflineNote>
@@ -935,7 +942,7 @@ export default function Pantry() {
                 <DrawerToggle open={isOpen(group.key)} onToggle={() => toggleDrawer(group.key)} className="place-toggle">
                   <span className="drawer-label">{group.label}</span>
                   <span className="place-count">{placeItems.length}</span>
-                  {toCheck > 0 && <span className="badge to-check">{toCheck} to check</span>}
+                  {toCheck > 0 && <span className="badge to-check">{toCheck} low or due</span>}
                 </DrawerToggle>
               </h2>
             )}

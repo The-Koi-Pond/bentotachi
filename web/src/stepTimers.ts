@@ -149,6 +149,15 @@ export function remaining(timer: StepTimer, now: number): number {
   return timer.endsAt === null ? timer.leftMs : Math.max(0, timer.endsAt - now);
 }
 
+// The screen stays on while a timer counts down and for a little after one
+// ends, so the finished timer is on screen when you walk over, not a phone
+// that dimmed as it started beeping. A paused one doesn't keep it on.
+export const AWAKE_AFTER_END_MS = 2 * 60_000;
+
+export function keepsScreenOn(timers: StepTimer[], now: number): boolean {
+  return timers.some((timer) => timer.endsAt !== null && now < timer.endsAt + AWAKE_AFTER_END_MS);
+}
+
 // Paused, it has no notification waiting (resuming holds a new one).
 export function pausedTimer(timer: StepTimer, now: number): StepTimer {
   return timer.endsAt === null ? timer : { ...timer, endsAt: null, leftMs: remaining(timer, now), alert: undefined };

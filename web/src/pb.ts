@@ -259,7 +259,7 @@ export interface MealPlanEntry extends RecordModel {
 
 export const mealPlan = () => pb.collection<MealPlanEntry>("meal_plan");
 
-// "We cooked this": a day a recipe was cooked (see cookHistory.ts).
+// "Cooked it": a day a recipe was cooked (see cookHistory.ts).
 // date: "2026-11-02 00:00:00.000Z".
 export interface CookedEntry extends RecordModel {
   date: string;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { errorMessage, type Recipe } from "./pb";
 import { formatMinutes, totalMinutes } from "./format";
 import { PauseIcon, PlayIcon, StopIcon } from "./icons";
@@ -16,6 +16,7 @@ import {
 } from "./cookTiming";
 import { remember, rememberedJson } from "./phoneStorage";
 import { askFirst } from "./askFirst";
+import { useKeepAwake } from "./useWakeLock";
 
 // "⏱ Time it" on a recipe: a prep-then-cook stopwatch to find out how long
 // the recipe really takes, then an offer to save that as its times. Kept on
@@ -37,11 +38,15 @@ export default function RecipeTimer({
   recipe,
   onSave,
   onFinished,
+  cookedAt,
 }: {
   recipe: Recipe;
   onSave: (changes: Partial<Recipe>) => Promise<void>;
   // Finishing means it was cooked: the recipe page marks it cooked today.
   onFinished: () => void;
+  // When the page's other "Cooked it" was pressed (0: not yet): the timing
+  // is over too, rather than running on (and keeping the screen on).
+  cookedAt: number;
 }) {
   const [state, setStateRaw] = useState<TimerState | null>(() => load(recipe.id));
   const [now, setNow] = useState(() => Date.now());
@@ -56,6 +61,23 @@ export default function RecipeTimer({
 
   // Tick once a second while a stage is running.
   const running = !!state && state.stage !== "done" && state.runningSince !== null;
+  // The screen stays on while it runs, like a step timer.
+  useKeepAwake(running);
+
+  // Only a press while it's on screen: it's hidden while the details are
+  // edited, and coming back must not end a stopwatch started after an
+  // earlier press.
+  const seenCookedAt = useRef(cookedAt);
+  useEffect(() => {
+    if (cookedAt === seenCookedAt.current) return;
+    seenCookedAt.current = cookedAt;
+    const current = load(recipe.id);
+    if (!current || current.stage === "done") return;
+    const next = finished(current, cookedAt);
+    store(recipe.id, next);
+    setStateRaw(next);
+    setNow(cookedAt);
+  }, [cookedAt, recipe.id]);
   useEffect(() => {
     if (!running) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -186,7 +208,7 @@ export default function RecipeTimer({
               onFinished();
             }}
           >
-            Finished
+            <span className="button-mark" aria-hidden="true">✓</span> Cooked it
           </button>
         ) : (
           <button className="button primary" onClick={() => act(startCooking)}>
