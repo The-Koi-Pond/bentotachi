@@ -6,6 +6,28 @@ for the next release stays in PLAN.md, "Waiting for the next app
 release"; when a release goes out, its list moves to the top of this file.
 Each release from 1.9.0 on is tagged in git (`v1.23.0`).
 
+Released in 1.29.0 (2026-11-13, deployed the same day):
+
+- Tidier lines on the shopping list (a tester's report): brackets that
+  only say how to prepare it or point to a note go, as a ", diced" already
+  did ("3 garlic cloves (finely minced)" -> "3 garlic cloves", "(cut into
+  0.5cm / 0.2" slices (Note 3))" gone); amounts, swaps and kinds stay
+  ("(100 g)", "(1 punnet)", "(or a few handfuls kale)").
+- A way back (a tester got stuck on a recipe): every page a step in from a
+  tab (a recipe, its editor, Add recipe, the settings pages) has a ‹ in
+  the top bar, before the logo. It goes back where you came from, like
+  Android's back, or to the page above with nothing to go back to.
+- Adding up the same thing (a tester's idea): garlic from two recipes is
+  one line, "3 garlic cloves" and "2 garlic cloves" making "5 garlic
+  cloves", "1 onion" and "1 large onion" making "2 onions"; grams and
+  kilos add up, a cup and grams stay two lines. The plan's "shop for the
+  week" adds up the same way (two recipes' "3 carrots" were one "3
+  carrots" before). Lines are only what to buy now: no "for …" under
+  them; a line from recipes has a small book that shows each recipe's
+  share and a link to it. Adding the same recipe again doesn't count it
+  twice. (A new `shares` field on list lines; older apps still show
+  them, with the first recipe.)
+
 Released in 1.28.0 (2026-11-13, deployed the same day):
 
 - Several shopping lists: the list's title is a menu of lists ("Party · 4
