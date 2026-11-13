@@ -3,7 +3,18 @@
 // jjv4110… was dropped over droppable area 2026-10-28"), so every
 // DndContext passes names from here instead.
 
-import type { Announcements } from "@dnd-kit/core";
+import type { Announcements, KeyboardCodes, ScreenReaderInstructions } from "@dnd-kit/core";
+
+// Where a grip opens a menu of moves (GripMenu.tsx), Enter opens it (a
+// button's own click) and only Space picks the thing up to drag: dnd-kit
+// would otherwise take both. Its KeyboardSensor's `keyboardCodes`.
+export const gripKeys: KeyboardCodes = { start: ["Space"], cancel: ["Escape"], end: ["Space", "Enter", "Tab"] };
+
+// What a screen reader hears on such a grip, in place of dnd-kit's own
+// hint, which says nothing of the menu.
+export const gripInstructions: ScreenReaderInstructions = {
+  draggable: "Press Enter for a menu of moves. Or press Space to pick it up, the arrow keys to move it, and Space again to drop it.",
+};
 
 type Id = string | number;
 

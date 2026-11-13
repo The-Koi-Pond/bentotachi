@@ -145,8 +145,19 @@ export default function DateField({
 
 // The calendar on its own, in the middle of the screen, for a date asked
 // for without a box to tap (a scan's "+ Use-by"). Closes with OK (the date)
-// or Cancel, Escape or the phone's back (null).
-export function DateDialog({ label, start = "", onDone }: { label: string; start?: string; onDone: (date: string | null) => void }) {
+// or Cancel, Escape or the phone's back (null). `required`: no Clear, for a
+// date that can't be left empty (where to move a dish).
+export function DateDialog({
+  label,
+  start = "",
+  required = false,
+  onDone,
+}: {
+  label: string;
+  start?: string;
+  required?: boolean;
+  onDone: (date: string | null) => void;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const box = dialog.current;
@@ -164,7 +175,7 @@ export function DateDialog({ label, start = "", onDone }: { label: string; start
         onDone(null);
       }}
     >
-      <Calendar start={start} empty="No date" label={label} required={false} onResize={() => {}} onDone={onDone} />
+      <Calendar start={start} empty="No date" label={label} required={required} onResize={() => {}} onDone={onDone} />
     </dialog>
   );
 }

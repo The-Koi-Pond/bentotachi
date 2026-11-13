@@ -258,18 +258,27 @@ Not released yet:
   biggest text, step numbers, the plan's day names and the ‹ › − + buttons
   grow, and the recipe chooser's buttons wrap; the pantry card lost its
   side stripe.
+- Moving without dragging: a tap on the ⠿ (or Enter; dragging still
+  works) opens a small menu. Shelves (in Edit) and pantry places: "Move
+  up", "Move down". A dish on the plan's list: "To the day before", "To
+  the day after", "Pick a day…", "Take it off the plan" (with Undo); one
+  sent past the days shown says where it went.
 
 Earlier releases, newest first: docs/RELEASES.md.
 
 ## Next up: moving things without dragging (Xel, 2026-11-13)
 
-The design re-audit found shelves (RecipeList.tsx), pantry places and
-shopping lists (TitlePicker.tsx) and dishes on the plan (MealPlan.tsx)
-move only by dragging: a keyboard works, but TalkBack users and anyone who
-can't drag have no way (WCAG 2.5.7). Xel: mock up a tap way next. Ideas to
-mock: "Move up / Move down" beside each in Edit; "Move to another day" in
-a dish's menu. Mock-ups at phone and desktop width, light and dark, then
-Xel picks.
+The design re-audit found shelves (RecipeList.tsx), pantry places
+(TitlePicker.tsx) and dishes on the plan (MealPlan.tsx) move only by
+dragging: a keyboard works, but TalkBack users and anyone who can't drag
+have no way (WCAG 2.5.7). (Shopping lists keep no order of their own, so
+they have no grips.) Xel picked "A: tap the grip" from mock-ups
+(2026-11-13): a plain tap on the ⠿ (dragging still works) opens a small
+menu. Shelves (in Edit) and pantry places: "Move up", "Move down". A dish in the plan's list view: "To the day before",
+"To the day after", "Pick a day…" (DateDialog), "Take it off the plan"
+(with Undo; today only dragging to the bin does that). Nothing new on
+screen; the Edit hints say the ⠿ can be tapped. Not chosen: visible ↑ ↓
+arrows in Edit (busier rows).
 
 ## Next up: the pantry listings (Xel, 2026-11-02)
 

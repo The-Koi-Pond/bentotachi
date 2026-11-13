@@ -44,12 +44,14 @@ import { HelpBox, HelpButton, useHelp } from "../Help";
 import RecipeChooser from "../RecipeChooser";
 import WeekShoppingSheet from "../WeekShoppingSheet";
 import { useUndo } from "../undo";
-import { showError } from "../toast";
+import { showError, showToast } from "../toast";
 import { useCountry, usePlanMeals } from "../household";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
 import { pageScroller } from "../pageScroll";
-import { dragAnnouncements } from "../dragWords";
+import { dragAnnouncements, gripInstructions, gripKeys } from "../dragWords";
+import GripMenu from "../GripMenu";
+import { DateDialog } from "../DateField";
 import {
   MEALS,
   MEAL_NAMES,
@@ -135,7 +137,7 @@ export default function MealPlan() {
   // so a tap isn't a drag), or with the keyboard (Space, arrows, Space).
   const listSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, { keyboardCodes: gripKeys })
   );
   // In the month grid the pictures fill the days, so a finger that lands on
   // one is usually scrolling: a finger has to press and hold before it
@@ -255,6 +257,16 @@ export default function MealPlan() {
       showError(errorMessage(err));
       plan.reload();
     }
+  }
+
+  // A dish's grip menu can send it past the days shown, where a drag
+  // can't: say where it went, or it looks deleted.
+  function moveFromMenu(entryId: string, to: string) {
+    const moving = shown.find((entry) => entry.id === entryId);
+    void move(entryId, to);
+    const day = parseSlot(to).date;
+    if (!moving || days.includes(day)) return;
+    showToast(`Moved “${entryLabel(moving)}” to ${formatDay(day, { weekday: "short", day: "numeric", month: "short" })}.`);
   }
 
   // What's dragged is a dish (its entry's id).
@@ -384,6 +396,7 @@ export default function MealPlan() {
               Drag <GripIcon /> to move a {word} to another day or meal, or onto another one to swap them. Drop it on
               the bin that appears at the bottom to take it off the plan.
             </p>
+            <p>Or tap <GripIcon /> to move it to the day before or after, or a day you pick, or take it off the plan.</p>
             <p>
               <PlusIcon /> beside a {word} adds another recipe to it, like a side.
             </p>
@@ -422,7 +435,7 @@ export default function MealPlan() {
       <DndContext
         sensors={readOnly ? NO_SENSORS : isList ? listSensors : monthSensors}
         collisionDetection={dropTarget}
-        accessibility={{ announcements }}
+        accessibility={{ announcements, screenReaderInstructions: isList ? gripInstructions : undefined }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDragCancel={() => setDragging(null)}
@@ -450,6 +463,7 @@ export default function MealPlan() {
                     dishesAt={(meal) => dishesAt(date, meal)}
                     onAdd={(meal) => setPicking({ date, meal })}
                     onRemove={remove}
+                    onMove={moveFromMenu}
                     readOnly={readOnly}
                   />
                 </Fragment>
@@ -641,6 +655,9 @@ interface DayProps {
   dishesAt: (meal: Meal) => MealPlanEntry[];
   onAdd: (meal: Meal) => void;
   onRemove: (entry: MealPlanEntry) => void;
+  // A dish to another meal's place ("2026-11-02|dinner"), as dragging does:
+  // the list's dish menus (DraggableDinner).
+  onMove?: (entryId: string, to: string) => void;
   // Showing the copy saved on this phone: no + Add, ✕ or dragging.
   readOnly: boolean;
 }
@@ -719,7 +736,17 @@ function DayRow({ today, ...day }: DayProps & { today: string }) {
 // One meal's place in a day row: a dinner (or breakfast, or lunch) that can
 // be dragged, or "+ Add" (a small chip when compact). Meals dragged here
 // land in it.
-function MealPlace({ date, meal, labelled, dishesAt, onAdd, readOnly, compact = false }: DayProps & { meal: Meal; compact?: boolean }) {
+function MealPlace({
+  date,
+  meal,
+  labelled,
+  dishesAt,
+  onAdd,
+  onRemove,
+  onMove,
+  readOnly,
+  compact = false,
+}: DayProps & { meal: Meal; compact?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: slotKey(date, meal) });
   const dishes = dishesAt(meal);
   if (compact) {
@@ -737,7 +764,14 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, readOnly, compact = 
     <div ref={setNodeRef} className={`plan-meal ${isOver ? "drop-here" : ""}`}>
       {labelled && <span className="meal-label">{MEAL_NAMES[meal]}</span>}
       {dishes.map((entry) => (
-        <DraggableDinner key={entry.id} entry={entry} readOnly={readOnly} />
+        <DraggableDinner
+          key={entry.id}
+          entry={entry}
+          readOnly={readOnly}
+          moveTo={(day) => onMove?.(entry.id, slotKey(day, meal))}
+          date={date}
+          onRemove={() => onRemove(entry)}
+        />
       ))}
       {/* Another recipe for it (a side): a quiet + beside its dishes, rather
           than a "+ Dinner" under every planned day (docs/VISION.md). */}
@@ -757,21 +791,50 @@ function MealPlace({ date, meal, labelled, dishesAt, onAdd, readOnly, compact = 
 
 // A planned dish as a soft chip: drag it by its dots to another day, or to
 // the bin that shows while dragging to take it off the plan (no ✕, so two
-// can share a row; the month view's day list keeps a ✕ for anyone who
-// can't drag).
-function DraggableDinner({ entry, readOnly }: { entry: MealPlanEntry; readOnly: boolean }) {
+// can share a row). A tap on the dots offers the same moves, for anyone who
+// can't drag (GripMenu.tsx).
+function DraggableDinner({
+  entry,
+  readOnly,
+  date,
+  moveTo,
+  onRemove,
+}: {
+  entry: MealPlanEntry;
+  readOnly: boolean;
+  date: string;
+  // To the same meal on another day.
+  moveTo: (day: string) => void;
+  onRemove: () => void;
+}) {
   const { setNodeRef, attributes, listeners, isDragging } = useDraggable({ id: entry.id, disabled: readOnly });
+  const [pickingDay, setPickingDay] = useState(false);
+  const name = entryLabel(entry);
   return (
     <div ref={setNodeRef} className={`dinner-slot ${isDragging ? "dragging" : ""}`}>
       {!readOnly && (
-        <button
-          className="drag-handle"
-          aria-label={`Move ${entryLabel(entry)} to another day or meal`}
-          {...attributes}
-          {...listeners}
-        >
-          <GripIcon />
-        </button>
+        <GripMenu
+          label={`Move ${name} to another day or meal`}
+          heading={`${name}, ${formatDay(date, { weekday: "short", day: "numeric", month: "short" })}`}
+          drag={{ ...attributes, ...listeners }}
+          moves={[
+            { label: "To the day before", run: () => moveTo(addDays(date, -1)) },
+            { label: "To the day after", run: () => moveTo(addDays(date, 1)) },
+            { label: "Pick a day…", run: () => setPickingDay(true) },
+            { label: "Take it off the plan", run: onRemove },
+          ]}
+        />
+      )}
+      {pickingDay && (
+        <DateDialog
+          label={`Move ${name} to`}
+          start={date}
+          required
+          onDone={(day) => {
+            setPickingDay(false);
+            if (day && day !== date) moveTo(day);
+          }}
+        />
       )}
       <DinnerCard entry={entry} />
     </div>

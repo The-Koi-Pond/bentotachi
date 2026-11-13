@@ -244,7 +244,12 @@ they say otherwise.
   of its places or lists, with "Edit …" (the pantry's places, the shopping
   lists): `<TitlePicker>` (`TitlePicker.tsx`). Moving one thing to
   where another is, as dragging does (shelves, places): `moved`
-  (`listOrder.ts`); what a screen reader hears while dragging, in names
+  (`listOrder.ts`), and a grip's "Move up / Move down" `upDownMoves`. A
+  drag grip that also opens a menu of moves on a tap or Enter (for anyone
+  who can't drag): `<GripMenu>` (`GripMenu.tsx`), whose `DndContext` takes
+  `gripKeys` and `gripInstructions` (`dragWords.ts`); a small menu placed from its button
+  and closed on a tap outside (the recipe's ⋯ too): `usePopMenu`
+  (`usePopMenu.ts`, panel `menu-panel pop-menu`); what a screen reader hears while dragging, in names
   rather than ids: every `DndContext` passes `accessibility={{
   announcements: dragAnnouncements(...) }}` (`dragWords.ts`). A message
   with a second button: `showToast(text, { action, extra })`. A passing

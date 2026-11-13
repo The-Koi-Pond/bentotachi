@@ -11,3 +11,23 @@ export function moved<T>(list: T[], from: number, to: number): T[] {
   next.splice(to, 0, moving);
   return next;
 }
+
+// One move in a grip's menu (GripMenu.tsx).
+export interface GripMove {
+  label: string;
+  run: () => void;
+  // Can't go that way (the first one can't move up).
+  disabled?: boolean;
+}
+
+// "Move up" and "Move down" for one in a list: onto the one before it or
+// after it, as if dragged there; off at either end, or if it isn't listed.
+export function upDownMoves(keys: readonly string[], key: string, moveTo: (toKey: string) => void): GripMove[] {
+  const at = keys.indexOf(key);
+  const up = at > 0 ? keys[at - 1] : null;
+  const down = at >= 0 && at < keys.length - 1 ? keys[at + 1] : null;
+  return [
+    { label: "Move up", disabled: !up, run: () => up && moveTo(up) },
+    { label: "Move down", disabled: !down, run: () => down && moveTo(down) },
+  ];
+}

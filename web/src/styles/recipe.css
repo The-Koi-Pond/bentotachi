@@ -1610,16 +1610,6 @@ footer .person-name:focus-visible {
 }
 
 /* The recipe's ⋯ menu: wide enough for its notes, and Delete in red. */
-.recipe-menu {
-  /* Placed on the screen from where the ⋯ is (RecipeMenu.tsx sets the
-     side, width and height), above the sticky bars, scrolling inside when
-     the space is short. */
-  position: fixed;
-  z-index: 20;
-  min-width: 0;
-  overflow-y: auto;
-}
-
 .recipe-menu .danger-item {
   color: var(--danger);
 }

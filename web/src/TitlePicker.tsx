@@ -5,9 +5,11 @@
 // "+ Add". A popover over the page, like the "?" tips (Help.tsx).
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
-import { dragAnnouncements } from "./dragWords";
+import { dragAnnouncements, gripInstructions, gripKeys } from "./dragWords";
 import { popoverSpot } from "./popoverSpot";
-import { ChevronIcon, GripIcon, TrashIcon } from "./icons";
+import { ChevronIcon, TrashIcon } from "./icons";
+import GripMenu from "./GripMenu";
+import { upDownMoves, type GripMove } from "./listOrder";
 
 const canPop = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
 
@@ -72,7 +74,10 @@ export default function TitlePicker({
   // Dragged by the grip (a small move starts it, so a tap in the name box
   // isn't a drag), or with the keyboard (Space, arrows, Space), like the
   // recipe shelves.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { keyboardCodes: gripKeys })
+  );
 
   const position = useCallback(() => {
     const box = menu.current;
@@ -135,11 +140,13 @@ export default function TitlePicker({
 
   const editable = options.filter((o) => o.editable !== false);
   const picked = options.find((o) => o.key === current);
+  const order = editable.map((o) => o.key);
   const rows = editable.map((o) => (
     <OptionRow
       key={o.key}
       option={o}
       draggable={!!onMove}
+      moves={upDownMoves(order, o.key, (toKey) => onMove?.(o.key, toKey))}
       maxLength={words.maxLength}
       onRename={(label) => stillEditing(() => onRename(o.key, label))}
       onDelete={o.deletable === false ? undefined : () => void stillEditing(() => onDelete(o.key))}
@@ -152,7 +159,10 @@ export default function TitlePicker({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          accessibility={{ announcements: dragAnnouncements((key) => options.find((o) => o.key === key)?.label ?? "it") }}
+          accessibility={{
+            screenReaderInstructions: gripInstructions,
+            announcements: dragAnnouncements((key) => options.find((o) => o.key === key)?.label ?? "it"),
+          }}
           onDragEnd={(event) => {
             if (event.over && event.over.id !== event.active.id) onMove(String(event.active.id), String(event.over.id));
           }}
@@ -248,9 +258,12 @@ function OptionRow({
   maxLength,
   onRename,
   onDelete,
+  moves,
 }: {
   option: TitleOption;
   draggable: boolean;
+  // Its grip's menu: "Move up", "Move down".
+  moves: GripMove[];
   maxLength: number;
   onRename: (label: string) => Promise<void>;
   onDelete?: () => void;
@@ -292,9 +305,13 @@ function OptionRow({
       style={drag.transform ? { transform: `translate3d(0, ${drag.transform.y}px, 0)` } : undefined}
     >
       {draggable && (
-        <button type="button" className="drag-handle place-handle" aria-label={`Move ${option.label}`} title="Drag to move" {...drag.attributes} {...drag.listeners}>
-          <GripIcon />
-        </button>
+        <GripMenu
+          className="place-handle"
+          label={`Move ${option.label}`}
+          heading={option.label}
+          drag={{ ...drag.attributes, ...drag.listeners }}
+          moves={moves}
+        />
       )}
       <input
         value={name}

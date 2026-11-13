@@ -54,6 +54,8 @@ import { useLiveRecords } from "../useLiveRecords";
 import OfflineNote from "../OfflineNote";
 import DrawerToggle from "../DrawerToggle";
 import { OTHER, inCategory, movedTo, puttingOn, shelves, sortCategories, takingOff } from "../recipeCategories";
+import GripMenu from "../GripMenu";
+import { upDownMoves, type GripMove } from "../listOrder";
 import { useShelfDrawers } from "../shelfDrawers";
 import { HelpBox, HelpButton, useHelp } from "../Help";
 import { useSingleUser, useSpell } from "../household";
@@ -65,7 +67,7 @@ import BackupNudge from "../BackupNudge";
 import { BenMood } from "../Brand";
 import { remember, remembered } from "../phoneStorage";
 import RecipeStandIn from "../RecipeStandIn";
-import { dragAnnouncements } from "../dragWords";
+import { dragAnnouncements, gripInstructions, gripKeys } from "../dragWords";
 
 // Where a dragged shelf would land: the shelf under the finger, else the
 // nearest one (as on the dinner plan).
@@ -176,7 +178,10 @@ export default function RecipeList() {
   const singleUser = useSingleUser();
   // Dragging shelves into a new order: by the grip (a small move starts
   // it, so taps still open drawers), or the keyboard (Space, arrows, Space).
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { keyboardCodes: gripKeys })
+  );
   const [draggingShelf, setDraggingShelf] = useState<string | null>(null);
 
   // A shelf dragged onto another takes its place, for the whole household.
@@ -533,6 +538,8 @@ export default function RecipeList() {
     !!categories?.length && !listChosen && !search.trim() && !filtering && !favoritesOnly && !quickOnly;
   const allShelves = showShelves ? shelves(shown, categories!) : [];
   const filledShelves = allShelves.filter((shelf) => shelf.recipes.length > 0);
+  // The ones a grip can move, in order ("Everything else" stays last).
+  const shelfOrder = allShelves.filter((shelf) => shelf.id !== OTHER).map((shelf) => shelf.id);
   const anyShelfOpen = filledShelves.some((shelf) => drawers.isOpen(shelf.id));
   const emptyShelves = allShelves.filter((shelf) => shelf.recipes.length === 0);
   const pickedNow = editing ? pickedRecipes(shown) : [];
@@ -762,7 +769,7 @@ export default function RecipeList() {
       {editing && (
         <div className="edit-bar">
           <p>
-            Tap recipes to pick them{showShelves ? ", or drag a shelf by its ⠿ to move it" : ""}.
+            Tap recipes to pick them{showShelves ? ", or move a shelf by its ⠿: drag it, or tap it" : ""}.
           </p>
           <button className="button primary" onClick={() => setEditing(false)}>
             Done
@@ -857,6 +864,7 @@ export default function RecipeList() {
           sensors={sensors}
           collisionDetection={shelfDropTarget}
           accessibility={{
+            screenReaderInstructions: gripInstructions,
             announcements: dragAnnouncements((id) => {
               const shelf = categories?.find((c) => c.id === id);
               return shelf ? `the ${shelf.name} shelf` : "the shelf";
@@ -884,6 +892,7 @@ export default function RecipeList() {
               onToggle={() => drawers.toggle(shelf.id)}
               // "Everything else" always comes last, and isn't a real shelf.
               movable={editing && shelf.id !== OTHER}
+              moves={upDownMoves(shelfOrder, shelf.id, (toId) => void moveShelf(shelf.id, toId))}
               editLink={editing && shelf.id !== OTHER ? `/shelves?edit=${shelf.id}` : null}
             >
               <ShelfGrid className={gridClass} count={shelf.recipes.length} fill={layout !== "list"}>
@@ -963,6 +972,7 @@ function Shelf({
   open,
   onToggle,
   movable,
+  moves,
   editLink,
   children,
 }: {
@@ -972,6 +982,8 @@ function Shelf({
   open: boolean;
   onToggle: () => void;
   movable: boolean;
+  // Its grip's menu: "Move up", "Move down".
+  moves: GripMove[];
   editLink: string | null;
   children: ReactNode;
 }) {
@@ -983,9 +995,13 @@ function Shelf({
     <section ref={drop.setNodeRef} className={classes.join(" ")}>
       <div className={`shelf-head ${editing ? "with-handle" : ""}`} ref={drag.setNodeRef}>
         {movable ? (
-          <button className="drag-handle shelf-handle" aria-label={`Move the ${name} shelf`} title="Drag to move" {...drag.attributes} {...drag.listeners}>
-            <GripIcon />
-          </button>
+          <GripMenu
+            className="shelf-handle"
+            label={`Move the ${name} shelf`}
+            heading={`The ${name} shelf`}
+            drag={{ ...drag.attributes, ...drag.listeners }}
+            moves={moves}
+          />
         ) : (
           editing && <span className="shelf-handle-space" aria-hidden="true" />
         )}
