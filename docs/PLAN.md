@@ -261,6 +261,16 @@ Not released yet:
 
 Earlier releases, newest first: docs/RELEASES.md.
 
+## Next up: moving things without dragging (Xel, 2026-11-13)
+
+The design re-audit found shelves (RecipeList.tsx), pantry places and
+shopping lists (TitlePicker.tsx) and dishes on the plan (MealPlan.tsx)
+move only by dragging: a keyboard works, but TalkBack users and anyone who
+can't drag have no way (WCAG 2.5.7). Xel: mock up a tap way next. Ideas to
+mock: "Move up / Move down" beside each in Edit; "Move to another day" in
+a dish's menu. Mock-ups at phone and desktop width, light and dark, then
+Xel picks.
+
 ## Next up: the pantry listings (Xel, 2026-11-02)
 
 Xel wants to keep working on how pantry items look and what they hold.
