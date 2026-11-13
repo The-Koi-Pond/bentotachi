@@ -240,6 +240,31 @@ export function lineMeasure(line: string): { amount: number; unit: string } | nu
   return { amount, unit: unit.trim() };
 }
 
+// The amount a line starts with, for adding two lines up (shoppingAddUp.ts):
+// how much, its unit ("" for a count: "3 garlic cloves"), and the words
+// after it and after the same amount given another way ("250 g/8 oz
+// butter": "butter"; "1/2 cup (100 g) tomatoes": ") tomatoes"), which
+// scaleLine changes along with it. null with no amount at the start, a
+// range ("2-3 onions"), or more added on ("1 cup plus 2 tbsp"), which don't
+// add up to one number.
+export function leadingAmount(line: string): { amount: number; unit: string; rest: string } | null {
+  const start = line.match(LEADING);
+  if (!start) return null;
+  const [whole, , low, , high] = start;
+  const unit = line.slice(whole.length).match(UNIT_AFTER) ? line.match(LEADING_MEASURED) : null;
+  const used = unit ?? start;
+  const unitText = unit ? unit[6] : "";
+  if (high !== undefined && !isMixedNumber(low, high, unitText)) return null;
+  let rest = line.slice(used[0].length);
+  if (unit) {
+    if (ADDED_ON.test(rest)) return null;
+    for (let alt = rest.match(ALTERNATIVE); alt; alt = rest.match(ALTERNATIVE)) rest = rest.slice(alt[0].length);
+  }
+  const amount = high === undefined ? parseNumber(low, unitText) : parseNumber(low, unitText) + parseNumber(high, unitText);
+  if (!(amount > 0)) return null;
+  return { amount, unit: unitText.trim(), rest };
+}
+
 // How many a recipe makes, from its servings text: "4", "Serves 4-6" (4),
 // "12 cookies". Null when it doesn't say a number.
 export function servingsCount(servings: string): number | null {

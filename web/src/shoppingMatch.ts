@@ -9,8 +9,13 @@ import { otherNames } from "./regionalNames.ts";
 // unless the two are linked to different pantry items.
 export function sameThing(thing: { text: string; pantryItem: string }, item: { text: string; pantry_item: string }): boolean {
   if (thing.pantryItem && item.pantry_item === thing.pantryItem) return true;
-  const linkedElsewhere = !!thing.pantryItem && !!item.pantry_item;
-  return !linkedElsewhere && item.text.trim().toLowerCase() === thing.text.trim().toLowerCase();
+  return !linkedApart(thing, item) && item.text.trim().toLowerCase() === thing.text.trim().toLowerCase();
+}
+
+// Linked to two different pantry items: never the same thing, whatever
+// their words (adding up on the list too, shoppingAddUp.ts).
+export function linkedApart(thing: { pantryItem: string }, item: { pantry_item: string }): boolean {
+  return !!thing.pantryItem && !!item.pantry_item && thing.pantryItem !== item.pantry_item;
 }
 
 // Whether a pantry item is already waiting on the list (by its link, or its
@@ -33,18 +38,3 @@ export function onTheListAs<T extends { text: string; pantry_item: string }>(ite
   return waiting.find((row) => (!row.pantry_item || row.pantry_item === item.id) && names.some((name) => isJustThis(row.text, name))) ?? null;
 }
 
-// Which of these things to add, in order: not what's already waiting on the
-// list, and not the same thing twice in one go.
-export function newToTheList<T extends { text: string; pantryItem: string }>(
-  things: T[],
-  waiting: { text: string; pantry_item: string }[]
-): T[] {
-  const seen = [...waiting];
-  const fresh: T[] = [];
-  for (const thing of things) {
-    if (seen.some((item) => sameThing(thing, item))) continue;
-    fresh.push(thing);
-    seen.push({ text: thing.text, pantry_item: thing.pantryItem });
-  }
-  return fresh;
-}

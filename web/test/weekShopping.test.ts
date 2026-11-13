@@ -17,14 +17,38 @@ test("merges lines linked to the same pantry item, across recipes", () => {
     pantry
   );
   assert.deepEqual(
-    rows.map((r) => [r.text, r.recipeTitles.join(" + "), r.recipeId]),
+    rows.map((r) => [r.text, r.recipeTitles.join(" + "), r.shares.map((s) => `${s.text} (${s.recipe})`).join(", ")]),
     [
-      // Two recipes, different words: the pantry's name.
-      ["Onion", "Curry + Oyakodon", "a"],
+      // Two recipes, different words: the pantry's name, and each one's
+      // share in its own words (for the list's book button).
+      ["Onion", "Curry + Oyakodon", "2 onions (a), 1 onion (b)"],
       // One recipe: its own words.
-      ["1 cup rice", "Curry", "a"],
-      ["3 eggs", "Oyakodon", "b"],
-      ["Dashi", "Oyakodon", "b"],
+      ["1 cup rice", "Curry", "1 cup rice (a)"],
+      ["3 eggs", "Oyakodon", "3 eggs (b)"],
+      ["Dashi", "Oyakodon", "Dashi (b)"],
+    ]
+  );
+});
+
+test("unlinked lines of the same thing add up into one row", () => {
+  const rows = gatherIngredients(
+    [
+      recipe("t", "Tuscan stew", ["3 carrots, diced", "3 garlic cloves (finely minced)", "Salt"]),
+      recipe("b", "Beef stew", ["3 carrots", "2 garlic cloves", "1 cup flour", "Salt"]),
+      recipe("s", "Scones", ["200 g flour"]),
+    ],
+    []
+  );
+  assert.deepEqual(
+    rows.map((r) => [r.text, r.recipeTitles.join(" + ")]),
+    [
+      ["6 carrots", "Tuscan stew + Beef stew"],
+      ["5 garlic cloves", "Tuscan stew + Beef stew"],
+      // No amount: one row, as before.
+      ["Salt", "Tuscan stew + Beef stew"],
+      // Units that don't add up stay apart.
+      ["1 cup flour", "Beef stew"],
+      ["200 g flour", "Scones"],
     ]
   );
 });
@@ -146,9 +170,9 @@ test("unlinked lines merge only when the wording matches", () => {
   assert.deepEqual(rows.map((r) => r.text), ["Dashi", "2 tsp dashi"]);
 });
 
-test("unlinked lines lose their formatting marks, as from the recipe page", () => {
+test("unlinked lines lose their formatting marks, as from the recipe page, and add up", () => {
   const rows = gatherIngredients([recipe("a", "A", ["2 tsp *soft* dashi"]), recipe("b", "B", ["2 tsp soft **dashi**"])], pantry);
-  assert.deepEqual(rows.map((r) => [r.text, r.recipeTitles.join(" + ")]), [["2 tsp soft dashi", "A + B"]]);
+  assert.deepEqual(rows.map((r) => [r.text, r.recipeTitles.join(" + ")]), [["4 tsp soft dashi", "A + B"]]);
 });
 
 test("starts with everything ticked except what we have", () => {

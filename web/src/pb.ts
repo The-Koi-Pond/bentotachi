@@ -8,6 +8,7 @@ import { keepPhotos } from "./photoCache";
 import { isServerAnswer } from "./loginGuard";
 import { viaTailscale } from "./tailscale.ts";
 import { connection, requestFetch } from "./connection.ts";
+import type { Share } from "./shoppingAddUp";
 
 // In a browser, Bento is served by PocketBase itself, so it talks to "/"
 // (in development Vite forwards that to PocketBase). The Android app carries
@@ -135,6 +136,10 @@ export interface ShoppingItem extends RecordModel {
   pantry_item: string;
   // Its list; "" (older apps, the server's "ran out" add) is the main one.
   list: string;
+  // Each recipe's part of it ("3 garlic cloves" for one stew, "2" for
+  // another; shoppingAddUp.ts); null on lines from before shares, and on
+  // things typed in.
+  shares: Share[] | null;
   added_by: string;
   created: string;
   updated: string;

@@ -99,17 +99,23 @@ li.divider-label {
   }
 }
 
-/* "for Crispy fish tacos": quiet, so the groceries stand out; still a link
-   to the recipe (underlined when pointed at or focused). */
-.item-source {
-  font-size: 0.8rem;
-  color: var(--muted);
-  text-decoration: none;
+/* Behind a line's book (SharesButton): each recipe's share, its amount
+   first, then a link to the recipe. */
+.share-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: start;
 }
 
-.item-source:hover,
-.item-source:focus-visible {
-  text-decoration: underline;
+.help-box .share-list p {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.share-list strong {
+  font-weight: 600;
 }
 
 /* "Coles ↗": a pantry item's product page (pantry rows and the shopping list). */

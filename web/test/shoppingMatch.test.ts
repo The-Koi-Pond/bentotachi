@@ -1,7 +1,7 @@
 // Run from the web folder with: node --test "test/*.test.ts"
 import test from "node:test";
 import assert from "node:assert/strict";
-import { newToTheList, onTheList, onTheListAs, sameThing } from "../src/shoppingMatch.ts";
+import { onTheList, onTheListAs, sameThing } from "../src/shoppingMatch.ts";
 
 test("a pantry item on the list under another wording is found, so it isn't added twice", () => {
   const milk = { id: "milk", name: "Milk" };
@@ -51,22 +51,6 @@ test("a pantry item is on the list by its link, or by name on an unlinked row", 
   // A "Milk" row linked to another item (oat milk, say) isn't this one.
   assert.equal(onTheList(milk, [{ text: "Milk", pantry_item: "oat" }]), false);
   assert.equal(onTheList(milk, []), false);
-});
-
-test("adding to the list skips what's waiting there and repeats in one go, keeping the order", () => {
-  const waiting = [{ text: "Milk", pantry_item: "milk" }, { text: "2 onions", pantry_item: "" }];
-  const things = [
-    { text: "2 L milk", pantryItem: "milk", recipe: "r" },
-    { text: "500 g rice", pantryItem: "rice", recipe: "r" },
-    { text: "2 Onions ", pantryItem: "", recipe: "r" },
-    { text: "Feta", pantryItem: "", recipe: "r" },
-    { text: "Rice", pantryItem: "rice", recipe: "s" },
-  ];
-  assert.deepEqual(newToTheList(things, waiting).map((t) => t.text), ["500 g rice", "Feta"]);
-  // The waiting list itself isn't changed.
-  assert.equal(waiting.length, 2);
-  // Nothing waiting: everything, once each.
-  assert.deepEqual(newToTheList([{ text: "Feta", pantryItem: "" }, { text: "feta", pantryItem: "" }], []).map((t) => t.text), ["Feta"]);
 });
 
 test("the same pantry item is already on the list, whatever it's called there", () => {

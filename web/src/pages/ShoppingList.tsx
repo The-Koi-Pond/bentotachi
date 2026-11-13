@@ -24,6 +24,7 @@ import TitlePicker, { type TitleWords } from "../TitlePicker";
 import { useShoppingLists } from "../useShoppingLists";
 import { rowsOn, storedList, toBuyOn, waitingElsewhere } from "../shoppingLists";
 import { HelpBox, HelpButton, useHelp } from "../Help";
+import { sharesOf, type Share } from "../shoppingAddUp";
 
 // The title's menu of lists (TitlePicker; docs/PLAN.md, "several shopping
 // lists").
@@ -387,10 +388,10 @@ function ShoppingRow({
   onToggle: (item: ShoppingItem) => void;
   onRemove: (item: ShoppingItem) => void;
 }) {
-  const recipe = item.expand?.recipe;
   // The pantry item's brand, unless it only repeats its name or this line's
   // ("Nutella" by Nutella).
   const brand = pantryItem && brandBesideName(pantryItem) && brandBesideName({ name: item.text, brand: pantryItem.brand });
+  const shares = sharesOf(item);
   return (
     <li className={item.checked ? "ticked" : ""}>
       <label>
@@ -398,19 +399,47 @@ function ShoppingRow({
         <span>
           <span className="item-text">{item.text}</span>
           {brand && <span className="item-brand">{brand}</span>}
-          {recipe && (
-            <Link to={`/recipes/${recipe.id}`} className="item-source">
-              for {recipe.title}
-            </Link>
-          )}
         </span>
       </label>
       {pantryItem &&
         !item.checked &&
         storeLinksOf(pantryItem).map((link) => <StoreLink key={link} url={link} itemName={item.text} />)}
+      {shares.some((share) => share.recipe || share.title) && <SharesButton item={item} shares={shares} />}
       <button className="icon-button small" onClick={() => onRemove(item)} aria-label={`Remove ${item.text}`}>
         <CloseIcon />
       </button>
     </li>
+  );
+}
+
+// The book on a line from recipes: which recipes need it and how much of it
+// each, in their own words, with a link to each. The line itself stays only
+// what to buy: a "for …" under every line made the list noisy.
+function SharesButton({ item, shares }: { item: ShoppingItem; shares: Share[] }) {
+  const help = useHelp();
+  return (
+    <>
+      <HelpButton help={help} label={`Recipes for ${item.text}`} className="icon-button small">
+        <BookIcon />
+      </HelpButton>
+      <HelpBox help={help}>
+        {/* Not a list: inside a list row, the rows' own rules would reach it. */}
+        <div className="share-list">
+          {shares.map((share, index) => (
+            <p key={index}>
+              <strong>{share.text}</strong>
+              {share.recipe ? (
+                <Link to={`/recipes/${share.recipe}`}>{share.title || "A recipe"}</Link>
+              ) : share.title ? (
+                // Its recipe was deleted since (pb_hooks/shopping.pb.js).
+                <span className="muted">{share.title} (deleted)</span>
+              ) : (
+                <span className="muted">Typed in</span>
+              )}
+            </p>
+          ))}
+        </div>
+      </HelpBox>
+    </>
   );
 }

@@ -225,6 +225,16 @@ Not released yet:
   tab (a recipe, its editor, Add recipe, the settings pages) has a ‹ in
   the top bar, before the logo. It goes back where you came from, like
   Android's back, or to the page above with nothing to go back to.
+- Adding up the same thing (a tester's idea): garlic from two recipes is
+  one line, "3 garlic cloves" and "2 garlic cloves" making "5 garlic
+  cloves", "1 onion" and "1 large onion" making "2 onions"; grams and
+  kilos add up, a cup and grams stay two lines. The plan's "shop for the
+  week" adds up the same way (two recipes' "3 carrots" were one "3
+  carrots" before). Lines are only what to buy now: no "for …" under
+  them; a line from recipes has a small book that shows each recipe's
+  share and a link to it. Adding the same recipe again doesn't count it
+  twice. (A new `shares` field on list lines; older apps still show
+  them, with the first recipe.)
 
 Earlier releases, newest first: docs/RELEASES.md.
 
@@ -249,7 +259,18 @@ be one line on the shopping list. Xel's calls (2026-11-13):
   in units that don't match stay separate). A merged line belongs to two
   recipes, which a list row can't say yet (one `recipe` relation), so it
   needs a migration (it runs on phones too) and a mock-up of how the row
-  shows both.
+  shows both. Mocked up with the tester's two stews
+  (https://claude.ai/artifact/7QDHhWW3N1dA2gEgQkScua): A, the total "for
+  X and Y"; B, the total with a line per recipe ("3 for X", "2 for Y");
+  C, "5 garlic cloves (3 + 2)" for both. Xel picked B without the names
+  (2026-11-13: "we don't need to list the recipe under them, kinda
+  noisy"): every line is only what to buy, no "for …" under it; a line
+  from a recipe gets a small book button that shows each recipe's share
+  and a link to it (tapping the text still ticks it). Mocked up on the
+  same page; Xel said build it (2026-11-13), built the same day. To keep
+  older apps working, the extra recipes would go in a new field beside
+  `recipe` (which keeps the first), rather than turning `recipe` into a
+  list.
 
 ## Next up: moving things without dragging (Xel, 2026-11-13)
 
@@ -1006,9 +1027,8 @@ below), exporting everything ("more personality"), and expiry reminders
 1. **Remember aisle corrections** (small to medium): move "tahini" to Tins
    & jars once and it stays there for the household (aisles.ts guesses
    from words today). Later, maybe each household's own aisle order.
-2. **Add up quantities** (medium): "2 eggs" and "3 eggs" on the list
-   become one line, "5 eggs". scaling.ts already reads amounts; units
-   that don't match ("1 cup" and "200 g" flour) stay separate.
+2. **Add up quantities**: built 2026-11-13, from a tester's report
+   ("Next up: from a tester's report").
 3. **Reusable menus** (medium): save a week, or a set like "Taco Tuesday",
    and drop it onto the plan in one go.
 4. **A Trash for deleted recipes** (small to medium): a deleted recipe

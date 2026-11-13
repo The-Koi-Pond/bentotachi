@@ -8,6 +8,7 @@ import { familyStatus, linkFor, linkTarget, type Family } from "./pantryLinks.ts
 import { coversFor, stillToBuy, worthBuying, type Cover } from "./pantryStock.ts";
 import { withoutSoftMarks } from "./softMarks.ts";
 import { recipeMeasures, type RecipeMeasures } from "./volumes.ts";
+import { addedUp, type Share } from "./shoppingAddUp.ts";
 import type { PantryItem, PantryPacket, PantryStatus, Recipe } from "./pb";
 
 export interface GatheredRow {
@@ -23,8 +24,9 @@ export interface GatheredRow {
   family: Family | null;
   // The dinners that need it, in plan order, without repeats.
   recipeTitles: string[];
-  // The first recipe that needs it, for the shopping item's "for" note.
-  recipeId: string;
+  // Each line of a recipe in it, for the list's book button
+  // (shoppingAddUp.ts).
+  shares: Share[];
   // What the pantry's packets cover of it (pantryStock.ts).
   cover: Cover;
 }
@@ -181,18 +183,34 @@ export function gatherIngredients(
       // duplicate check sees the same words.
       const plain = listWording(line);
       const target = linkTarget(link);
-      const key = target ? `p:${target}` : `t:${plain.toLowerCase()}`;
+      let key = target ? `p:${target}` : `t:${plain.toLowerCase()}`;
+      // Not linked: onto a row of the same thing it adds up with ("3
+      // carrots" twice -> "6 carrots", "3 + 2 garlic cloves"), as the list
+      // itself does (shoppingAddUp.ts).
+      let summed: string | null = null;
+      if (!target) {
+        for (const [other, row] of rows) {
+          summed = other.startsWith("t:") ? addedUp(row.text, plain) : null;
+          if (summed) {
+            key = other;
+            break;
+          }
+        }
+      }
       // Measured on the whole line, as the recipe page does: "Parmesan,
       // finely grated (about 50 g)" says how much only after the comma.
       needs.set(key, [...(needs.get(key) ?? []), { line, measures }]);
       const row = rows.get(key);
+      const share = { recipe: recipe.id, title: recipe.title, text: plain };
       if (row) {
         if (!row.recipeTitles.includes(recipe.title)) row.recipeTitles.push(recipe.title);
+        row.shares.push(share);
         // Needed more than once (two recipes, or twice in one): one row, by
         // the pantry's name ("Onion", or "Pasta" for any kind), as one
         // line's amount would be too little.
         const name = link.item?.name ?? link.family?.name;
         if (name) row.text = name;
+        else if (summed) row.text = summed;
       } else {
         rows.set(key, {
           key,
@@ -200,7 +218,7 @@ export function gatherIngredients(
           pantryItem: link.item,
           family: link.family,
           recipeTitles: [recipe.title],
-          recipeId: recipe.id,
+          shares: [share],
           cover: { kind: "unknown" },
         });
       }

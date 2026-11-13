@@ -123,7 +123,7 @@ function ChosenRecipe({
     setStatus(null);
     try {
       const result = await addToShoppingList(
-        ticks.ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId })),
+        ticks.ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", shares: row.shares })),
         list
       );
       setStatus({ text: addedMessage(result, listName), isError: false });

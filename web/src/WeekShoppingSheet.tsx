@@ -64,7 +64,7 @@ export default function WeekShoppingSheet({
     setStatus(null);
     try {
       const result = await addToShoppingList(
-        ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", recipe: row.recipeId })),
+        ticked.map((row) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "", shares: row.shares })),
         to
       );
       setStatus({ text: addedMessage(result, listName), isError: false });

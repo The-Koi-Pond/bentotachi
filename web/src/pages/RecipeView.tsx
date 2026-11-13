@@ -1074,7 +1074,11 @@ function IngredientsSection({
               pantryItem: linkOf(lines[index]).item,
             };
           })
-      ).map(({ text, pantryItem }) => ({ text, pantryItem: pantryItem?.id ?? "", recipe: recipe.id }));
+      ).map(({ text, pantryItem }) => ({
+        text,
+        pantryItem: pantryItem?.id ?? "",
+        shares: [{ recipe: recipe.id, title: recipe.title, text }],
+      }));
       setStatus({ text: addedMessage(await addToShoppingList(things, { list: shop.open, mainId: shop.mainId }), listName), isError: false });
       setPicking(false);
       setChoosing(false);

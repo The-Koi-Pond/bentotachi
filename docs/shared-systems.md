@@ -85,8 +85,16 @@ they say otherwise.
   `useShoppingQueue` (`shoppingQueue.ts`). A record saved under an id
   picked beforehand (so sending it twice can't add it twice):
   `newRecordId` (`offlineShopping.ts`).
-- Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`; skips
-  what's already waiting, `newToTheList`). "Is it already on the list?":
+- Adding to the shopping list: `addToShoppingList` (`shoppingAdd.ts`):
+  onto the line waiting for the same thing, adding up ("3 + 2 garlic
+  cloves"), or a new line; a recipe already counted on a line isn't
+  counted again (`plannedAdds`, `shoppingAddUp.ts`). Two lines as one
+  ("5 garlic cloves", or null when they don't add up): `addedUp`; each
+  recipe's part of a line, for its book button: `shares` /
+  `sharesOf` (a deleted recipe's share loses its id on the server,
+  `pb_hooks/shopping.pb.js`). Whether a gathered row is already on the
+  list for its recipes: `plannedAdds` changes nothing (`GatheredTicks.tsx`). The amount a line starts with: `leadingAmount`
+  (`scaling.ts`). "Is it already on the list?":
   `sameThing`, for a pantry item `onTheList` (`shoppingMatch.ts`;
   `server/pb_hooks/pantry.pb.js` follows the same rule), or under another
   wording ("300ml milk"): `onTheListAs`. Whether a line is just a thing

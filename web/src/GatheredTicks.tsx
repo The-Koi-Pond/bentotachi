@@ -5,7 +5,7 @@ import { rowsOn, waitingElsewhere } from "./shoppingLists";
 import { rowStatus, startsTicked, type GatheredRow } from "./weekShopping";
 import { useLiveRecords } from "./useLiveRecords";
 import { shoppingCopyReadOnly } from "./offline";
-import { sameThing } from "./shoppingMatch";
+import { plannedAdds, sharesOf } from "./shoppingAddUp";
 import { coverNote } from "./pantryStock";
 
 const STATUS_WORDS = { have: "Have", low: "Low", out: "Out" } as const;
@@ -22,9 +22,14 @@ export function useGatheredTicks(rows: GatheredRow[], to: ToList, lists: Pick<Sh
   const [ticks, setTicks] = useState<Map<string, boolean>>(new Map());
 
   const all = shopping.items ?? [];
-  const waiting = rowsOn(all, to.list || to.mainId, to.mainId).filter((item) => !item.checked);
+  const waiting = rowsOn(all, to.list || to.mainId, to.mainId)
+    .filter((item) => !item.checked)
+    .map((item) => ({ id: item.id, text: item.text, pantryItem: item.pantry_item, shares: sharesOf(item) }));
   const thing = (row: GatheredRow) => ({ text: row.text, pantryItem: row.pantryItem?.id ?? "" });
-  const onList = (row: GatheredRow) => waiting.some((item) => sameThing(thing(row), item));
+  // On the list already for these recipes: adding it would change nothing
+  // (plannedAdds). Another recipe's "3 carrots" can still be ticked, and
+  // adds up.
+  const onList = (row: GatheredRow) => plannedAdds([{ ...thing(row), shares: row.shares }], waiting).steps.length === 0;
   // The other list it's waiting on, by name, or "".
   const elsewhere = (row: GatheredRow) => waitingElsewhere(thing(row), all, to.list || to.mainId, lists)?.name ?? "";
   const isTicked = (row: GatheredRow) => !onList(row) && (ticks.get(row.key) ?? (startsTicked(row) && !elsewhere(row)));
