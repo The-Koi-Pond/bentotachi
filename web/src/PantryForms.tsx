@@ -640,7 +640,7 @@ export function AddPantryItem({
       <button type="button" className="link-button more-details" aria-expanded={more} onClick={() => setMore(!more)}>
         {more ? "− Fewer details" : "+ More details (brand, note, expiry, store links)"}
       </button>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {error && duplicate && barcode && onUseExisting && (
         <div className="actions">
           <button type="button" className="button small" onClick={() => onUseExisting(duplicate, fields.brand)}>
@@ -975,7 +975,7 @@ export function EditPantryItem({
           <NoteField existing={existing} fields={fields} onChange={change} />
         </div>
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
         <button type="button" className="button danger small push-left" onClick={onDelete}>
           Remove

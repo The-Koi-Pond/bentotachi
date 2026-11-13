@@ -866,7 +866,6 @@
 
 .tag-chip.selected .tag-count {
   color: inherit;
-  opacity: 0.85;
 }
 
 /* Recipe list tag panel: "Show recipes [With | Without]" above the tags. */

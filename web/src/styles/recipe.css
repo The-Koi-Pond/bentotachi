@@ -721,9 +721,21 @@
   cursor: pointer;
 }
 
-.step.done,
-.steps > li:has(.step.done) .step-timers {
-  opacity: 0.55;
+/* A ticked step: muted and struck through (.done), its number and timers
+   quietened too. Colours, not opacity, so its words still read (4.5:1).
+   (.step's own `color: inherit` comes after .done, so it's said again.) */
+.step.done {
+  color: var(--muted);
+}
+
+.step.done .step-number {
+  color: var(--muted);
+  background: none;
+  box-shadow: inset 0 0 0 1.5px var(--border);
+}
+
+.steps > li:has(.step.done) .timer-chip {
+  color: var(--muted);
 }
 
 /* "⏱ 10 min" inside a step that mentions a time, under its text and lined
@@ -764,8 +776,9 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  /* 28 px, or more with the phone's bigger text, so "12" stays inside. */
+  width: max(28px, calc(1.75rem * var(--text-zoom, 1)));
+  height: max(28px, calc(1.75rem * var(--text-zoom, 1)));
   border-radius: 50%;
   background: var(--accent-soft);
   font-weight: 700;
@@ -777,7 +790,6 @@
   margin: 0;
 }
 
-/* "✓ Cooked it" at the end of a recipe's method. */
 /* "Enough: 2 × 500 g" under a recipe line while choosing what to buy. */
 .pick-note {
   font-size: 0.8rem;
@@ -1380,8 +1392,10 @@ footer .person-name:focus-visible {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+/* The stage still to come: quiet, but readable (no opacity). */
 .timer-stage.later {
-  opacity: 0.55;
+  color: var(--muted);
+  border-style: dashed;
 }
 
 .timer-label {

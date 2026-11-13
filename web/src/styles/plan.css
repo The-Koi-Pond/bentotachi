@@ -136,8 +136,9 @@
   flex: none;
   display: flex;
   flex-direction: column;
-  /* Just wide enough for "Today" and "Nov 10". */
-  width: 46px;
+  /* Just wide enough for "Today" and "Nov 10", growing with the phone's
+     bigger text (textZoom.ts) so "Today" isn't drawn under the dish. */
+  width: max(46px, calc(2.875rem * var(--text-zoom, 1)));
   line-height: 1.2;
 }
 
@@ -248,7 +249,6 @@
   align-self: stretch;
   width: 28px;
   height: auto;
-  opacity: 0.6;
   border-radius: 0;
 }
 
@@ -507,16 +507,22 @@
   border-radius: 8px;
 }
 
+/* With the phone's biggest text the buttons wrap onto a second line rather
+   than running off the sheet. */
 .chooser-filters,
 .chooser-note-picks,
 .chooser-note-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
 .chooser-filters > button,
 .chooser-note-picks > button {
-  flex: 1;
+  /* Equal widths while they fit; never narrower than their words, so they
+     wrap instead. */
+  flex: 1 1 0%;
+  min-width: max-content;
   display: inline-flex;
   align-items: center;
   justify-content: center;

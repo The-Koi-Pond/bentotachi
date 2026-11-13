@@ -313,7 +313,7 @@ export default function AddRecipe() {
             placeholder={"Name\nIngredients\n…\nMethod\n…"}
           />
         </label>
-        {pasteError && <p className="error">{pasteError}</p>}
+        {pasteError && <p className="error" role="alert">{pasteError}</p>}
         <div className="actions">
           <Link to={handLink} className="button">
             Add by hand

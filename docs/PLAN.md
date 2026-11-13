@@ -251,6 +251,13 @@ Not released yet:
   tags, "Time it"); ratings and "Last had · Cooked it" moved to a box after
   the method; on a phone the photo is shorter, so the first ingredients
   show without scrolling.
+- A last polish (the same check-up): screen readers hear an error under a
+  form as it appears (a wrong password, a failed save); ticked steps, the
+  timer's next stage and the week view's grip are quiet without going
+  faint; the hint inside a box reads in dark mode; with the phone's
+  biggest text, step numbers, the plan's day names and the ‹ › − + buttons
+  grow, and the recipe chooser's buttons wrap; the pantry card lost its
+  side stripe.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

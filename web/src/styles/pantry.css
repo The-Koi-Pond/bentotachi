@@ -684,7 +684,7 @@
 /* To use soon, or past it: the expiry badges' amber, mixed with the text
    colour so it reads on the jade in light mode as well as dark. */
 .stock-label-meta.soon {
-  color: color-mix(in srgb, var(--low) 55%, var(--text));
+  color: color-mix(in srgb, var(--low) 45%, var(--text)); /* 5.2 on the jade */
   font-weight: 600;
 }
 
@@ -788,7 +788,6 @@
   padding: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--jade-strong);
   border-radius: 10px;
   /* Scrolled into view clear of the bottom edge. */
   scroll-margin-bottom: 16px;

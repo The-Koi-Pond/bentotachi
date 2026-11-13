@@ -109,7 +109,7 @@ function ShelfPage({ opened }: { opened: string }) {
           what to call anything (“mains”, “main dishes”, “dinner”), so add each spelling you see.
         </p>
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {category === undefined ? (
         <p className="muted">
           That shelf has gone walkabout: someone may have deleted it. <Link to="/?edit=1">Back to your recipes</Link>

@@ -258,7 +258,7 @@ function AddSiteForm({ sites, onAdded, onClose }: { sites: SavedSite[]; onAdded:
         </span>
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Smitten Kitchen" />
       </label>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
         <button type="button" className="button ghost" onClick={onClose} disabled={busy}>
           Cancel

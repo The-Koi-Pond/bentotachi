@@ -370,7 +370,7 @@ export default function RecipeEdit() {
         )}
       </fieldset>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
         <Link to={existing ? `/recipes/${existing.id}` : "/"} className="button ghost">
           Cancel

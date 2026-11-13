@@ -754,8 +754,10 @@ main h1:not(.card h1) {
 }
 
 .icon-button.small {
-  width: 36px;
-  height: 36px;
+  /* 36 px, or more with the phone's bigger text, for the ones that hold a
+     character ("‹", "−", "+") rather than a drawn icon. */
+  width: max(36px, calc(2.25rem * var(--text-zoom, 1)));
+  height: max(36px, calc(2.25rem * var(--text-zoom, 1)));
   color: var(--muted);
 }
 
@@ -1056,6 +1058,13 @@ select {
   border-radius: 8px;
   padding: 7px 12px;
   width: 100%;
+}
+
+/* The hint inside an empty box: the browser's own grey is too faint on the
+   dark boxes (3.2), --muted reads in both themes. */
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 input[type="checkbox"] {

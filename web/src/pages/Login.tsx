@@ -246,7 +246,7 @@ function PhoneSetupForm() {
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="like Sam" required autoFocus />
         </label>
       )}
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <button className="button primary" disabled={busy}>
         {busy ? "Starting… (a few seconds)" : returning ? "Open Bentotachi" : "Start using Bentotachi"}
       </button>
@@ -309,7 +309,7 @@ function LoginForm({ server, phone = false }: { server: string; phone?: boolean 
           required
         />
       </label>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <button className="button primary" disabled={busy}>
         {busy ? "Logging in…" : "Log in"}
       </button>
@@ -394,7 +394,7 @@ function SetupForm({ server }: { server: string }) {
         This also makes you the server's admin. If you ever need its admin page ({isAndroidApp ? "the server address" : window.location.host}
         /_/), log in there with <strong>{username || "yourname"}@bento.local</strong> and this password.
       </p>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <button className="button primary" disabled={busy}>
         {busy ? "Setting up…" : "Set up Bentotachi"}
       </button>

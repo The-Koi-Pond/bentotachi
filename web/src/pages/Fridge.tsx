@@ -248,7 +248,7 @@ function NoteForm({ solo, onPosted }: { solo: boolean; onPosted: (note: Note) =>
           solo ? "A note to yourself, like “Defrost the chicken tonight”" : "A note for everyone, like “Don't buy eggs, I got two dozen”"
         }
       />
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <button className="button primary end-button" disabled={busy || !text.trim()}>
         {busy ? "Sticking it up…" : "Stick it on the fridge"}
       </button>
@@ -302,7 +302,7 @@ function Lately() {
   return (
     <section className="card stack">
       <h2>Lately</h2>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {!data && !error && <p className="muted">Having a look…</p>}
       {data && (
         <ul className="fridge-lately">

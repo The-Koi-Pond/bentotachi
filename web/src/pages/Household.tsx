@@ -184,7 +184,7 @@ function AddPerson({ onAdded }: { onAdded: (user: User) => void }) {
               required
             />
           </label>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert">{error}</p>}
           <div className="actions">
             <button type="button" className="button ghost" onClick={() => setOpen(false)} disabled={busy}>
               Cancel
