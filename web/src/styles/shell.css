@@ -107,6 +107,20 @@ main {
   gap: 6px;
 }
 
+/* The ‹ (on a page a step in from a tab, BackButton.tsx), then the logo. */
+.topbar-start {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Into the bar's left padding a little, so the logo moves over less. */
+.topbar .back-button {
+  flex: none;
+  margin-left: -8px;
+}
+
 /* The top bar's buttons (Manage, +, ⋮): all the same small circle with the
    same size icon, so the orange + doesn't look bigger than the rest. */
 .topbar .icon-button {

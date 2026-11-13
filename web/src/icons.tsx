@@ -451,6 +451,15 @@ export function ChevronIcon() {
   );
 }
 
+// The top bar's back arrow (BackButton.tsx).
+export function BackIcon() {
+  return (
+    <Icon size={20}>
+      <path d="m15 18-6-6 6-6" />
+    </Icon>
+  );
+}
+
 // The recipe timer's Stop, Pause and Resume: filled, like a player's.
 export function StopIcon({ size = 14 }: { size?: number }) {
   return (

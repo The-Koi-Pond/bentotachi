@@ -214,9 +214,42 @@ Changes already live in the browser version, not yet in a published APK
 (they go into the next `npm run release`'s notes). When a release goes
 out, its list moves to the top of docs/RELEASES.md as "Released in …".
 
-Not released yet: nothing (1.28.0 went out on 2026-11-13).
+Not released yet:
+
+- Tidier lines on the shopping list (a tester's report): brackets that
+  only say how to prepare it or point to a note go, as a ", diced" already
+  did ("3 garlic cloves (finely minced)" -> "3 garlic cloves", "(cut into
+  0.5cm / 0.2" slices (Note 3))" gone); amounts, swaps and kinds stay
+  ("(100 g)", "(1 punnet)", "(or a few handfuls kale)").
+- A way back (a tester got stuck on a recipe): every page a step in from a
+  tab (a recipe, its editor, Add recipe, the settings pages) has a ‹ in
+  the top bar, before the logo. It goes back where you came from, like
+  Android's back, or to the page above with nothing to go back to.
 
 Earlier releases, newest first: docs/RELEASES.md.
+
+## Next up: from a tester's report (2026-11-13)
+
+A tester got stuck on a recipe for five minutes, not knowing the way back
+to the list was tapping Recipes again (Android's back works too, but
+nothing shows it), and asked for the same ingredient from two recipes to
+be one line on the shopping list. Xel's calls (2026-11-13):
+
+- **A way back from a recipe**: mocked up first, three options drawn on
+  the real page (https://claude.ai/artifact/MRmqy675nmZSSCKpPnvud1). Xel
+  picked B (2026-11-13): a ‹ in the top bar before the logo, on every page
+  a step in from a tab (built, above). Not chosen: A, "‹ Recipes" above
+  the title (one more line, and it scrolls away); C, a ‹ beside the title
+  (scrolls away, less room for long titles).
+- **The same thing from two recipes, one line**: first tidier wording
+  (built, above: the list's duplicate check only matches the same words,
+  and the cooking notes in brackets made them differ). Then adding up, as
+  its own job: "3 garlic cloves" waiting and "2 garlic cloves" added
+  becomes "5 garlic cloves" (the "Add up quantities" idea below; amounts
+  in units that don't match stay separate). A merged line belongs to two
+  recipes, which a list row can't say yet (one `recipe` relation), so it
+  needs a migration (it runs on phones too) and a mock-up of how the row
+  shows both.
 
 ## Next up: moving things without dragging (Xel, 2026-11-13)
 

@@ -20,6 +20,7 @@ import Fridge from "./pages/Fridge";
 import Settings from "./pages/Settings";
 import Toaster from "./Toaster";
 import FridgeLink from "./FridgeLink";
+import BackButton from "./BackButton";
 import SettingsMenu from "./SettingsMenu";
 import ConnectionStatus from "./ConnectionStatus";
 import { PhotoKeeper } from "./KeptPhotos";
@@ -91,7 +92,10 @@ function Screens() {
           (pageScroll.ts). */}
       <div className="app-frame">
       <header className="topbar">
-        <FridgeLink />
+        <span className="topbar-start">
+          <BackButton />
+          <FridgeLink />
+        </span>
         <nav>
           <AddRecipeButton />
           <ConnectionStatus />

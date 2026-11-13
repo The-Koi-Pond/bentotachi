@@ -104,6 +104,9 @@ they say otherwise.
   for one-way or big things: `askFirst` (`askFirst.ts`), never
   `window.confirm`; it works outside React too. Deleting recipes: `confirmDelete` / `deleteRecipes` (`recipeDeletion.ts`;
   the question from `deleteQuestion`, `deleteWarning.ts`).
+- Going back a page from a button (the top bar's ‹, the shelves' Done):
+  `useGoBack` (`useGoBack.ts`): back where you came from, or up a level
+  (`parentOf`, `pageParents.ts`) with nothing in the app to go back to.
 - Leaving with unsaved typing: `useUnsavedChanges` / `confirmDiscard`
   (`unsavedChanges.ts`).
 - A short message after a tap, at the bottom: `showToast` / `showError`

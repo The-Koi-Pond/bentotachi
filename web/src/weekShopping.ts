@@ -80,16 +80,62 @@ function partsOf(text: string): string[] {
   return parts;
 }
 
+// The sizes in how to cut something ("1cm / 0.4\"", "~ 1 x 3cm"): not words
+// that make a bracket into something to buy.
+const CUT_SIZE = /^(?:[~≈x×/\-–]|[\d.,½¼¾⅓⅔⅛/-]+(?:mm|cm|in|inch|inches|["”″])?|mm|cm|inch|inches)$/i;
+// A pointer to the recipe's notes: "(Note 3)", "(see note)".
+const NOTE_POINTER = /^(?:see\s+)?(?:the\s+)?notes?(?:\s+\d+|\s+below|\s+above)?\.?$/i;
+
+// Whether a bracket says only how to prepare it, or where its note is:
+// "(finely minced)", "(halved and sliced into 1cm / 0.4" wedges)",
+// "(peeled, cut into chunks ~ 1 x 3cm)", "(Note 3)". Amounts, swaps and
+// kinds stay: "(100 g)", "(1 punnet)", "(or a few handfuls kale)",
+// "(store bought mix, or see Note 2)", "(14.5 oz, drained)".
+function isPreparationAside(inside: string): boolean {
+  return partsOf(inside.replace(/\([^)]*\)|\[[^\]]*\]/g, " ").trim()).every((part) => {
+    if (NOTE_POINTER.test(part.trim())) return true;
+    const words = part.split(/\s+/).filter((word) => word && !CUT_SIZE.test(word));
+    return isPreparation(words.join(" "));
+  });
+}
+
+// The line without its preparation brackets (isPreparationAside); brackets
+// inside brackets ("(cut into 4cm pieces (cut the thick end in half))")
+// go with the one around them.
+function withoutPreparationAsides(text: string): string {
+  let out = "";
+  let depth = 0;
+  let start = -1;
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === "(") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (char === ")" && depth > 0) {
+      depth--;
+      if (depth === 0) {
+        const aside = text.slice(start, i + 1);
+        if (!isPreparationAside(aside.slice(1, -1))) out += aside;
+        start = -1;
+      }
+    } else if (depth === 0) out += char;
+  }
+  // An unclosed bracket stays as it was written.
+  if (depth > 0 && start >= 0) out += text.slice(start);
+  return out.replace(/\s+([,.;:)])/g, "$1").replace(/\s{2,}/g, " ").trim();
+}
+
 // How a recipe line reads on the shopping list: the recipe's own words
 // (amount and kind: "12 oz gluten free linguine pasta", not the pantry's
-// "Pasta"), without how to prepare it ("2 onions, diced" ->
-// "2 onions", "Feta, to serve" -> "Feta"). Only preparation goes: "Salt,
-// pepper" and "2 carrots, 2 celery sticks" keep every thing to buy, and
-// commas in brackets or decimals ("1,5 kg") don't count.
+// "Pasta"), without how to prepare it ("2 onions, diced" -> "2 onions",
+// "Feta, to serve" -> "Feta", "3 garlic cloves (finely minced)" -> "3
+// garlic cloves"). Only preparation goes: "Salt, pepper" and "2 carrots, 2
+// celery sticks" keep every thing to buy, and commas in brackets or
+// decimals ("1,5 kg") don't count.
 export function listWording(line: string): string {
   const parts = partsOf(withoutSoftMarks(line).trim());
   while (parts.length > 1 && isPreparation(parts[parts.length - 1])) parts.pop();
-  return parts.join(", ").trim();
+  return withoutPreparationAsides(parts.join(", ")) || parts.join(", ").trim();
 }
 
 // A recipe's chosen lines as things to buy, from its page: each in its own

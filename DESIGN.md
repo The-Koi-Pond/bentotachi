@@ -339,7 +339,7 @@ The system's defining container. A section heading (and a slim button beside it)
 - **Error / Disabled:** a form's errors sit under the box in Danger and are read out as they appear; a disabled select drops to 55% opacity. Checkboxes are 22 px and tick in Jade Strong.
 
 ### Navigation
-- **Top bar:** Surface White, 1 px bottom border, the drawn title at 36 px tall on the left (its sticky note beside it), 44 px icon buttons on the right; a crossed-out cloud appears only when the server can't be reached.
+- **Top bar:** Surface White, 1 px bottom border, the drawn title at 36 px tall on the left (its sticky note beside it), with a ‹ back button before it on every page a step in from a tab (a recipe, its editor, Add recipe, the settings pages), 44 px icon buttons on the right; a crossed-out cloud appears only when the server can't be reached.
 - **Tab bar:** a tray. Rim background, 4 px rim and gaps, each tab an 8 px-rounded Surface White compartment with a small icon above a 0.8rem weight-600 label in Quiet Grey. The current tab fills Jade Soft with an Umeboshi label. Labels shorten with "…" at the biggest text rather than spill.
 - **Two-way switch:** a white 12 px-rounded strip with a 1 px border; each side 32 px tall, 0.88rem weight 500 in Quiet Grey. The chosen side turns Soy Ink, weight 700, with the wooden chopstick (4 px, Waribashi Wood) underneath. Never an iPhone-style sliding pill.
 - **Toggle switch:** a 40 by 24 px pill track in Border Mist with a 1.5 px edge so it shows when off; on, it turns Jade Strong and the white thumb slides 16 px.

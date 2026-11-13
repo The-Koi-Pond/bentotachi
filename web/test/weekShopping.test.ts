@@ -41,6 +41,36 @@ test("the list says what the recipe needs, without how to prepare it", () => {
   assert.equal(listWording("Onions, carrots and celery, chopped"), "Onions, carrots and celery");
 });
 
+test("brackets that only say how to prepare it, or where its note is, go too", () => {
+  // Lines from a tester's list, copied from two recipe sites.
+  assert.equal(listWording("3 garlic cloves (finely minced)"), "3 garlic cloves");
+  assert.equal(listWording('1 onion (halved and sliced into 1cm / 0.4" wedges)'), "1 onion");
+  assert.equal(listWording('1 large onion (halved then sliced into 1cm / 0.4" slices)'), "1 large onion");
+  assert.equal(listWording('3 carrots (peeled, cut into equal size chunks ~ 1 x 3cm (0.4 x 1.2"))'), "3 carrots");
+  assert.equal(
+    listWording('2 celery sticks (cut into 4cm / 1.6" pieces (cut thicker end in half horizontally so they\'re all about the same width))'),
+    "2 celery sticks"
+  );
+  assert.equal(
+    listWording('1/2 cup (100 g) sun dried tomatoes (cut into 0.5cm / 0.2" slices (Note 3))'),
+    "1/2 cup (100 g) sun dried tomatoes"
+  );
+  assert.equal(listWording("Salt (see note)"), "Salt");
+  assert.equal(listWording("Parsley (optional), to serve"), "Parsley");
+  // Amounts, swaps and kinds stay.
+  for (const line of [
+    "1 1/2 tsp Italian herb mix (store bought mix, or see Note 2)",
+    "200g (1 1/4 cups) cherry or grape tomatoes (1 punnet)",
+    "100g / 3.5oz baby spinach (or a few big handfuls torn kale)",
+    "3 sprigs fresh thyme (or 1/2 tsp dried thyme)",
+    "1 can (14.5 oz, drained) tomatoes",
+    "Chillies (bird's eye)",
+  ])
+    assert.equal(listWording(line), line);
+  // A bracket left open is kept as written.
+  assert.equal(listWording("2 eggs (beaten"), "2 eggs (beaten");
+});
+
 test("nothing to buy is cut off: lists of things, and commas in brackets", () => {
   assert.equal(listWording("Salt, pepper"), "Salt, pepper");
   assert.equal(listWording("2 carrots, 2 celery sticks, 1 onion"), "2 carrots, 2 celery sticks, 1 onion");

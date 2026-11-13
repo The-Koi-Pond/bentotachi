@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
+import { useGoBack } from "../useGoBack";
 import { errorMessage, recipeCategories, recipes, type Recipe, type RecipeCategory } from "../pb";
 import { normaliseTag, sortCategories } from "../recipeCategories";
 import { forEveryone, useSingleUser } from "../household";
@@ -27,15 +28,10 @@ function ShelfPage({ opened }: { opened: string }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const singleUser = useSingleUser();
-  const navigate = useNavigate();
 
   // Done: back to the Recipes page's Edit mode (by going back, if that's
-  // where this was opened from).
-  function finish() {
-    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
-    if (index > 0) navigate(-1);
-    else navigate("/?edit=1", { replace: true });
-  }
+  // where this was opened from; pageParents.ts).
+  const finish = useGoBack();
 
   useEffect(() => {
     recipeCategories()
