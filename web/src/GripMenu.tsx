@@ -35,6 +35,9 @@ export default function GripMenu({
         className={`drag-handle ${className}`}
         title="Drag to move, or tap for moves"
         {...drag}
+        // A button that opens a menu, not dnd-kit's "draggable": TalkBack
+        // says what it is, and the hint below says it also drags.
+        aria-roledescription={undefined}
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}

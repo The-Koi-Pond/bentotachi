@@ -11,9 +11,10 @@ import type { Announcements, KeyboardCodes, ScreenReaderInstructions } from "@dn
 export const gripKeys: KeyboardCodes = { start: ["Space"], cancel: ["Escape"], end: ["Space", "Enter", "Tab"] };
 
 // What a screen reader hears on such a grip, in place of dnd-kit's own
-// hint, which says nothing of the menu.
+// hint, which says nothing of the menu. TalkBack reads it on a phone too,
+// so the menu comes first and the keys after.
 export const gripInstructions: ScreenReaderInstructions = {
-  draggable: "Press Enter for a menu of moves. Or press Space to pick it up, the arrow keys to move it, and Space again to drop it.",
+  draggable: "Opens a menu of moves. With a keyboard, Space picks it up, the arrow keys move it, and Space drops it.",
 };
 
 type Id = string | number;
