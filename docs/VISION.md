@@ -194,7 +194,12 @@ than the roomier defaults. Two layouts changed with it (picked from
 mock-ups the same day): on the plan, a second dish is added with a "+"
 beside the last dish's ✕, not a "+ Dinner" under every planned day; on a
 recipe, the details, tags, ratings and cooking history share one box,
-split by thin lines, instead of three boxes.
+split by thin lines, instead of three boxes. Since 2026-11-13 (Xel picked
+"C" from mock-ups after the design critique) that box holds only what you
+need before cooking (description, servings and times, tags, "Time it");
+the ratings and "Last had · Cooked it" are a second box after the method,
+which replaced the method's own "Cooked it"; and on a phone the photo is
+at most 220 px tall, so the first ingredients are on the first screen.
 
 **Compact look, 44px to tap** (Xel, 2026-11-12, after the design audit):
 rows and buttons keep the compact sizes above, but every control's tap

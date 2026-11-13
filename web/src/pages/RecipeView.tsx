@@ -579,11 +579,11 @@ export default function RecipeView() {
         </>
       )}
 
-      {/* About it, in one box split by thin lines (docs/VISION.md, "Compact,
-          not airy"): the description, servings and times with the ✎ for
-          them (and the name) in its corner, the tags, how it's gone for us
-          (ratings, when it was last had and next planned, "We cooked
-          this"), and "⏱ Time it" last. */}
+      {/* What to know before cooking, in one box split by thin lines
+          (docs/VISION.md, "Compact, not airy"): the description, servings
+          and times with the ✎ for them (and the name) in its corner, the
+          tags, and "⏱ Time it" last. How it's gone for us comes after the
+          method. */}
       <section className="details-card" aria-label="About this recipe">
         {editing !== "details" && (
           <>
@@ -615,28 +615,9 @@ export default function RecipeView() {
           canEdit={!offline}
           onSave={(tags) => save({ tags })}
         />
-        {!offline && (
-          <>
-            <RecipeReactions state={ratings} showHeart={!recipe.image} />
-            {/* The website's own rating, plainly the site's (★, not onigiri). */}
-            {!!recipe.site_rating && !!siteHost(recipe.source_url) && (
-              <p className="muted site-rating">
-                <span className="site-star">★</span> {recipe.site_rating}
-                {recipe.site_rating_count
-                  ? ` from ${recipe.site_rating_count.toLocaleString()} ${recipe.site_rating_count === 1 ? "rating" : "ratings"}`
-                  : ""}{" "}
-                on {siteHost(recipe.source_url)}
-              </p>
-            )}
-            <CookHistory
-              recipeId={recipe.id}
-              cooked={cooked.items ?? []}
-              onCooked={() => void finishCooking()}
-              onUndo={(entries) => void undoCooked(entries)}
-            />
-            {/* Timing it while cooking, to save how long it really takes. */}
-            {editing !== "details" && <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} cookedAt={cookedAt} />}
-          </>
+        {/* Timing it while cooking, to save how long it really takes. */}
+        {!offline && editing !== "details" && (
+          <RecipeTimer recipe={recipe} onSave={save} onFinished={() => void finishCooking()} cookedAt={cookedAt} />
         )}
       </section>
 
@@ -767,17 +748,34 @@ export default function RecipeView() {
             })}
           </ol>
         )}
-        {/* At the end of the method, where cooking ends: marks it cooked,
-            then asks what it used up (UsedUpSheet). */}
-        {!offline && editing !== "steps" && (recipe.steps ?? []).length > 0 && (
-          <div className="finished-cooking">
-            <button className="button primary" onClick={() => void finishCooking()}>
-              <span className="button-mark" aria-hidden="true">✓</span> Cooked it
-            </button>
-            <span className="muted">Marks it cooked today, then asks what it used up</span>
-          </div>
-        )}
       </section>
+
+      {/* How it's gone for us, after the method where cooking ends: the
+          ratings, when it was last had and next planned, and "Cooked it",
+          which then asks what it used up (UsedUpSheet). Up top they kept the
+          ingredients off a phone's first screen (docs/VISION.md, "Compact,
+          not airy"). */}
+      {!offline && (
+        <section className="details-card" aria-label="How it's gone">
+          <RecipeReactions state={ratings} showHeart={!recipe.image} />
+          {/* The website's own rating, plainly the site's (★, not onigiri). */}
+          {!!recipe.site_rating && !!siteHost(recipe.source_url) && (
+            <p className="muted site-rating">
+              <span className="site-star">★</span> {recipe.site_rating}
+              {recipe.site_rating_count
+                ? ` from ${recipe.site_rating_count.toLocaleString()} ${recipe.site_rating_count === 1 ? "rating" : "ratings"}`
+                : ""}{" "}
+              on {siteHost(recipe.source_url)}
+            </p>
+          )}
+          <CookHistory
+            recipeId={recipe.id}
+            cooked={cooked.items ?? []}
+            onCooked={() => void finishCooking()}
+            onUndo={(entries) => void undoCooked(entries)}
+          />
+        </section>
+      )}
       {usedUp && <UsedUpSheet recipe={recipe} scale={scale} measures={hints.measures} again={usedUp.again} onClose={closeUsedUp} />}
 
       {(recipe.author_notes || recipe.notes || editing === "author_notes" || editing === "notes") && (

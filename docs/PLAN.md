@@ -246,6 +246,11 @@ Not released yet:
   timer or "Time it" runs; Shopping and Pantry have a "?" saying their
   title is a menu; a place's "2 to check" is now "2 low or due"; Add
   recipe has a title; an empty recipe name says "A recipe needs a name."
+- Ingredients higher on a recipe (the same check-up): the box at the top
+  keeps what you need before cooking (description, servings and times,
+  tags, "Time it"); ratings and "Last had · Cooked it" moved to a box after
+  the method; on a phone the photo is shorter, so the first ingredients
+  show without scrolling.
 
 Earlier releases, newest first: docs/RELEASES.md.
 

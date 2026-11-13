@@ -778,16 +778,6 @@
 }
 
 /* "✓ Cooked it" at the end of a recipe's method. */
-.finished-cooking {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  margin-top: 14px;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
 /* "Enough: 2 × 500 g" under a recipe line while choosing what to buy. */
 .pick-note {
   font-size: 0.8rem;
@@ -1154,6 +1144,16 @@ footer .person-name:focus-visible {
   aspect-ratio: 3 / 2;
   height: auto;
   max-height: 380px;
+}
+
+/* On a phone the photo (one, or a strip of them) stays short enough that
+   the first ingredients are on the first screen (docs/VISION.md, "Compact,
+   not airy"). After the rules above, which it overrides. */
+@media (max-width: 520px) {
+  .hero,
+  .hero-strip .hero {
+    max-height: 220px;
+  }
 }
 
 .hero-dots {
