@@ -785,8 +785,8 @@ main h1:not(.card h1) {
   display: inline-grid;
   place-items: center;
   /* 22 px, or more with the phone's bigger text, so the "?" stays inside. */
-  width: max(22px, 1.76em);
-  height: max(22px, 1.76em);
+  width: max(22px, calc(1.76em * var(--text-zoom, 1)));
+  height: max(22px, calc(1.76em * var(--text-zoom, 1)));
   margin-left: 6px;
   padding: 0;
   font: inherit;

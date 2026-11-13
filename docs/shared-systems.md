@@ -269,8 +269,11 @@ they say otherwise.
   lists under "44 px to tap" in `base.css` and set `--tap-x` / `--tap-y`
   to at most half the gap to its neighbour (an invisible `::before`; not
   for inputs or selects, nor inside a box that clips). A size that holds
-  text: `max(<px>, <em>)`, so it looks the same and grows with the phone's
-  text size.
+  text: `max(<px>, calc(<em> * var(--text-zoom, 1)))`, so it looks the
+  same and grows with the phone's text size. Android's web view enlarges
+  font sizes but not rem/em in other lengths; `--text-zoom` (textZoom.ts,
+  set at start) is that enlargement, 1 in browsers. Check big text on the
+  emulator at `font_scale 2.0`, not by enlarging a browser's root font.
 - A screen's styles go in its own file. A new piece two screens use goes
   in `base.css`, not a copy in each. Some older shared pieces still live
   in the file of the screen they began on, among them: tag chips

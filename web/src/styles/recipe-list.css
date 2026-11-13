@@ -327,15 +327,19 @@
 }
 
 /* Phones: three small cards per row, fewer once the phone's text is big
-   enough that a name wouldn't fit (a card never narrower than 5.5rem, so
-   still three on a 320 px phone at normal text). The half pixel spares a
-   browser that rounds the thirds up from dropping to two. */
+   enough that a name wouldn't fit (a card never narrower than 5.5rem at
+   normal text, so still three on a 320 px phone; --text-zoom is Android's
+   bigger text, textZoom.ts). The half pixel spares a browser that rounds
+   the thirds up from dropping to two. */
 @media (max-width: 520px) {
   .recipe-grid {
     --grid-gap: 8px;
     grid-template-columns: repeat(
       auto-fill,
-      minmax(min(100%, max(5.5rem, calc((100% - 2 * var(--grid-gap)) / 3 - 0.5px))), 1fr)
+      minmax(
+        min(100%, max(calc(5.5rem * var(--text-zoom, 1)), calc((100% - 2 * var(--grid-gap)) / 3 - 0.5px))),
+        1fr
+      )
     );
   }
 
@@ -407,7 +411,10 @@
 @media (max-width: 520px) {
   .recipe-grid.big {
     --grid-gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(8.75rem, calc((100% - var(--grid-gap)) / 2 - 0.5px))), 1fr));
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, max(calc(8.75rem * var(--text-zoom, 1)), calc((100% - var(--grid-gap)) / 2 - 0.5px))), 1fr)
+    );
   }
 
   .recipe-grid.big .recipe-card-text {
@@ -809,6 +816,9 @@
    "Show shelves"). */
 .list-options-links {
   display: flex;
+  /* With the phone's biggest text, the link goes under the count rather
+     than off the screen. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 6px;

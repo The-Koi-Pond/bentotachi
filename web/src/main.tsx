@@ -20,10 +20,12 @@ import "./styles/settings.css";
 import "./styles/print.css";
 import { applyTheme, savedTheme } from "./theme";
 import { SystemBarColours } from "./SystemBarColours";
+import { followTextZoom } from "./textZoom";
 
 setUpBackGesture();
 // Light or dark as chosen in Settings, before anything is drawn.
 applyTheme(savedTheme());
+followTextZoom();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

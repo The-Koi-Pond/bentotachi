@@ -250,8 +250,8 @@
   gap: 4px;
   /* 22 px, or more with the phone's bigger text, so the words stay on the
      colour. */
-  min-width: max(22px, 1.76em);
-  min-height: max(22px, 1.76em);
+  min-width: max(22px, calc(1.76em * var(--text-zoom, 1)));
+  min-height: max(22px, calc(1.76em * var(--text-zoom, 1)));
   padding: 0 8px;
   font-size: 0.78rem;
   font-weight: 800;
@@ -290,8 +290,8 @@
   display: grid;
   place-content: center;
   /* 46 px, or more with the phone's bigger text, so its words stay inside. */
-  width: max(46px, 4.79em);
-  height: max(46px, 4.79em);
+  width: max(46px, calc(4.79em * var(--text-zoom, 1)));
+  height: max(46px, calc(4.79em * var(--text-zoom, 1)));
   border: 2px solid var(--accent);
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 3.5px var(--accent);
@@ -1331,12 +1331,19 @@ footer .person-name:focus-visible {
 
 /* Recipe timer (RecipeTimer.tsx): "⏱ Time it" under the times, then a card
    with a prep and a cook clock. */
+/* "Time it" goes under its question once the question would be squeezed
+   (the phone's biggest text, textZoom.ts), like the cooked row's button. */
 .timer-start-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   font-size: 0.9rem;
+}
+
+.timer-start-row > .muted {
+  flex: 1 1 calc(8em * var(--text-zoom, 1));
 }
 
 .timer-start {
@@ -1429,7 +1436,7 @@ footer .person-name:focus-visible {
 }
 
 .cook-history .plan-history {
-  flex: 1 1 6em;
+  flex: 1 1 calc(6em * var(--text-zoom, 1));
   min-width: 0;
   margin: 0;
 }

@@ -176,8 +176,11 @@
 /* One item. Simple: name and level on one line. Detailed: the photo (or
    letter tile) beside the name block, with Opened and the store links
    under it. */
+/* With the phone's biggest text the level drops under the name (at the
+   right) rather than squeezing it to "Ba…" (.pantry-name's 7em). */
 .pantry-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   min-height: 38px;
@@ -209,6 +212,7 @@
 
 .pantry-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   min-height: 36px;
@@ -268,7 +272,7 @@
 }
 
 .pantry-name {
-  flex: 1;
+  flex: 1 1 calc(7em * var(--text-zoom, 1));
   /* The whole height of its row to tap, not just its words (still in the
      middle). */
   align-self: stretch;
@@ -318,8 +322,8 @@
   align-items: center;
   gap: 3px;
   /* The same width whatever the word, so the levels line up down the list:
-     just enough for "Have" (72 px), in em so it grows with the text. */
-  width: 5.625em;
+     just enough for "Have" (72 px), growing with the text (textZoom.ts). */
+  width: calc(5.625em * var(--text-zoom, 1));
   min-height: 32px;
   padding: 3px 7px 3px 6px;
   font-size: 0.8rem;
